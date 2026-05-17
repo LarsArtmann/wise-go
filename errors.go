@@ -3,6 +3,7 @@ package wise
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -90,10 +91,11 @@ func joinStrings(ss []string, sep string) string {
 		return ""
 	}
 
-	result := ss[0]
+	var result strings.Builder
+	result.WriteString(ss[0])
 	for _, s := range ss[1:] {
-		result += sep + s
+		result.WriteString(sep + s)
 	}
 
-	return result
+	return result.String()
 }

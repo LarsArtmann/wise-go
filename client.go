@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	defaultTimeout   = 30 * time.Second
+	defaultTimeout    = 30 * time.Second
 	defaultMaxRetries = 3
-	defaultRetryMin  = 100 * time.Millisecond
-	defaultRetryMax  = 5 * time.Second
+	defaultRetryMin   = 100 * time.Millisecond
+	defaultRetryMax   = 5 * time.Second
 )
 
 // Client is the Wise API client.

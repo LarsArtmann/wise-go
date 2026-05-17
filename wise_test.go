@@ -126,7 +126,7 @@ var _ = Describe("Wise Client", func() {
 						{
 							ID: 67890, Type: "BUSINESS",
 							BusinessName: "Acme Corp",
-							Email: "billing@acme.com", CreatedAt: "2023-02-20T14:00:00Z",
+							Email:        "billing@acme.com", CreatedAt: "2023-02-20T14:00:00Z",
 						},
 					}
 					w.Header().Set("Content-Type", "application/json")
