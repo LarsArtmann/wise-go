@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"net/url"
 	"time"
-
-	"github.com/cockroachdb/errors"
 )
 
 // ListTransactions returns transactions for a balance within a time range.
@@ -35,7 +33,7 @@ func (c *Client) ListTransactions(
 
 	err := c.getWithQuery(ctx, path, query, &statement)
 	if err != nil {
-		return nil, errors.Wrap(err, "list transactions")
+		return nil, fmt.Errorf("list transactions: %w", err)
 	}
 
 	transactions := make([]Transaction, len(statement.Transactions))

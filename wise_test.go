@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
+	"errors"
 	"github.com/larsartmann/wise-go"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

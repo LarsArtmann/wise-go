@@ -3,8 +3,11 @@ package wise
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/larsartmann/go-error-family"
 )
 
 // --- Structured error types ---
@@ -20,10 +23,39 @@ func (e *APIError) Error() string {
 	return fmt.Sprintf("wise: api error (%d): %s", e.StatusCode, e.Message)
 }
 
+func (e *APIError) ErrorCode() string {
+	return "wise.api_error"
+}
+
+func (e *APIError) ErrorFamily() errorfamily.Family {
+	return errorfamily.Rejection
+}
+
+func (e *APIError) ErrorContext() map[string]string {
+	return map[string]string{
+		"status_code": strconv.Itoa(e.StatusCode),
+	}
+}
+
 // RateLimitError is returned when the Wise API returns HTTP 429.
 type RateLimitError struct {
 	APIError
 	RetryAfter time.Duration
+}
+
+func (e *RateLimitError) ErrorFamily() errorfamily.Family {
+	return errorfamily.Transient
+}
+
+func (e *RateLimitError) IsRetryable() bool {
+	return true
+}
+
+func (e *RateLimitError) ErrorContext() map[string]string {
+	return map[string]string{
+		"status_code": strconv.Itoa(e.StatusCode),
+		"retry_after": e.RetryAfter.String(),
+	}
 }
 
 // AuthError is returned when the Wise API returns HTTP 401 or 403.
@@ -31,14 +63,34 @@ type AuthError struct {
 	APIError
 }
 
+func (e *AuthError) ErrorCode() string {
+	return "wise.auth"
+}
+
 // NotFoundError is returned when the Wise API returns HTTP 404.
 type NotFoundError struct {
 	APIError
 }
 
+func (e *NotFoundError) ErrorCode() string {
+	return "wise.not_found"
+}
+
 // ServerError is returned when the Wise API returns HTTP 5xx.
 type ServerError struct {
 	APIError
+}
+
+func (e *ServerError) ErrorFamily() errorfamily.Family {
+	return errorfamily.Transient
+}
+
+func (e *ServerError) IsRetryable() bool {
+	return true
+}
+
+func (e *ServerError) ErrorCode() string {
+	return "wise.server"
 }
 
 func newAPIError(statusCode int, body string) error {

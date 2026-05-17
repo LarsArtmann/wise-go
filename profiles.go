@@ -3,8 +3,6 @@ package wise
 import (
 	"context"
 	"fmt"
-
-	"github.com/cockroachdb/errors"
 )
 
 // ListProfiles returns all profiles for the authenticated user.
@@ -13,7 +11,7 @@ func (c *Client) ListProfiles(ctx context.Context) ([]ProfileResult, error) {
 
 	err := c.get(ctx, "/v2/profiles", &profiles)
 	if err != nil {
-		return nil, errors.Wrap(err, "list profiles")
+		return nil, fmt.Errorf("list profiles: %w", err)
 	}
 
 	results := make([]ProfileResult, len(profiles))

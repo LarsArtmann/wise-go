@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cockroachdb/errors"
+	"github.com/larsartmann/go-error-family"
 )
 
 // ListBalances returns all balances for a profile.
@@ -50,7 +50,7 @@ func (c *Client) GetBalance(ctx context.Context, profileID, balanceID int64) (*B
 		}
 	}
 
-	return nil, errors.Newf("balance %d not found for profile %d", balanceID, profileID)
+	return nil, errorfamily.NewRejection("wise.balance.not_found", fmt.Sprintf("balance %d not found for profile %d", balanceID, profileID))
 }
 
 func mapBalance(b Balance) (BalanceResult, error) {

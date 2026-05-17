@@ -2,12 +2,13 @@ package wise
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/failsafe-go/failsafe-go"
 	"github.com/failsafe-go/failsafe-go/retrypolicy"
+	"github.com/larsartmann/go-error-family"
 )
 
 const (
@@ -99,8 +100,11 @@ func isRetryable(resp *http.Response, err error) bool {
 // Authenticate validates the API key by calling ListProfiles.
 func (c *Client) Authenticate(ctx context.Context) error {
 	_, err := c.ListProfiles(ctx)
+	if err != nil {
+		return fmt.Errorf("authenticate: %w", err)
+	}
 
-	return errors.Wrap(err, "authentication failed")
+	return nil
 }
 
 // Health checks if the Wise API is reachable.
@@ -143,7 +147,7 @@ func (c *Client) getWithQuery(
 		GetWithExecution(func(exec failsafe.Execution[*http.Response]) (*http.Response, error) {
 			req, reqErr := http.NewRequestWithContext(exec.Context(), http.MethodGet, fullURL, nil)
 			if reqErr != nil {
-				return nil, errors.Wrap(reqErr, "create request")
+				return nil, fmt.Errorf("create request: %w", reqErr)
 			}
 
 			c.setAuth(req)
@@ -151,7 +155,7 @@ func (c *Client) getWithQuery(
 			return c.httpClient.Do(req)
 		})
 	if err != nil {
-		return errors.Wrap(err, "request failed")
+		return fmt.Errorf("request failed: %w", err)
 	}
 
 	rc := &responseCloser{resp: resp}
@@ -162,7 +166,9 @@ func (c *Client) getWithQuery(
 	}
 
 	if target != nil {
-		return errors.Wrap(jsonDecode(resp, target), "decode response")
+		if err := jsonDecode(resp, target); err != nil {
+			return errorfamily.WrapCorruption(err, "wise.response.decode", "decode response")
+		}
 	}
 
 	return nil
