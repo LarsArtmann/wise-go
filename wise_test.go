@@ -3,12 +3,12 @@ package wise_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"errors"
 	"github.com/larsartmann/wise-go"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

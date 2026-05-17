@@ -170,19 +170,20 @@ resp, err := client.ListTransactions(ctx, wise.ListTransactionsRequest{
 
 **Transaction type classification** — The SDK maps Wise detail types to Go enums:
 
-| Wise `details.type` | `TransactionType` | Note |
-|---|---|---|
-| `CARD_PAYMENT` | `TransactionTypeCard` | |
-| `CARD_REFUND` (amount > 0) | `TransactionTypeRefund` | |
-| `CARD_REFUND` (amount ≤ 0) | `TransactionTypeCard` | |
-| `TRANSFER` | `TransactionTypeTransfer` | |
-| `PAYMENT` | `TransactionTypePayment` | |
-| `CONVERSION`, `EXCHANGE` | `TransactionTypeExchange` | |
-| `FEE` | `TransactionTypeFee` | |
-| Other (amount > 0) | `TransactionTypeCredit` | Default for positive amounts |
-| Other (amount ≤ 0) | `TransactionTypeDebit` | Default for negative amounts |
+| Wise `details.type`        | `TransactionType`         | Note                         |
+| -------------------------- | ------------------------- | ---------------------------- |
+| `CARD_PAYMENT`             | `TransactionTypeCard`     |                              |
+| `CARD_REFUND` (amount > 0) | `TransactionTypeRefund`   |                              |
+| `CARD_REFUND` (amount ≤ 0) | `TransactionTypeCard`     |                              |
+| `TRANSFER`                 | `TransactionTypeTransfer` |                              |
+| `PAYMENT`                  | `TransactionTypePayment`  |                              |
+| `CONVERSION`, `EXCHANGE`   | `TransactionTypeExchange` |                              |
+| `FEE`                      | `TransactionTypeFee`      |                              |
+| Other (amount > 0)         | `TransactionTypeCredit`   | Default for positive amounts |
+| Other (amount ≤ 0)         | `TransactionTypeDebit`    | Default for negative amounts |
 
 **Amount semantics:**
+
 - `AmountCents` — absolute value (always positive)
 - `TotalCents` — signed value (negative for debits, positive for credits)
 - All amounts use `int64` minor units (cents) to avoid IEEE 754 floating-point errors
@@ -219,23 +220,23 @@ if err != nil {
 }
 ```
 
-| HTTP Status | Error Type | Retried? |
-|---|---|---|
-| 401, 403 | `AuthError` | No |
-| 404 | `NotFoundError` | No |
-| 429 | `RateLimitError` | Yes |
-| 5xx | `ServerError` | Yes |
-| Network error | Wrapped `error` | Yes |
+| HTTP Status   | Error Type       | Retried? |
+| ------------- | ---------------- | -------- |
+| 401, 403      | `AuthError`      | No       |
+| 404           | `NotFoundError`  | No       |
+| 429           | `RateLimitError` | Yes      |
+| 5xx           | `ServerError`    | Yes      |
+| Network error | Wrapped `error`  | Yes      |
 
 ## Design Decisions
 
-| Decision | Rationale |
-|---|---|
-| Monetary amounts as `int64` cents | `float64` causes precision loss (e.g., `0.1 + 0.2 ≠ 0.3`). Cents are safe for arithmetic and storage. |
-| Two-layer type system | Raw API types mirror JSON exactly. Result types expose clean Go types. Mapping functions convert between them. |
-| `failsafe-go` for retries | Purpose-built HTTP retry with backoff, not a generic CQRS middleware. |
-| Flat package structure | Single `package wise` — no sub-packages for 8 files. Import path is the API. |
-| BDD tests with Ginkgo | `httptest.Server` mock API responses. Tests verify both happy paths and error classification. |
+| Decision                          | Rationale                                                                                                      |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Monetary amounts as `int64` cents | `float64` causes precision loss (e.g., `0.1 + 0.2 ≠ 0.3`). Cents are safe for arithmetic and storage.          |
+| Two-layer type system             | Raw API types mirror JSON exactly. Result types expose clean Go types. Mapping functions convert between them. |
+| `failsafe-go` for retries         | Purpose-built HTTP retry with backoff, not a generic CQRS middleware.                                          |
+| Flat package structure            | Single `package wise` — no sub-packages for 8 files. Import path is the API.                                   |
+| BDD tests with Ginkgo             | `httptest.Server` mock API responses. Tests verify both happy paths and error classification.                  |
 
 ## Testing
 
