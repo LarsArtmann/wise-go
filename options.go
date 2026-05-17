@@ -62,8 +62,8 @@ func WithHTTPClient(client *http.Client) Option {
 	}
 }
 
-// withNow sets the clock function for testing.
-func withNow(fn func() time.Time) Option {
+// WithNow sets the clock function for testing.
+func WithNow(fn func() time.Time) Option {
 	return func(c *config) {
 		c.now = fn
 	}

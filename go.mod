@@ -1,6 +1,6 @@
 module github.com/larsartmann/wise-go
 
-go 1.26.0
+go 1.26.2
 
 require (
 	github.com/cockroachdb/errors v1.13.0
