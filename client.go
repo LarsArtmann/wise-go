@@ -12,10 +12,10 @@ import (
 )
 
 const (
-	defaultTimeout    = 30 * time.Second
-	defaultMaxRetries = 3
-	defaultRetryMin   = 100 * time.Millisecond
-	defaultRetryMax   = 5 * time.Second
+	defaultTimeout           = 30 * time.Second
+	defaultMaxRetries        = 3
+	defaultRetryBackoffStart = 100 * time.Millisecond
+	defaultRetryBackoffCap   = 5 * time.Second
 )
 
 // Client is the Wise API client.
@@ -50,12 +50,12 @@ func New(apiKey string, opts ...Option) *Client {
 		retryMax = cfg.maxRetries
 	}
 
-	retryMin := defaultRetryMin
+	retryMin := defaultRetryBackoffStart
 	if cfg.retryMin > 0 {
 		retryMin = cfg.retryMin
 	}
 
-	retryMaxDelay := defaultRetryMax
+	retryMaxDelay := defaultRetryBackoffCap
 	if cfg.retryMax > 0 {
 		retryMaxDelay = cfg.retryMax
 	}
@@ -128,7 +128,6 @@ func (rc *responseCloser) close() {
 	}
 }
 
-//nolint:bodyclose
 func (c *Client) getWithQuery(
 	ctx context.Context,
 	path string,

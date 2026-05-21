@@ -38,7 +38,10 @@ func (c *Client) ListBalances(ctx context.Context, profileID int64) ([]BalanceRe
 }
 
 // GetBalance returns a specific balance by ID within a profile.
-func (c *Client) GetBalance(ctx context.Context, profileID, balanceID int64) (*BalanceResult, error) {
+func (c *Client) GetBalance(
+	ctx context.Context,
+	profileID, balanceID int64,
+) (*BalanceResult, error) {
 	balances, err := c.ListBalances(ctx, profileID)
 	if err != nil {
 		return nil, fmt.Errorf("get balance %d for profile %d: %w", balanceID, profileID, err)
@@ -50,7 +53,10 @@ func (c *Client) GetBalance(ctx context.Context, profileID, balanceID int64) (*B
 		}
 	}
 
-	return nil, errorfamily.NewRejection("wise.balance.not_found", fmt.Sprintf("balance %d not found for profile %d", balanceID, profileID))
+	return nil, errorfamily.NewRejection(
+		"wise.balance.not_found",
+		fmt.Sprintf("balance %d not found for profile %d", balanceID, profileID),
+	)
 }
 
 func mapBalance(b Balance) (BalanceResult, error) {

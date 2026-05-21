@@ -19,6 +19,43 @@ func TestWiseClient(t *testing.T) {
 	RunSpecs(t, "Wise SDK Suite")
 }
 
+func stdBalance(
+	id int64,
+	currency, name string,
+	visible bool,
+	investmentState string,
+	amount, reserved float64,
+	created string,
+) wise.Balance {
+	return wise.Balance{
+		ID: id, Currency: currency, Type: "STANDARD", Name: name,
+		InvestmentState: investmentState, Visible: visible,
+		Amount:         wise.BalanceAmount{Value: amount, Currency: currency},
+		ReservedAmount: wise.BalanceAmount{Value: reserved, Currency: currency},
+		CreationTime:   created,
+	}
+}
+
+func testTx(id, txType string, amount float64) wise.StatementTransaction {
+	return wise.StatementTransaction{
+		TransactionID: id, Date: "2023-01-15 14:30:00",
+		Amount:    wise.BalanceAmount{Value: amount, Currency: "EUR"},
+		TotalFees: wise.BalanceAmount{Value: 0, Currency: "EUR"},
+		Details:   wise.TransactionDetails{Type: txType},
+	}
+}
+
+var unauthorizedHandler = func(w http.ResponseWriter, _ *http.Request) {
+	w.WriteHeader(http.StatusUnauthorized)
+	_, _ = w.Write([]byte(`{"errors":[{"code":"UNAUTHORIZED","message":"Invalid API key"}]}`))
+}
+
+func expectListProfilesError(client *wise.Client, substr string) {
+	_, err := client.ListProfiles(context.Background())
+	Expect(err).To(HaveOccurred())
+	Expect(err.Error()).To(ContainSubstring(substr))
+}
+
 var _ = Describe("Wise Client", func() {
 	var (
 		server *httptest.Server
@@ -35,6 +72,14 @@ var _ = Describe("Wise Client", func() {
 	AfterEach(func() {
 		server.Close()
 	})
+
+	defaultListTxReq := wise.ListTransactionsRequest{
+		ProfileID: 12345,
+		BalanceID: 100,
+		Currency:  "EUR",
+		From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+		To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
+	}
 
 	Describe("New", func() {
 		It("should create client with default options", func() {
@@ -86,10 +131,7 @@ var _ = Describe("Wise Client", func() {
 
 		Context("with invalid credentials", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {
-					w.WriteHeader(http.StatusUnauthorized)
-					_, _ = w.Write([]byte(`{"errors":[{"code":"UNAUTHORIZED","message":"Invalid API key"}]}`))
-				})
+				mux.HandleFunc("/v2/profiles", unauthorizedHandler)
 			})
 
 			It("should return an AuthError", func() {
@@ -170,16 +212,11 @@ var _ = Describe("Wise Client", func() {
 
 		Context("with API error", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {
-					w.WriteHeader(http.StatusUnauthorized)
-					_, _ = w.Write([]byte(`{"errors":[{"code":"UNAUTHORIZED","message":"Invalid API key"}]}`))
-				})
+				mux.HandleFunc("/v2/profiles", unauthorizedHandler)
 			})
 
 			It("should return error with API error details", func() {
-				_, err := client.ListProfiles(context.Background())
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("UNAUTHORIZED"))
+				expectListProfilesError(client, "UNAUTHORIZED")
 			})
 		})
 
@@ -195,9 +232,7 @@ var _ = Describe("Wise Client", func() {
 			})
 
 			It("should return an error", func() {
-				_, err := client.ListProfiles(context.Background())
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("unknown profile type"))
+				expectListProfilesError(client, "unknown profile type")
 			})
 		})
 	})
@@ -205,26 +240,35 @@ var _ = Describe("Wise Client", func() {
 	Describe("ListBalances", func() {
 		Context("with valid API response", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/v4/profiles/12345/balances", func(w http.ResponseWriter, _ *http.Request) {
-					balances := []wise.Balance{
-						{
-							ID: 100, Currency: "EUR", Type: "STANDARD", Name: "Main Account",
-							InvestmentState: "NOT_INVESTED", Visible: true,
-							Amount:         wise.BalanceAmount{Value: 1234.56, Currency: "EUR"},
-							ReservedAmount: wise.BalanceAmount{Value: 0.0, Currency: "EUR"},
-							CreationTime:   "2023-01-01T00:00:00Z",
-						},
-						{
-							ID: 200, Currency: "USD", Type: "STANDARD", Name: "USD Account",
-							InvestmentState: "NOT_INVESTED", Visible: true,
-							Amount:         wise.BalanceAmount{Value: 500.00, Currency: "USD"},
-							ReservedAmount: wise.BalanceAmount{Value: 50.00, Currency: "USD"},
-							CreationTime:   "2023-01-02T00:00:00Z",
-						},
-					}
-					w.Header().Set("Content-Type", "application/json")
-					_ = json.NewEncoder(w).Encode(balances)
-				})
+				mux.HandleFunc(
+					"/v4/profiles/12345/balances",
+					func(w http.ResponseWriter, _ *http.Request) {
+						balances := []wise.Balance{
+							stdBalance(
+								100,
+								"EUR",
+								"Main Account",
+								true,
+								"NOT_INVESTED",
+								1234.56,
+								0.0,
+								"2023-01-01T00:00:00Z",
+							),
+							stdBalance(
+								200,
+								"USD",
+								"USD Account",
+								true,
+								"NOT_INVESTED",
+								500.00,
+								50.00,
+								"2023-01-02T00:00:00Z",
+							),
+						}
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.NewEncoder(w).Encode(balances)
+					},
+				)
 			})
 
 			It("should return visible balances", func() {
@@ -256,33 +300,45 @@ var _ = Describe("Wise Client", func() {
 
 		Context("with invisible balances", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/v4/profiles/12345/balances", func(w http.ResponseWriter, _ *http.Request) {
-					balances := []wise.Balance{
-						{
-							ID: 100, Currency: "EUR", Type: "STANDARD", Name: "Visible",
-							InvestmentState: "NOT_INVESTED", Visible: true,
-							Amount:         wise.BalanceAmount{Value: 100.00, Currency: "EUR"},
-							ReservedAmount: wise.BalanceAmount{Value: 0, Currency: "EUR"},
-							CreationTime:   "2023-01-01T00:00:00Z",
-						},
-						{
-							ID: 200, Currency: "EUR", Type: "STANDARD", Name: "Invisible",
-							InvestmentState: "NOT_INVESTED", Visible: false,
-							Amount:         wise.BalanceAmount{Value: 200.00, Currency: "EUR"},
-							ReservedAmount: wise.BalanceAmount{Value: 0, Currency: "EUR"},
-							CreationTime:   "2023-01-01T00:00:00Z",
-						},
-						{
-							ID: 300, Currency: "EUR", Type: "STANDARD", Name: "Investment",
-							InvestmentState: "INVESTED", Visible: true,
-							Amount:         wise.BalanceAmount{Value: 300.00, Currency: "EUR"},
-							ReservedAmount: wise.BalanceAmount{Value: 0, Currency: "EUR"},
-							CreationTime:   "2023-01-01T00:00:00Z",
-						},
-					}
-					w.Header().Set("Content-Type", "application/json")
-					_ = json.NewEncoder(w).Encode(balances)
-				})
+				mux.HandleFunc(
+					"/v4/profiles/12345/balances",
+					func(w http.ResponseWriter, _ *http.Request) {
+						balances := []wise.Balance{
+							stdBalance(
+								100,
+								"EUR",
+								"Visible",
+								true,
+								"NOT_INVESTED",
+								100.00,
+								0,
+								"2023-01-01T00:00:00Z",
+							),
+							stdBalance(
+								200,
+								"EUR",
+								"Invisible",
+								false,
+								"NOT_INVESTED",
+								200.00,
+								0,
+								"2023-01-01T00:00:00Z",
+							),
+							stdBalance(
+								300,
+								"EUR",
+								"Investment",
+								true,
+								"INVESTED",
+								300.00,
+								0,
+								"2023-01-01T00:00:00Z",
+							),
+						}
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.NewEncoder(w).Encode(balances)
+					},
+				)
 			})
 
 			It("should filter out invisible and investment balances", func() {
@@ -295,10 +351,17 @@ var _ = Describe("Wise Client", func() {
 
 		Context("with API error", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/v4/profiles/12345/balances", func(w http.ResponseWriter, _ *http.Request) {
-					w.WriteHeader(http.StatusInternalServerError)
-					_, _ = w.Write([]byte(`{"errors":[{"code":"SERVER_ERROR","message":"Internal server error"}]}`))
-				})
+				mux.HandleFunc(
+					"/v4/profiles/12345/balances",
+					func(w http.ResponseWriter, _ *http.Request) {
+						w.WriteHeader(http.StatusInternalServerError)
+						_, _ = w.Write(
+							[]byte(
+								`{"errors":[{"code":"SERVER_ERROR","message":"Internal server error"}]}`,
+							),
+						)
+					},
+				)
 			})
 
 			It("should return error", func() {
@@ -310,19 +373,25 @@ var _ = Describe("Wise Client", func() {
 
 	Describe("GetBalance", func() {
 		BeforeEach(func() {
-			mux.HandleFunc("/v4/profiles/12345/balances", func(w http.ResponseWriter, _ *http.Request) {
-				balances := []wise.Balance{
-					{
-						ID: 100, Currency: "EUR", Type: "STANDARD", Name: "EUR Account",
-						InvestmentState: "NOT_INVESTED", Visible: true,
-						Amount:         wise.BalanceAmount{Value: 1000.00, Currency: "EUR"},
-						ReservedAmount: wise.BalanceAmount{Value: 0, Currency: "EUR"},
-						CreationTime:   "2023-01-01T00:00:00Z",
-					},
-				}
-				w.Header().Set("Content-Type", "application/json")
-				_ = json.NewEncoder(w).Encode(balances)
-			})
+			mux.HandleFunc(
+				"/v4/profiles/12345/balances",
+				func(w http.ResponseWriter, _ *http.Request) {
+					balances := []wise.Balance{
+						stdBalance(
+							100,
+							"EUR",
+							"EUR Account",
+							true,
+							"NOT_INVESTED",
+							1000.00,
+							0,
+							"2023-01-01T00:00:00Z",
+						),
+					}
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.NewEncoder(w).Encode(balances)
+				},
+			)
 		})
 
 		It("should return the specific balance", func() {
@@ -352,10 +421,16 @@ var _ = Describe("Wise Client", func() {
 						response := wise.StatementResponse{
 							Transactions: []wise.StatementTransaction{
 								{
-									TransactionID:   "tx-001",
-									Date:            "2023-01-15 14:30:00",
-									Amount:          wise.BalanceAmount{Value: -50.00, Currency: "EUR"},
-									TotalFees:       wise.BalanceAmount{Value: 0.50, Currency: "EUR"},
+									TransactionID: "tx-001",
+									Date:          "2023-01-15 14:30:00",
+									Amount: wise.BalanceAmount{
+										Value:    -50.00,
+										Currency: "EUR",
+									},
+									TotalFees: wise.BalanceAmount{
+										Value:    0.50,
+										Currency: "EUR",
+									},
 									ReferenceNumber: "REF-001",
 									Details: wise.TransactionDetails{
 										Type:         "CARD_PAYMENT",
@@ -365,9 +440,12 @@ var _ = Describe("Wise Client", func() {
 									},
 								},
 								{
-									TransactionID:   "tx-002",
-									Date:            "2023-01-20 10:00:00",
-									Amount:          wise.BalanceAmount{Value: 1000.00, Currency: "EUR"},
+									TransactionID: "tx-002",
+									Date:          "2023-01-20 10:00:00",
+									Amount: wise.BalanceAmount{
+										Value:    1000.00,
+										Currency: "EUR",
+									},
 									TotalFees:       wise.BalanceAmount{Value: 0, Currency: "EUR"},
 									ReferenceNumber: "REF-002",
 									Details: wise.TransactionDetails{
@@ -377,7 +455,10 @@ var _ = Describe("Wise Client", func() {
 									},
 								},
 							},
-							EndOfStatementBalance: wise.BalanceAmount{Value: 950.50, Currency: "EUR"},
+							EndOfStatementBalance: wise.BalanceAmount{
+								Value:    950.50,
+								Currency: "EUR",
+							},
 						}
 
 						w.Header().Set("Content-Type", "application/json")
@@ -387,62 +468,32 @@ var _ = Describe("Wise Client", func() {
 			})
 
 			It("should return transactions", func() {
-				resp, err := client.ListTransactions(context.Background(), wise.ListTransactionsRequest{
-					ProfileID: 12345,
-					BalanceID: 100,
-					Currency:  "EUR",
-					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
-				})
+				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(resp.Transactions).To(HaveLen(2))
 				Expect(resp.HasMore).To(BeFalse())
 			})
 
 			It("should map transaction ID correctly", func() {
-				resp, err := client.ListTransactions(context.Background(), wise.ListTransactionsRequest{
-					ProfileID: 12345,
-					BalanceID: 100,
-					Currency:  "EUR",
-					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
-				})
+				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(resp.Transactions[0].ID).To(Equal("tx-001"))
 			})
 
 			It("should classify card payment as card type", func() {
-				resp, err := client.ListTransactions(context.Background(), wise.ListTransactionsRequest{
-					ProfileID: 12345,
-					BalanceID: 100,
-					Currency:  "EUR",
-					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
-				})
+				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(resp.Transactions[0].Type).To(Equal(wise.TransactionTypeCard))
 			})
 
 			It("should classify transfer as transfer type", func() {
-				resp, err := client.ListTransactions(context.Background(), wise.ListTransactionsRequest{
-					ProfileID: 12345,
-					BalanceID: 100,
-					Currency:  "EUR",
-					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
-				})
+				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(resp.Transactions[1].Type).To(Equal(wise.TransactionTypeTransfer))
 			})
 
 			It("should convert amounts to cents correctly", func() {
-				resp, err := client.ListTransactions(context.Background(), wise.ListTransactionsRequest{
-					ProfileID: 12345,
-					BalanceID: 100,
-					Currency:  "EUR",
-					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
-				})
+				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
 				Expect(err).ToNot(HaveOccurred())
 
 				// First transaction: -50.00 → totalCents=-5000, amountCents=5000 (abs)
@@ -452,13 +503,7 @@ var _ = Describe("Wise Client", func() {
 			})
 
 			It("should parse date correctly", func() {
-				resp, err := client.ListTransactions(context.Background(), wise.ListTransactionsRequest{
-					ProfileID: 12345,
-					BalanceID: 100,
-					Currency:  "EUR",
-					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
-				})
+				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(resp.Transactions[0].Date.Year()).To(Equal(2023))
 				Expect(resp.Transactions[0].Date.Month()).To(Equal(time.January))
@@ -466,13 +511,7 @@ var _ = Describe("Wise Client", func() {
 			})
 
 			It("should map description and merchant", func() {
-				resp, err := client.ListTransactions(context.Background(), wise.ListTransactionsRequest{
-					ProfileID: 12345,
-					BalanceID: 100,
-					Currency:  "EUR",
-					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
-				})
+				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(resp.Transactions[0].Description).To(Equal("Coffee Shop"))
 				Expect(resp.Transactions[0].MerchantName).To(Equal("Starbucks"))
@@ -488,30 +527,10 @@ var _ = Describe("Wise Client", func() {
 					func(w http.ResponseWriter, _ *http.Request) {
 						response := wise.StatementResponse{
 							Transactions: []wise.StatementTransaction{
-								{
-									TransactionID: "tx-refund", Date: "2023-01-15 14:30:00",
-									Amount:    wise.BalanceAmount{Value: 25.00, Currency: "EUR"},
-									TotalFees: wise.BalanceAmount{Value: 0, Currency: "EUR"},
-									Details:   wise.TransactionDetails{Type: "CARD_REFUND"},
-								},
-								{
-									TransactionID: "tx-exchange", Date: "2023-01-15 14:30:00",
-									Amount:    wise.BalanceAmount{Value: -100.00, Currency: "EUR"},
-									TotalFees: wise.BalanceAmount{Value: 0, Currency: "EUR"},
-									Details:   wise.TransactionDetails{Type: "CONVERSION"},
-								},
-								{
-									TransactionID: "tx-fee", Date: "2023-01-15 14:30:00",
-									Amount:    wise.BalanceAmount{Value: -0.50, Currency: "EUR"},
-									TotalFees: wise.BalanceAmount{Value: 0, Currency: "EUR"},
-									Details:   wise.TransactionDetails{Type: "FEE"},
-								},
-								{
-									TransactionID: "tx-payment", Date: "2023-01-15 14:30:00",
-									Amount:    wise.BalanceAmount{Value: -200.00, Currency: "EUR"},
-									TotalFees: wise.BalanceAmount{Value: 0, Currency: "EUR"},
-									Details:   wise.TransactionDetails{Type: "PAYMENT"},
-								},
+								testTx("tx-refund", "CARD_REFUND", 25.00),
+								testTx("tx-exchange", "CONVERSION", -100.00),
+								testTx("tx-fee", "FEE", -0.50),
+								testTx("tx-payment", "PAYMENT", -200.00),
 							},
 						}
 						w.Header().Set("Content-Type", "application/json")
@@ -521,41 +540,25 @@ var _ = Describe("Wise Client", func() {
 			})
 
 			It("should classify CARD_REFUND with positive amount as refund", func() {
-				resp, err := client.ListTransactions(context.Background(), wise.ListTransactionsRequest{
-					ProfileID: 12345, BalanceID: 100, Currency: "EUR",
-					From: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-					To:   time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
-				})
+				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(resp.Transactions[0].Type).To(Equal(wise.TransactionTypeRefund))
 			})
 
 			It("should classify CONVERSION as exchange", func() {
-				resp, err := client.ListTransactions(context.Background(), wise.ListTransactionsRequest{
-					ProfileID: 12345, BalanceID: 100, Currency: "EUR",
-					From: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-					To:   time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
-				})
+				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(resp.Transactions[1].Type).To(Equal(wise.TransactionTypeExchange))
 			})
 
 			It("should classify FEE as fee", func() {
-				resp, err := client.ListTransactions(context.Background(), wise.ListTransactionsRequest{
-					ProfileID: 12345, BalanceID: 100, Currency: "EUR",
-					From: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-					To:   time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
-				})
+				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(resp.Transactions[2].Type).To(Equal(wise.TransactionTypeFee))
 			})
 
 			It("should classify PAYMENT as payment", func() {
-				resp, err := client.ListTransactions(context.Background(), wise.ListTransactionsRequest{
-					ProfileID: 12345, BalanceID: 100, Currency: "EUR",
-					From: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-					To:   time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
-				})
+				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(resp.Transactions[3].Type).To(Equal(wise.TransactionTypePayment))
 			})
@@ -567,17 +570,17 @@ var _ = Describe("Wise Client", func() {
 					"/v1/profiles/12345/balance-statements/100/statement.json",
 					func(w http.ResponseWriter, _ *http.Request) {
 						w.WriteHeader(http.StatusNotFound)
-						_, _ = w.Write([]byte(`{"errors":[{"code":"NOT_FOUND","message":"Balance not found"}]}`))
+						_, _ = w.Write(
+							[]byte(
+								`{"errors":[{"code":"NOT_FOUND","message":"Balance not found"}]}`,
+							),
+						)
 					},
 				)
 			})
 
 			It("should return NotFoundError", func() {
-				_, err := client.ListTransactions(context.Background(), wise.ListTransactionsRequest{
-					ProfileID: 12345, BalanceID: 100, Currency: "EUR",
-					From: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-					To:   time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
-				})
+				_, err := client.ListTransactions(context.Background(), defaultListTxReq)
 				Expect(err).To(HaveOccurred())
 
 				var notFoundErr *wise.NotFoundError
@@ -594,12 +597,23 @@ var _ = Describe("Wise Client", func() {
 						callCount++
 						if callCount <= 3 {
 							w.WriteHeader(http.StatusTooManyRequests)
-							_, _ = w.Write([]byte(`{"errors":[{"code":"RATE_LIMITED","message":"Too many requests"}]}`))
+							_, _ = w.Write(
+								[]byte(
+									`{"errors":[{"code":"RATE_LIMITED","message":"Too many requests"}]}`,
+								),
+							)
 
 							return
 						}
 						profiles := []wise.Profile{
-							{ID: 1, Type: "PERSONAL", FirstName: "Test", LastName: "User", Email: "test@test.com", CreatedAt: "2023-01-01T00:00:00Z"},
+							{
+								ID:        1,
+								Type:      "PERSONAL",
+								FirstName: "Test",
+								LastName:  "User",
+								Email:     "test@test.com",
+								CreatedAt: "2023-01-01T00:00:00Z",
+							},
 						}
 						w.Header().Set("Content-Type", "application/json")
 						_ = json.NewEncoder(w).Encode(profiles)

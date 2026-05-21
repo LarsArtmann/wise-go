@@ -33,14 +33,22 @@ func (c *Client) ListTransactions(
 
 	err := c.getWithQuery(ctx, path, query, &statement)
 	if err != nil {
-		return nil, fmt.Errorf("list transactions: %w", err)
+		return nil, fmt.Errorf("list transactions for profileID=%d balanceID=%d currency=%s: %w",
+			req.ProfileID, req.BalanceID, req.Currency, err)
 	}
 
 	transactions := make([]Transaction, len(statement.Transactions))
 	for i, t := range statement.Transactions {
 		tx, mapErr := mapTransaction(t, req.ProfileID, req.BalanceID, req.Currency, c.now)
 		if mapErr != nil {
-			return nil, fmt.Errorf("map transaction %s: %w", t.TransactionID, mapErr)
+			return nil, fmt.Errorf(
+				"map transaction %s for profileID=%d balanceID=%d currency=%s: %w",
+				t.TransactionID,
+				req.ProfileID,
+				req.BalanceID,
+				req.Currency,
+				mapErr,
+			)
 		}
 
 		transactions[i] = tx
@@ -57,11 +65,18 @@ func mapTransaction(
 	profileID int64,
 	balanceID int64,
 	currency string,
-	now func() time.Time,
+	now func() time.Time, //nolint:revive // reserved for future clock injection
 ) (Transaction, error) {
 	date, err := parseWiseDate(t.Date)
 	if err != nil {
-		return Transaction{}, fmt.Errorf("parse date %q: %w", t.Date, err)
+		return Transaction{}, fmt.Errorf(
+			"parse date %q for profileID=%d balanceID=%d currency=%s: %w",
+			t.Date,
+			profileID,
+			balanceID,
+			currency,
+			err,
+		)
 	}
 
 	totalCents := t.Amount.Cents()
