@@ -56,6 +56,49 @@ func expectListProfilesError(client *wise.Client, substr string) {
 	Expect(err.Error()).To(ContainSubstring(substr))
 }
 
+func testProfiles(id int64, firstName, lastName, email string) []wise.Profile {
+	return []wise.Profile{
+		{
+			ID:        id,
+			Type:      "PERSONAL",
+			FirstName: firstName,
+			LastName:  lastName,
+			Email:     email,
+			CreatedAt: "2023-01-01T00:00:00Z",
+		},
+	}
+}
+
+func personalProfile(id int64, firstName, lastName, email, createdAt string) wise.Profile {
+	return wise.Profile{
+		ID: id, Type: "PERSONAL",
+		FirstName: firstName, LastName: lastName,
+		Email: email, CreatedAt: createdAt,
+	}
+}
+
+func expectProfileID(profiles []wise.ProfileResult, idx int, expectedID int64) {
+	Expect(profiles[idx].ID).To(Equal(expectedID))
+}
+
+func expectBalanceAmountCents(
+	balances []wise.BalanceResult, idx int, expectedAmount, expectedReserved int64,
+) {
+	Expect(balances[idx].AmountCents).To(Equal(expectedAmount))
+	Expect(balances[idx].ReservedCents).To(Equal(expectedReserved))
+}
+
+func expectTransactionQueryParams(r *http.Request, currency, intervalStart, intervalEnd string) {
+	params := map[string]string{
+		"currency":      currency,
+		"intervalStart": intervalStart,
+		"intervalEnd":   intervalEnd,
+	}
+	for name, expected := range params {
+		Expect(r.URL.Query().Get(name)).To(Equal(expected))
+	}
+}
+
 var _ = Describe("Wise Client", func() {
 	var (
 		server *httptest.Server
@@ -108,18 +151,10 @@ var _ = Describe("Wise Client", func() {
 			BeforeEach(func() {
 				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, r *http.Request) {
 					Expect(r.Header.Get("Authorization")).To(Equal("Bearer test-api-key"))
-					profiles := []wise.Profile{
-						{
-							ID:        12345,
-							Type:      "PERSONAL",
-							FirstName: "John",
-							LastName:  "Doe",
-							Email:     "john@example.com",
-							CreatedAt: "2023-01-15T10:30:00Z",
-						},
-					}
 					w.Header().Set("Content-Type", "application/json")
-					_ = json.NewEncoder(w).Encode(profiles)
+					_ = json.NewEncoder(w).Encode(
+						testProfiles(12345, "John", "Doe", "john@example.com"),
+					)
 				})
 			})
 
@@ -160,11 +195,9 @@ var _ = Describe("Wise Client", func() {
 			BeforeEach(func() {
 				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {
 					profiles := []wise.Profile{
-						{
-							ID: 12345, Type: "PERSONAL",
-							FirstName: "John", LastName: "Doe",
-							Email: "john@example.com", CreatedAt: "2023-01-15T10:30:00Z",
-						},
+						personalProfile(
+							12345, "John", "Doe", "john@example.com", "2023-01-15T10:30:00Z",
+						),
 						{
 							ID: 67890, Type: "BUSINESS",
 							BusinessName: "Acme Corp",
@@ -186,7 +219,7 @@ var _ = Describe("Wise Client", func() {
 				profiles, err := client.ListProfiles(context.Background())
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(profiles[0].ID).To(Equal(int64(12345)))
+				expectProfileID(profiles, 0, 12345)
 				Expect(profiles[0].Name).To(Equal("John Doe"))
 				Expect(profiles[0].Type).To(Equal(wise.ProfileTypePersonal))
 				Expect(profiles[0].Email).To(Equal("john@example.com"))
@@ -196,7 +229,7 @@ var _ = Describe("Wise Client", func() {
 				profiles, err := client.ListProfiles(context.Background())
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(profiles[1].ID).To(Equal(int64(67890)))
+				expectProfileID(profiles, 1, 67890)
 				Expect(profiles[1].Name).To(Equal("Acme Corp"))
 				Expect(profiles[1].Type).To(Equal(wise.ProfileTypeBusiness))
 			})
@@ -291,10 +324,8 @@ var _ = Describe("Wise Client", func() {
 				balances, err := client.ListBalances(context.Background(), 12345)
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(balances[0].AmountCents).To(Equal(int64(123456)))
-				Expect(balances[0].ReservedCents).To(Equal(int64(0)))
-				Expect(balances[1].AmountCents).To(Equal(int64(50000)))
-				Expect(balances[1].ReservedCents).To(Equal(int64(5000)))
+				expectBalanceAmountCents(balances, 0, 123456, 0)
+				expectBalanceAmountCents(balances, 1, 50000, 5000)
 			})
 		})
 
@@ -414,9 +445,9 @@ var _ = Describe("Wise Client", func() {
 				mux.HandleFunc(
 					"/v1/profiles/12345/balance-statements/100/statement.json",
 					func(w http.ResponseWriter, r *http.Request) {
-						Expect(r.URL.Query().Get("currency")).To(Equal("EUR"))
-						Expect(r.URL.Query().Get("intervalStart")).To(Equal("2023-01-01T00:00:00Z"))
-						Expect(r.URL.Query().Get("intervalEnd")).To(Equal("2023-01-31T23:59:59Z"))
+						expectTransactionQueryParams(
+							r, "EUR", "2023-01-01T00:00:00Z", "2023-01-31T23:59:59Z",
+						)
 
 						response := wise.StatementResponse{
 							Transactions: []wise.StatementTransaction{
