@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	errorfamily "github.com/larsartmann/go-error-family"
 	id "github.com/larsartmann/go-branded-id"
+	errorfamily "github.com/larsartmann/go-error-family"
 )
 
 // ListBalances returns all balances for a profile.

@@ -14,11 +14,11 @@ The wise-go project is a well-structured, production-ready Go SDK for the Wise A
 
 ## Build & Test Status
 
-| Check | Status | Details |
-|-------|--------|---------|
-| Build | ✅ PASS | Compiles successfully |
-| Vet | ✅ PASS | No issues detected |
-| Tests | ✅ PASS | 33/33 specs passing |
+| Check        | Status     | Details                   |
+| ------------ | ---------- | ------------------------- |
+| Build        | ✅ PASS    | Compiles successfully     |
+| Vet          | ✅ PASS    | No issues detected        |
+| Tests        | ✅ PASS    | 33/33 specs passing       |
 | Dependencies | ✅ CURRENT | All dependencies resolved |
 
 ---
@@ -54,7 +54,7 @@ The wise-go project is a well-structured, production-ready Go SDK for the Wise A
 
 1. **LSP Diagnostics Staleness** - The gopls LSP shows "go mod tidy" errors for `go-branded-id` even though:
    - Build passes successfully
-   - Tests pass successfully  
+   - Tests pass successfully
    - `go mod tidy` runs without errors
    - This appears to be an LSP caching issue, not an actual problem
 
@@ -143,19 +143,22 @@ The wise-go project is a well-structured, production-ready Go SDK for the Wise A
 ## Top 1 Question I Cannot Figure Out
 
 **Why does gopls LSP show "go mod tidy" errors for `go-branded-id` when:**
+
 - `go build ./...` succeeds without errors
 - `go test ./...` passes all 33 tests
 - `go mod tidy` runs without errors
 - The dependency exists in `go.mod`
 
 **This appears to be:**
+
 - An LSP server caching issue (restarting gopls may fix)
 - A multi-module workspace configuration problem
 - A version mismatch between LSP's view of go.mod and actual go.mod
 
 **Actions to try:**
+
 1. Restart gopls via `:LspRestart` command
-2. Run `go mod download all` 
+2. Run `go mod download all`
 3. Check if `.gopls.cache` needs clearing
 4. Verify workspace configuration
 
@@ -175,17 +178,17 @@ wise-go
 
 ## Files Summary
 
-| File | LOC | Purpose |
-|------|-----|---------|
-| client.go | ~200 | Main Client struct and options |
-| profiles.go | ~65 | Profile API operations |
-| balances.go | ~97 | Balance API operations |
+| File            | LOC  | Purpose                         |
+| --------------- | ---- | ------------------------------- |
+| client.go       | ~200 | Main Client struct and options  |
+| profiles.go     | ~65  | Profile API operations          |
+| balances.go     | ~97  | Balance API operations          |
 | transactions.go | ~136 | Transaction listing and mapping |
-| types.go | ~210 | Data types and enums |
-| errors.go | ~180 | Error handling |
-| options.go | ~50 | Client configuration options |
-| ids.go | ~42 | Branded ID types [NEW] |
-| wise_test.go | ~700 | Test suite (33 specs) |
+| types.go        | ~210 | Data types and enums            |
+| errors.go       | ~180 | Error handling                  |
+| options.go      | ~50  | Client configuration options    |
+| ids.go          | ~42  | Branded ID types [NEW]          |
+| wise_test.go    | ~700 | Test suite (33 specs)           |
 
 ---
 
@@ -193,7 +196,7 @@ wise-go
 
 **Branch:** master  
 **Working Tree:** Clean (all changes committed)  
-**Last Commit:** See git log  
+**Last Commit:** See git log
 
 **Pending Changes:** None - all work committed
 
