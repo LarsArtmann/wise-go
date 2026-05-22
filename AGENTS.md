@@ -19,5 +19,6 @@
 
 ## Dependencies
 
+- **`go-branded-id v0.3.0`** — branded/phantom types for strongly-typed IDs (ProfileID, BalanceID, TransactionID, UserID) that prevent mixing different entity IDs at compile time.
 - **`go-error-family v0.1.1`** — behavioral error classification with retry decisions, exit codes, and CLI boundary handling. All domain errors implement its interfaces.
 - **`failsafe-go v0.9.6`** — retry with exponential backoff. `isRetryable` func decides what gets retried (429, 5xx, network errors).

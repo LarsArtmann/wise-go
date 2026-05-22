@@ -116,7 +116,7 @@ type ErrorDetail struct {
 
 // ProfileResult is the parsed representation of a Wise profile.
 type ProfileResult struct {
-	ID        int64
+	ID        ProfileID
 	Type      ProfileType
 	Name      string
 	Email     string
@@ -125,7 +125,7 @@ type ProfileResult struct {
 
 // BalanceResult is the parsed representation of a Wise balance.
 type BalanceResult struct {
-	ID               int64
+	ID               BalanceID
 	Currency         string
 	Type             BalanceType
 	Name             string
@@ -140,9 +140,9 @@ type BalanceResult struct {
 // Transaction is the parsed representation of a Wise transaction.
 // All monetary amounts are in cents (int64) for precision-safe arithmetic.
 type Transaction struct {
-	ID             string
-	ProfileID      int64
-	BalanceID      int64
+	ID             TransactionID
+	ProfileID      ProfileID
+	BalanceID      BalanceID
 	AmountCents    int64
 	AmountCurrency string
 	FeesCents      int64
@@ -194,8 +194,8 @@ const (
 
 // ListTransactionsRequest parameters for listing transactions.
 type ListTransactionsRequest struct {
-	ProfileID int64
-	BalanceID int64
+	ProfileID ProfileID
+	BalanceID BalanceID
 	Currency  string
 	From      time.Time
 	To        time.Time

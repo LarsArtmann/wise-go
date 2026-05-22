@@ -78,7 +78,7 @@ func personalProfile(id int64, firstName, lastName, email, createdAt string) wis
 }
 
 func expectProfileID(profiles []wise.ProfileResult, idx int, expectedID int64) {
-	Expect(profiles[idx].ID).To(Equal(expectedID))
+	Expect(profiles[idx].ID.Get()).To(Equal(expectedID))
 }
 
 func expectBalanceAmountCents(
@@ -117,8 +117,8 @@ var _ = Describe("Wise Client", func() {
 	})
 
 	defaultListTxReq := wise.ListTransactionsRequest{
-		ProfileID: 12345,
-		BalanceID: 100,
+		ProfileID: wise.NewProfileID(12345),
+		BalanceID: wise.NewBalanceID(100),
 		Currency:  "EUR",
 		From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
 		To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
@@ -314,7 +314,7 @@ var _ = Describe("Wise Client", func() {
 				balances, err := client.ListBalances(context.Background(), 12345)
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(balances[0].ID).To(Equal(int64(100)))
+				Expect(balances[0].ID.Get()).To(Equal(int64(100)))
 				Expect(balances[0].Currency).To(Equal("EUR"))
 				Expect(balances[0].Type).To(Equal(wise.BalanceTypeStandard))
 				Expect(balances[0].Name).To(Equal("Main Account"))
@@ -428,7 +428,7 @@ var _ = Describe("Wise Client", func() {
 		It("should return the specific balance", func() {
 			balance, err := client.GetBalance(context.Background(), 12345, 100)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(balance.ID).To(Equal(int64(100)))
+			Expect(balance.ID.Get()).To(Equal(int64(100)))
 			Expect(balance.AmountCents).To(Equal(int64(100000)))
 		})
 
@@ -508,7 +508,7 @@ var _ = Describe("Wise Client", func() {
 			It("should map transaction ID correctly", func() {
 				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(resp.Transactions[0].ID).To(Equal("tx-001"))
+				Expect(resp.Transactions[0].ID.Get()).To(Equal("tx-001"))
 			})
 
 			It("should classify card payment as card type", func() {

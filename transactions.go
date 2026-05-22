@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/url"
 	"time"
+
+	id "github.com/larsartmann/go-branded-id"
 )
 
 // ListTransactions returns transactions for a balance within a time range.
@@ -14,7 +16,7 @@ func (c *Client) ListTransactions(
 	req ListTransactionsRequest,
 ) (*ListTransactionsResponse, error) {
 	path := fmt.Sprintf("/v1/profiles/%d/balance-statements/%d/statement.json",
-		req.ProfileID, req.BalanceID)
+		req.ProfileID.Get(), req.BalanceID.Get())
 
 	query := func() string {
 		v := url.Values{}
@@ -62,8 +64,8 @@ func (c *Client) ListTransactions(
 
 func mapTransaction(
 	t StatementTransaction,
-	profileID int64,
-	balanceID int64,
+	profileID ProfileID,
+	balanceID BalanceID,
 	currency string,
 	now func() time.Time, //nolint:revive // reserved for future clock injection
 ) (Transaction, error) {
@@ -72,8 +74,8 @@ func mapTransaction(
 		return Transaction{}, fmt.Errorf(
 			"parse date %q for profileID=%d balanceID=%d currency=%s: %w",
 			t.Date,
-			profileID,
-			balanceID,
+			profileID.Get(),
+			balanceID.Get(),
 			currency,
 			err,
 		)
@@ -90,7 +92,7 @@ func mapTransaction(
 	txType := classifyTransactionType(t.Details.Type, t.Amount.Value)
 
 	return Transaction{
-		ID:             t.TransactionID,
+		ID:             id.NewID[TransactionBrand](t.TransactionID),
 		ProfileID:      profileID,
 		BalanceID:      balanceID,
 		AmountCents:    amountCents,

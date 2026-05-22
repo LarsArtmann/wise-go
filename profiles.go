@@ -3,6 +3,8 @@ package wise
 import (
 	"context"
 	"fmt"
+
+	id "github.com/larsartmann/go-branded-id"
 )
 
 // ListProfiles returns all profiles for the authenticated user.
@@ -44,7 +46,7 @@ func mapProfile(p Profile) (ProfileResult, error) {
 	}
 
 	return ProfileResult{
-		ID:        p.ID,
+		ID:        id.NewID[ProfileBrand](p.ID),
 		Type:      profileType,
 		Name:      name,
 		Email:     p.Email,

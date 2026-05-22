@@ -4,6 +4,7 @@ go 1.26.2
 
 require (
 	github.com/failsafe-go/failsafe-go v0.9.6
+	github.com/larsartmann/go-branded-id v0.3.0
 	github.com/larsartmann/go-error-family v0.1.1
 	github.com/onsi/ginkgo/v2 v2.29.0
 	github.com/onsi/gomega v1.41.0

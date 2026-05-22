@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	errorfamily "github.com/larsartmann/go-error-family"
+	id "github.com/larsartmann/go-branded-id"
 )
 
 // ListBalances returns all balances for a profile.
@@ -48,7 +49,7 @@ func (c *Client) GetBalance(
 	}
 
 	for _, balance := range balances {
-		if balance.ID == balanceID {
+		if balance.ID.Get() == balanceID {
 			return &balance, nil
 		}
 	}
@@ -71,7 +72,7 @@ func mapBalance(b Balance) (BalanceResult, error) {
 	}
 
 	return BalanceResult{
-		ID:               b.ID,
+		ID:               id.NewID[BalanceBrand](b.ID),
 		Currency:         b.Currency,
 		Type:             balanceType,
 		Name:             b.Name,
