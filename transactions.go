@@ -67,7 +67,7 @@ func mapTransaction(
 	profileID ProfileID,
 	balanceID BalanceID,
 	currency string,
-	now func() time.Time, //nolint:revive // reserved for future clock injection
+	now func() time.Time,
 ) (Transaction, error) {
 	date, err := parseWiseDate(t.Date)
 	if err != nil {
