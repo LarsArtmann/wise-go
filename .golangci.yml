@@ -86,10 +86,7 @@ linters:
         - os/exec.Cmd
     gocritic:
       disabled-checks:
-        - dupImport
         - ifElseChain
-        - octalLiteral
-        - whyNoLint
     revive:
       rules:
         - disabled: true
