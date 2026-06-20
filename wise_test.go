@@ -305,13 +305,13 @@ var _ = Describe("Wise Client", func() {
 			})
 
 			It("should return visible balances", func() {
-				balances, err := client.ListBalances(context.Background(), 12345)
+				balances, err := client.ListBalances(context.Background(), wise.NewProfileID(12345))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(balances).To(HaveLen(2))
 			})
 
 			It("should map balance fields correctly", func() {
-				balances, err := client.ListBalances(context.Background(), 12345)
+				balances, err := client.ListBalances(context.Background(), wise.NewProfileID(12345))
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(balances[0].ID.Get()).To(Equal(int64(100)))
@@ -321,7 +321,7 @@ var _ = Describe("Wise Client", func() {
 			})
 
 			It("should convert amounts to cents", func() {
-				balances, err := client.ListBalances(context.Background(), 12345)
+				balances, err := client.ListBalances(context.Background(), wise.NewProfileID(12345))
 				Expect(err).ToNot(HaveOccurred())
 
 				expectBalanceAmountCents(balances, 0, 123456, 0)
@@ -373,7 +373,7 @@ var _ = Describe("Wise Client", func() {
 			})
 
 			It("should filter out invisible and investment balances", func() {
-				balances, err := client.ListBalances(context.Background(), 12345)
+				balances, err := client.ListBalances(context.Background(), wise.NewProfileID(12345))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(balances).To(HaveLen(1))
 				Expect(balances[0].Name).To(Equal("Visible"))
@@ -396,7 +396,7 @@ var _ = Describe("Wise Client", func() {
 			})
 
 			It("should return error", func() {
-				_, err := client.ListBalances(context.Background(), 12345)
+				_, err := client.ListBalances(context.Background(), wise.NewProfileID(12345))
 				Expect(err).To(HaveOccurred())
 			})
 		})
@@ -426,14 +426,14 @@ var _ = Describe("Wise Client", func() {
 		})
 
 		It("should return the specific balance", func() {
-			balance, err := client.GetBalance(context.Background(), 12345, 100)
+			balance, err := client.GetBalance(context.Background(), wise.NewProfileID(12345), wise.NewBalanceID(100))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(balance.ID.Get()).To(Equal(int64(100)))
 			Expect(balance.AmountCents).To(Equal(int64(100000)))
 		})
 
 		It("should return error for non-existent balance", func() {
-			_, err := client.GetBalance(context.Background(), 12345, 999)
+			_, err := client.GetBalance(context.Background(), wise.NewProfileID(12345), wise.NewBalanceID(999))
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("not found"))
 		})

@@ -11,14 +11,14 @@ import (
 // ListBalances returns all balances for a profile.
 // Returns only visible, non-investment balances by default.
 // Use WithHiddenBalances() option to include all balances.
-func (c *Client) ListBalances(ctx context.Context, profileID int64) ([]BalanceResult, error) {
-	path := fmt.Sprintf("/v4/profiles/%d/balances", profileID)
+func (c *Client) ListBalances(ctx context.Context, profileID ProfileID) ([]BalanceResult, error) {
+	path := fmt.Sprintf("/v4/profiles/%d/balances", profileID.Get())
 
 	var balances []Balance
 
 	err := c.get(ctx, path, &balances)
 	if err != nil {
-		return nil, fmt.Errorf("list balances for profile %d: %w", profileID, err)
+		return nil, fmt.Errorf("list balances for profile %d: %w", profileID.Get(), err)
 	}
 
 	results := make([]BalanceResult, 0, len(balances))
@@ -41,22 +41,23 @@ func (c *Client) ListBalances(ctx context.Context, profileID int64) ([]BalanceRe
 // GetBalance returns a specific balance by ID within a profile.
 func (c *Client) GetBalance(
 	ctx context.Context,
-	profileID, balanceID int64,
+	profileID ProfileID,
+	balanceID BalanceID,
 ) (*BalanceResult, error) {
 	balances, err := c.ListBalances(ctx, profileID)
 	if err != nil {
-		return nil, fmt.Errorf("get balance %d for profile %d: %w", balanceID, profileID, err)
+		return nil, fmt.Errorf("get balance %d for profile %d: %w", balanceID.Get(), profileID.Get(), err)
 	}
 
 	for _, balance := range balances {
-		if balance.ID.Get() == balanceID {
+		if balance.ID == balanceID {
 			return &balance, nil
 		}
 	}
 
 	return nil, errorfamily.NewRejection(
 		"wise.balance.not_found",
-		fmt.Sprintf("balance %d not found for profile %d", balanceID, profileID),
+		fmt.Sprintf("balance %d not found for profile %d", balanceID.Get(), profileID.Get()),
 	)
 }
 

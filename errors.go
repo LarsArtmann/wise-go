@@ -146,7 +146,8 @@ func joinStrings(ss []string, sep string) string {
 	var result strings.Builder
 	result.WriteString(ss[0])
 	for _, s := range ss[1:] {
-		result.WriteString(sep + s)
+		result.WriteString(sep)
+		result.WriteString(s)
 	}
 
 	return result.String()

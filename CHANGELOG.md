@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING:** `ListBalances` and `GetBalance` now take branded `ProfileID`/`BalanceID` parameters instead of raw `int64`, matching the existing `ListTransactions` API. Use `wise.NewProfileID(id)` / `wise.NewBalanceID(id)` to construct them. This makes mixing different entity IDs a compile-time error.
+
+### Fixed
+
+- Avoid an intermediate string allocation when joining API error messages.
+
 ## [0.1.0] - 2026-06-03
 
 ### Added

@@ -1,6 +1,6 @@
 # wise-go — AGENTS.md
 
-**Updated:** 2026-05-17
+**Updated:** 2026-06-20
 
 ## Gotchas
 
@@ -9,6 +9,8 @@
 - **Balance filtering** — `ListBalances` silently drops `Visible: false` and `InvestmentState != "NOT_INVESTED"` balances. `GetBalance` has no direct API endpoint — it calls `ListBalances` then linear-scans, so it also inherits this filtering.
 - **`//nolint:bodyclose`** — `getWithQuery` intentionally defers body close via `responseCloser`. The nolint is required because failsafe-go's executor wraps the response. Don't remove it.
 - **`WithNow` in options.go** — exported, for clock injection in tests. The `config.now` field is wired to `Client.now` but `mapTransaction` currently doesn't use its `now` parameter (dead code warning exists).
+- **Two-layer type design** — Raw API structs (`Profile`, `Balance`, `StatementTransaction` in `types.go`) intentionally use primitives (`int64`/`string`) to match Wise's JSON wire format. The parsed result types (`ProfileResult`, `BalanceResult`, `Transaction`) convert these into strong types (branded IDs, enums, `time.Time`, `int64` cents). Phantom/strong-id linters flag the raw structs as false positives — don't brand the JSON-decode layer.
+- **Branded IDs are the public API** — Every client method taking an ID uses branded types (`ListBalances(ctx, ProfileID)`, `GetBalance(ctx, ProfileID, BalanceID)`, `ListTransactionsRequest{ProfileID, BalanceID}`). Construct with `NewProfileID`/`NewBalanceID`/`NewTransactionID`; unwrap with `.Get()`. Mixing entity IDs is a compile-time error.
 - **No pagination** — Wise returns all transactions in a single response. `HasMore` exists on the response type but is always `false`.
 
 ## Conventions
@@ -19,8 +21,8 @@
 
 ## Dependencies
 
-- **`go-branded-id v0.3.0`** — branded/phantom types for strongly-typed IDs (ProfileID, BalanceID, TransactionID, UserID) that prevent mixing different entity IDs at compile time.
-- **`go-error-family v0.1.1`** — behavioral error classification with retry decisions, exit codes, and CLI boundary handling. All domain errors implement its interfaces.
+- **`go-branded-id v0.3.1`** — branded/phantom types for strongly-typed IDs (ProfileID, BalanceID, TransactionID, UserID) that prevent mixing different entity IDs at compile time.
+- **`go-error-family v0.4.0`** — behavioral error classification with retry decisions, exit codes, and CLI boundary handling. All domain errors implement its interfaces.
 - **`failsafe-go v0.9.6`** — retry with exponential backoff. `isRetryable` func decides what gets retried (429, 5xx, network errors).
 
 ## Build & Dev

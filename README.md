@@ -157,8 +157,8 @@ balance, err := client.GetBalance(ctx, profileID, balanceID)
 
 ```go
 resp, err := client.ListTransactions(ctx, wise.ListTransactionsRequest{
-    ProfileID: 12345,
-    BalanceID: 100,
+    ProfileID: wise.NewProfileID(12345),
+    BalanceID: wise.NewBalanceID(100),
     Currency:  "EUR",
     From:      time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
     To:        time.Date(2025, 1, 31, 23, 59, 59, 0, time.UTC),
