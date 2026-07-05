@@ -121,9 +121,6 @@ linters:
         linters:
           - exhaustruct
           - revive
-      - text: now is unused
-        linters:
-          - unparam
       - path: types\.go
         linters:
           - revive

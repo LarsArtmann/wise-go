@@ -113,28 +113,28 @@ func getBalance(
 
 var _ = Describe("Wise Client", func() {
 	var (
-		server *httptest.Server
-		mux    *http.ServeMux
-		client *wise.Client
+		server           *httptest.Server
+		mux              *http.ServeMux
+		client           *wise.Client
+		defaultListTxReq wise.ListTransactionsRequest
 	)
 
 	BeforeEach(func() {
 		mux = http.NewServeMux()
 		server = httptest.NewServer(mux)
 		client = wise.New("test-api-key", wise.WithBaseURL(server.URL))
+		defaultListTxReq = wise.ListTransactionsRequest{
+			ProfileID: wise.NewProfileID(12345),
+			BalanceID: wise.NewBalanceID(100),
+			Currency:  "EUR",
+			From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
+		}
 	})
 
 	AfterEach(func() {
 		server.Close()
 	})
-
-	defaultListTxReq := wise.ListTransactionsRequest{
-		ProfileID: wise.NewProfileID(12345),
-		BalanceID: wise.NewBalanceID(100),
-		Currency:  "EUR",
-		From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-		To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
-	}
 
 	Describe("New", func() {
 		It("should create client with default options", func() {
@@ -631,37 +631,142 @@ var _ = Describe("Wise Client", func() {
 			})
 		})
 
-		Context("with rate limit error", func() {
+		Context("with running balance and exchange details", func() {
 			BeforeEach(func() {
-				callCount := 0
 				mux.HandleFunc(
-					"/v2/profiles",
+					"/v1/profiles/12345/balance-statements/100/statement.json",
 					func(w http.ResponseWriter, _ *http.Request) {
-						callCount++
-						if callCount <= 3 {
-							w.WriteHeader(http.StatusTooManyRequests)
-							_, _ = w.Write(
-								[]byte(
-									`{"errors":[{"code":"RATE_LIMITED","message":"Too many requests"}]}`,
-								),
-							)
-
-							return
-						}
-						profiles := []wise.Profile{
-							{
-								ID:        1,
-								Type:      "PERSONAL",
-								FirstName: "Test",
-								LastName:  "User",
-								Email:     "test@test.com",
-								CreatedAt: "2023-01-01T00:00:00Z",
+						response := wise.StatementResponse{
+							Transactions: []wise.StatementTransaction{
+								{
+									TransactionID: "tx-exch",
+									Date:          "2023-01-15 14:30:00",
+									Amount:        wise.BalanceAmount{Value: -100.00, Currency: "EUR"},
+									TotalFees:     wise.BalanceAmount{Value: 0, Currency: "EUR"},
+									RunningBalance: wise.BalanceAmount{
+										Value: 5000.00, Currency: "EUR",
+									},
+									ReferenceNumber: "REF-EXCH",
+									Details:         wise.TransactionDetails{Type: "CONVERSION"},
+									ExchangeDetails: &wise.ExchangeDetails{
+										FromAmount:   wise.BalanceAmount{Value: 100.00, Currency: "EUR"},
+										ToAmount:     wise.BalanceAmount{Value: 108.50, Currency: "USD"},
+										Rate:         1.085,
+										FromCurrency: "EUR",
+										ToCurrency:   "USD",
+									},
+								},
 							},
 						}
 						w.Header().Set("Content-Type", "application/json")
-						_ = json.NewEncoder(w).Encode(profiles)
+						_ = json.NewEncoder(w).Encode(response)
 					},
 				)
+			})
+
+			It("should map running balance", func() {
+				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(resp.Transactions[0].RunningBalanceCents).To(Equal(int64(500000)))
+				Expect(resp.Transactions[0].RunningBalanceCurrency).To(Equal("EUR"))
+			})
+
+			It("should map exchange details", func() {
+				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
+				Expect(err).ToNot(HaveOccurred())
+
+				exch := resp.Transactions[0].Exchange
+				Expect(exch).ToNot(BeNil())
+				Expect(exch.FromCents).To(Equal(int64(10000)))
+				Expect(exch.FromCurrency).To(Equal("EUR"))
+				Expect(exch.ToCents).To(Equal(int64(10850)))
+				Expect(exch.ToCurrency).To(Equal("USD"))
+				Expect(exch.Rate).To(Equal(1.085))
+			})
+		})
+
+		Context("with a cross-currency transaction", func() {
+			BeforeEach(func() {
+				mux.HandleFunc(
+					"/v1/profiles/12345/balance-statements/100/statement.json",
+					func(w http.ResponseWriter, _ *http.Request) {
+						response := wise.StatementResponse{
+							Transactions: []wise.StatementTransaction{
+								{
+									TransactionID: "tx-usd",
+									Date:          "2023-01-15 14:30:00",
+									Amount:        wise.BalanceAmount{Value: -50.00, Currency: "USD"},
+									TotalFees:     wise.BalanceAmount{Value: 0, Currency: "USD"},
+									RunningBalance: wise.BalanceAmount{
+										Value: 200.00, Currency: "USD",
+									},
+									ReferenceNumber: "REF-USD",
+									Details:         wise.TransactionDetails{Type: "CARD_PAYMENT"},
+								},
+							},
+						}
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.NewEncoder(w).Encode(response)
+					},
+				)
+			})
+
+			It("should use the transaction currency, not the request currency", func() {
+				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
+				Expect(err).ToNot(HaveOccurred())
+
+				tx := resp.Transactions[0]
+				Expect(tx.AmountCurrency).To(Equal("USD"))
+				Expect(tx.TotalCurrency).To(Equal("USD"))
+				Expect(tx.RunningBalanceCurrency).To(Equal("USD"))
+			})
+		})
+
+		Context("with invalid request", func() {
+			It("should reject missing currency", func() {
+				req := defaultListTxReq
+				req.Currency = ""
+				_, err := client.ListTransactions(context.Background(), req)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("currency is required"))
+			})
+
+			It("should reject From after To", func() {
+				req := defaultListTxReq
+				req.From = time.Date(2023, 6, 1, 0, 0, 0, 0, time.UTC)
+				req.To = time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
+				_, err := client.ListTransactions(context.Background(), req)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("intervalStart must not be after intervalEnd"))
+			})
+		})
+	})
+
+	Describe("Retry", func() {
+		Context("on 429 with Retry-After header", func() {
+			var callCount int
+
+			BeforeEach(func() {
+				callCount = 0
+				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {
+					callCount++
+					if callCount <= 3 {
+						w.Header().Set("Retry-After", "0")
+						w.WriteHeader(http.StatusTooManyRequests)
+						_, _ = w.Write([]byte(
+							`{"errors":[{"code":"RATE_LIMITED","message":"Too many requests"}]}`,
+						))
+						return
+					}
+					profiles := []wise.Profile{
+						{
+							ID: 1, Type: "PERSONAL", FirstName: "Test", LastName: "User",
+							Email: "test@test.com", CreatedAt: "2023-01-01T00:00:00Z",
+						},
+					}
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.NewEncoder(w).Encode(profiles)
+				})
 			})
 
 			It("should retry on 429 and eventually succeed", func() {

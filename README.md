@@ -186,7 +186,14 @@ resp, err := client.ListTransactions(ctx, wise.ListTransactionsRequest{
 
 - `AmountCents` — absolute value (always positive)
 - `TotalCents` — signed value (negative for debits, positive for credits)
+- `RunningBalanceCents` — the balance after this transaction (signed `int64`)
+- `Exchange` — `*TransactionExchange` with from/to amounts and rate; `nil` for non-conversion transactions
 - All amounts use `int64` minor units (cents) to avoid IEEE 754 floating-point errors
+
+**Validation** — `ListTransactions` rejects invalid requests before hitting the API:
+
+- Empty `Currency` → `"wise.transactions.invalid_request: currency is required"`
+- `From` after `To` → `"wise.transactions.invalid_request: intervalStart must not be after intervalEnd"`
 
 ## Error Handling
 

@@ -26,13 +26,15 @@ Objects with identity and lifecycle in the Wise domain.
 
 Immutable objects defined by attributes.
 
-| Term            | Definition                             | Context                                                                            |
-| --------------- | -------------------------------------- | ---------------------------------------------------------------------------------- |
-| Cents           | Monetary amount in minor units (int64) | `1234.56 EUR` → `123456` cents; avoids float64 precision loss                      |
-| BalanceAmount   | Wise API monetary value with currency  | Wire format: `{value: 1234.56, currency: "EUR"}`; converted to cents via `Cents()` |
-| TransactionType | Classification of a transaction        | Enum: card, credit, debit, exchange, fee, refund, transfer, payment, unknown       |
-| ProfileType     | Kind of profile                        | Enum: personal, business                                                           |
-| BalanceType     | Kind of balance                        | Enum: STANDARD, SAVINGS                                                            |
+| Term                | Definition                                   | Context                                                                            |
+| ------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Cents               | Monetary amount in minor units (int64)       | `1234.56 EUR` → `123456` cents; avoids float64 precision loss                      |
+| BalanceAmount       | Wise API monetary value with currency        | Wire format: `{value: 1234.56, currency: "EUR"}`; converted to cents via `Cents()` |
+| TransactionType     | Classification of a transaction              | Enum: card, credit, debit, exchange, fee, refund, transfer, payment, unknown       |
+| ProfileType         | Kind of profile                              | Enum: personal, business                                                           |
+| BalanceType         | Kind of balance                              | Enum: STANDARD, SAVINGS                                                            |
+| InvestmentState     | Whether a balance is invested in Wise        | Values: `NOT_INVESTED`, `INVESTED`; only non-invested balances are returned        |
+| TransactionExchange | Currency-conversion details on a transaction | From/to amounts in cents, rate; nil for non-conversion transactions                |
 
 ## Raw vs Result Types
 

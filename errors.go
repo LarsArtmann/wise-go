@@ -1,6 +1,7 @@
 package wise
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -11,6 +12,15 @@ import (
 )
 
 // --- Structured error types ---
+
+// Error code constants returned by ErrorCode() on each error type.
+const (
+	errorCodeAPI       = "wise.api_error"
+	errorCodeRateLimit = "wise.rate_limit"
+	errorCodeAuth      = "wise.auth"
+	errorCodeNotFound  = "wise.not_found"
+	errorCodeServer    = "wise.server"
+)
 
 // APIError is the base error returned for non-2xx Wise API responses.
 type APIError struct {
@@ -24,7 +34,7 @@ func (e *APIError) Error() string {
 }
 
 func (e *APIError) ErrorCode() string {
-	return "wise.api_error"
+	return errorCodeAPI
 }
 
 func (e *APIError) ErrorFamily() errorfamily.Family {
@@ -58,13 +68,17 @@ func (e *RateLimitError) ErrorContext() map[string]string {
 	}
 }
 
+func (e *RateLimitError) ErrorCode() string {
+	return errorCodeRateLimit
+}
+
 // AuthError is returned when the Wise API returns HTTP 401 or 403.
 type AuthError struct {
 	APIError
 }
 
 func (e *AuthError) ErrorCode() string {
-	return "wise.auth"
+	return errorCodeAuth
 }
 
 // NotFoundError is returned when the Wise API returns HTTP 404.
@@ -73,7 +87,7 @@ type NotFoundError struct {
 }
 
 func (e *NotFoundError) ErrorCode() string {
-	return "wise.not_found"
+	return errorCodeNotFound
 }
 
 // ServerError is returned when the Wise API returns HTTP 5xx.
@@ -90,10 +104,10 @@ func (e *ServerError) IsRetryable() bool {
 }
 
 func (e *ServerError) ErrorCode() string {
-	return "wise.server"
+	return errorCodeServer
 }
 
-func newAPIError(statusCode int, body string) error {
+func newAPIError(statusCode int, body string, retryAfter time.Duration) error {
 	errResp := parseErrorResponse(body)
 
 	msg := body
@@ -103,7 +117,7 @@ func newAPIError(statusCode int, body string) error {
 			msgs[i] = fmt.Sprintf("%s: %s", e.Code, e.Message)
 		}
 
-		msg = joinStrings(msgs, "; ")
+		msg = strings.Join(msgs, "; ")
 	}
 
 	base := APIError{
@@ -116,7 +130,7 @@ func newAPIError(statusCode int, body string) error {
 	case statusCode == http.StatusTooManyRequests:
 		return &RateLimitError{
 			APIError:   base,
-			RetryAfter: time.Second,
+			RetryAfter: retryAfter,
 		}
 	case statusCode == http.StatusUnauthorized || statusCode == http.StatusForbidden:
 		return &AuthError{APIError: base}
@@ -131,24 +145,9 @@ func newAPIError(statusCode int, body string) error {
 
 func parseErrorResponse(body string) *ErrorResponse {
 	var errResp ErrorResponse
-	if jsonUnmarshal([]byte(body), &errResp) == nil && len(errResp.Errors) > 0 {
+	if json.Unmarshal([]byte(body), &errResp) == nil && len(errResp.Errors) > 0 {
 		return &errResp
 	}
 
 	return nil
-}
-
-func joinStrings(ss []string, sep string) string {
-	if len(ss) == 0 {
-		return ""
-	}
-
-	var result strings.Builder
-	result.WriteString(ss[0])
-	for _, s := range ss[1:] {
-		result.WriteString(sep)
-		result.WriteString(s)
-	}
-
-	return result.String()
 }

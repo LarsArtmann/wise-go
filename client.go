@@ -24,7 +24,6 @@ type Client struct {
 	baseURL    string
 	httpClient *http.Client
 	executor   failsafe.Executor[*http.Response]
-	now        func() time.Time
 }
 
 // New creates a new Wise API client with the given API key and options.
@@ -60,11 +59,6 @@ func New(apiKey string, opts ...Option) *Client {
 		retryMaxDelay = cfg.retryMax
 	}
 
-	now := time.Now
-	if cfg.now != nil {
-		now = cfg.now
-	}
-
 	httpClient := cfg.httpClient
 	if httpClient == nil {
 		httpClient = &http.Client{
@@ -83,7 +77,6 @@ func New(apiKey string, opts ...Option) *Client {
 		baseURL:    cfg.baseURL,
 		executor:   failsafe.With(retry),
 		httpClient: httpClient,
-		now:        now,
 	}
 }
 
@@ -186,5 +179,5 @@ func (c *Client) checkError(resp *http.Response) error {
 
 	body, _ := readBody(resp)
 
-	return newAPIError(resp.StatusCode, body)
+	return newAPIError(resp.StatusCode, body, parseRetryAfter(resp.Header.Get("Retry-After")))
 }

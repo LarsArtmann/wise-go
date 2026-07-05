@@ -9,8 +9,10 @@ import (
 )
 
 // ListBalances returns all balances for a profile.
-// Returns only visible, non-investment balances by default.
-// Use WithHiddenBalances() option to include all balances.
+//
+// Only visible, non-investment balances are returned. Wise exposes no
+// per-balance endpoint, so there is no way to fetch a hidden or invested
+// balance individually through this SDK.
 func (c *Client) ListBalances(ctx context.Context, profileID ProfileID) ([]BalanceResult, error) {
 	path := fmt.Sprintf("/v4/profiles/%d/balances", profileID.Get())
 
@@ -23,7 +25,7 @@ func (c *Client) ListBalances(ctx context.Context, profileID ProfileID) ([]Balan
 
 	results := make([]BalanceResult, 0, len(balances))
 	for _, b := range balances {
-		if !b.Visible || b.InvestmentState != "NOT_INVESTED" {
+		if !b.Visible || b.InvestmentState != InvestmentStateNotInvested {
 			continue
 		}
 

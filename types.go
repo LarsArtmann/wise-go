@@ -140,21 +140,34 @@ type BalanceResult struct {
 // Transaction is the parsed representation of a Wise transaction.
 // All monetary amounts are in cents (int64) for precision-safe arithmetic.
 type Transaction struct {
-	ID             TransactionID
-	ProfileID      ProfileID
-	BalanceID      BalanceID
-	AmountCents    int64
-	AmountCurrency string
-	FeesCents      int64
-	FeesCurrency   string
-	TotalCents     int64
-	TotalCurrency  string
-	Type           TransactionType
-	Description    string
-	Reference      string
-	Category       string
-	MerchantName   string
-	Date           time.Time
+	ID                     TransactionID
+	ProfileID              ProfileID
+	BalanceID              BalanceID
+	AmountCents            int64
+	AmountCurrency         string
+	FeesCents              int64
+	FeesCurrency           string
+	TotalCents             int64
+	TotalCurrency          string
+	RunningBalanceCents    int64
+	RunningBalanceCurrency string
+	Exchange               *TransactionExchange
+	Type                   TransactionType
+	Description            string
+	Reference              string
+	Category               string
+	MerchantName           string
+	Date                   time.Time
+}
+
+// TransactionExchange captures the currency-conversion details of an
+// exchange transaction. nil when the transaction is not a conversion.
+type TransactionExchange struct {
+	FromCents    int64
+	FromCurrency string
+	ToCents      int64
+	ToCurrency   string
+	Rate         float64
 }
 
 // --- Enum types ---
@@ -173,6 +186,12 @@ type BalanceType string
 const (
 	BalanceTypeStandard BalanceType = "STANDARD"
 	BalanceTypeSavings  BalanceType = "SAVINGS"
+)
+
+// InvestmentState values reported by Wise balances (Balance.InvestmentState).
+const (
+	InvestmentStateNotInvested = "NOT_INVESTED"
+	InvestmentStateInvested    = "INVESTED"
 )
 
 // TransactionType categorizes the transaction kind.

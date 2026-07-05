@@ -14,7 +14,6 @@ type config struct {
 	retryMin   time.Duration
 	retryMax   time.Duration
 	httpClient *http.Client
-	now        func() time.Time
 }
 
 func defaultConfig() config {
@@ -59,12 +58,5 @@ func WithRetry(maxRetries int, minDelay, maxDelay time.Duration) Option {
 func WithHTTPClient(client *http.Client) Option {
 	return func(c *config) {
 		c.httpClient = client
-	}
-}
-
-// WithNow sets the clock function for testing.
-func WithNow(fn func() time.Time) Option {
-	return func(c *config) {
-		c.now = fn
 	}
 }
