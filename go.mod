@@ -5,7 +5,7 @@ go 1.26.4
 require (
 	github.com/failsafe-go/failsafe-go v0.9.6
 	github.com/larsartmann/go-branded-id v0.3.1
-	github.com/larsartmann/go-error-family v0.5.1
+	github.com/larsartmann/go-error-family v0.6.0
 	github.com/onsi/ginkgo/v2 v2.31.0
 	github.com/onsi/gomega v1.42.0
 )
