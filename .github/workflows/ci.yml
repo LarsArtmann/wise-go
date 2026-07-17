@@ -3,8 +3,22 @@ name: CI
 on:
   push:
     branches: [main, master]
+    paths-ignore:
+    - '**/*.md'
+    - docs/**
+    - LICENSE
+    - .gitignore
+    - '**/*.svg'
+    - '**/*.png'
   pull_request:
     branches: [main, master]
+    paths-ignore:
+    - '**/*.md'
+    - docs/**
+    - LICENSE
+    - .gitignore
+    - '**/*.svg'
+    - '**/*.png'
 
 env:
   GO_VERSION: "1.26"
@@ -15,56 +29,62 @@ jobs:
     name: Build & Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-          cache: true
+    - uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        cache: true
 
-      - name: Build
-        run: go build ./...
+    - name: Build
+      run: go build ./...
 
-      - name: Test
-        run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+    - name: Test
+      run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
 
-      - name: Check go mod tidy
-        run: |
-          cp go.mod go.mod.bak && cp go.sum go.sum.bak 2>/dev/null || true
-          go mod tidy
-          diff go.mod go.mod.bak || (echo "go.mod is not tidy" && exit 1)
-          diff go.sum go.sum.bak 2>/dev/null || true
-          rm -f go.mod.bak go.sum.bak
+    - name: Check go mod tidy
+      run: |
+        cp go.mod go.mod.bak && cp go.sum go.sum.bak 2>/dev/null || true
+        go mod tidy
+        diff go.mod go.mod.bak || (echo "go.mod is not tidy" && exit 1)
+        diff go.sum go.sum.bak 2>/dev/null || true
+        rm -f go.mod.bak go.sum.bak
 
+    timeout-minutes: 15
   lint:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-          cache: true
+    - uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        cache: true
 
-      - name: Lint
-        uses: golangci/golangci-lint-action@v7
-        with:
-          version: ${{ env.GOLANGCI_LINT_VERSION }}
-          args: --timeout=5m
+    - name: Lint
+      uses: golangci/golangci-lint-action@v7
+      with:
+        version: ${{ env.GOLANGCI_LINT_VERSION }}
+        args: --timeout=5m
 
+    timeout-minutes: 15
   govulncheck:
     name: Vulnerability Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-          cache: true
+    - uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        cache: true
 
-      - name: Run govulncheck
-        run: |
-          go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck ./...
+    - name: Run govulncheck
+      run: |
+        go install golang.org/x/vuln/cmd/govulncheck@latest
+        govulncheck ./...
+    timeout-minutes: 15
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
