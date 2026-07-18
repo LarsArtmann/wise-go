@@ -1,7 +1,6 @@
 # wise-go
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/larsartmann/wise-go.svg)](https://pkg.go.dev/github.com/larsartmann/wise-go)
-[![Go Report Card](https://goreportcard.com/badge/github.com/larsartmann/wise-go)](https://goreportcard.com/report/github.com/larsartmann/wise-go)
 
 The unofficial Go SDK for the [Wise](https://wise.com) (TransferWise) API.
 

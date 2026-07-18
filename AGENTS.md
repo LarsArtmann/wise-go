@@ -1,7 +1,5 @@
 # wise-go — AGENTS.md
 
-**Updated:** 2026-07-05
-
 ## Gotchas
 
 - **Dual date formats** — Wise uses RFC3339 for profile/balance timestamps but `"2006-01-02 15:04:05"` for transaction dates. Two different parsers (`parseRFC3339` vs `parseWiseDate`) — use the right one.
