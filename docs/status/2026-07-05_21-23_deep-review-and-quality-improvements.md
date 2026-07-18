@@ -184,3 +184,41 @@ The wire format is uppercase. `parseProfileType` maps `"PERSONAL"` → `ProfileT
 ---
 
 > **Bottom line:** The codebase is in strong shape after this session. 3 bugs fixed, 4 dead-code paths removed, 2 missing data fields surfaced, type safety strengthened across 3 areas, input validation added, and test coverage pushed to 94.8%. All 7 quality gates green.
+
+---
+
+## Resolution (2026-07-18)
+
+A follow-up review pass on 2026-07-18 (post-v0.2.0, commit `218c2d3` + same-day fixes) re-tracked the action items above into the new living docs. Items not mentioned here remain open as written.
+
+**Moved to `TODO_LIST.md` (short-term, actionable):**
+
+- Item **#5** (`TransactionTypeUnknown` is unreachable) — TODO_LIST P2 / v0.3.0; also called out in `docs/brainstorming/2026-07-18_data-model-review.html`.
+- Item **#13** (`Roundtripper` interface for logging) — TODO_LIST P1; reframed in `docs/architecture-understanding/2026-07-18_10-08_*.html` as "accept a `Doer` interface in `WithHTTPClient`," backward-compatible.
+- Item **#23** (consider a `Money` type) — TODO_LIST P2 / v0.3.0; the centerpiece of the data-model review. The proposed `Money{Cents int64; Currency Currency}` collapses `Transaction` from 20 fields to 14 and makes cents/currency mismatch unrepresentable.
+- Item **#24** (surface `EndOfStatementBalance`) — TODO_LIST P2; will land paired with `Money`.
+
+**Moved to `ROADMAP.md` (long-term):**
+
+- Item **#25** (write operations: transfers, recipients, quotes, payouts) — ROADMAP "Axis 1: Completeness." `client.post` / `patch` / `delete` helpers will mirror the existing `get` / `getWithQuery` shape.
+
+**Resolved elsewhere:**
+
+- Item **#19** (CHANGELOG entry) — `CHANGELOG.md` now contains the full v0.2.0 entry covering this session's changes (currency-source fix, Retry-After parsing, WithNow removal, etc.).
+- Item **#15** (Exchange field in README) — present in README's "Amount semantics" subsection.
+
+**New defects found and fixed on 2026-07-18** (discovered during the follow-up full-code-review, not anticipated by this report):
+
+- `classifyTransactionType` grouped `CARD_PAYMENT` and `CARD_REFUND` into one amount-based case branch, contradicting the README contract. A positive-amount `CARD_PAYMENT` was silently classified as `TransactionTypeRefund`. Split into two cases; 2 regression unit tests added.
+- `ListTransactions` formatted branded IDs with `%d` directly (not `.Get()`) in two error paths, inconsistent with the rest of the codebase. Normalized.
+- `ListTransactionsRequest.Type` filter was forwarded in the URL but never covered by a BDD test. Two tests added (forwarded when set, omitted when unset).
+- `Transaction.Date` UTC assumption was undocumented. Doc comment added to `parseWiseDate` and to the `Transaction` type itself.
+
+**Confirmed still open and not yet re-tracked:**
+
+- Item **#1** (replace `amount float64` with `totalCents int64` in classifier) — moot once `Money` lands; the classifier signature will change with it.
+- Item **#2** (wire `Retry-After` into failsafe-go backoff) — still open.
+- Item **#3** (`errorfamily.RegisterClassification`) — `go-error-family v0.6.1` exposes the API; wise-go does not yet call it. Still open.
+- Items **#4, #6, #7, #8, #9, #10, #11, #12, #14, #16, #17, #18, #20, #21, #22** — still open as written; no progress since this report.
+
+**Question (g) resolution path:** the `ProfileType` lowercase vs wire-uppercase casing question is now one instance of the broader enum-casing inconsistency documented in `docs/brainstorming/2026-07-18_data-model-review.html` (Step 4 of its migration roadmap). Decision deferred to v0.3.0 where all enum casings will be normalized together.

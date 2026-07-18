@@ -1,18 +1,25 @@
 # wise-go
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/larsartmann/wise-go.svg)](https://pkg.go.dev/github.com/larsartmann/wise-go)
+[![Coverage](https://img.shields.io/badge/coverage-94.8%25-success)](https://github.com/larsartmann/wise-go)
+[![Lint](https://img.shields.io/badge/lint-0%20issues-success)](https://github.com/larsartmann/wise-go)
+[![Go](https://img.shields.io/badge/Go-1.26+-00ADD8?logo=go&logoColor=white)](https://go.dev/)
 
 The unofficial Go SDK for the [Wise](https://wise.com) (TransferWise) API.
 
-Wise does not provide an official Go SDK. This library fills that gap with strongly-typed structs, automatic retries, and idiomatic Go error handling.
+Wise publishes no official Go SDK and no complete OpenAPI spec. **wise-go fills that gap** with hand-written types that make invalid states hard to reach: monetary amounts as `int64` cents (never `float64`), branded IDs that prevent mixing `ProfileID` with `BalanceID` at compile time, and behavioral error classification so you can retry on intent rather than string-matching status codes.
+
+> **Status: early development (v0.2.0).** Read-only coverage of profiles, balances, and transactions. Write operations (transfers, recipients, quotes, webhooks) are not yet implemented — see [ROADMAP.md](ROADMAP.md).
 
 ## Features
 
-- **Strongly-typed results** — Monetary amounts as `int64` cents (no `float64` money), dates as `time.Time`, enums for profile/balance/transaction types
-- **Automatic retries** — Exponential backoff on 429 (rate limit), 5xx, and network errors via [failsafe-go](https://github.com/failsafe-go/failsafe-go)
-- **Typed errors** — `AuthError`, `RateLimitError`, `NotFoundError`, `ServerError` with structured error details from the Wise API
-- **Minimal dependencies** — `failsafe-go` for retries, `go-error-family` for behavioral error classification
-- **Sandbox support** — One-line switch to the Wise sandbox environment
+- **Money is never `float64`** — Every amount is `int64` minor units (cents). No IEEE-754 representation error, ever.
+- **Branded IDs prevent entity-mixing bugs** — `ProfileID`, `BalanceID`, and `TransactionID` are distinct types; passing one where another belongs is a compile error.
+- **Automatic retries with backoff** — Exponential backoff on 429 (rate limit), 5xx, and network errors via [failsafe-go](https://github.com/failsafe-go/failsafe-go). Auth, not-found, and client errors fail immediately.
+- **Typed, classifiable errors** — `AuthError`, `RateLimitError` (with parsed `Retry-After`), `NotFoundError`, `ServerError`. Each carries its Wise API detail and implements `ErrorCode()` / `ErrorFamily()` / `IsRetryable()` from [go-error-family](https://github.com/larsartmann/go-error-family).
+- **Two-layer type system** — Raw wire types mirror Wise's JSON exactly; result types expose clean Go. The mapping is the only bridge.
+- **Sandbox support** — One-line switch to the Wise sandbox environment.
+- **Minimal dependencies** — Three focused production deps: `failsafe-go`, `go-branded-id`, `go-error-family`.
 
 ## Installation
 
@@ -254,9 +261,7 @@ Tests use `net/http/httptest` to mock the Wise API — no network access require
 
 ## Project Status
 
-Early development. Covers core read endpoints: profiles, balances, and transactions.
-
-Not yet implemented: transfers, recipients, quotes, webhooks, and write operations.
+See [FEATURES.md](FEATURES.md) for the full feature inventory by status and [ROADMAP.md](ROADMAP.md) for long-term direction.
 
 ## License
 
