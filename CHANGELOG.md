@@ -6,10 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-### Fixed
+## [0.3.0] - 2026-07-18
 
-- **CARD_PAYMENT classification** — `classifyTransactionType` grouped `CARD_PAYMENT` and `CARD_REFUND` into a single amount-based case, causing positive-amount card payments (e.g. reversed charges) to be silently classified as `TransactionTypeRefund`. Split into two cases: `CARD_PAYMENT` always returns `TransactionTypeCard`; `CARD_REFUND` retains the amount-dependent dispatch.
-- **Branded-ID formatting in error messages** — `ListTransactions` passed `req.ProfileID` and `req.BalanceID` directly to `%d` in two `fmt.Errorf` sites, inconsistent with the `.Get()` pattern used everywhere else. Normalized to `.Get()`.
+### Changed
+
+- **BREAKING: `GOEXPERIMENT=jsonv2` is now a hard, end-to-end requirement.** `go-branded-id v0.3.2` and `go-error-family v0.7.0` import `encoding/json/v2`, which only builds when the `jsonv2` experiment is enabled. Every consumer must `export GOEXPERIMENT=jsonv2` before any `go build` / `go test` / `go mod tidy`, or the build fails with `build constraints exclude all Go files in encoding/json/v2`. Wired into every build surface: the top-level `env` of `.github/workflows/ci.yml` (inherited by all jobs), both `flake.nix` devShells, the `buildGoModule` checkPhase, and the `.golangci.yml` `run.build-tags`. Documented in README (Installation + Testing), CONTRIBUTING.md (dedicated section), and AGENTS.md. On NixOS, `nix develop` sets it automatically.
+- Bump [go-branded-id](https://github.com/larsartmann/go-branded-id) from v0.3.1 to **v0.3.2**.
+- Bump [go-error-family](https://github.com/larsartmann/go-error-family) from v0.6.1 to **v0.7.0**.
+- Rewrote `CONTRIBUTING.md` to match the actual project (single `package wise`, `flake.nix` workflow, GOEXPERIMENT requirement, real conventions); the previous version described a fictional clean-architecture layout with `just`, `pkg/errors/`, and `cmd/` directories that do not exist.
+- Documented UTC timezone assumption on `parseWiseDate` and `Transaction.Date` (Wise sends no timezone; `time.Parse` interprets as UTC).
+- README: added coverage/lint/Go badges, sharpened value proposition, moved project status above the fold, linked to FEATURES.md and ROADMAP.md.
 
 ### Added
 
@@ -20,14 +26,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - BDD tests for `ListTransactionsRequest.Type` filter forwarding (previously untested code path).
 - Unit tests for positive-amount `CARD_PAYMENT` classification (regression guard).
 
-### Changed
+### Fixed
 
-- **`GOEXPERIMENT=jsonv2` is now a hard, end-to-end requirement.** `go-branded-id v0.3.2` and `go-error-family v0.7.0` import `encoding/json/v2`, which only builds with the `jsonv2` experiment enabled. Wired it into every build surface: the top-level `env` of `.github/workflows/ci.yml` (inherited by all jobs), both `flake.nix` devShells, the `buildGoModule` checkPhase, and the `.golangci.yml` `run.build-tags`. Documented the requirement in README (Installation + Testing), CONTRIBUTING.md (dedicated section), and AGENTS.md.
-- Bump [go-branded-id](https://github.com/larsartmann/go-branded-id) from v0.3.1 to **v0.3.2**.
-- Bump [go-error-family](https://github.com/larsartmann/go-error-family) from v0.6.1 to **v0.7.0**.
-- Rewrote `CONTRIBUTING.md` to match the actual project (single `package wise`, `flake.nix` workflow, GOEXPERIMENT requirement, real conventions); the previous version described a fictional clean-architecture layout with `just`, `pkg/errors/`, and `cmd/` directories that do not exist.
-- Documented UTC timezone assumption on `parseWiseDate` and `Transaction.Date` (Wise sends no timezone; `time.Parse` interprets as UTC).
-- README: added coverage/lint/Go badges, sharpened value proposition, moved project status above the fold, linked to FEATURES.md and ROADMAP.md.
+- **BREAKING: `CARD_PAYMENT` classification corrected.** `classifyTransactionType` grouped `CARD_PAYMENT` and `CARD_REFUND` into a single amount-based case, causing positive-amount card payments (e.g. reversed charges) to be silently classified as `TransactionTypeRefund`. Split into two cases: `CARD_PAYMENT` always returns `TransactionTypeCard`; `CARD_REFUND` retains the amount-dependent dispatch. Consumers switching on `tx.Type` for `CARD_PAYMENT` details will see corrected values.
+- **Branded-ID formatting in error messages** — `ListTransactions` passed `req.ProfileID` and `req.BalanceID` directly to `%d` in two `fmt.Errorf` sites, inconsistent with the `.Get()` pattern used everywhere else. Normalized to `.Get()`.
 
 ## [0.2.0] - 2026-07-05
 
