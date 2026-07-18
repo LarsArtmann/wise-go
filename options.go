@@ -1,7 +1,6 @@
 package wise
 
 import (
-	"net/http"
 	"time"
 )
 
@@ -13,7 +12,7 @@ type config struct {
 	maxRetries int
 	retryMin   time.Duration
 	retryMax   time.Duration
-	httpClient *http.Client
+	httpClient Doer
 }
 
 func defaultConfig() config {
@@ -54,8 +53,10 @@ func WithRetry(maxRetries int, minDelay, maxDelay time.Duration) Option {
 	}
 }
 
-// WithHTTPClient sets a custom HTTP client.
-func WithHTTPClient(client *http.Client) Option {
+// WithHTTPClient sets a custom HTTP client. Accepts any type implementing Doer
+// (*http.Client satisfies this implicitly). Use this to inject a client with
+// custom Transport (tracing, logging, mTLS), custom Timeout, or a mock for testing.
+func WithHTTPClient(client Doer) Option {
 	return func(c *config) {
 		c.httpClient = client
 	}

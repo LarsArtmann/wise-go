@@ -192,10 +192,13 @@ const (
 	BalanceTypeSavings  BalanceType = "SAVINGS"
 )
 
+// InvestmentState identifies whether a Wise balance is invested.
+type InvestmentState string
+
 // InvestmentState values reported by Wise balances (Balance.InvestmentState).
 const (
-	InvestmentStateNotInvested = "NOT_INVESTED"
-	InvestmentStateInvested    = "INVESTED"
+	InvestmentStateNotInvested InvestmentState = "NOT_INVESTED"
+	InvestmentStateInvested    InvestmentState = "INVESTED"
 )
 
 // TransactionType categorizes the transaction kind.
@@ -222,7 +225,7 @@ type ListTransactionsRequest struct {
 	Currency  string
 	From      time.Time
 	To        time.Time
-	Type      string // Optional filter by transaction type
+	Type      string // Optional filter by transaction type. See DetailType* constants.
 }
 
 // ListTransactionsResponse from listing transactions.

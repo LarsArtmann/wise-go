@@ -18,11 +18,18 @@ const (
 	defaultRetryBackoffCap   = 5 * time.Second
 )
 
+// Doer is the interface for an HTTP client. *http.Client satisfies this.
+// Inject a custom implementation via WithHTTPClient for testing or middleware
+// (tracing, logging, retries at the transport layer).
+type Doer interface {
+	Do(*http.Request) (*http.Response, error)
+}
+
 // Client is the Wise API client.
 type Client struct {
 	apiKey     string
 	baseURL    string
-	httpClient *http.Client
+	httpClient Doer
 	executor   failsafe.Executor[*http.Response]
 }
 

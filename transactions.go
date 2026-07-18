@@ -133,15 +133,16 @@ func mapExchange(ed *ExchangeDetails) *TransactionExchange {
 	}
 }
 
-// Wise detail.type wire-format values (StatementTransaction.Details.Type).
+// DetailType constants are Wise's wire-format values for details.type.
+// Use these as ListTransactionsRequest.Type filter values.
 const (
-	wiseDetailCardPayment = "CARD_PAYMENT"
-	wiseDetailCardRefund  = "CARD_REFUND"
-	wiseDetailTransfer    = "TRANSFER"
-	wiseDetailPayment     = "PAYMENT"
-	wiseDetailConversion  = "CONVERSION"
-	wiseDetailExchange    = "EXCHANGE"
-	wiseDetailFee         = "FEE"
+	DetailTypeCardPayment = "CARD_PAYMENT"
+	DetailTypeCardRefund  = "CARD_REFUND"
+	DetailTypeTransfer    = "TRANSFER"
+	DetailTypePayment     = "PAYMENT"
+	DetailTypeConversion  = "CONVERSION"
+	DetailTypeExchange    = "EXCHANGE"
+	DetailTypeFee         = "FEE"
 )
 
 // classifyTransactionType maps Wise detail types to SDK transaction types.
@@ -151,21 +152,21 @@ const (
 // full contract.
 func classifyTransactionType(wiseType string, amount float64) TransactionType {
 	switch wiseType {
-	case wiseDetailCardPayment:
+	case DetailTypeCardPayment:
 		return TransactionTypeCard
-	case wiseDetailCardRefund:
+	case DetailTypeCardRefund:
 		if amount > 0 {
 			return TransactionTypeRefund
 		}
 
 		return TransactionTypeCard
-	case wiseDetailTransfer:
+	case DetailTypeTransfer:
 		return TransactionTypeTransfer
-	case wiseDetailPayment:
+	case DetailTypePayment:
 		return TransactionTypePayment
-	case wiseDetailConversion, wiseDetailExchange:
+	case DetailTypeConversion, DetailTypeExchange:
 		return TransactionTypeExchange
-	case wiseDetailFee:
+	case DetailTypeFee:
 		return TransactionTypeFee
 	default:
 		if amount > 0 {

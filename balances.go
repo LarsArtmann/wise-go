@@ -25,7 +25,7 @@ func (c *Client) ListBalances(ctx context.Context, profileID ProfileID) ([]Balan
 
 	results := make([]BalanceResult, 0, len(balances))
 	for _, b := range balances {
-		if !b.Visible || b.InvestmentState != InvestmentStateNotInvested {
+		if !b.Visible || InvestmentState(b.InvestmentState) != InvestmentStateNotInvested {
 			continue
 		}
 
@@ -89,12 +89,8 @@ func mapBalance(b Balance) (BalanceResult, error) {
 }
 
 func parseBalanceType(s string) (BalanceType, error) {
-	switch s {
-	case "STANDARD":
-		return BalanceTypeStandard, nil
-	case "SAVINGS":
-		return BalanceTypeSavings, nil
-	default:
-		return "", fmt.Errorf("unknown balance type %q", s)
-	}
+	return parseEnum(map[string]BalanceType{
+		"STANDARD": BalanceTypeStandard,
+		"SAVINGS":  BalanceTypeSavings,
+	}, s, "balance type")
 }

@@ -55,12 +55,8 @@ func mapProfile(p Profile) (ProfileResult, error) {
 }
 
 func parseProfileType(s string) (ProfileType, error) {
-	switch s {
-	case "PERSONAL":
-		return ProfileTypePersonal, nil
-	case "BUSINESS":
-		return ProfileTypeBusiness, nil
-	default:
-		return "", fmt.Errorf("unknown profile type %q", s)
-	}
+	return parseEnum(map[string]ProfileType{
+		"PERSONAL": ProfileTypePersonal,
+		"BUSINESS": ProfileTypeBusiness,
+	}, s, "profile type")
 }

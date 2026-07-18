@@ -2,6 +2,7 @@ package wise
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -9,6 +10,18 @@ import (
 )
 
 const defaultRetryAfter = time.Second
+
+// parseEnum maps a raw string to a typed enum value via a lookup table.
+// Eliminates the duplicated switch-parser pattern across parseProfileType,
+// parseBalanceType, and future typed enums.
+func parseEnum[T ~string](table map[string]T, raw string, kind string) (T, error) {
+	if v, ok := table[raw]; ok {
+		return v, nil
+	}
+
+	var zero T
+	return zero, fmt.Errorf("unknown %s %q", kind, raw)
+}
 
 func jsonDecode(resp *http.Response, target any) error {
 	return json.NewDecoder(resp.Body).Decode(target)
