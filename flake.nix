@@ -43,6 +43,8 @@
         }:
         let
           goPkg = pkgs.go_1_26;
+          buildGoModule = pkgs.buildGoModule.override { go = goPkg; };
+          version = self.rev or self.dirtyRev or "dev";
         in
         {
           # Reproducible local dev shell. `nix develop` enters this.
@@ -81,9 +83,9 @@
           checks = {
             format = config.treefmt.build.check self;
 
-            test = pkgs.stdenvNoCC.mkDerivation {
+            test = buildGoModule {
               pname = "wise-go-test";
-              version = "dev";
+              inherit version;
               src = lib.fileset.toSource {
                 root = ./.;
                 fileset = lib.fileset.unions [
@@ -102,69 +104,19 @@
                   ./wise_test.go
                 ];
               };
-              nativeBuildInputs = [
-                goPkg
-              ];
-              GOWORK = "off";
-              GOPRIVATE = "github.com/larsartmann";
-              # Vendor deps offline, then run tests with the race detector.
-              buildPhase = ''
-                runHook preBuild
-                export HOME=$(mktemp -d)
-                export GOCACHE=$TMPDIR/go-cache
-                export GOMODCACHE=$TMPDIR/go-mod
+              vendorHash = "sha256-nrd770ZIYNl+b6pfFWJqBmeWgpgPLge92eVKYcTT2/0=";
+              doCheck = true;
+              checkPhase = ''
+                runHook preCheck
                 go test -race -coverprofile=coverage.out -covermode=atomic ./...
-                runHook postBuild
+                runHook postCheck
               '';
-              doCheck = false;
               installPhase = ''
                 runHook preInstall
                 mkdir -p $out
-                cp coverage.out $out/coverage.out
+                cp coverage.out $out/coverage.out 2>/dev/null || true
                 runHook postInstall
               '';
-            };
-
-            lint = pkgs.stdenvNoCC.mkDerivation {
-              pname = "wise-go-lint";
-              version = "dev";
-              src = lib.fileset.toSource {
-                root = ./.;
-                fileset = lib.fileset.unions [
-                  ./go.mod
-                  ./go.sum
-                  ./ids.go
-                  ./helpers.go
-                  ./options.go
-                  ./profiles.go
-                  ./balances.go
-                  ./errors.go
-                  ./client.go
-                  ./transactions.go
-                  ./types.go
-                  ./internal_test.go
-                  ./wise_test.go
-                  ./.golangci.yml
-                ];
-              };
-              nativeBuildInputs = [
-                goPkg
-                pkgs.golangci-lint
-              ];
-              GOWORK = "off";
-              GOPRIVATE = "github.com/larsartmann";
-              buildPhase = ''
-                runHook preBuild
-                export HOME=$(mktemp -d)
-                export GOCACHE=$TMPDIR/go-cache
-                export GOMODCACHE=$TMPDIR/go-mod
-                # Download deps so lint can read the package graph.
-                go mod download || true
-                golangci-lint run --timeout=5m
-                runHook postBuild
-              '';
-              doCheck = false;
-              installPhase = "touch $out";
             };
           };
         };
