@@ -27,7 +27,13 @@ Wise publishes no official Go SDK and no complete OpenAPI spec. **wise-go fills 
 go get github.com/larsartmann/wise-go
 ```
 
-Requires Go 1.26 or later.
+Requires **Go 1.26 or later** with the **`jsonv2` experiment** enabled. The `go-branded-id` and `go-error-family` dependencies use `encoding/json/v2`, which only builds when the experiment is on:
+
+```bash
+export GOEXPERIMENT=jsonv2   # add to ~/.bashrc / ~/.zshrc for persistence
+```
+
+Every invocation of the Go toolchain (`go build`, `go test`, `go vet`, `go mod tidy`) needs this variable set. On NixOS, `nix develop` sets it for you (see `flake.nix`).
 
 ## Quick Start
 
@@ -254,10 +260,10 @@ if err != nil {
 ## Testing
 
 ```bash
-go test ./...
+GOEXPERIMENT=jsonv2 go test ./...
 ```
 
-Tests use `net/http/httptest` to mock the Wise API — no network access required.
+Tests use `net/http/httptest` to mock the Wise API — no network access required. The `GOEXPERIMENT=jsonv2` prefix is mandatory (see [Installation](#installation)).
 
 ## Project Status
 

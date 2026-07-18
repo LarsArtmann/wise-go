@@ -22,6 +22,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **`GOEXPERIMENT=jsonv2` is now a hard, end-to-end requirement.** `go-branded-id v0.3.2` and `go-error-family v0.7.0` import `encoding/json/v2`, which only builds with the `jsonv2` experiment enabled. Wired it into every build surface: the top-level `env` of `.github/workflows/ci.yml` (inherited by all jobs), both `flake.nix` devShells, the `buildGoModule` checkPhase, and the `.golangci.yml` `run.build-tags`. Documented the requirement in README (Installation + Testing), CONTRIBUTING.md (dedicated section), and AGENTS.md.
+- Bump [go-branded-id](https://github.com/larsartmann/go-branded-id) from v0.3.1 to **v0.3.2**.
+- Bump [go-error-family](https://github.com/larsartmann/go-error-family) from v0.6.1 to **v0.7.0**.
+- Rewrote `CONTRIBUTING.md` to match the actual project (single `package wise`, `flake.nix` workflow, GOEXPERIMENT requirement, real conventions); the previous version described a fictional clean-architecture layout with `just`, `pkg/errors/`, and `cmd/` directories that do not exist.
 - Documented UTC timezone assumption on `parseWiseDate` and `Transaction.Date` (Wise sends no timezone; `time.Parse` interprets as UTC).
 - README: added coverage/lint/Go badges, sharpened value proposition, moved project status above the fold, linked to FEATURES.md and ROADMAP.md.
 

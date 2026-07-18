@@ -23,6 +23,9 @@ on:
 env:
   GO_VERSION: "1.26"
   GOLANGCI_LINT_VERSION: v2.12
+  # go-branded-id and go-error-family use encoding/json/v2, which requires
+  # the jsonv2 experiment on Go 1.26. Inherited by all jobs below.
+  GOEXPERIMENT: "jsonv2"
 
 jobs:
   build-and-test:

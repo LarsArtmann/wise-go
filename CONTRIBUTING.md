@@ -1,52 +1,41 @@
 # Contributing to wise-go
 
-> **Thank you for contributing!** This guide covers everything you need to know to contribute effectively.
+> **Thank you for contributing!** This guide covers everything you need to build, test, and submit changes to wise-go.
 
 ## Table of Contents
 
-- [Code of Conduct](#code-of-conduct)
 - [Quick Start](#quick-start)
 - [Development Setup](#development-setup)
-- [Code Standards](#code-standards)
+- [The GOEXPERIMENT=jsonv2 Requirement](#the-goexperimentjsonv2-requirement)
+- [Project Layout](#project-layout)
+- [Conventions](#conventions)
 - [Testing](#testing)
-- [Architecture](#architecture)
-- [Linting & Quality](#linting--quality)
-- [Security](#security)
+- [Linting & Formatting](#linting--formatting)
+- [Pre-commit Hooks](#pre-commit-hooks)
 - [Pull Request Process](#pull-request-process)
 - [Commit Messages](#commit-messages)
-
----
-
-## Code of Conduct
-
-We are committed to providing a welcoming and respectful environment. All contributors are expected to:
-
-- **Be respectful** — Treat others with kindness and professionalism
-- **Be inclusive** — Welcome diverse perspectives and experiences
-- **Be constructive** — Provide feedback that helps improve the project
-- **Be collaborative** — Work together to achieve the best outcomes
-
-**Unacceptable behavior** will not be tolerated.
+- [Getting Help](#getting-help)
 
 ---
 
 ## Quick Start
 
 ```bash
-# 1. Clone the repository
+# 1. Clone
 git clone https://github.com/LarsArtmann/wise-go.git
 cd wise-go
 
-# 2. Run the setup script
-./CONTRIBUTING-setup.sh
+# 2. Enter the dev shell (sets GOEXPERIMENT, Go 1.26, golangci-lint, gopls)
+nix develop
 
-# 3. Install development dependencies
-just install
+# 3. Verify the build
+go build ./...
 
-# 4. Verify everything works
-just lint
-just test
+# 4. Run the full suite
+nix flake check      # tests + format + lint, all hermetic
 ```
+
+If you do not use Nix, see [Development Setup](#development-setup) for the manual path.
 
 ---
 
@@ -54,349 +43,200 @@ just test
 
 ### Prerequisites
 
-| Tool           | Version | Purpose              |
-| -------------- | ------- | -------------------- |
-| Go             | 1.21+   | Language runtime     |
-| Just           | latest  | Task runner          |
-| golangci-lint  | v2.6.0  | Code linting         |
-| go-arch-lint   | v1.14.0 | Architecture linting |
-| branching-flow | latest  | Semantic analysis    |
-| gofumpt        | latest  | Code formatting      |
-| goimports      | latest  | Import management    |
+| Tool          | Version | Purpose                                                 |
+| ------------- | ------- | ------------------------------------------------------- |
+| Go            | 1.26+   | Language runtime. Required for the `jsonv2` experiment. |
+| Nix (flakes)  | 2.18+   | Reproducible dev + CI environment (recommended)         |
+| golangci-lint | v2.12   | Linting (the `nix develop` shell provides this)         |
 
-### Installation
+### Recommended: Nix
 
 ```bash
-# Install all tools via just
-just install
-
-# Or install individually
-go get -tool github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.6.0
-go get -tool github.com/fe3dback/go-arch-lint@v1.14.0
+nix develop          # enter the shell — GOEXPERIMENT is set automatically
 ```
 
-### Pre-commit Hooks
+Everything below works inside that shell without any prefix.
+
+### Manual (non-Nix)
 
 ```bash
-# Install basic hooks (formatting only - fast)
-just install-hooks
+# Mandatory: the jsonv2 experiment must be on for every Go invocation
+export GOEXPERIMENT=jsonv2   # add to ~/.bashrc or ~/.zshrc
 
-# Install comprehensive hooks (includes architecture validation)
-just install-hooks-full
+# Tools
+go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.0
 ```
 
 ---
 
-## Code Standards
+## The GOEXPERIMENT=jsonv2 Requirement
 
-### Mandatory Rules
-
-1. **Centralized Error Management**
-   - All errors MUST be defined in `pkg/errors/`
-   - No direct `errors.New()` or `fmt.Errorf()` outside `pkg/errors`
-   - Use `pkg/errors.Wrap()`, `pkg/errors.New()` for error creation
-   - Use `errors.Is()`, `errors.As()` for error checking
-
-2. **Strong ID Types**
-   - No raw string/numeric IDs — use branded types
-   - Example: `type UserID = brsdt.Type[string, "user_id"]`
-
-3. **Composition Over Inheritance**
-   - Prefer interfaces and struct embedding over class hierarchies
-   - Use dependency injection for testability
-
-4. **Early Returns**
-   - Use guard clauses to reduce nesting
-   - Keep functions small and focused
-
-### File Organization
+**This is non-negotiable.** The `go-branded-id` and `go-error-family` dependencies use `encoding/json/v2`, which only builds when the `jsonv2` experiment is enabled. Without it you will see:
 
 ```
-├── cmd/                    # Application entry points
-│   └── wise-go/main.go
-├── internal/               # Private application code
-│   ├── domain/             # Domain layer (business logic)
-│   │   ├── entities/       # Business entities
-│   │   ├── values/         # Value objects
-│   │   ├── repositories/   # Repository interfaces
-│   │   └── services/      # Domain services
-│   ├── application/        # Application layer
-│   │   └── handlers/      # HTTP handlers
-│   ├── infrastructure/     # Infrastructure layer
-│   │   └── db/            # SQLC generated code
-│   └── config/            # Configuration
-├── pkg/                    # Public packages
-│   └── errors/            # Centralized error definitions
-└── wise-go.go     # Module definition
+build constraints exclude all Go files in encoding/json/v2
 ```
 
-### Naming Conventions
+Every Go toolchain invocation needs the variable:
 
-| Type       | Convention                  | Example                        |
-| ---------- | --------------------------- | ------------------------------ |
-| Packages   | lowercase, single word      | `domain`, `handlers`           |
-| Interfaces | PascalCase with "er" suffix | `Repository`, `Service`        |
-| Functions  | PascalCase                  | `CreateUser`, `GetByID`        |
-| Variables  | camelCase                   | `userID`, `isActive`           |
-| Constants  | PascalCase                  | `MaxRetries`, `DefaultTimeout` |
-| Files      | lowercase, descriptive      | `user_repository.go`           |
+```bash
+GOEXPERIMENT=jsonv2 go build ./...
+GOEXPERIMENT=jsonv2 go test ./...
+GOEXPERIMENT=jsonv2 go vet ./...
+GOEXPERIMENT=jsonv2 go mod tidy
+GOEXPERIMENT=jsonv2 golangci-lint run
+```
+
+Where it is already wired in:
+
+- `flake.nix` — both devShells and the `buildGoModule` checkPhase.
+- `.golangci.yml` — `run.build-tags: [goexperiment.jsonv2, ...]` so the analyzer sees the same code the compiler does.
+- `.github/workflows/ci.yml` — top-level `env: GOEXPERIMENT: "jsonv2"`, inherited by every job.
+
+`nix develop` sets it for you, so inside that shell plain `go test ./...` works.
+
+---
+
+## Project Layout
+
+wise-go is a **single-package Go library**. There is no `cmd/`, `internal/`, or `pkg/` — the whole SDK lives in one `package wise` at the repository root.
+
+```
+├── *.go              # package wise — the entire public SDK
+├── flake.nix         # devShells, checks (tests + lint + format), treefmt
+├── .golangci.yml     # curated linter config (63 linters)
+├── go.mod / go.sum   # module github.com/larsartmann/wise-go
+├── AGENTS.md         # session context + gotchas — READ THIS FIRST
+├── docs/             # reviews, architecture, planning, status reports
+└── README.md         # user-facing overview
+```
+
+Before contributing, read [AGENTS.md](AGENTS.md) — it documents the non-obvious behaviors (dual date formats, `AmountCents` vs `TotalCents`, balance filtering, branded-ID usage, error families).
+
+---
+
+## Conventions
+
+- **Money is `int64` cents** — never `float64`. `AmountCents` is absolute; `TotalCents` preserves sign.
+- **Branded IDs** — `ProfileID`, `BalanceID`, `TransactionID` are distinct phantom types from `go-branded-id`. Mixing them is a compile error. Construct with `NewProfileID` / `NewBalanceID` / `NewTransactionID`; unwrap with `.Get()`.
+- **Behavioral errors** — domain error types implement `go-error-family` interfaces (`ErrorCode()`, `ErrorFamily()`, `IsRetryable()`). Never construct `AuthError` / `NotFoundError` etc. directly outside `newAPIError()` in `errors.go`.
+- **Two-layer types** — raw wire structs (`Profile`, `Balance`, `StatementTransaction`) match Wise's JSON exactly with primitives. Result types (`ProfileResult`, `BalanceResult`, `Transaction`) expose strong Go types. Mapping functions are the only bridge. Do not brand the JSON-decode layer.
+- **Error wrapping at call sites** uses `fmt.Errorf("context: %w", err)`; the inner error carries the classification.
+- **Retries** via `failsafe-go` — only 429, 5xx, and network errors are retried.
 
 ---
 
 ## Testing
 
-### Test Structure
-
-```go
-// Package naming: same package or package_test for black-box
-package domain_test  // Preferred for integration
-
-// or
-
-package domain  // For white-box testing
-```
-
-### Test Organization
-
-```go
-// Use descriptive names with Given-When-Then pattern
-func TestCreateUser_GivenValidInput_WhenUserDoesNotExist_ShouldCreateUser(t *testing.T)
-```
-
-### Coverage Requirements
-
-| Metric          | Minimum | Target |
-| --------------- | ------- | ------ |
-| Line Coverage   | 70%     | 85%    |
-| Branch Coverage | 60%     | 75%    |
-| Critical Paths  | 100%    | 100%   |
-
 ```bash
-# Run tests with coverage
-just test
+# Hermetic, includes race detector + coverage
+nix flake check
 
-# Check coverage threshold
-just coverage 80
-
-# Detailed coverage analysis
-just coverage-detailed
+# Or manually (remember GOEXPERIMENT)
+go test -race -coverprofile=coverage.out -covermode=atomic ./...
+go tool cover -func=coverage.out | tail -1
 ```
+
+Tests use `net/http/httptest` to mock the Wise API — **no network access, no API key required**. Coverage is currently ~95%.
+
+### Test style
+
+- BDD-style with Ginkgo for `wise_test.go` (black-box `package wise_test`).
+- Internal unit tests in `internal_test.go` (white-box `package wise`).
+- Use the `Given..._When..._Should...` naming pattern.
 
 ---
 
-## Architecture
-
-### Clean Architecture Layers
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    INFRASTRUCTURE                           │
-│   (External systems: DB, HTTP clients, file system)          │
-└─────────────────────────┬───────────────────────────────────┘
-                          │ implements
-┌─────────────────────────▼───────────────────────────────────┐
-│                    APPLICATION                              │
-│   (Use cases, handlers, orchestration)                      │
-└─────────────────────────┬───────────────────────────────────┘
-                          │ uses
-┌─────────────────────────▼───────────────────────────────────┐
-│                       DOMAIN                                 │
-│   (Entities, value objects, domain services)                 │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Dependency Rules
-
-- **Domain** → Domain only (entities, values, repositories interfaces)
-- **Application** → Domain + Infrastructure interfaces
-- **Infrastructure** → Domain interfaces (implements them)
-- **pkg/errors** → Available everywhere (mandatory)
-
-### Architecture Validation
+## Linting & Formatting
 
 ```bash
-# Check architecture compliance
-just lint-arch
+# Inside nix develop (GOEXPERIMENT already set):
+golangci-lint run          # 63 curated linters, see .golangci.yml
+nix fmt                    # gofumpt + goimports + nixfmt
 
-# Generate architecture graph
-just graph
-
-# Verbose architecture checking
-just verbose
+# Manual:
+GOEXPERIMENT=jsonv2 golangci-lint run
 ```
+
+The linter config is deliberately curated. Do **not** run `buildflow auto-configure` or `buildflow --fix` — it replaces the curated list with 100+ generic linters (including ones that flag legitimate patterns in this codebase) and breaks the build.
+
+### Quality gates
+
+Before pushing, all of these must pass:
+
+- [ ] `go build ./...`
+- [ ] `go vet ./...`
+- [ ] `go test -race ./...`
+- [ ] `golangci-lint run` — 0 issues
+- [ ] `nix flake check` — all checks pass
 
 ---
 
-## Linting & Quality
+## Pre-commit Hooks
 
-### Quick Commands
+Pre-commit hooks are provided via [git-hooks.nix](https://github.com/cachix/git-hooks.nix) and wired into `flake.nix`. They run `nix fmt` and (if installed) `buildflow` validation including `govalid-generate`.
 
-```bash
-# Run all linters
-just lint
-
-# Fix issues automatically
-just fix
-
-# Format code
-just format
-
-# Run pre-commit checks
-just check-pre-commit
-just check-pre-commit-fast  # Fast version for hooks
-```
-
-### Detailed Commands
+Because the hooks invoke the Go toolchain, **you must commit with `GOEXPERIMENT=jsonv2` in your environment**:
 
 ```bash
-# Code quality only
-just lint-code
-
-# Architecture only
-just lint-arch
-
-# Security only
-just lint-security
-
-# Vulnerability scanning
-just lint-vulns
-
-# Nil panic detection
-just lint-nilaway
-
-# Capability analysis
-just lint-capslock
+GOEXPERIMENT=jsonv2 git commit -m "..."
 ```
 
-### Branching-Flow Analysis
-
-```bash
-# Semantic context analysis (error handling)
-branching-flow context .
-
-# Find duplicate types
-branching-flow dupe .
-
-# Check for phantom types
-branching-flow phantom .
-
-# Panic condition analysis
-branching-flow panic .
-
-# Strong ID type analysis
-branching-flow strong-id .
-
-# Boolean blindness analysis
-branching-flow boolblind .
-
-# Anti-pattern detection
-branching-flow anti-patterns .
-
-# Run all analyzers
-branching-flow all .
-```
-
-### Quality Gates
-
-Before merging, all checks must pass:
-
-- [ ] `golangci-lint` passes
-- [ ] `go-arch-lint` passes
-- [ ] `branching-flow all .` passes
-- [ ] Tests pass with 80%+ coverage
-- [ ] Code is formatted (`gofumpt`)
-- [ ] Imports are organized (`goimports`)
-- [ ] No security vulnerabilities (`govulncheck`)
-
----
-
-## Security
-
-### Security Scanning
-
-```bash
-# Full security audit
-just security-audit
-
-# Quick security check
-just capslock-quick
-
-# Vulnerability scanning
-just lint-vulns
-
-# Docker security scan
-just docker-security
-```
-
-### Security Best Practices
-
-1. **Input Validation** — Validate all inputs at boundaries
-2. **Parameterized Queries** — Use SQLC for type-safe SQL
-3. **No Secrets in Code** — Use environment variables
-4. **Principle of Least Privilege** — Request only required capabilities
-5. **Error Messages** — Don't leak sensitive information
+Inside `nix develop` this is handled automatically.
 
 ---
 
 ## Pull Request Process
 
-### PR Requirements
+### Branch naming
 
-1. **Branch Naming**
+```
+feat/description
+fix/description
+docs/description
+refactor/description
+test/description
+chore/description
+```
 
-   ```
-   feat/description
-   fix/description
-   docs/description
-   refactor/description
-   test/description
-   ```
+### Before opening a PR
 
-2. **PR Description Template**
+1. **Self-review** — run the full quality gate suite locally.
+2. **Small and focused** — one logical change per PR.
+3. **Explain the "why"** — the PR description should motivate the change, not just list files.
+4. **Update docs** — if your change affects behavior, update `README.md`, `AGENTS.md` gotchas, and `CHANGELOG.md` `[Unreleased]`.
 
-   ```markdown
-   ## Summary
+### PR description template
 
-   Brief description of changes
+```markdown
+## Summary
 
-   ## Type
+Brief description of the change and why.
 
-   - [ ] Feature
-   - [ ] Bug fix
-   - [ ] Refactoring
-   - [ ] Documentation
+## Type
 
-   ## Test Plan
+- [ ] Feature
+- [ ] Bug fix
+- [ ] Refactoring
+- [ ] Documentation
 
-   - [ ] Unit tests added/updated
-   - [ ] Integration tests added/updated
-   - [ ] Manual testing performed
+## Test plan
 
-   ## Checklist
-
-   - [ ] Code follows style guidelines
-   - [ ] Architecture rules pass
-   - [ ] Security scan clean
-   - [ ] Documentation updated
-   ```
-
-### Review Process
-
-1. **Self-review first** — Run `just lint` and `just test` locally
-2. **Small PRs** — Keep changes focused and digestible
-3. **Explain "why"** — Not just "what", but rationale
-4. **Be responsive** — Address feedback promptly
+- [ ] Unit tests added/updated
+- [ ] `nix flake check` passes
+- [ ] `golangci-lint run` is clean
+```
 
 ---
 
 ## Commit Messages
 
-### Format
+Conventional Commits format:
 
 ```
 <type>(<scope>): <subject>
 
-<body>
+<body — explain the why>
 
 <footer>
 ```
@@ -420,42 +260,34 @@ just docker-security
 
 ```bash
 # Good
-feat(auth): add JWT token refresh mechanism
+fix(transactions): classify CARD_PAYMENT separately from CARD_REFUND
 
-Implements automatic token refresh before expiration
-to improve user experience and reduce authentication
-failures.
+CARD_PAYMENT and positive-amount CARD_REFUND were both mapped to
+TransactionTypeCard, hiding refunds. Split the classification so
+refunds surface correctly.
 
-Closes #123
+Closes #42
 
 # Bad
 fix stuff
 
 # Good
-docs(readme): update installation instructions
-
-Added Go 1.21+ requirement and just installation
-instructions for macOS users.
+ci: require GOEXPERIMENT=jsonv2 across all jobs
 
 # Bad
-updated README
+updated CI
 ```
 
 ---
 
 ## Getting Help
 
-### Resources
-
-- [Go Documentation](https://go.dev/doc/)
-- [Uber Go Style Guide](https://github.com/uber-go/guide)
+- [AGENTS.md](AGENTS.md) — project gotchas and conventions
+- [README.md](README.md) — user-facing overview and API examples
+- [Go documentation](https://go.dev/doc/)
 - [Effective Go](https://go.dev/doc/effective_go)
 
-### Getting Unblocked
-
-1. **Read the docs** — Check `docs/` folder first
-2. **Check existing issues** — Someone may have solved it
-3. **Ask questions** — Open a discussion, don't struggle alone
+If you are stuck, open a discussion or check existing issues before struggling alone.
 
 ---
 
