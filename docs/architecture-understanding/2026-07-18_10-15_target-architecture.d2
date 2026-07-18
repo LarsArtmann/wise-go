@@ -1,0 +1,134 @@
+direction: down
+
+Wise API (api.wise.com): {
+  shape: cloud
+  style.fill: "#f4d35e"
+}
+
+Caller (Application code): {
+  shape: person
+}
+
+package wise: {
+  style.stroke: "#ffb347"
+  style.stroke-width: 2
+  style.fill: "#18181d"
+
+  Client: {
+    shape: class
+    style.fill: "#ffb347"
+    - config
+    - doer: "interface{ Do }"
+    - retryPolicy: "failsafe.RetryPolicy"
+    + New(key, opts): "*Client"
+    + Profiles(): "*ProfileService"
+    + Balances(): "*BalanceService"
+    + Transactions(): "*TransactionService"
+  }
+
+  Service Clients: {
+    shape: package
+    style.fill: "#0e0e10"
+
+    ProfileService: {
+      shape: class
+      + List(ctx): "[]Profile"
+    }
+    BalanceService: {
+      shape: class
+      + List(ctx, ProfileID): "[]Balance"
+      + Get(ctx, ProfileID, BalanceID): Balance
+    }
+    TransactionService: {
+      shape: class
+      + List(ctx, ListTransactionsRequest): ListTransactionsResult
+    }
+  }
+
+  HTTP Core: {
+    shape: rectangle
+    - get / getWithQuery / post / patch
+    - isRetryable
+    - setAuth
+    - checkError
+  }
+
+  Money Value Object: {
+    shape: class
+    style.fill: "#6eb5ff"
+    + Currency (branded, validated)
+    + Cents: int64
+    + NewMoney(cents, Currency): Money
+  }
+
+  Branded Types: {
+    shape: package
+    style.fill: "#0e0e10"
+    ProfileID
+    BalanceID
+    TransactionID
+    Currency (new)
+    InvestmentState (typed)
+    DetailType (exported)
+  }
+
+  Result Domain Types: {
+    shape: package
+    style.fill: "#0e0e10"
+    Profile: "(no Result suffix)"
+    Balance: "(no Result suffix)"
+    Transaction: "(4 Money fields)"
+    TransactionExchange: "(2 Money fields)"
+    ListTransactionsRequest: "(typed DetailType)"
+    ListTransactionsResult: "([]Transaction, no HasMore lie)"
+  }
+
+  Domain Errors: {
+    shape: package
+    style.fill: "#0e0e10"
+    APIError
+    RateLimitError
+    AuthError
+    NotFoundError
+    ServerError
+  }
+}
+
+package wise.internal.raw: {
+  shape: package
+  style.stroke: "#ff6b6b"
+  style.stroke-dash: 4
+  Unexported wire types: {
+    rawProfile
+    rawBalance
+    rawStatementTransaction
+    rawBalanceAmount
+    rawExchangeDetails
+  }
+  JSON decode only
+}
+
+External Deps: {
+  shape: package
+  style.stroke: "#6eb5ff"
+  failsafe-go
+  go-branded-id
+  go-error-family
+}
+
+Caller -> Client.New: wise.New(key, opts)
+Caller -> Service Clients: client.Profiles().List(ctx) etc.
+Service Clients -> HTTP Core: c.get
+HTTP Core -> Wise API: HTTPS with retry
+Wise API -> HTTP Core: JSON response
+HTTP Core -> wise.internal.raw: decode (hidden)
+wise.internal.raw -> Result Domain Types: map* via Money
+Result Domain Types -> Caller: returns
+Money Value Object -> Result Domain Types: embedded in
+Branded Types -> Result Domain Types: typed fields
+Branded Types -> Money Value Object: Currency
+HTTP Core -> Domain Errors: status -> typed error
+Domain Errors -> Caller: returned (errors.As)
+Client -> External Deps.failsafe-go
+Branded Types -> External Deps.go-branded-id
+Domain Errors -> External Deps.go-error-family

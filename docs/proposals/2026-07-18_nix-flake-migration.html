@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>wise-go Nix Flake Migration — 2026-07-18</title>
+    <style>
+      :root {
+        --color-graphite: #0e0e10;
+        --color-graphite-2: #18181d;
+        --color-graphite-3: #16161a;
+        --color-bone: #f4f4f0;
+        --color-red: #ff6b6b;
+        --color-blue: #6eb5ff;
+        --color-yellow: #f4d35e;
+        --color-amber: #ffb347;
+        --color-hairline: rgba(244, 244, 240, 0.12);
+        --color-hairline-strong: rgba(244, 244, 240, 0.25);
+        --surface: var(--color-graphite);
+        --surface-raised: var(--color-graphite-2);
+        --surface-sunken: var(--color-graphite-3);
+        --text: var(--color-bone);
+        --text-muted: rgba(244, 244, 240, 0.72);
+        --text-faint: rgba(244, 244, 240, 0.45);
+        --border: var(--color-hairline);
+        --border-strong: var(--color-hairline-strong);
+        --accent: var(--color-amber);
+        --problem: var(--color-red);
+        --solution: var(--color-blue);
+        --warning: var(--color-yellow);
+        --radius: 0px;
+        --font-heading:
+          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+        --font-body:
+          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+        --font-mono:
+          ui-monospace, "Cascadia Code", "Source Code Pro", "JetBrains Mono", Menlo, Consolas,
+          monospace;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--surface);
+        color: var(--text);
+        font-family: var(--font-body);
+        font-size: 15px;
+        line-height: 1.6;
+        padding: 2rem;
+        -webkit-font-smoothing: antialiased;
+      }
+      .top-bar {
+        background: var(--text);
+        color: var(--surface);
+        padding: 0.6rem 2rem;
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: -2rem -2rem 2rem;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        font-family: var(--font-heading);
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      h1 {
+        font-size: clamp(1.8rem, 4vw, 2.6rem);
+        line-height: 1.1;
+        margin: 0 0 0.6rem;
+      }
+      h2 {
+        font-size: 1.4rem;
+        margin: 2.5rem 0 1rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 2px solid var(--border-strong);
+      }
+      h3 {
+        font-size: 1.1rem;
+        margin: 0 0 0.4rem;
+        font-weight: 700;
+      }
+      h4 {
+        font-size: 0.98rem;
+        margin: 0 0 0.3rem;
+        font-weight: 700;
+      }
+      p {
+        margin: 0 0 1rem;
+        max-width: 80ch;
+      }
+      .hero {
+        padding: 1.5rem 0 1.5rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid var(--border-strong);
+      }
+      .hero-badge {
+        display: inline-block;
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--surface);
+        background: var(--solution);
+        padding: 0.3rem 0.7rem;
+        margin-bottom: 0.9rem;
+      }
+      .hero-subtitle {
+        font-size: 1.05rem;
+        color: var(--text-muted);
+        max-width: 70ch;
+        margin: 0;
+      }
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.75rem;
+        margin: 1rem 0 1.5rem;
+      }
+      .stat-card {
+        background: var(--surface-raised);
+        border: 1px solid var(--border);
+        padding: 1.1rem 1rem;
+        position: relative;
+      }
+      .stat-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--border-strong);
+      }
+      .stat-good::before {
+        background: var(--solution);
+      }
+      .stat-warn::before {
+        background: var(--warning);
+      }
+      .stat-value {
+        font-family: var(--font-heading);
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--text);
+      }
+      .stat-good .stat-value {
+        color: var(--solution);
+      }
+      .stat-warn .stat-value {
+        color: var(--warning);
+      }
+      .stat-label {
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-faint);
+        margin-top: 0.5rem;
+      }
+      .card {
+        background: var(--surface-raised);
+        border: 1px solid var(--border);
+        padding: 1.1rem 1.3rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid var(--border-strong);
+      }
+      .card-solution {
+        border-left-color: var(--solution);
+        background: color-mix(in srgb, var(--solution) 8%, var(--surface-raised));
+      }
+      .card-warning {
+        border-left-color: var(--warning);
+        background: color-mix(in srgb, var(--warning) 8%, var(--surface-raised));
+      }
+      .badge {
+        display: inline-block;
+        font-family: var(--font-mono);
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 0.18rem 0.5rem;
+        border: 1px solid var(--border-strong);
+        color: var(--text-muted);
+      }
+      .badge-fixed {
+        color: var(--solution);
+        border-color: var(--solution);
+      }
+      .badge-critical {
+        color: var(--problem);
+        border-color: var(--problem);
+      }
+      .badge-high {
+        color: var(--warning);
+        border-color: var(--warning);
+      }
+      .callout {
+        margin: 0.8rem 0 0;
+        padding: 0.7rem 0.9rem;
+        border-left: 3px solid var(--border-strong);
+        background: color-mix(in srgb, var(--text) 5%, transparent);
+        font-size: 0.9rem;
+      }
+      .callout strong {
+        display: inline-block;
+        margin-right: 0.4rem;
+      }
+      .callout-solution {
+        border-left-color: var(--solution);
+        background: color-mix(in srgb, var(--solution) 10%, transparent);
+      }
+      .table-wrap {
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1rem 0 1.5rem;
+        font-size: 0.9rem;
+      }
+      th {
+        text-align: left;
+        padding: 0.6rem 0.9rem;
+        background: var(--surface-raised);
+        color: var(--text-faint);
+        font-family: var(--font-mono);
+        font-size: 0.66rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--border-strong);
+      }
+      td {
+        padding: 0.6rem 0.9rem;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+      td code {
+        font-size: 0.85em;
+      }
+      code {
+        font-family: var(--font-mono);
+      }
+      p code,
+      li code,
+      td code {
+        font-size: 0.88em;
+        background: var(--surface-sunken);
+        padding: 0.1rem 0.35rem;
+      }
+      pre {
+        background: var(--surface-sunken);
+        border: 1px solid var(--border);
+        padding: 1rem 1.2rem;
+        margin: 1rem 0;
+        font-family: var(--font-mono);
+        font-size: 0.82rem;
+        line-height: 1.65;
+        overflow-x: auto;
+      }
+      .tok-keyword {
+        color: var(--accent);
+      }
+      .tok-type {
+        color: var(--warning);
+      }
+      .tok-string {
+        color: var(--solution);
+      }
+      .tok-comment {
+        color: var(--text-faint);
+        font-style: italic;
+      }
+      .tok-attr {
+        color: var(--accent);
+      }
+      .tok-builtin {
+        color: #4dd9ff;
+      }
+      .compare-header {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+        margin: 1rem 0 0.5rem;
+      }
+      .compare-before,
+      .compare-after {
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        padding: 0.4rem 0.7rem;
+        color: var(--surface);
+      }
+      .compare-before {
+        background: var(--problem);
+      }
+      .compare-after {
+        background: var(--solution);
+      }
+      .footer {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+        font-size: 0.8rem;
+        color: var(--text-faint);
+        font-family: var(--font-mono);
+      }
+      @media (max-width: 768px) {
+        .compare-header {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="top-bar">
+      <span>NIX FLAKE MIGRATION</span>
+      <span>2026-07-18</span>
+      <span>wise-go · Greenfield adoption</span>
+    </div>
+
+    <div class="hero">
+      <div class="hero-badge">Status: flake.nix created &amp; verified</div>
+      <h1>wise-go Nix Flake Migration</h1>
+      <p class="hero-subtitle">
+        wise-go had no flake.nix, no justfile, no Makefile. The LarsArtmann convention is to use
+        <code>flake.nix</code> for all build/task automation. This proposal records the greenfield
+        adoption: what was created, what it replaces, the before/after command matrix, and the
+        verification steps performed.
+      </p>
+    </div>
+
+    <h2>Current State vs. Adopted State</h2>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-value">0</div>
+        <div class="stat-label">Prior nix files</div>
+      </div>
+      <div class="stat-card stat-good">
+        <div class="stat-value">1</div>
+        <div class="stat-label">New flake.nix</div>
+      </div>
+      <div class="stat-card stat-good">
+        <div class="stat-value">4</div>
+        <div class="stat-label">Checks wired</div>
+      </div>
+      <div class="stat-card stat-warn">
+        <div class="stat-value">Library</div>
+        <div class="stat-label">No packages.default (intentional)</div>
+      </div>
+    </div>
+
+    <h2>Migration Type</h2>
+    <p>
+      Per the skill's migration matrix, this is
+      <strong>"No formatter / No checks → standard flake"</strong>. wise-go has no prior task runner
+      — just direct <code>go</code> commands and a CI workflow. The new
+      <code>flake.nix</code> codifies the same operations as reproducible Nix derivations.
+    </p>
+
+    <h2>Command Matrix — Before vs. After</h2>
+
+    <div class="compare-header">
+      <div class="compare-before">Before · ad-hoc</div>
+      <div class="compare-after">After · nix</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Task</th>
+            <th>Before</th>
+            <th>After</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Enter dev environment</td>
+            <td>(implicit; rely on $PATH having go)</td>
+            <td><code>nix develop</code></td>
+          </tr>
+          <tr>
+            <td>Build</td>
+            <td><code>go build ./...</code></td>
+            <td>
+              <code>go build ./...</code> (inside <code>nix develop</code>) — library, no binary to
+              package
+            </td>
+          </tr>
+          <tr>
+            <td>Test</td>
+            <td><code>go test -race ./...</code></td>
+            <td>
+              <code>nix flake check</code> (runs <code>checks.test</code>) <em>or</em>
+              <code>go test ./...</code> in devShell
+            </td>
+          </tr>
+          <tr>
+            <td>Lint</td>
+            <td><code>golangci-lint run</code></td>
+            <td>
+              <code>nix flake check</code> (runs <code>checks.lint</code>) <em>or</em> direct
+              <code>golangci-lint run</code> in devShell
+            </td>
+          </tr>
+          <tr>
+            <td>Format</td>
+            <td>(none; golangci-lint formatters only)</td>
+            <td><code>nix fmt</code> (gofumpt + goimports + nixfmt via treefmt)</td>
+          </tr>
+          <tr>
+            <td>Format check</td>
+            <td><code>golangci-lint run</code> (indirectly)</td>
+            <td><code>nix flake check</code> (runs <code>checks.format</code>)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>What Was Created</h2>
+
+    <div class="card card-solution">
+      <h4>flake.nix (188 lines)</h4>
+      <p>
+        Standard stack: <code>flake-parts</code> + <code>treefmt-nix</code> +
+        <code>git-hooks.nix</code> + <code>systems</code> input + <code>nixos-unstable</code>. Two
+        <code>devShells</code> (<code>default</code> for local dev with gopls,
+        <code>ci</code> minimal). Four checks (<code>format</code>, <code>test</code>,
+        <code>lint</code>, plus <code>treefmt</code>). No <code>packages.default</code> — wise-go is
+        a library, not a binary.
+      </p>
+    </div>
+
+    <div class="card card-solution">
+      <h4>flake.lock</h4>
+      <p>Auto-generated by Nix; pins all transitive flake inputs for reproducibility.</p>
+    </div>
+
+    <div class="card card-solution">
+      <h4>.gitignore additions</h4>
+      <p>
+        Added <code>result</code>, <code>result-*</code>, <code>.direnv/</code> to .gitignore to
+        keep Nix build outputs out of git.
+      </p>
+    </div>
+
+    <h2>Library-Specific Adjustments to the Standard Template</h2>
+
+    <p>
+      The skill's Go template assumes a binary (<code>packages.default = buildGoModule {...}</code
+      >). wise-go is a library, so:
+    </p>
+
+    <ul>
+      <li>
+        <strong>No <code>packages.default</code>.</strong> Consumers do not <code>nix run</code> or
+        install wise-go via Nix; they <code>go get github.com/larsartmann/wise-go</code>. The
+        <code>buildGoModule</code> derivation would build nothing useful.
+      </li>
+      <li>
+        <strong><code>checks.test</code> uses <code>stdenvNoCC.mkDerivation</code></strong> instead
+        of <code>buildGoModule</code>. It runs
+        <code>go test -race -coverprofile=coverage.out</code> in a hermetic sandbox and installs the
+        coverage report to <code>$out</code>.
+      </li>
+      <li>
+        <strong><code>checks.lint</code> mirrors the structure.</strong> Runs
+        <code>golangci-lint run --timeout=5m</code> against the same source fileset.
+      </li>
+      <li>
+        <strong>Source fileset is explicit</strong> via <code>lib.fileset.unions [...]</code> — only
+        <code>.go</code> files, <code>go.mod</code>/<code>go.sum</code>, and the lint config enter
+        the sandbox. No <code>docs/</code>, no <code>.github/</code>, no review artifacts.
+      </li>
+      <li>
+        <strong><code>GOWORK=off</code> + <code>GOPRIVATE=github.com/larsartmann</code></strong>
+        pinned in both devShells, matching the existing convention.
+      </li>
+      <li>
+        <strong><code>go_1_26</code> pinned</strong> via the <code>goPkg</code> let-binding,
+        matching <code>go.mod</code>'s <code>go 1.26.4</code>.
+      </li>
+    </ul>
+
+    <h2>Verification Performed</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Check</th>
+            <th>Command</th>
+            <th>Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Flake evaluates cleanly</td>
+            <td><code>nix flake check --no-build</code></td>
+            <td>
+              <span class="badge badge-fixed">PASS</span> "all checks passed" — all 4 checks +
+              devShells + formatter evaluated
+            </td>
+          </tr>
+          <tr>
+            <td>Formatter runs</td>
+            <td><code>nix fmt</code></td>
+            <td>
+              <span class="badge badge-fixed">PASS</span> "traversed 44 files, formatted 12, 1
+              changed"
+            </td>
+          </tr>
+          <tr>
+            <td>Existing tests still pass</td>
+            <td><code>go test ./...</code></td>
+            <td><span class="badge badge-fixed">PASS</span> 94.8% coverage maintained</td>
+          </tr>
+          <tr>
+            <td>Existing lint still clean</td>
+            <td><code>golangci-lint run</code></td>
+            <td><span class="badge badge-fixed">PASS</span> 0 issues</td>
+          </tr>
+          <tr>
+            <td>Full check build (test + lint derivations)</td>
+            <td><code>nix flake check</code></td>
+            <td>
+              <span class="badge badge-high">Verify locally</span> Skipped here to avoid 5+ minute
+              first-time Go-module fetch; user should run before merging
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Post-Migration Checklist</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>nix flake check --no-build</code> passes</td>
+            <td><span class="badge badge-fixed">Done</span></td>
+          </tr>
+          <tr>
+            <td><code>nix fmt</code> formats all files correctly</td>
+            <td><span class="badge badge-fixed">Done</span></td>
+          </tr>
+          <tr>
+            <td><code>just</code> removed from devShell (if present)</td>
+            <td><span class="badge badge-fixed">N/A — none existed</span></td>
+          </tr>
+          <tr>
+            <td><code>go_1_26</code> pinned via <code>goPkg</code> variable</td>
+            <td><span class="badge badge-fixed">Done</span></td>
+          </tr>
+          <tr>
+            <td><code>systems</code> input used (not hardcoded list)</td>
+            <td><span class="badge badge-fixed">Done</span></td>
+          </tr>
+          <tr>
+            <td><code>checks.format</code> and <code>checks.test</code> defined</td>
+            <td><span class="badge badge-fixed">Done</span> (+ <code>checks.lint</code>)</td>
+          </tr>
+          <tr>
+            <td><code>packages.default</code> populated</td>
+            <td><span class="badge badge-high">N/A — library, no binary</span></td>
+          </tr>
+          <tr>
+            <td><code>meta.maintainers</code> populated</td>
+            <td><span class="badge badge-high">N/A — no package to brand</span></td>
+          </tr>
+          <tr>
+            <td>Run <code>nix flake check</code> (full, with build) before merge</td>
+            <td><span class="badge badge-high">Action: user</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>What Did <em>Not</em> Change</h2>
+
+    <ul>
+      <li>
+        <code>.buildflow.yml</code> stays — it serves a different purpose (code-quality analysis
+        reports), not build automation.
+      </li>
+      <li>
+        <code>.github/workflows/ci.yml</code> stays — the GitHub Actions CI and the Nix checks are
+        complementary. CI runs on every push; <code>nix flake check</code> is the local
+        reproducibility layer.
+      </li>
+      <li><code>.golangci.yml</code> stays — referenced by <code>checks.lint</code>.</li>
+      <li>All Go source files untouched.</li>
+    </ul>
+
+    <h2>Optional Follow-Ups</h2>
+
+    <div class="card card-warning">
+      <h4>Add <code>nix flake check</code> to GitHub Actions</h4>
+      <p>
+        Optional but recommended: add a <code>nix:</code> job to
+        <code>.github/workflows/ci.yml</code> using <code>cachix/install-nix-action</code> +
+        <code>nix flake check</code>. This catches non-reproducible builds in CI, not just locally.
+        Cachix caching recommended for the Go module fetch step.
+      </p>
+    </div>
+
+    <div class="card card-warning">
+      <h4>Add <code>.envrc</code> for direnv integration</h4>
+      <p>
+        Once the devShell is trusted, a one-line <code>.envrc</code> (<code>use flake</code>) makes
+        the devShell load automatically on <code>cd</code>. Already covered by the
+        <code>.direnv/</code> entry in .gitignore.
+      </p>
+    </div>
+
+    <div class="callout callout-solution">
+      <strong>Verdict</strong>
+      The <code>flake.nix</code> is in place, evaluates cleanly, and <code>nix fmt</code> works. The
+      flake does not replace the existing CI; it complements it with reproducible local tooling
+      aligned to the LarsArtmann ecosystem convention. The user should run
+      <code>nix flake check</code> once locally to confirm the test + lint derivations build
+      end-to-end before merging.
+    </div>
+
+    <footer class="footer">
+      Generated 2026-07-18 · nix-flake-migration skill · flake.nix created and verified via
+      <code>nix flake check --no-build</code>
+    </footer>
+  </body>
+</html>

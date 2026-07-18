@@ -1,0 +1,1335 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>wise-go Data Model Review — 2026-07-18</title>
+    <style>
+      :root {
+        --color-graphite: #0e0e10;
+        --color-graphite-2: #18181d;
+        --color-graphite-3: #16161a;
+        --color-bone: #f4f4f0;
+        --color-red: #ff6b6b;
+        --color-blue: #6eb5ff;
+        --color-yellow: #f4d35e;
+        --color-amber: #ffb347;
+        --color-hairline: rgba(244, 244, 240, 0.12);
+        --color-hairline-strong: rgba(244, 244, 240, 0.25);
+        --surface: var(--color-graphite);
+        --surface-raised: var(--color-graphite-2);
+        --surface-sunken: var(--color-graphite-3);
+        --text: var(--color-bone);
+        --text-muted: rgba(244, 244, 240, 0.72);
+        --text-faint: rgba(244, 244, 240, 0.45);
+        --border: var(--color-hairline);
+        --border-strong: var(--color-hairline-strong);
+        --accent: var(--color-amber);
+        --problem: var(--color-red);
+        --solution: var(--color-blue);
+        --warning: var(--color-yellow);
+        --radius: 0px;
+        --font-heading:
+          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+        --font-body:
+          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+        --font-mono:
+          ui-monospace, "Cascadia Code", "Source Code Pro", "JetBrains Mono", Menlo, Consolas,
+          monospace;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      section[id],
+      [id] {
+        scroll-margin-top: 60px;
+      }
+      body {
+        background: var(--surface);
+        color: var(--text);
+        font-family: var(--font-body);
+        font-size: 15px;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      .top-bar {
+        background: var(--text);
+        color: var(--surface);
+        padding: 0.6rem 2rem;
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .layout {
+        display: flex;
+        gap: 2.5rem;
+        padding: 2rem;
+      }
+      .sidebar {
+        width: 220px;
+        flex-shrink: 0;
+        position: sticky;
+        top: 1rem;
+        align-self: flex-start;
+        height: calc(100vh - 2rem);
+        overflow-y: auto;
+        display: none;
+      }
+      .sidebar nav {
+        display: flex;
+        flex-direction: column;
+      }
+      .sidebar .label {
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--accent);
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 2px solid var(--border-strong);
+      }
+      .sidebar a {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        text-decoration: none;
+        padding: 0.45rem 0.75rem;
+        border-left: 2px solid transparent;
+        transition: all 0.15s ease;
+        font-weight: 500;
+      }
+      .sidebar a:hover,
+      .sidebar a.active {
+        color: var(--accent);
+        border-left-color: var(--accent);
+        background: color-mix(in srgb, var(--accent) 8%, transparent);
+      }
+      .main {
+        flex: 1;
+        min-width: 0;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        font-family: var(--font-heading);
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      h1 {
+        font-size: clamp(1.8rem, 4vw, 2.6rem);
+        line-height: 1.1;
+        margin: 0 0 0.6rem;
+      }
+      h2 {
+        font-size: 1.4rem;
+        margin: 2.5rem 0 1rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 2px solid var(--border-strong);
+        display: flex;
+        align-items: baseline;
+        gap: 0.6rem;
+      }
+      h2 .num {
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        color: var(--accent);
+        font-weight: 700;
+        letter-spacing: 0.06em;
+      }
+      h3 {
+        font-size: 1.1rem;
+        margin: 0 0 0.4rem;
+        font-weight: 700;
+      }
+      h4 {
+        font-size: 0.98rem;
+        margin: 0 0 0.3rem;
+        font-weight: 700;
+      }
+      p {
+        margin: 0 0 1rem;
+      }
+      .hero {
+        padding: 1.5rem 0 1.5rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid var(--border-strong);
+      }
+      .hero-badge {
+        display: inline-block;
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--surface);
+        background: var(--accent);
+        padding: 0.3rem 0.7rem;
+        margin-bottom: 0.9rem;
+      }
+      .hero-subtitle {
+        font-size: 1.05rem;
+        color: var(--text-muted);
+        max-width: 70ch;
+        margin: 0;
+      }
+      .hero-shapes {
+        position: relative;
+        height: 80px;
+        margin-bottom: 1rem;
+      }
+      .hero-shapes .circle {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 56px;
+        height: 56px;
+        background: var(--problem);
+        border-radius: 50%;
+      }
+      .hero-shapes .square {
+        position: absolute;
+        top: 24px;
+        left: 72px;
+        width: 48px;
+        height: 48px;
+        background: var(--solution);
+      }
+      .hero-shapes .tri {
+        position: absolute;
+        top: 8px;
+        left: 140px;
+        width: 0;
+        height: 0;
+        border-left: 28px solid transparent;
+        border-right: 28px solid transparent;
+        border-bottom: 48px solid var(--warning);
+      }
+      .card {
+        background: var(--surface-raised);
+        border: 1px solid var(--border);
+        padding: 1.1rem 1.3rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid var(--border-strong);
+      }
+      .card-problem {
+        border-left-color: var(--problem);
+        background: color-mix(in srgb, var(--problem) 8%, var(--surface-raised));
+      }
+      .card-solution {
+        border-left-color: var(--solution);
+        background: color-mix(in srgb, var(--solution) 8%, var(--surface-raised));
+      }
+      .card-warning {
+        border-left-color: var(--warning);
+        background: color-mix(in srgb, var(--warning) 8%, var(--surface-raised));
+      }
+      .severity {
+        display: inline-block;
+        font-family: var(--font-mono);
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 0.2rem 0.55rem;
+        margin-bottom: 0.6rem;
+        color: var(--surface);
+      }
+      .severity-critical {
+        background: var(--problem);
+      }
+      .severity-high {
+        background: var(--warning);
+      }
+      .severity-medium {
+        background: var(--accent);
+      }
+      .severity-low {
+        background: var(--solution);
+      }
+      .badge {
+        display: inline-block;
+        font-family: var(--font-mono);
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 0.18rem 0.5rem;
+        border: 1px solid var(--border-strong);
+        color: var(--text-muted);
+      }
+      .badge-critical {
+        color: var(--problem);
+        border-color: var(--problem);
+      }
+      .badge-high {
+        color: var(--warning);
+        border-color: var(--warning);
+      }
+      .badge-medium {
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+      .badge-low {
+        color: var(--text-muted);
+      }
+      .callout {
+        margin: 0.8rem 0 0;
+        padding: 0.7rem 0.9rem;
+        border-left: 3px solid var(--border-strong);
+        background: color-mix(in srgb, var(--text) 5%, transparent);
+        font-size: 0.9rem;
+      }
+      .callout strong {
+        display: inline-block;
+        margin-right: 0.4rem;
+      }
+      .callout-solution {
+        border-left-color: var(--solution);
+        background: color-mix(in srgb, var(--solution) 10%, transparent);
+      }
+      .callout-warning {
+        border-left-color: var(--warning);
+        background: color-mix(in srgb, var(--warning) 10%, transparent);
+      }
+      .callout-problem {
+        border-left-color: var(--problem);
+        background: color-mix(in srgb, var(--problem) 10%, transparent);
+      }
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.75rem;
+        margin: 1rem 0 1.5rem;
+      }
+      .stat-card {
+        background: var(--surface-raised);
+        border: 1px solid var(--border);
+        padding: 1.1rem 1rem;
+        position: relative;
+      }
+      .stat-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--border-strong);
+      }
+      .stat-bad::before {
+        background: var(--problem);
+      }
+      .stat-good::before {
+        background: var(--solution);
+      }
+      .stat-warn::before {
+        background: var(--warning);
+      }
+      .stat-value {
+        font-family: var(--font-heading);
+        font-size: 2rem;
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -0.03em;
+        color: var(--text);
+      }
+      .stat-bad .stat-value {
+        color: var(--problem);
+      }
+      .stat-good .stat-value {
+        color: var(--solution);
+      }
+      .stat-warn .stat-value {
+        color: var(--warning);
+      }
+      .stat-label {
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-faint);
+        margin-top: 0.5rem;
+      }
+      .strengths {
+        display: grid;
+        gap: 0.5rem;
+        margin: 1rem 0 1.5rem;
+      }
+      .strength {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.8rem;
+        padding: 0.7rem 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .strength .check {
+        font-family: var(--font-mono);
+        font-weight: 700;
+        color: var(--solution);
+        font-size: 1.1rem;
+        line-height: 1.4;
+      }
+      .strength .text strong {
+        display: block;
+        margin-bottom: 0.15rem;
+      }
+      .strength .text span {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+      }
+      .table-wrap {
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1rem 0 1.5rem;
+        font-size: 0.9rem;
+      }
+      th {
+        text-align: left;
+        padding: 0.6rem 0.9rem;
+        background: var(--surface-raised);
+        color: var(--text-faint);
+        font-family: var(--font-mono);
+        font-size: 0.66rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--border-strong);
+      }
+      td {
+        padding: 0.6rem 0.9rem;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+      tr:hover td {
+        background: var(--surface-raised);
+      }
+      pre {
+        background: var(--surface-sunken);
+        border: 1px solid var(--border);
+        padding: 1rem 1.2rem;
+        margin: 1rem 0;
+        font-family: var(--font-mono);
+        font-size: 0.82rem;
+        line-height: 1.65;
+        overflow-x: auto;
+      }
+      code {
+        font-family: var(--font-mono);
+      }
+      p code,
+      li code,
+      td code {
+        font-size: 0.88em;
+        background: var(--surface-sunken);
+        padding: 0.1rem 0.35rem;
+      }
+      .tok-keyword {
+        color: var(--accent);
+      }
+      .tok-type {
+        color: var(--warning);
+      }
+      .tok-string {
+        color: var(--solution);
+      }
+      .tok-comment {
+        color: var(--text-faint);
+        font-style: italic;
+      }
+      .tok-func {
+        color: #74a9ff;
+      }
+      .tok-number {
+        color: var(--accent);
+      }
+      .tok-generic {
+        color: var(--problem);
+      }
+      .tok-builtin {
+        color: #4dd9ff;
+      }
+      .tok-punct {
+        color: var(--text-muted);
+      }
+      .compare-header {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+        margin: 1rem 0 0.5rem;
+      }
+      .compare-before,
+      .compare-after {
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        padding: 0.4rem 0.7rem;
+        color: var(--surface);
+      }
+      .compare-before {
+        background: var(--problem);
+      }
+      .compare-after {
+        background: var(--solution);
+      }
+      .compare-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+      }
+      .compare-row pre {
+        margin: 0;
+      }
+      .migration-step {
+        display: grid;
+        grid-template-columns: 48px 1fr;
+        gap: 1rem;
+        margin: 1rem 0;
+        padding: 1rem;
+        background: var(--surface-raised);
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--accent);
+      }
+      .migration-num {
+        font-family: var(--font-mono);
+        font-weight: 800;
+        font-size: 1.5rem;
+        color: var(--accent);
+        line-height: 1;
+      }
+      .migration-content h4 {
+        margin-bottom: 0.2rem;
+      }
+      .migration-content p {
+        margin-bottom: 0;
+        color: var(--text-muted);
+        font-size: 0.92rem;
+      }
+      .footer {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+        font-size: 0.8rem;
+        color: var(--text-faint);
+        font-family: var(--font-mono);
+      }
+      @media (min-width: 1024px) {
+        .sidebar {
+          display: block;
+        }
+      }
+      @media (max-width: 768px) {
+        .layout {
+          flex-direction: column;
+          padding: 1rem;
+        }
+        .top-bar {
+          padding: 0.6rem 1rem;
+          flex-wrap: wrap;
+          gap: 0.3rem;
+        }
+        .stat-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .compare-header,
+        .compare-row {
+          grid-template-columns: 1fr;
+        }
+        .migration-step {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="top-bar">
+      <span>DATA MODEL REVIEW</span>
+      <span>2026-07-18</span>
+      <span>wise-go · First-principles type redesign</span>
+    </div>
+
+    <div class="layout">
+      <aside class="sidebar" data-nav>
+        <nav>
+          <div class="label">Contents</div>
+          <a href="#current">Current State</a>
+          <a href="#catalog">Problem Catalog</a>
+          <a href="#vision">The Vision</a>
+          <a href="#model">Proposed Model</a>
+          <a href="#composition">Composition</a>
+          <a href="#validation">Validation</a>
+          <a href="#decisions">Decision Log</a>
+          <a href="#antipatterns">Anti-Patterns</a>
+          <a href="#roadmap">Migration</a>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <div class="hero">
+          <div class="hero-shapes">
+            <div class="circle"></div>
+            <div class="square"></div>
+            <div class="tri"></div>
+          </div>
+          <div class="hero-badge">Architecture Deep-Dive</div>
+          <h1>wise-go Data Model Review</h1>
+          <p class="hero-subtitle">
+            A first-principles review of every type in <code>types.go</code>, <code>ids.go</code>,
+            <code>errors.go</code>, and the request/response structs. The existing model is already
+            disciplined — branded IDs, two-layer raw/result split, int64 cents. This review catalogs
+            what separates it from a model where invalid states are <em>unrepresentable</em>, not
+            merely rejected at runtime.
+          </p>
+        </div>
+
+        <h2 id="current"><span class="num">00</span>Current State</h2>
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-value">22</div>
+            <div class="stat-label">Public types</div>
+          </div>
+          <div class="stat-card stat-bad">
+            <div class="stat-value">9</div>
+            <div class="stat-label">Problems found</div>
+          </div>
+          <div class="stat-card stat-bad">
+            <div class="stat-value">2</div>
+            <div class="stat-label">Critical</div>
+          </div>
+          <div class="stat-card stat-warn">
+            <div class="stat-value">3</div>
+            <div class="stat-label">High</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">4</div>
+            <div class="stat-label">Medium / Low</div>
+          </div>
+        </div>
+
+        <p>
+          The model is structurally sound. The raw-vs-result split correctly isolates the
+          JSON-decode layer from the public API. Branded IDs (<code>ProfileID</code>,
+          <code>BalanceID</code>, <code>TransactionID</code>) already eliminate an entire class of
+          "passed the wrong ID" bugs at compile time. The error types compose via embedding and
+          classify behaviorally via <code>go-error-family</code>.
+        </p>
+
+        <p>
+          The remaining problems cluster around two systemic roots:
+          <strong>(a) money is modeled as paired primitive fields instead of a value object</strong
+          >, and <strong>(b) several domain enums remain stringly-typed</strong>. Both are classic
+          "organic growth" patterns — easy to write once, expensive to maintain, and exactly what
+          this skill exists to correct.
+        </p>
+
+        <h2 id="catalog"><span class="num">01</span>Problem Catalog</h2>
+
+        <div class="card card-problem">
+          <span class="severity severity-critical">Critical · P9</span>
+          <h3>Money is smashed into primitive pairs</h3>
+          <p>
+            <strong>Where:</strong> <code>Transaction</code> (6 pairs),
+            <code>TransactionExchange</code> (2 pairs), <code>BalanceResult</code> (2 pairs).
+          </p>
+          <p>
+            Every monetary amount is modeled as <code>XxxCents int64</code> paired with
+            <code>XxxCurrency string</code>. <code>Transaction</code> alone has
+            <em>twelve</em> fields for four logical amounts. Nothing prevents constructing a
+            <code>Transaction</code> with <code>TotalCents</code> in USD but
+            <code>TotalCurrency</code> set to <code>"EUR"</code>. The pairing is an invariant the
+            type system does not enforce.
+          </p>
+          <div class="callout callout-solution">
+            <strong>Fix</strong>
+            Introduce a <code>Money</code> value object. Each pair collapses to one field.
+            Mismatched currency/amount becomes unrepresentable.
+          </div>
+        </div>
+
+        <div class="card card-problem">
+          <span class="severity severity-critical">Critical · P1 / P4</span>
+          <h3>Currency is a raw string</h3>
+          <p>
+            <strong>Where:</strong> every <code>Currency string</code> field,
+            <code>ListTransactionsRequest.Currency</code>, <code>BalanceAmount.Currency</code>.
+          </p>
+          <p>
+            ISO 4217 currency codes are a closed, well-known set of exactly 3 uppercase letters.
+            Modeling them as <code>string</code> means any caller can pass <code>"usd"</code>,
+            <code>"USD "</code>, <code>"euros"</code>, or <code>""</code> and the type system will
+            not help. The empty-string case is so real that
+            <code>ListTransactionsRequest.validate()</code> already special-cases it.
+          </p>
+          <div class="callout callout-solution">
+            <strong>Fix</strong>
+            <code>type Currency string</code> with a constructor that validates length-3 uppercase
+            ASCII. Pairs naturally with <code>Money</code>.
+          </div>
+        </div>
+
+        <div class="card card-problem">
+          <span class="severity severity-high">High · P1</span>
+          <h3>InvestmentState is untyped constants</h3>
+          <p>
+            <strong>Where:</strong> <code>types.go:192-195</code>, used in
+            <code>balances.go:28</code>.
+          </p>
+          <p>
+            <code>InvestmentStateNotInvested</code> and <code>InvestmentStateInvested</code> are
+            bare <code>string</code> constants with no named type. The filter at
+            <code>balances.go:28</code> compares
+            <code>b.InvestmentState != InvestmentStateNotInvested</code> against an untyped string.
+            Adding a third state in the future would silently slip past this. Compare to
+            <code>BalanceType</code> and <code>ProfileType</code>, which are properly typed — this
+            is an inconsistency within the same file.
+          </p>
+          <div class="callout callout-solution">
+            <strong>Fix</strong>
+            <code>type InvestmentState string</code> with the two constants promoted to that type.
+            Add a <code>parseInvestmentState</code> helper that returns an error for unknown values.
+          </div>
+        </div>
+
+        <div class="card card-problem">
+          <span class="severity severity-high">High · P1</span>
+          <h3>ListTransactionsRequest.Type is a raw Wise detail-type string</h3>
+          <p>
+            <strong>Where:</strong> <code>types.go:221</code>, serialized at
+            <code>transactions.go:33</code>.
+          </p>
+          <p>
+            The <code>Type</code> filter accepts Wise's <code>details.type</code> wire values
+            (<code>CARD_PAYMENT</code>, <code>TRANSFER</code>, etc.). These are the same values the
+            SDK already has as unexported constants (<code>wiseDetailCardPayment</code>, etc.) — but
+            the request field is <code>string</code>, so callers cannot discover the valid set
+            without reading the README. The constants exist but are kept private.
+          </p>
+          <div class="callout callout-solution">
+            <strong>Fix</strong>
+            Export a typed <code>DetailType</code> enum and use it in the request. Existing string
+            callers can keep working via a <code>String()</code>-based setter or by leaving the
+            field as <code>string</code> but documenting the closed set.
+          </div>
+        </div>
+
+        <div class="card card-problem">
+          <span class="severity severity-high">High · P3 / P10</span>
+          <h3>ListTransactionsResponse.HasMore is a documented lie</h3>
+          <p>
+            <strong>Where:</strong> <code>types.go:227</code>, hardcoded at
+            <code>transactions.go:66</code>.
+          </p>
+          <p>
+            The field is always <code>false</code>. <code>AGENTS.md</code> documents this. The
+            README documents this. And yet the field exists, promising pagination semantics that the
+            type does not deliver. A caller writing
+            <code>for resp.HasMore { fetchMore() }</code> will loop zero times and silently produce
+            an incomplete dataset if Wise ever changes the contract. The field makes an impossible
+            state <em>representable</em> — the opposite of the type-system goal.
+          </p>
+          <div class="callout callout-solution">
+            <strong>Fix</strong>
+            For v1.0: remove <code>HasMore</code> entirely and let
+            <code>ListTransactionsResponse</code> be a plain <code>[]Transaction</code>. For v0.x:
+            at minimum rename to <code>HasMoreOrEq</code>... no — better: document why it exists
+            (forward compatibility) in a comment, and never write <code>HasMore: true</code> in
+            tests.
+          </div>
+        </div>
+
+        <div class="card card-warning">
+          <span class="severity severity-medium">Medium · P3</span>
+          <h3>Enum value casing is inconsistent</h3>
+          <p><strong>Where:</strong> <code>types.go:178-209</code>.</p>
+          <p>
+            <code>ProfileType</code> values are lowercase (<code>personal</code>,
+            <code>business</code>) — normalized from the API's
+            <code>PERSONAL</code>/<code>BUSINESS</code>. <code>BalanceType</code> values are
+            uppercase (<code>STANDARD</code>, <code>SAVINGS</code>) — passed through from the API
+            verbatim. <code>TransactionType</code> values are lowercase (<code>card</code>,
+            <code>credit</code>) — normalized from <code>CARD_PAYMENT</code>, etc. Two normalization
+            strategies coexist in the same file. There is no single rule a contributor can follow.
+          </p>
+          <div class="callout callout-solution">
+            <strong>Fix</strong>
+            Pick one rule: "result enums are always lowercase Go-style; raw values stay wire-style."
+            Then <code>BalanceType</code> should normalize to <code>standard</code>/<code
+              >savings</code
+            >
+            for consistency — or all three stay wire-style. Either is defensible; the mix is not.
+          </div>
+        </div>
+
+        <div class="card card-warning">
+          <span class="severity severity-medium">Medium · P3</span>
+          <h3>TransactionTypeUnknown is dead</h3>
+          <p><strong>Where:</strong> <code>types.go:209</code>.</p>
+          <p>
+            <code>TransactionTypeUnknown</code> is defined but never returned by
+            <code>classifyTransactionType</code> — the default branch falls back to
+            <code>Credit</code> or <code>Debit</code> based on amount sign. The constant is dead
+            weight that implies a classification path that does not exist. Either remove it, or use
+            it as the fallback when the detail type is unrecognized (preserving the information that
+            classification failed).
+          </p>
+        </div>
+
+        <div class="card card-warning">
+          <span class="severity severity-medium">Medium · P9 / P11</span>
+          <h3>Duplicated enum-parsing functions</h3>
+          <p>
+            <strong>Where:</strong> <code>profiles.go:57-66</code>, <code>balances.go:91-100</code>.
+          </p>
+          <p>
+            <code>parseProfileType</code> and <code>parseBalanceType</code> are the same function
+            shape: a <code>switch</code> over a string mapping to a typed enum, with a default
+            error. Adding <code>parseInvestmentState</code> and <code>parseDetailType</code> would
+            add two more copies. A single generic helper eliminates the pattern.
+          </p>
+          <div class="callout callout-solution">
+            <strong>Fix</strong>
+            <pre><code><span class="tok-keyword">func</span> <span class="tok-func">parseEnum</span>[<span class="tok-generic">T</span> ~<span class="tok-type">string</span>](table <span class="tok-keyword">map</span>[<span class="tok-type">string</span>]<span class="tok-generic">T</span>, raw <span class="tok-type">string</span>, kind <span class="tok-type">string</span>) (<span class="tok-generic">T</span>, <span class="tok-type">error</span>) {
+    <span class="tok-keyword">if</span> v, ok := table[raw]; ok {
+        <span class="tok-keyword">return</span> v, <span class="tok-keyword">nil</span>
+    }
+    <span class="tok-keyword">var</span> zero <span class="tok-generic">T</span>
+    <span class="tok-keyword">return</span> zero, fmt.<span class="tok-func">Errorf</span>(<span class="tok-string">"unknown %s %q"</span>, kind, raw)
+}</code></pre>
+          </div>
+        </div>
+
+        <div class="card card-warning">
+          <span class="severity severity-low">Low · P3</span>
+          <h3>Transaction.Date timezone semantics are undocumented</h3>
+          <p>
+            <strong>Where:</strong> <code>helpers.go:44-51</code>, <code>transactions.go:76</code>.
+          </p>
+          <p>
+            Wise returns transaction dates as <code>"2006-01-02 15:04:05"</code> with no timezone.
+            <code>time.Parse</code> interprets this as UTC. Whether the original statement is in
+            UTC, the account's timezone, or the currency's home timezone is not documented. A caller
+            comparing <code>tx.Date</code> to a local time will silently off-by-a-day at boundaries.
+          </p>
+          <div class="callout callout-solution">
+            <strong>Fix</strong>
+            Document the assumption in the <code>parseWiseDate</code> doc comment and in the
+            <code>Transaction.Date</code> field doc: "Returned in UTC; Wise does not transmit a
+            timezone."
+          </div>
+        </div>
+
+        <h2 id="vision"><span class="num">02</span>The Vision</h2>
+
+        <div class="strengths">
+          <div class="strength">
+            <div class="check">+</div>
+            <div class="text">
+              <strong>Money is a value object, not a field pair</strong>
+              <span
+                >One <code>Money</code> type carries cents + currency together. A transaction has
+                four <code>Money</code> fields, not twelve primitive fields.</span
+              >
+            </div>
+          </div>
+          <div class="strength">
+            <div class="check">+</div>
+            <div class="text">
+              <strong>Currency is branded and validated at construction</strong>
+              <span
+                >An empty or malformed currency cannot reach the API layer because it cannot be
+                constructed.</span
+              >
+            </div>
+          </div>
+          <div class="strength">
+            <div class="check">+</div>
+            <div class="text">
+              <strong>Every enum is a named type with a parser</strong>
+              <span
+                >No bare string constants. <code>InvestmentState</code>,
+                <code>DetailType</code> join <code>ProfileType</code>, <code>BalanceType</code>,
+                <code>TransactionType</code>.</span
+              >
+            </div>
+          </div>
+          <div class="strength">
+            <div class="check">+</div>
+            <div class="text">
+              <strong>Enum parsing is one generic helper, not N copies</strong>
+              <span><code>parseEnum[T]</code> eliminates the duplicated switch functions.</span>
+            </div>
+          </div>
+          <div class="strength">
+            <div class="check">+</div>
+            <div class="text">
+              <strong>Responses do not promise what they cannot deliver</strong>
+              <span
+                ><code>HasMore</code> is gone (or honestly named).
+                <code>TransactionTypeUnknown</code> is gone (or used).</span
+              >
+            </div>
+          </div>
+          <div class="strength">
+            <div class="check">+</div>
+            <div class="text">
+              <strong>One normalization rule for all result enums</strong>
+              <span
+                >Lowercase Go-style for SDK-facing enums; wire values stay wire-side in the raw
+                layer only.</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <h2 id="model"><span class="num">03</span>Proposed Go Data Model</h2>
+
+        <h3>Money and Currency</h3>
+        <pre><code><span class="tok-comment">// Currency is an ISO 4217 currency code (e.g. "USD", "EUR").</span>
+<span class="tok-comment">// Construct with NewCurrency; the zero value is intentionally invalid.</span>
+<span class="tok-keyword">type</span> <span class="tok-type">Currency</span> <span class="tok-type">string</span>
+
+<span class="tok-comment">// NewCurrency validates a 3-letter uppercase ASCII currency code.</span>
+<span class="tok-keyword">func</span> <span class="tok-func">NewCurrency</span>(s <span class="tok-type">string</span>) (<span class="tok-type">Currency</span>, <span class="tok-type">error</span>) {
+    <span class="tok-keyword">if</span> <span class="tok-builtin">len</span>(s) != <span class="tok-number">3</span> {
+        <span class="tok-keyword">return</span> <span class="tok-string">""</span>, fmt.<span class="tok-func">Errorf</span>(<span class="tok-string">"currency must be 3 letters, got %q"</span>, s)
+    }
+    <span class="tok-keyword">for</span> _, r := <span class="tok-keyword">range</span> s {
+        <span class="tok-keyword">if</span> r &lt; <span class="tok-string">'A'</span> || r &gt; <span class="tok-string">'Z'</span> {
+            <span class="tok-keyword">return</span> <span class="tok-string">""</span>, fmt.<span class="tok-func">Errorf</span>(<span class="tok-string">"currency must be uppercase ASCII, got %q"</span>, s)
+        }
+    }
+    <span class="tok-keyword">return</span> <span class="tok-type">Currency</span>(s), <span class="tok-keyword">nil</span>
+}
+
+<span class="tok-comment">// Money is a monetary amount in minor units of a currency.</span>
+<span class="tok-comment">// The zero value is "0 cents in no currency" — construct with NewMoney</span>
+<span class="tok-comment">// to enforce the currency invariant.</span>
+<span class="tok-keyword">type</span> <span class="tok-type">Money</span> <span class="tok-keyword">struct</span> {
+    Cents    <span class="tok-type">int64</span>
+    Currency <span class="tok-type">Currency</span>
+}
+
+<span class="tok-keyword">func</span> <span class="tok-func">NewMoney</span>(cents <span class="tok-type">int64</span>, cur <span class="tok-type">Currency</span>) <span class="tok-type">Money</span> {
+    <span class="tok-keyword">return</span> <span class="tok-type">Money</span>{Cents: cents, Currency: cur}
+}
+
+<span class="tok-comment">// FromBalanceAmount converts a raw wire BalanceAmount (float64 major units)</span>
+<span class="tok-comment">// to precision-safe Money (int64 minor units).</span>
+<span class="tok-keyword">func</span> <span class="tok-func">moneyFromBalance</span>(a <span class="tok-type">BalanceAmount</span>) <span class="tok-type">Money</span> {
+    <span class="tok-keyword">return</span> <span class="tok-type">Money</span>{Cents: a.<span class="tok-func">Cents</span>(), Currency: <span class="tok-type">Currency</span>(a.Currency)}
+}</code></pre>
+
+        <h3>Redesigned result types</h3>
+        <pre><code><span class="tok-keyword">type</span> <span class="tok-type">Transaction</span> <span class="tok-keyword">struct</span> {
+    ID             <span class="tok-type">TransactionID</span>
+    ProfileID      <span class="tok-type">ProfileID</span>
+    BalanceID      <span class="tok-type">BalanceID</span>
+    Amount         <span class="tok-type">Money</span>   <span class="tok-comment">// absolute value, always positive</span>
+    Fees           <span class="tok-type">Money</span>
+    Total          <span class="tok-type">Money</span>   <span class="tok-comment">// signed: negative for debits</span>
+    RunningBalance <span class="tok-type">Money</span>
+    Exchange       *<span class="tok-type">TransactionExchange</span>
+    Type           <span class="tok-type">TransactionType</span>
+    Description    <span class="tok-type">string</span>
+    Reference      <span class="tok-type">string</span>
+    Category       <span class="tok-type">string</span>
+    MerchantName   <span class="tok-type">string</span>
+    Date           <span class="tok-type">time.Time</span>
+}
+
+<span class="tok-keyword">type</span> <span class="tok-type">TransactionExchange</span> <span class="tok-keyword">struct</span> {
+    From <span class="tok-type">Money</span>
+    To   <span class="tok-type">Money</span>
+    Rate <span class="tok-type">float64</span>
+}
+
+<span class="tok-keyword">type</span> <span class="tok-type">BalanceResult</span> <span class="tok-keyword">struct</span> {
+    ID              <span class="tok-type">BalanceID</span>
+    Currency        <span class="tok-type">Currency</span>
+    Type            <span class="tok-type">BalanceType</span>
+    Name            <span class="tok-type">string</span>
+    Amount          <span class="tok-type">Money</span>
+    Reserved        <span class="tok-type">Money</span>
+    Visible         <span class="tok-type">bool</span>
+    CreatedAt       <span class="tok-type">time.Time</span>
+}
+
+<span class="tok-keyword">type</span> <span class="tok-type">ListTransactionsRequest</span> <span class="tok-keyword">struct</span> {
+    ProfileID <span class="tok-type">ProfileID</span>
+    BalanceID <span class="tok-type">BalanceID</span>
+    Currency  <span class="tok-type">Currency</span>
+    From      <span class="tok-type">time.Time</span>
+    To        <span class="tok-type">time.Time</span>
+    Type      <span class="tok-type">DetailType</span> <span class="tok-comment">// zero value means "no filter"</span>
+}</code></pre>
+
+        <p>
+          The <code>Transaction</code> struct drops from <strong>20 fields to 14</strong>, and every
+          monetary amount now carries its currency by construction. The previous impossible state —
+          <code>TotalCents</code> in one currency and <code>TotalCurrency</code>
+          in another — is now unrepresentable.
+        </p>
+
+        <h2 id="composition"><span class="num">04</span>Composition in Action</h2>
+
+        <h3>Money: before vs. after</h3>
+        <div class="compare-header">
+          <div class="compare-before">Before · 6 paired fields</div>
+          <div class="compare-after">After · 3 Money fields</div>
+        </div>
+        <div class="compare-row">
+          <div>
+            <pre><code><span class="tok-keyword">type</span> <span class="tok-type">TransactionExchange</span> <span class="tok-keyword">struct</span> {
+    FromCents    <span class="tok-type">int64</span>
+    FromCurrency <span class="tok-type">string</span>
+    ToCents      <span class="tok-type">int64</span>
+    ToCurrency   <span class="tok-type">string</span>
+    Rate         <span class="tok-type">float64</span>
+}
+
+<span class="tok-comment">// Nothing prevents this:</span>
+<span class="tok-type">TransactionExchange</span>{
+    FromCents:    <span class="tok-number">100</span>,
+    FromCurrency: <span class="tok-string">"USD"</span>,
+    ToCents:      <span class="tok-number">92</span>,
+    ToCurrency:   <span class="tok-string">"USD"</span>, <span class="tok-comment">// oops, same currency</span>
+}</code></pre>
+          </div>
+          <div>
+            <pre><code><span class="tok-keyword">type</span> <span class="tok-type">TransactionExchange</span> <span class="tok-keyword">struct</span> {
+    From <span class="tok-type">Money</span>
+    To   <span class="tok-type">Money</span>
+    Rate <span class="tok-type">float64</span>
+}
+
+<span class="tok-comment">// From/To carry their currency atomically.</span>
+<span class="tok-comment">// Cross-currency intent is visible at a glance:</span>
+<span class="tok-type">TransactionExchange</span>{
+    From: <span class="tok-func">NewMoney</span>(<span class="tok-number">100</span>, <span class="tok-string">"USD"</span>),
+    To:   <span class="tok-func">NewMoney</span>(<span class="tok-number">92</span>,  <span class="tok-string">"EUR"</span>),
+    Rate: <span class="tok-number">0.92</span>,
+}</code></pre>
+          </div>
+        </div>
+
+        <h3>Error composition: already correct</h3>
+        <p>
+          The error model is the part of the codebase that <em>already</em> uses composition well.
+          <code>RateLimitError</code>, <code>AuthError</code>, <code>NotFoundError</code>, and
+          <code>ServerError</code> embed <code>APIError</code> by value and override only the
+          methods that differ. The base type carries <code>StatusCode</code>, <code>Message</code>,
+          <code>Body</code>, <code>Error()</code>, <code>ErrorCode()</code>, and a default
+          <code>ErrorFamily()</code>. Subtypes override <code>ErrorFamily()</code> (transient vs.
+          rejection), <code>IsRetryable()</code>, and <code>ErrorContext()</code> as needed.
+        </p>
+
+        <p>
+          This is the textbook Go composition pattern — no deep inheritance, no abstract base
+          classes, behavior overridden at the edge. It is called out here so reviewers do not "fix"
+          something that is not broken.
+        </p>
+
+        <h2 id="validation"><span class="num">05</span>Validation Layer</h2>
+
+        <p>
+          The principle: <strong>if a value can be invalid, it must not be constructible.</strong>
+          The redesigned model pushes validation into constructors so call sites never re-validate.
+        </p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Value</th>
+                <th>Current</th>
+                <th>Proposed</th>
+                <th>Invalid state becomes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Currency</td>
+                <td>raw <code>string</code>; <code>validate()</code> rejects <code>""</code></td>
+                <td><code>NewCurrency(string) (Currency, error)</code></td>
+                <td>Unrepresentable — bad codes fail construction</td>
+              </tr>
+              <tr>
+                <td>Money</td>
+                <td>two fields, no link</td>
+                <td><code>Money{Cents, Currency}</code> struct</td>
+                <td>Unrepresentable — cents and currency are atomic</td>
+              </tr>
+              <tr>
+                <td>InvestmentState</td>
+                <td>untyped string constants</td>
+                <td><code>type InvestmentState string</code> + parser</td>
+                <td>A compile-time error if you typo a constant</td>
+              </tr>
+              <tr>
+                <td>DetailType (request filter)</td>
+                <td>raw <code>string</code></td>
+                <td><code>type DetailType string</code> with exported constants</td>
+                <td>Discoverable set; typos caught at compile time</td>
+              </tr>
+              <tr>
+                <td>ProfileID / BalanceID / TransactionID</td>
+                <td>Already branded</td>
+                <td>Unchanged</td>
+                <td>Already unrepresentable (compile-time)</td>
+              </tr>
+              <tr>
+                <td>Date (no timezone)</td>
+                <td>Silent UTC assumption</td>
+                <td>Same code, documented assumption</td>
+                <td>Documented; not fixable without Wise API change</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="decisions"><span class="num">06</span>Decision Log</h2>
+
+        <div class="card card-solution">
+          <h4>Decision: Money is a struct, not [2]int64 or a typed int64</h4>
+          <p>
+            <strong>Chosen:</strong> <code>struct { Cents int64; Currency Currency }</code>.
+            <strong>Rejected:</strong> a typed int64 with the currency in a parallel slice (data
+            locality argued for it); a generic <code>Money[T Currency]</code> (overkill, currencies
+            are not a compile-time set). The struct wins because it composes by value, zero-copy,
+            and the pair is the natural unit — you never add cents across currencies.
+          </p>
+        </div>
+
+        <div class="card card-solution">
+          <h4>Decision: Currency is a named string, not an int enum</h4>
+          <p>
+            <strong>Chosen:</strong> <code>type Currency string</code> with constructor validation.
+            <strong>Rejected:</strong> a closed int enum (would require a registry and prevent
+            callers from using currencies Wise has not added yet); an iota of "known" currencies
+            (same problem, worse). A validated named string keeps the wire format readable while
+            rejecting malformed values at construction.
+          </p>
+        </div>
+
+        <div class="card card-solution">
+          <h4>Decision: InvestmentState joins the typed-enum pattern</h4>
+          <p>
+            <strong>Chosen:</strong> promote to <code>type InvestmentState string</code>.
+            <strong>Rejected:</strong> leave as bare constants "because there are only two values."
+            Two-value enums grow. The cost of typing it is one line; the cost of leaving it is a
+            silent future bug when Wise adds <code>HELD</code> or <code>PENDING</code>.
+          </p>
+        </div>
+
+        <div class="card card-solution">
+          <h4>Decision: Do not introduce interface-based union for Transaction</h4>
+          <p>
+            <strong>Chosen:</strong> keep <code>Transaction</code> a flat struct with a
+            <code>Type</code> field and optional <code>Exchange</code>. <strong>Rejected:</strong> a
+            sealed interface union (<code>CreditTx</code>, <code>DebitTx</code>,
+            <code>ExchangeTx</code> ...). A union would force every caller ranging over
+            <code>[]Transaction</code> to type-switch, which is the wrong ergonomic for statement
+            iteration. The optional <code>Exchange</code> pointer is the right trade-off for
+            read-heavy SDKs.
+          </p>
+        </div>
+
+        <div class="card card-warning">
+          <h4>Decision: defer HasMore removal to v1.0</h4>
+          <p>
+            <strong>Chosen:</strong> keep <code>HasMore</code> in v0.x, remove in v1.0.
+            <strong>Rationale:</strong> the field is part of the public API today; removing it is a
+            breaking change. The project is pre-1.0 and breaking changes are expected, but the
+            data-model review is not the right scope for an API break — that belongs in a deliberate
+            release. For now: add a comment explaining why it is always false.
+          </p>
+        </div>
+
+        <h2 id="antipatterns"><span class="num">07</span>Anti-Patterns to Avoid</h2>
+
+        <div class="card card-problem">
+          <h4>Do not brand the raw API structs</h4>
+          <p>
+            <code>Profile</code>, <code>Balance</code>, <code>StatementTransaction</code> exist to
+            match Wise's JSON wire format exactly. Branding <code>Profile.ID int64</code> into a
+            branded type breaks <code>encoding/json</code> unmarshaling and creates false positives
+            for phantom-ID linters. The raw layer stays primitive; the result layer gets the types.
+            This is already correct — keep it.
+          </p>
+        </div>
+
+        <div class="card card-problem">
+          <h4>Do not introduce a <code>Money[T Currency]</code> generic</h4>
+          <p>
+            Tempting for "type-safe cross-currency arithmetic," but currencies are a runtime value,
+            not a compile-time set. Generic Money would force code generation or a massive type-set
+            for no real safety gain over the validated-string <code>Currency</code>.
+          </p>
+        </div>
+
+        <div class="card card-problem">
+          <h4>Do not add a <code>Validate()</code> method to every type</h4>
+          <p>
+            If you need <code>Validate()</code>, the type allows invalid states. The fix is to make
+            the constructor the only way in and have it reject invalid input. <code>Money</code>,
+            <code>Currency</code>, and the typed enums do not need <code>Validate()</code> because
+            they cannot be constructed invalid. The only <code>validate()</code> that should remain
+            is on <code>ListTransactionsRequest</code>, where the invariant (<code
+              >From &lt;= To</code
+            >) genuinely cannot be encoded in the field types.
+          </p>
+        </div>
+
+        <h2 id="roadmap"><span class="num">08</span>Migration Roadmap</h2>
+
+        <p>
+          The roadmap is ordered by <strong>value ÷ risk</strong>. Each step is independently
+          shippable. The project is at <code>v0.2.0</code>; pre-1.0 means breaking changes are
+          acceptable but should still be deliberate.
+        </p>
+
+        <div class="migration-step">
+          <div class="migration-num">1</div>
+          <div class="migration-content">
+            <h4>Type InvestmentState + generic parseEnum helper</h4>
+            <p>
+              <strong>Internal-only, zero API break.</strong> Promote the two constants to
+              <code>type InvestmentState string</code>; introduce <code>parseEnum[T ~string]</code>;
+              refactor <code>parseProfileType</code> and <code>parseBalanceType</code> onto it. Ship
+              as <code>v0.2.1</code>.
+            </p>
+          </div>
+        </div>
+
+        <div class="migration-step">
+          <div class="migration-num">2</div>
+          <div class="migration-content">
+            <h4>Export DetailType for ListTransactionsRequest.Type</h4>
+            <p>
+              <strong>Backward-compatible if done carefully.</strong> Promote the unexported
+              <code>wiseDetail*</code> constants to exported <code>DetailType</code> values; add a
+              <code>type DetailType string</code>. Keep the request field as <code>string</code> for
+              now but document the closed set. Ship as <code>v0.2.2</code>.
+            </p>
+          </div>
+        </div>
+
+        <div class="migration-step">
+          <div class="migration-num">3</div>
+          <div class="migration-content">
+            <h4>Introduce Money and Currency (breaking)</h4>
+            <p>
+              <strong>v0.3.0 — the breaking release.</strong> Add <code>Money</code>,
+              <code>Currency</code>, <code>NewCurrency</code>, <code>NewMoney</code>. Migrate
+              <code>Transaction</code>, <code>TransactionExchange</code>,
+              <code>BalanceResult</code>, and <code>ListTransactionsRequest</code>. Update tests,
+              README, AGENTS.md. This is the centerpiece of the redesign and the change that pays
+              for all the rest.
+            </p>
+          </div>
+        </div>
+
+        <div class="migration-step">
+          <div class="migration-num">4</div>
+          <div class="migration-content">
+            <h4>Normalize enum casing + reconcile dead values</h4>
+            <p>
+              <strong>v0.3.0 (same release as step 3).</strong> Pick one enum-casing rule (suggest
+              lowercase for SDK-facing enums). Either use or remove
+              <code>TransactionTypeUnknown</code>. Add a comment to <code>HasMore</code> explaining
+              it is always false until v1.0 removes it.
+            </p>
+          </div>
+        </div>
+
+        <div class="migration-step">
+          <div class="migration-num">5</div>
+          <div class="migration-content">
+            <h4>v1.0: remove HasMore, lock the contract</h4>
+            <p>
+              <strong>v1.0.</strong> Drop <code>ListTransactionsResponse</code> entirely;
+              <code>ListTransactions</code> returns <code>[]Transaction</code> directly. Document
+              the UTC assumption on <code>Transaction.Date</code>. Freeze the public API.
+            </p>
+          </div>
+        </div>
+
+        <h2>Conclusion</h2>
+
+        <blockquote class="callout callout-solution">
+          The wise-go data model is already disciplined — it gets the hard things right (branded
+          IDs, two-layer split, behavioral errors). What separates it from a model where invalid
+          states are <em>unrepresentable</em> is one missing value object (<code>Money</code>), one
+          missing branded primitive (<code>Currency</code>), and finishing the typed-enum pattern it
+          already started. None of these are speculative refactorings — every one of them removes a
+          class of bug the current model pushes onto the caller.
+        </blockquote>
+
+        <footer class="footer">
+          Generated 2026-07-18 from commit 218c2d3 · Reviewer: Crush data-model-review skill · All
+          findings verified against source
+        </footer>
+      </main>
+    </div>
+
+    <script>
+      (function () {
+        if (!("IntersectionObserver" in window)) return;
+        var nav = document.querySelector("[data-nav]");
+        if (!nav) return;
+        var links = nav.querySelectorAll('a[href^="#"]');
+        var ids = Array.from(links).map(function (l) {
+          return l.getAttribute("href").slice(1);
+        });
+        var sections = ids
+          .map(function (id) {
+            return document.getElementById(id);
+          })
+          .filter(Boolean);
+        if (!sections.length) return;
+        var observer = new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (entry) {
+              if (entry.isIntersecting) {
+                links.forEach(function (link) {
+                  link.classList.toggle(
+                    "active",
+                    link.getAttribute("href") === "#" + entry.target.id,
+                  );
+                });
+              }
+            });
+          },
+          { rootMargin: "-80px 0px -60% 0px", threshold: 0 },
+        );
+        sections.forEach(function (s) {
+          observer.observe(s);
+        });
+      })();
+    </script>
+  </body>
+</html>

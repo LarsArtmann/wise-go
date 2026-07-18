@@ -1,0 +1,133 @@
+direction: down
+
+Wise API (api.wise.com): {
+  shape: cloud
+  style.fill: "#f4d35e"
+}
+
+Caller (Application code): {
+  shape: person
+}
+
+package wise: {
+  style.stroke: "#ffb347"
+  style.stroke-width: 2
+  style.fill: "#18181d"
+
+  Client: {
+    shape: class
+    style.fill: "#ffb347"
+    - apiKey: string
+    - baseURL: string
+    - httpClient: *http.Client
+    - executor: failsafe.Executor
+    + New(key, opts): *Client
+    + Authenticate(ctx): error
+    + Health(ctx): error
+  }
+
+  Resource Methods: {
+    shape: package
+    + ListProfiles(ctx)
+    + ListBalances(ctx, ProfileID)
+    + GetBalance(ctx, ProfileID, BalanceID)
+    + ListTransactions(ctx, req)
+  }
+
+  HTTP Core: {
+    shape: rectangle
+    - getWithQuery
+    - isRetryable
+    - setAuth
+    - checkError
+    - responseCloser
+  }
+
+  Two-Layer Types: {
+    shape: package
+    style.fill: "#0e0e10"
+
+    Raw Wire Types: {
+      shape: package
+      Profile
+      Balance
+      BalanceAmount
+      StatementTransaction
+      TransactionDetails
+      ExchangeDetails
+      ErrorResponse
+    }
+
+    Mapping Functions: {
+      shape: step
+      style.fill: "#6eb5ff"
+      mapProfile
+      mapBalance
+      mapTransaction
+      mapExchange
+    }
+
+    Parsed Result Types: {
+      shape: package
+      ProfileResult
+      BalanceResult
+      Transaction
+      TransactionExchange
+      ListTransactionsRequest
+      ListTransactionsResponse
+    }
+  }
+
+  Branded IDs: {
+    shape: package
+    style.fill: "#0e0e10"
+    ProfileID: "ID[ProfileBrand, int64]"
+    BalanceID: "ID[BalanceBrand, int64]"
+    TransactionID: "ID[TransactionBrand, string]"
+  }
+
+  Domain Errors: {
+    shape: package
+    style.fill: "#0e0e10"
+    APIError (base)
+    RateLimitError (transient)
+    AuthError (rejection)
+    NotFoundError (rejection)
+    ServerError (transient)
+  }
+
+  Helpers: {
+    shape: rectangle
+    parseWiseDate
+    parseRFC3339
+    parseRetryAfter
+    jsonDecode
+    readBody
+  }
+}
+
+External Deps: {
+  shape: package
+  style.stroke: "#6eb5ff"
+  failsafe-go: {shape: stored_data}
+  go-branded-id: {shape: stored_data}
+  go-error-family: {shape: stored_data}
+}
+
+Caller -> Client.New: wise.New(key, opts)
+Caller -> Resource Methods: calls
+Resource Methods -> HTTP Core: c.getWithQuery
+HTTP Core -> Wise API: HTTPS with retry
+Wise API -> HTTP Core: JSON response
+HTTP Core -> Two-Layer Types.Mapping Functions: decode raw -> map*
+Mapping Functions -> Two-Layer Types.Raw Wire Types: consumes
+Mapping Functions -> Two-Layer Types.Parsed Result Types: produces
+Two-Layer Types.Parsed Result Types -> Caller: returns
+Branded IDs -> Two-Layer Types.Parsed Result Types: embedded in
+HTTP Core -> Domain Errors: status -> typed error
+Domain Errors -> Caller: returned (errors.As)
+Client -> External Deps.failsafe-go: retry executor
+Branded IDs -> External Deps.go-branded-id: phantom types
+Domain Errors -> External Deps.go-error-family: interfaces
+Resource Methods -> Branded IDs: accepts + returns
+Helpers -> Two-Layer Types.Mapping Functions: parseWiseDate / parseRFC3339
