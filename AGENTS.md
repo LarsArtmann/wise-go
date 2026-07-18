@@ -4,6 +4,7 @@
 
 - **Dual date formats** — Wise uses RFC3339 for profile/balance timestamps but `"2006-01-02 15:04:05"` for transaction dates. Two different parsers (`parseRFC3339` vs `parseWiseDate`) — use the right one.
 - **AmountCents vs TotalCents** — `Transaction.AmountCents` is absolute value (always positive). `Transaction.TotalCents` preserves sign (negative for debits). Getting this wrong silently produces wrong data.
+- **CARD_PAYMENT vs CARD_REFUND classification** — `CARD_PAYMENT` always maps to `TransactionTypeCard` regardless of amount sign. Only `CARD_REFUND` is amount-dependent (positive → `TransactionTypeRefund`, non-positive → `TransactionTypeCard`). Do not re-group these into one case branch — the README contract requires separate handling.
 - **Balance filtering** — `ListBalances` silently drops `Visible: false` and `InvestmentState != "NOT_INVESTED"` balances. `GetBalance` has no direct API endpoint — it calls `ListBalances` then linear-scans, so it also inherits this filtering. There is no `WithHiddenBalances` option (the old doc comment lied).
 - **`//nolint:bodyclose`** — `getWithQuery` intentionally defers body close via `responseCloser`. The nolint is required because failsafe-go's executor wraps the response. Don't remove it.
 - **Two-layer type design** — Raw API structs (`Profile`, `Balance`, `StatementTransaction` in `types.go`) intentionally use primitives (`int64`/`string`) to match Wise's JSON wire format. The parsed result types (`ProfileResult`, `BalanceResult`, `Transaction`) convert these into strong types (branded IDs, enums, `time.Time`, `int64` cents). Phantom/strong-id linters flag the raw structs as false positives — don't brand the JSON-decode layer.
@@ -11,6 +12,8 @@
 - **No pagination** — Wise returns all transactions in a single response. `HasMore` exists on the response type but is always `false`.
 - **Retry-After header** — `RateLimitError.RetryAfter` is parsed from the HTTP `Retry-After` header (delta-seconds or HTTP-date), falling back to 1 second.
 - **ListTransactions validates before calling the API** — empty currency or `From > To` returns an `errorfamily.Rejection` immediately without a network round-trip.
+- **flake.nix must be git-tracked for buildflow** — The buildflow pre-commit hook runs `nix fmt .` which requires `flake.nix` to be in the git index. If you create or modify `flake.nix`, `git add` it before committing or the pre-commit hook fails.
+- **Transaction.Date is UTC** — Wise statement dates (`"2006-01-02 15:04:05"`) carry no timezone. `parseWiseDate` interprets them as UTC via `time.Parse`. Callers comparing to local-time values must convert explicitly to avoid off-by-one-day errors at boundaries.
 
 ## Conventions
 
@@ -29,4 +32,6 @@
 
 - **Test**: `go test ./...`
 - **Lint**: `golangci-lint run`
-- **Format**: `gofmt -w .`
+- **Format**: `nix fmt` (gofumpt + goimports + nixfmt via treefmt)
+- **Full check**: `nix flake check` (format + sandboxed test via `buildGoModule`)
+- **Dev shell**: `nix develop` (provides go, gopls, golangci-lint, go-tools)

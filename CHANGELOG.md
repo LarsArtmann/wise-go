@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **CARD_PAYMENT classification** — `classifyTransactionType` grouped `CARD_PAYMENT` and `CARD_REFUND` into a single amount-based case, causing positive-amount card payments (e.g. reversed charges) to be silently classified as `TransactionTypeRefund`. Split into two cases: `CARD_PAYMENT` always returns `TransactionTypeCard`; `CARD_REFUND` retains the amount-dependent dispatch.
+- **Branded-ID formatting in error messages** — `ListTransactions` passed `req.ProfileID` and `req.BalanceID` directly to `%d` in two `fmt.Errorf` sites, inconsistent with the `.Get()` pattern used everywhere else. Normalized to `.Get()`.
+
+### Added
+
+- `flake.nix` — reproducible devShells (default + CI), treefmt (gofumpt + goimports + nixfmt), and a sandboxed test check via `buildGoModule`. Use `nix develop`, `nix fmt`, `nix flake check`.
+- `FEATURES.md` — honest feature inventory by status (FULLY_FUNCTIONAL / PARTIALLY_FUNCTIONAL / BROKEN / PLANNED) with code evidence.
+- `TODO_LIST.md` — short-term actionable tasks sorted by priority.
+- `ROADMAP.md` — long-term direction across completeness, type-safety, and scale axes.
+- BDD tests for `ListTransactionsRequest.Type` filter forwarding (previously untested code path).
+- Unit tests for positive-amount `CARD_PAYMENT` classification (regression guard).
+
+### Changed
+
+- Documented UTC timezone assumption on `parseWiseDate` and `Transaction.Date` (Wise sends no timezone; `time.Parse` interprets as UTC).
+- README: added coverage/lint/Go badges, sharpened value proposition, moved project status above the fold, linked to FEATURES.md and ROADMAP.md.
+
 ## [0.2.0] - 2026-07-05
 
 ### Changed
