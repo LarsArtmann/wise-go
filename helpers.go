@@ -20,6 +20,7 @@ func parseEnum[T ~string](table map[string]T, raw string, kind string) (T, error
 	}
 
 	var zero T
+
 	return zero, fmt.Errorf("unknown %s %q", kind, raw)
 }
 

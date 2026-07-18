@@ -27,6 +27,7 @@ func TestParseRetryAfter(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			got := parseRetryAfter(tt.value)
 			if got != tt.want {
 				t.Errorf("parseRetryAfter(%q) = %v, want %v", tt.value, got, tt.want)
@@ -79,6 +80,7 @@ func TestClassifyTransactionType(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			got := classifyTransactionType(tt.wiseType, tt.amount)
 			if got != tt.want {
 				t.Errorf("classifyTransactionType(%q, %v) = %v, want %v",
@@ -106,6 +108,7 @@ func TestBalanceAmountCents(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			got := BalanceAmount{Value: tt.value}.Cents()
 			if got != tt.want {
 				t.Errorf("Cents() = %d, want %d", got, tt.want)
@@ -214,6 +217,7 @@ func TestNewAPIErrorRetryAfter(t *testing.T) {
 	t.Parallel()
 
 	err := newAPIError(http.StatusTooManyRequests, "{}", 42*time.Second)
+
 	var rle *RateLimitError
 	if !errors.As(err, &rle) {
 		t.Fatalf("expected *RateLimitError, got %T", err)
@@ -246,6 +250,7 @@ func TestWithHTTPClient(t *testing.T) {
 	t.Parallel()
 
 	custom := &http.Client{Timeout: 7 * time.Second}
+
 	c := New("key", WithHTTPClient(custom))
 	if c.httpClient != custom {
 		t.Error("WithHTTPClient did not set the custom client")

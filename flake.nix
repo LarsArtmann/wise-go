@@ -57,6 +57,7 @@
             ];
             GOWORK = "off";
             GOPRIVATE = "github.com/larsartmann";
+            GOEXPERIMENT = "jsonv2";
           };
 
           # Minimal CI shell. Same tools, no extras, deterministic.
@@ -67,6 +68,7 @@
             ];
             GOWORK = "off";
             GOPRIVATE = "github.com/larsartmann";
+            GOEXPERIMENT = "jsonv2";
           };
 
           # `nix fmt`
@@ -104,11 +106,11 @@
                   ./wise_test.go
                 ];
               };
-              vendorHash = "sha256-nrd770ZIYNl+b6pfFWJqBmeWgpgPLge92eVKYcTT2/0=";
+              vendorHash = "sha256-nzVrM3mDSBHsvcBSguEeTInA2xzjvOk/cQk7/ck+SSM=";
               doCheck = true;
               checkPhase = ''
                 runHook preCheck
-                go test -race -coverprofile=coverage.out -covermode=atomic ./...
+                GOEXPERIMENT=jsonv2 go test -race -coverprofile=coverage.out -covermode=atomic ./...
                 runHook postCheck
               '';
               installPhase = ''

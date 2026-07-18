@@ -50,6 +50,7 @@ func (e *APIError) ErrorContext() map[string]string {
 // RateLimitError is returned when the Wise API returns HTTP 429.
 type RateLimitError struct {
 	APIError
+
 	RetryAfter time.Duration
 }
 
@@ -111,6 +112,7 @@ func newAPIError(statusCode int, body string, retryAfter time.Duration) error {
 	errResp := parseErrorResponse(body)
 
 	msg := body
+
 	if errResp != nil && len(errResp.Errors) > 0 {
 		msgs := make([]string, len(errResp.Errors))
 		for i, e := range errResp.Errors {

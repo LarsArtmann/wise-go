@@ -216,6 +216,7 @@ var _ = Describe("Wise Client", func() {
 							Email:        "billing@acme.com", CreatedAt: "2023-02-20T14:00:00Z",
 						},
 					}
+
 					w.Header().Set("Content-Type", "application/json")
 					_ = json.NewEncoder(w).Encode(profiles)
 				})
@@ -271,6 +272,7 @@ var _ = Describe("Wise Client", func() {
 					profiles := []wise.Profile{
 						{ID: 1, Type: "UNKNOWN_TYPE", CreatedAt: "2023-01-15T10:30:00Z"},
 					}
+
 					w.Header().Set("Content-Type", "application/json")
 					_ = json.NewEncoder(w).Encode(profiles)
 				})
@@ -310,6 +312,7 @@ var _ = Describe("Wise Client", func() {
 								"2023-01-02T00:00:00Z",
 							),
 						}
+
 						w.Header().Set("Content-Type", "application/json")
 						_ = json.NewEncoder(w).Encode(balances)
 					},
@@ -378,6 +381,7 @@ var _ = Describe("Wise Client", func() {
 								"2023-01-01T00:00:00Z",
 							),
 						}
+
 						w.Header().Set("Content-Type", "application/json")
 						_ = json.NewEncoder(w).Encode(balances)
 					},
@@ -431,6 +435,7 @@ var _ = Describe("Wise Client", func() {
 							"2023-01-01T00:00:00Z",
 						),
 					}
+
 					w.Header().Set("Content-Type", "application/json")
 					_ = json.NewEncoder(w).Encode(balances)
 				},
@@ -576,6 +581,7 @@ var _ = Describe("Wise Client", func() {
 								testTx("tx-payment", "PAYMENT", -200.00),
 							},
 						}
+
 						w.Header().Set("Content-Type", "application/json")
 						_ = json.NewEncoder(w).Encode(response)
 					},
@@ -658,6 +664,7 @@ var _ = Describe("Wise Client", func() {
 								},
 							},
 						}
+
 						w.Header().Set("Content-Type", "application/json")
 						_ = json.NewEncoder(w).Encode(response)
 					},
@@ -705,6 +712,7 @@ var _ = Describe("Wise Client", func() {
 								},
 							},
 						}
+
 						w.Header().Set("Content-Type", "application/json")
 						_ = json.NewEncoder(w).Encode(response)
 					},
@@ -727,6 +735,7 @@ var _ = Describe("Wise Client", func() {
 
 			BeforeEach(func() {
 				capturedRequest = nil
+
 				mux.HandleFunc(
 					"/v1/profiles/12345/balance-statements/100/statement.json",
 					func(w http.ResponseWriter, r *http.Request) {
@@ -736,6 +745,7 @@ var _ = Describe("Wise Client", func() {
 								testTx("tx-filtered", "CARD_PAYMENT", -10.00),
 							},
 						}
+
 						w.Header().Set("Content-Type", "application/json")
 						_ = json.NewEncoder(w).Encode(response)
 					},
@@ -787,6 +797,7 @@ var _ = Describe("Wise Client", func() {
 
 			BeforeEach(func() {
 				callCount = 0
+
 				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {
 					callCount++
 					if callCount <= 3 {
@@ -795,14 +806,17 @@ var _ = Describe("Wise Client", func() {
 						_, _ = w.Write([]byte(
 							`{"errors":[{"code":"RATE_LIMITED","message":"Too many requests"}]}`,
 						))
+
 						return
 					}
+
 					profiles := []wise.Profile{
 						{
 							ID: 1, Type: "PERSONAL", FirstName: "Test", LastName: "User",
 							Email: "test@test.com", CreatedAt: "2023-01-01T00:00:00Z",
 						},
 					}
+
 					w.Header().Set("Content-Type", "application/json")
 					_ = json.NewEncoder(w).Encode(profiles)
 				})

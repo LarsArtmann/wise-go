@@ -135,6 +135,7 @@ func (c *Client) getWithQuery(
 	target any,
 ) error {
 	fullURL := c.baseURL + path
+
 	if query != nil {
 		if q := query(); q != "" {
 			fullURL += "?" + q
