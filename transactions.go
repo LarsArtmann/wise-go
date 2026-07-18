@@ -41,7 +41,7 @@ func (c *Client) ListTransactions(
 	err := c.getWithQuery(ctx, path, query, &statement)
 	if err != nil {
 		return nil, fmt.Errorf("list transactions for profileID=%d balanceID=%d currency=%s: %w",
-			req.ProfileID, req.BalanceID, req.Currency, err)
+			req.ProfileID.Get(), req.BalanceID.Get(), req.Currency, err)
 	}
 
 	transactions := make([]Transaction, len(statement.Transactions))
@@ -145,9 +145,15 @@ const (
 )
 
 // classifyTransactionType maps Wise detail types to SDK transaction types.
+// CARD_PAYMENT is always a card transaction (typically a debit, but the type
+// does not change with sign). CARD_REFUND is amount-dependent: positive amounts
+// are classified as refunds, non-positive fall back to card. See README for the
+// full contract.
 func classifyTransactionType(wiseType string, amount float64) TransactionType {
 	switch wiseType {
-	case wiseDetailCardPayment, wiseDetailCardRefund:
+	case wiseDetailCardPayment:
+		return TransactionTypeCard
+	case wiseDetailCardRefund:
 		if amount > 0 {
 			return TransactionTypeRefund
 		}

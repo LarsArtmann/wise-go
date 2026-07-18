@@ -41,6 +41,10 @@ func parseRetryAfter(value string) time.Duration {
 	return defaultRetryAfter
 }
 
+// parseWiseDate parses a Wise statement date string of the form "2006-01-02 15:04:05".
+// Wise does not transmit a timezone; time.Parse interprets these values as UTC.
+// Callers comparing the resulting time.Time to a local-time value must convert
+// explicitly to avoid silent off-by-one-day errors at boundaries.
 func parseWiseDate(s string) (time.Time, error) {
 	t, err := time.Parse("2006-01-02 15:04:05", s)
 	if err != nil {

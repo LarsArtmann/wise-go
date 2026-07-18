@@ -722,6 +722,45 @@ var _ = Describe("Wise Client", func() {
 			})
 		})
 
+		Context("with a type filter on the request", func() {
+			var capturedRequest *http.Request
+
+			BeforeEach(func() {
+				capturedRequest = nil
+				mux.HandleFunc(
+					"/v1/profiles/12345/balance-statements/100/statement.json",
+					func(w http.ResponseWriter, r *http.Request) {
+						capturedRequest = r
+						response := wise.StatementResponse{
+							Transactions: []wise.StatementTransaction{
+								testTx("tx-filtered", "CARD_PAYMENT", -10.00),
+							},
+						}
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.NewEncoder(w).Encode(response)
+					},
+				)
+			})
+
+			It("should forward the type filter in the query string", func() {
+				req := defaultListTxReq
+				req.Type = "CARD_PAYMENT"
+
+				_, err := client.ListTransactions(context.Background(), req)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(capturedRequest).ToNot(BeNil())
+				Expect(capturedRequest.URL.Query().Get("type")).To(Equal("CARD_PAYMENT"))
+			})
+
+			It("should omit the type filter when unset", func() {
+				_, err := client.ListTransactions(context.Background(), defaultListTxReq)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(capturedRequest).ToNot(BeNil())
+				_, hasType := capturedRequest.URL.Query()["type"]
+				Expect(hasType).To(BeFalse())
+			})
+		})
+
 		Context("with invalid request", func() {
 			It("should reject missing currency", func() {
 				req := defaultListTxReq

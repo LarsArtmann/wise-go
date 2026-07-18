@@ -57,6 +57,13 @@ func TestClassifyTransactionType(t *testing.T) {
 		want     TransactionType
 	}{
 		{name: "card payment debit", wiseType: "CARD_PAYMENT", amount: -10, want: TransactionTypeCard},
+		{
+			name:     "card payment credit still card (not refund)",
+			wiseType: "CARD_PAYMENT",
+			amount:   25,
+			want:     TransactionTypeCard,
+		},
+		{name: "card payment zero still card", wiseType: "CARD_PAYMENT", amount: 0, want: TransactionTypeCard},
 		{name: "card refund positive", wiseType: "CARD_REFUND", amount: 25, want: TransactionTypeRefund},
 		{name: "card refund zero", wiseType: "CARD_REFUND", amount: 0, want: TransactionTypeCard},
 		{name: "transfer", wiseType: "TRANSFER", amount: 100, want: TransactionTypeTransfer},

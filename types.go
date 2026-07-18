@@ -139,6 +139,10 @@ type BalanceResult struct {
 
 // Transaction is the parsed representation of a Wise transaction.
 // All monetary amounts are in cents (int64) for precision-safe arithmetic.
+//
+// Date is returned in UTC. Wise statement dates carry no timezone; the SDK
+// interprets them as UTC via time.Parse. Convert explicitly before comparing
+// against local-time values.
 type Transaction struct {
 	ID                     TransactionID
 	ProfileID              ProfileID
