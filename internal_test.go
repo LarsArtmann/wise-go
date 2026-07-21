@@ -218,8 +218,8 @@ func TestNewAPIErrorRetryAfter(t *testing.T) {
 
 	err := newAPIError(http.StatusTooManyRequests, "{}", 42*time.Second)
 
-	var rle *RateLimitError
-	if !errors.As(err, &rle) {
+	rle, ok := errors.AsType[*RateLimitError](err)
+	if !ok {
 		t.Fatalf("expected *RateLimitError, got %T", err)
 	}
 

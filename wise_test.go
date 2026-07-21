@@ -185,8 +185,8 @@ var _ = Describe("Wise Client", func() {
 				err := client.Authenticate(context.Background())
 				Expect(err).To(HaveOccurred())
 
-				var authErr *wise.AuthError
-				Expect(errors.As(err, &authErr)).To(BeTrue())
+				_, ok := errors.AsType[*wise.AuthError](err)
+				Expect(ok).To(BeTrue())
 			})
 		})
 	})
@@ -632,8 +632,8 @@ var _ = Describe("Wise Client", func() {
 				_, err := client.ListTransactions(context.Background(), defaultListTxReq)
 				Expect(err).To(HaveOccurred())
 
-				var notFoundErr *wise.NotFoundError
-				Expect(errors.As(err, &notFoundErr)).To(BeTrue())
+				_, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue())
 			})
 		})
 
