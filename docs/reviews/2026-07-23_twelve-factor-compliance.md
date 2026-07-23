@@ -13,13 +13,13 @@ Within the factors that fit a reusable SDK, the project is strong: it is version
 
 ### Overall result
 
-| Dimension | Result | Interpretation |
-|---|---:|---|
-| Applicable factors | **5 strong, 2 partial** | Good library-level compliance for code, dependencies, resources, statelessness, and dev parity |
-| Not applicable to this repository | **5 factors** | This repo does not own a server process, deployment runtime, logging pipeline, or admin process |
-| Recommended priority | **P1: release/CI evidence; P2: consumer configuration guidance** | Improve the operational contract without turning the SDK into an application framework |
+| Dimension                         |                                                           Result | Interpretation                                                                                  |
+| --------------------------------- | ---------------------------------------------------------------: | ----------------------------------------------------------------------------------------------- |
+| Applicable factors                |                                          **5 strong, 2 partial** | Good library-level compliance for code, dependencies, resources, statelessness, and dev parity  |
+| Not applicable to this repository |                                                    **5 factors** | This repo does not own a server process, deployment runtime, logging pipeline, or admin process |
+| Recommended priority              | **P1: release/CI evidence; P2: consumer configuration guidance** | Improve the operational contract without turning the SDK into an application framework          |
 
-**Bottom line:** The project is **well aligned with the spirit of Twelve-Factor where the methodology applies**, but it cannot be called a Twelve-Factor *app* because it does not itself run an application process. It is best described as a Twelve-Factor-friendly client library.
+**Bottom line:** The project is **well aligned with the spirit of Twelve-Factor where the methodology applies**, but it cannot be called a Twelve-Factor _app_ because it does not itself run an application process. It is best described as a Twelve-Factor-friendly client library.
 
 ## Assessment model
 
