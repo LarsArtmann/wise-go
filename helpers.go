@@ -1,7 +1,7 @@
 package wise
 
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"fmt"
 	"io"
 	"net/http"
@@ -25,7 +25,7 @@ func parseEnum[T ~string](table map[string]T, raw string, kind string) (T, error
 }
 
 func jsonDecode(resp *http.Response, target any) error {
-	return json.NewDecoder(resp.Body).Decode(target)
+	return json.UnmarshalRead(resp.Body, target)
 }
 
 func readBody(resp *http.Response) (string, error) {

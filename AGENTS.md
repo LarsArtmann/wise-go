@@ -13,7 +13,7 @@
 - **Retry-After header** — `RateLimitError.RetryAfter` is parsed from the HTTP `Retry-After` header (delta-seconds or HTTP-date), falling back to 1 second.
 - **ListTransactions validates before calling the API** — empty currency or `From > To` returns an `errorfamily.Rejection` immediately without a network round-trip.
 - **flake.nix must be git-tracked for buildflow** — The buildflow pre-commit hook runs `nix fmt .` which requires `flake.nix` to be in the git index. If you create or modify `flake.nix`, `git add` it before committing or the pre-commit hook fails.
-- **GOEXPERIMENT=jsonv2 required** — As of go-branded-id v0.3.2 and go-error-family v0.7.0, both deps import `encoding/json/v2` which requires `GOEXPERIMENT=jsonv2` to build. Set this env var in your shell (`export GOEXPERIMENT=jsonv2`) or use `nix develop` which sets it automatically. The flake devShells, buildGoModule checkPhase, and .golangci.yml build-tags are all configured for this.
+- **GOEXPERIMENT=jsonv2 required** — As of go-branded-id v0.3.2 and go-error-family v0.7.0, both deps import `encoding/json/v2` which requires `GOEXPERIMENT=jsonv2` to build. The flake devShells, buildGoModule checkPhase, and .golangci.yml build-tags are all configured for this. For buildflow: `.buildflow.yml` has an `env:` key that injects `GOEXPERIMENT: jsonv2` into all tool subprocesses (go-fix, test-race, govalid-generate, golangci-lint). `go env -w GOEXPERIMENT=jsonv2` does NOT work here — Nix home-manager symlinks `~/.config/go/env` into the read-only store.
 - **Transaction.Date is UTC** — Wise statement dates (`"2006-01-02 15:04:05"`) carry no timezone. `parseWiseDate` interprets them as UTC via `time.Parse`. Callers comparing to local-time values must convert explicitly to avoid off-by-one-day errors at boundaries.
 - **buildflow auto-configure is dangerous** — `buildflow --fix` can add 40+ linters (including irrelevant ones like `arangolint`, `clickhouselint`, `depguard`) that produce false positives. If buildflow modifies `.golangci.yml`, review the diff carefully. The project's curated linter list is intentional; do not let buildflow replace it with a generic "enable everything" config.
 
@@ -26,8 +26,8 @@
 
 ## Dependencies
 
-- **`go-branded-id v0.3.1`** — branded/phantom types for strongly-typed IDs (ProfileID, BalanceID, TransactionID) that prevent mixing different entity IDs at compile time.
-- **`go-error-family v0.6.0`** — behavioral error classification with retry decisions, exit codes, and CLI boundary handling. All domain errors implement its interfaces.
+- **`go-branded-id v0.3.2`** — branded/phantom types for strongly-typed IDs (ProfileID, BalanceID, TransactionID) that prevent mixing different entity IDs at compile time. v0.3.2 imports `encoding/json/v2` (requires `GOEXPERIMENT=jsonv2`).
+- **`go-error-family v0.7.0`** — behavioral error classification with retry decisions, exit codes, and CLI boundary handling. All domain errors implement its interfaces. v0.7.0 imports `encoding/json/v2` (requires `GOEXPERIMENT=jsonv2`).
 - **`failsafe-go v0.9.6`** — retry with exponential backoff. `isRetryable` func decides what gets retried (429, 5xx, network errors).
 
 ## Build & Dev

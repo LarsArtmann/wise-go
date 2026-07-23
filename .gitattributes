@@ -3,3 +3,5 @@
 reports/** linguist-generated
 # Exclude from language statistics
 docs/status/*.md linguist-documentation
+# Enforce consistent line endings across all platforms
+* text=auto eol=lf

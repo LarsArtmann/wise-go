@@ -2,7 +2,7 @@ package wise_test
 
 import (
 	"context"
-	"encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -164,7 +164,7 @@ var _ = Describe("Wise Client", func() {
 				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, r *http.Request) {
 					Expect(r.Header.Get("Authorization")).To(Equal("Bearer test-api-key"))
 					w.Header().Set("Content-Type", "application/json")
-					_ = json.NewEncoder(w).Encode(
+					_ = json.MarshalWrite(w,
 						testProfiles(12345, "John", "Doe", "john@example.com"),
 					)
 				})
@@ -218,7 +218,7 @@ var _ = Describe("Wise Client", func() {
 					}
 
 					w.Header().Set("Content-Type", "application/json")
-					_ = json.NewEncoder(w).Encode(profiles)
+					_ = json.MarshalWrite(w, profiles)
 				})
 			})
 
@@ -274,7 +274,7 @@ var _ = Describe("Wise Client", func() {
 					}
 
 					w.Header().Set("Content-Type", "application/json")
-					_ = json.NewEncoder(w).Encode(profiles)
+					_ = json.MarshalWrite(w, profiles)
 				})
 			})
 
@@ -314,7 +314,7 @@ var _ = Describe("Wise Client", func() {
 						}
 
 						w.Header().Set("Content-Type", "application/json")
-						_ = json.NewEncoder(w).Encode(balances)
+						_ = json.MarshalWrite(w, balances)
 					},
 				)
 			})
@@ -383,7 +383,7 @@ var _ = Describe("Wise Client", func() {
 						}
 
 						w.Header().Set("Content-Type", "application/json")
-						_ = json.NewEncoder(w).Encode(balances)
+						_ = json.MarshalWrite(w, balances)
 					},
 				)
 			})
@@ -437,7 +437,7 @@ var _ = Describe("Wise Client", func() {
 					}
 
 					w.Header().Set("Content-Type", "application/json")
-					_ = json.NewEncoder(w).Encode(balances)
+					_ = json.MarshalWrite(w, balances)
 				},
 			)
 		})
@@ -510,7 +510,7 @@ var _ = Describe("Wise Client", func() {
 						}
 
 						w.Header().Set("Content-Type", "application/json")
-						_ = json.NewEncoder(w).Encode(response)
+						_ = json.MarshalWrite(w, response)
 					},
 				)
 			})
@@ -583,7 +583,7 @@ var _ = Describe("Wise Client", func() {
 						}
 
 						w.Header().Set("Content-Type", "application/json")
-						_ = json.NewEncoder(w).Encode(response)
+						_ = json.MarshalWrite(w, response)
 					},
 				)
 			})
@@ -666,7 +666,7 @@ var _ = Describe("Wise Client", func() {
 						}
 
 						w.Header().Set("Content-Type", "application/json")
-						_ = json.NewEncoder(w).Encode(response)
+						_ = json.MarshalWrite(w, response)
 					},
 				)
 			})
@@ -714,7 +714,7 @@ var _ = Describe("Wise Client", func() {
 						}
 
 						w.Header().Set("Content-Type", "application/json")
-						_ = json.NewEncoder(w).Encode(response)
+						_ = json.MarshalWrite(w, response)
 					},
 				)
 			})
@@ -747,7 +747,7 @@ var _ = Describe("Wise Client", func() {
 						}
 
 						w.Header().Set("Content-Type", "application/json")
-						_ = json.NewEncoder(w).Encode(response)
+						_ = json.MarshalWrite(w, response)
 					},
 				)
 			})
@@ -818,7 +818,7 @@ var _ = Describe("Wise Client", func() {
 					}
 
 					w.Header().Set("Content-Type", "application/json")
-					_ = json.NewEncoder(w).Encode(profiles)
+					_ = json.MarshalWrite(w, profiles)
 				})
 			})
 
