@@ -164,7 +164,8 @@ var _ = Describe("Wise Client", func() {
 				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, r *http.Request) {
 					Expect(r.Header.Get("Authorization")).To(Equal("Bearer test-api-key"))
 					w.Header().Set("Content-Type", "application/json")
-					_ = json.MarshalWrite(w,
+					_ = json.MarshalWrite(
+						w,
 						testProfiles(12345, "John", "Doe", "john@example.com"),
 					)
 				})
