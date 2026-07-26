@@ -1,6 +1,6 @@
 module github.com/larsartmann/wise-go
 
-go 1.26.5
+go 1.26.4
 
 require (
 	github.com/failsafe-go/failsafe-go v0.9.6
