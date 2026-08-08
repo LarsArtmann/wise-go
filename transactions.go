@@ -44,8 +44,8 @@ func (c *Client) ListTransactions(
 			req.ProfileID.Get(), req.BalanceID.Get(), req.Currency, err)
 	}
 
-	transactions := make([]Transaction, len(statement.Transactions))
-	for i, t := range statement.Transactions {
+	transactions := make([]Transaction, 0, len(statement.Transactions))
+	for _, t := range statement.Transactions {
 		tx, mapErr := mapTransaction(t, req.ProfileID, req.BalanceID, req.Currency)
 		if mapErr != nil {
 			return nil, fmt.Errorf(
@@ -58,7 +58,7 @@ func (c *Client) ListTransactions(
 			)
 		}
 
-		transactions[i] = tx
+		transactions = append(transactions, tx)
 	}
 
 	return &ListTransactionsResponse{

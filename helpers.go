@@ -21,6 +21,7 @@ func parseEnum[T ~string](table map[string]T, raw string, kind string) (T, error
 
 	var zero T
 
+	//nolint:err113 // generic enum parser needs a dynamic error message
 	return zero, fmt.Errorf("unknown %s %q", kind, raw)
 }
 

@@ -133,6 +133,9 @@ linters:
           allow:
             - $gostd
             - $module
+            - github.com/failsafe-go
+            - github.com/larsartmann
+            - github.com/onsi
     dupl:
       threshold: 100
     exhaustruct:
@@ -179,6 +182,13 @@ linters:
         - a
         - b
         - v
+        - w
+        - r
+        - p
+        - id
+        - tx
+        - ed
+        - rc
       ignore-type-assert-ok: true
   exclusions:
     generated: lax

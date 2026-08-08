@@ -22,7 +22,7 @@ const (
 // Inject a custom implementation via WithHTTPClient for testing or middleware
 // (tracing, logging, retries at the transport layer).
 type Doer interface {
-	Do(*http.Request) (*http.Response, error)
+	Do(req *http.Request) (*http.Response, error)
 }
 
 // Client is the Wise API client.

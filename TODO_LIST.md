@@ -14,14 +14,14 @@ see [ROADMAP.md](ROADMAP.md). For shipped features see [FEATURES.md](FEATURES.md
 
 These are small, non-breaking, high-value cleanups identified in the 2026-07-18 review pass.
 
-- [ ] **Type `InvestmentState`** — promote bare `string` constants at `types.go:192` to
+- [x] **Type `InvestmentState`** — promote bare `string` constants at `types.go:192` to
       `type InvestmentState string`; update filter at `balances.go:28`. Zero API break
       for typical callers. (data-model review Step 1)
-- [ ] **Export `DetailType` constants** — promote the unexported `wiseDetail*` constants
+- [x] **Export `DetailType` constants** — promote the unexported `wiseDetail*` constants
       in `transactions.go:137-145` so callers of `ListTransactionsRequest.Type` can
       discover the valid set without reading the README. Keep the field as `string` for
       backward compat. (data-model review Step 2)
-- [ ] **Accept `Doer` interface in `WithHTTPClient`** — change `options.go:58` and
+- [x] **Accept `Doer` interface in `WithHTTPClient`** — change `options.go:58` and
       `client.go:25` from `*http.Client` to an unexported `doer interface{ Do(...) }`.
       `*http.Client` satisfies it implicitly. (architecture review Step 3)
 - [ ] **Verify full `nix flake check`** — run the test + lint derivations end-to-end
@@ -66,7 +66,14 @@ These are coordinated breaking changes; ship together.
 - [ ] **Document UTC assumption on `Transaction.Date`** — already added as a field
       comment on 2026-07-18; mirror in README's transaction section if/when it grows.
 
-## Done (2026-07-18)
+## Done
+
+### 2026-08-08
+
+- [x] Fix depguard config — allow failsafe-go, go-branded-id, go-error-family, onsi in `.golangci.yml`
+- [x] Fix remaining lint issues (varnamelen, makezero, mnd, inamedparam, err113) — 0 issues
+
+### 2026-07-18
 
 - [x] Fix `CARD_PAYMENT` with positive amount being misclassified as `TransactionTypeRefund`
 - [x] Normalize `%d` branded-ID formatting in `transactions.go` error paths (`.Get()` pattern)

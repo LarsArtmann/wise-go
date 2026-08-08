@@ -16,14 +16,14 @@ func (c *Client) ListProfiles(ctx context.Context) ([]ProfileResult, error) {
 		return nil, fmt.Errorf("list profiles: %w", err)
 	}
 
-	results := make([]ProfileResult, len(profiles))
-	for i, p := range profiles {
+	results := make([]ProfileResult, 0, len(profiles))
+	for _, p := range profiles {
 		result, mapErr := mapProfile(p)
 		if mapErr != nil {
 			return nil, fmt.Errorf("map profile %d: %w", p.ID, mapErr)
 		}
 
-		results[i] = result
+		results = append(results, result)
 	}
 
 	return results, nil

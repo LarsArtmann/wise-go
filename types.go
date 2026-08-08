@@ -57,10 +57,12 @@ type BalanceAmount struct {
 	Currency string  `json:"currency"`
 }
 
+const centsPerUnit = 100
+
 // Cents converts a BalanceAmount to int64 minor units (cents).
 // Uses math.Round to handle IEEE 754 floating-point representation errors.
 func (a BalanceAmount) Cents() int64 {
-	return int64(math.Round(a.Value * 100))
+	return int64(math.Round(a.Value * centsPerUnit))
 }
 
 // StatementResponse from balance-statements endpoint.

@@ -114,9 +114,9 @@ func newAPIError(statusCode int, body string, retryAfter time.Duration) error {
 	msg := body
 
 	if errResp != nil && len(errResp.Errors) > 0 {
-		msgs := make([]string, len(errResp.Errors))
-		for i, e := range errResp.Errors {
-			msgs[i] = fmt.Sprintf("%s: %s", e.Code, e.Message)
+		msgs := make([]string, 0, len(errResp.Errors))
+		for _, e := range errResp.Errors {
+			msgs = append(msgs, fmt.Sprintf("%s: %s", e.Code, e.Message))
 		}
 
 		msg = strings.Join(msgs, "; ")
@@ -138,7 +138,7 @@ func newAPIError(statusCode int, body string, retryAfter time.Duration) error {
 		return &AuthError{APIError: base}
 	case statusCode == http.StatusNotFound:
 		return &NotFoundError{APIError: base}
-	case statusCode >= 500:
+	case statusCode >= http.StatusInternalServerError:
 		return &ServerError{APIError: base}
 	default:
 		return &base

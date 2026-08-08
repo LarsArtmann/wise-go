@@ -2,7 +2,7 @@
 # See: https://github.com/larsartmann/buildflow
 
 # Environment variables injected into all tool subprocesses.
-# Required: go-branded-id v0.3.2 + go-error-family v0.7.0 import encoding/json/v2.
+# Required: go-branded-id v0.5.1 + go-error-family v0.10.0 import encoding/json/v2.
 env:
   GOEXPERIMENT: jsonv2
 
