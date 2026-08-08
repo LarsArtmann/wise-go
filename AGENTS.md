@@ -26,6 +26,7 @@
 - **Error families** — `APIError`/`AuthError`/`NotFoundError` → Rejection (not retryable). `RateLimitError`/`ServerError` → Transient (retryable).
 - **Every error type has its own `ErrorCode()`** — `wise.api_error`, `wise.rate_limit`, `wise.auth`, `wise.not_found`, `wise.server`.
 - **`Money` is a value object, NOT a math library** — `Money{Cents, Currency}` exists to pair cents with currency at the serialization boundary so mismatched amounts are unrepresentable. It deliberately has no `Add`/`Sub`/`IsZero`/`IsNegative`/`Equal` methods. The SDK is an anti-corruption layer: call the API, parse responses, return typed data. Financial arithmetic is the consumer's domain logic, not the SDK's job.
+- **`DetailType` typed enum** — `ListTransactionsRequest.Type` is `DetailType` (not `string`) as of v0.5.0. The `DetailType*` constants (`DetailTypeCardPayment`, etc.) are typed values. Use `req.Type = wise.DetailTypeCardPayment` instead of `req.Type = "CARD_PAYMENT"`.
 
 ## Dependencies
 
