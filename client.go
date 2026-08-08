@@ -149,7 +149,7 @@ func (c *Client) getWithQuery(
 		GetWithExecution(func(exec failsafe.Execution[*http.Response]) (*http.Response, error) {
 			req, reqErr := http.NewRequestWithContext(exec.Context(), http.MethodGet, fullURL, nil)
 			if reqErr != nil {
-				return nil, fmt.Errorf("create request: %w", reqErr)
+				return nil, fmt.Errorf("create request for %s: %w", fullURL, reqErr)
 			}
 
 			c.setHeaders(req)
@@ -157,19 +157,19 @@ func (c *Client) getWithQuery(
 			return c.httpClient.Do(req)
 		})
 	if err != nil {
-		return fmt.Errorf("request failed: %w", err)
+		return fmt.Errorf("request to %s failed: %w", fullURL, err)
 	}
 
 	rc := &responseCloser{resp: resp}
 	defer rc.close()
 
 	if err := c.checkError(resp); err != nil {
-		return err
+		return fmt.Errorf("request to %s: %w", fullURL, err)
 	}
 
 	if target != nil {
 		if err := jsonDecode(resp, target); err != nil {
-			return errorfamily.WrapCorruption(err, "wise.response.decode", "decode response")
+			return errorfamily.WrapCorruption(err, "wise.response.decode", fmt.Sprintf("decode response from %s", fullURL))
 		}
 	}
 
