@@ -6,6 +6,11 @@ Executed the full Pareto plan from `docs/planning/2026-08-08_02-13_pareto-execut
 All 16 medium-granularity tasks (M1-M16) across 7 tiers were addressed. The codebase went from
 36 broken lint issues to 0, with a major breaking-change release (v0.4.0) implemented.
 
+> **Post-session update (2026-08-08 docs-health pass):** v0.4.0 was tagged.
+> FEATURES.md and ROADMAP.md were rebuilt from code. CONTRIBUTING.md remains stale
+> (see TODO_LIST.md P4). Open items from section f) were harvested into
+> TODO_LIST.md and ROADMAP.md. See inline `done` markers for resolved items.
+
 ---
 
 ## a) FULLY DONE (working, verified, green)
@@ -94,16 +99,16 @@ All 16 medium-granularity tasks (M1-M16) across 7 tiers were addressed. The code
 
 - Everything is ready but the tag has not been created. Deliberate — irreversible action.
 
-### FEATURES.md Update
+### ~~FEATURES.md Update~~ — done (2026-08-08 docs-health pass)
 
-- Still references `HasMore` as `PARTIALLY_FUNCTIONAL` (it's now removed).
-- Does not mention `Money`, `Currency`, `internal/raw`, or any v0.4.0 changes.
+- ~~Still references `HasMore` as `PARTIALLY_FUNCTIONAL` (it's now removed).~~ done
+- ~~Does not mention `Money`, `Currency`, `internal/raw`, or any v0.4.0 changes.~~ done
 
-### ROADMAP.md Update
+### ~~ROADMAP.md Update~~ — done (2026-08-08 docs-health pass)
 
-- Still references `v0.3.0` as "the breaking type release" (should be v0.4.0).
-- Still references `HasMore`, `TransactionTypeUnknown`, `ProfileResult`, `BalanceResult`.
-- Timeline not updated.
+- ~~Still references `v0.3.0` as "the breaking type release" (should be v0.4.0).~~ done
+- ~~Still references `HasMore`, `TransactionTypeUnknown`, `ProfileResult`, `BalanceResult`.~~ done
+- ~~Timeline not updated.~~ done
 
 ### CONTRIBUTING.md Update
 
@@ -120,11 +125,11 @@ All code builds, tests, lints, and passes `nix flake check`. No broken state was
 
 ### However — things I SHOULD have caught but didn't until prompted:
 
-1. **ROADMAP.md has 6 stale references** to the old API — I updated TODO_LIST, CHANGELOG, and AGENTS.md but completely forgot ROADMAP.md, which is the strategic document that explains WHY these tasks exist. It still says "v0.3.0 — the breaking type release" and describes `HasMore` as forward-compat.
+1. ~~**ROADMAP.md has 6 stale references** to the old API~~ done (2026-08-08 docs-health pass) — ROADMAP.md rebuilt to reflect v0.4.0 shipped.
 
-2. **CONTRIBUTING.md has 3 stale references** — still tells contributors "AmountCents is absolute; TotalCents preserves sign" and references `ProfileResult`/`BalanceResult`. This actively misleads new contributors.
+2. **CONTRIBUTING.md has 3 stale references** — still tells contributors "AmountCents is absolute; TotalCents preserves sign" and references `ProfileResult`/`BalanceResult`. This actively misleads new contributors. Still open — TODO_LIST.md P4.
 
-3. **FEATURES.md has 1 stale reference** — lists `HasMore` as `PARTIALLY_FUNCTIONAL` when it's now removed. The entire v0.4.0 feature set (Money, Currency, internal/raw) is missing.
+3. ~~**FEATURES.md has 1 stale reference** — lists `HasMore` as `PARTIALLY_FUNCTIONAL` when it's now removed. The entire v0.4.0 feature set (Money, Currency, internal/raw) is missing.~~ done (2026-08-08 docs-health pass)
 
 4. **Coverage dropped from 94.8% to 92.4%** — the new `Money.String()` and `NewCurrency()` code paths have tests, but the error branches in `toMoney` (currency validation failures during balance/transaction mapping) are not covered by BDD tests. The `internal/raw` package shows 0% because it has no test files (expected — it's pure data types).
 
@@ -156,8 +161,8 @@ All code builds, tests, lints, and passes `nix flake check`. No broken state was
 
 ### Immediate (should have been done this session)
 
-1. Update ROADMAP.md — remove stale v0.3.0/HasMore/TransactionTypeUnknown/ProfileResult/BalanceResult references
-2. Update FEATURES.md — remove HasMore, add Money/Currency/internal/raw features, update statuses
+1. ~~Update ROADMAP.md — remove stale v0.3.0/HasMore/TransactionTypeUnknown/ProfileResult/BalanceResult references~~ done (2026-08-08 docs-health pass)
+2. ~~Update FEATURES.md — remove HasMore, add Money/Currency/internal/raw features, update statuses~~ done (2026-08-08 docs-health pass)
 3. Update CONTRIBUTING.md — replace AmountCents/TotalCents/ProfileResult/BalanceResult with new API
 4. Add BDD test for `EndOfStatementBalance` when the API returns empty/zero values
 5. Add BDD test for `toMoney` currency validation failure path
@@ -165,7 +170,7 @@ All code builds, tests, lints, and passes `nix flake check`. No broken state was
 
 ### Short-term (next sprint)
 
-7. Tag v0.4.0 — the code is ready, migration guide is written
+7. ~~Tag v0.4.0 — the code is ready, migration guide is written~~ done — tagged `v0.4.0`
 8. Make `classifyTransactionType` take `int64` cents instead of `float64`
 9. Make `ListTransactionsRequest.Type` a typed enum instead of `string`
 10. Add `Money.Add(Money) (Money, error)` with currency mismatch check
@@ -227,9 +232,9 @@ All code builds, tests, lints, and passes `nix flake check`. No broken state was
 
 Right now, if a single transaction in a Wise response has a malformed currency code (e.g., `""` or `"EU"`), the entire `ListTransactions` call fails. This is the "fail fast" approach. An alternative is to skip the bad transaction, log a warning, and return the good ones. This is a business decision — should one bad row from Wise break the consumer's entire request?
 
-### 2. Should we tag v0.4.0 now, or batch it with the doc updates (ROADMAP/FEATURES/CONTRIBUTING)?
+### ~~2. Should we tag v0.4.0 now, or batch it with the doc updates (ROADMAP/FEATURES/CONTRIBUTING)?~~ — resolved: tagged `v0.4.0`
 
-The code is ready and tested. But ROADMAP.md, FEATURES.md, and CONTRIBUTING.md still reference the old API. Should we tag v0.4.0 now and fix docs in a follow-up, or wait until all docs are updated for a clean release?
+~~The code is ready and tested. But ROADMAP.md, FEATURES.md, and CONTRIBUTING.md still reference the old API. Should we tag v0.4.0 now and fix docs in a follow-up, or wait until all docs are updated for a clean release?~~ Resolved: v0.4.0 was tagged; ROADMAP/FEATURES updated in a follow-up docs-health pass. CONTRIBUTING.md still pending (TODO_LIST.md P4).
 
 ### 3. Should `classifyTransactionType` be refactored to take `Money` instead of `float64` now, or defer?
 

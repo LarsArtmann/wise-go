@@ -4,78 +4,50 @@ Short- and mid-term actionable work for wise-go. Each item is bounded, has clear
 ownership, and can be completed in one sitting. For long-term vision and raw ideas
 see [ROADMAP.md](ROADMAP.md). For shipped features see [FEATURES.md](FEATURES.md).
 
-## Status key
+## P1 — v1.0 release (API lock)
 
-- `[ ]` not started
-- `[~]` in progress
-- `[x]` done
+- [ ] **Lock the public API at v1.0** — formal audit of every exported symbol,
+      godoc review pass, then tag `v1.0.0`. All v0.4.0 breaking changes are shipped
+      and tested; the lock is the logical next milestone. Requires explicit approval
+      (tagging is irreversible). Deferred from v0.4.0 session
+      (`docs/status/2026-08-08_02-53_pareto-plan-v040-implementation.md`).
 
-## P1 — Should ship in the next release (v0.2.1 / v0.2.2)
+## P2 — Type-safety refinements
 
-These are small, non-breaking, high-value cleanups identified in the 2026-07-18 review pass.
+- [ ] **`Money` arithmetic API** — add `Add`, `Sub`, `IsZero`, `IsNegative`, `Equal`
+      methods with currency-mismatch checks. Consumers currently handle cents math
+      and currency comparison themselves. (`types.go:55`)
+- [ ] **`classifyTransactionType` takes `Money` not `float64`** — the classifier
+      leaks the raw API's `float64` representation into the clean layer
+      (`transactions.go:180`). Refactor to accept `int64` cents or `Money`.
+- [ ] **`ListTransactionsRequest.Type` typed enum** — currently `string` (`types.go:182`);
+      should be a typed enum matching the exported `DetailType*` constants
+      (`transactions.go:165`).
 
-- [x] **Type `InvestmentState`** — promote bare `string` constants to
-      `type InvestmentState string`. (data-model review Step 1)
-- [x] **Export `DetailType` constants** — callers of `ListTransactionsRequest.Type` can
-      discover the valid set. (data-model review Step 2)
-- [x] **Accept `Doer` interface in `WithHTTPClient`** — `*http.Client` satisfies it implicitly.
-      (architecture review Step 3)
-- [x] **Verify full `nix flake check`** — passes (format + sandboxed test via buildGoModule).
-- [x] **Add `nix flake check` to CI** — `nix:` job added to `.github/workflows/ci.yml`
-      using `cachix/install-nix-action`.
+## P3 — Test coverage gaps
 
-## P2 — v0.4.0 (breaking change release)
+- [ ] **Test `toMoney` currency validation failure path** — the error branches in
+      `toMoney` (`helpers.go:17`) are not covered by BDD tests. A malformed currency
+      code in a Wise response currently fails the entire `ListTransactions` call.
+- [ ] **Test `EndOfStatementBalance` with empty/zero values** — the BDD test covers
+      the happy path (`types.go:188`) but not the edge case where Wise returns an
+      empty balance object.
+- [ ] **Test `internal/raw.BalanceAmount.Cents()`** — the `math.Round` path
+      (`internal/raw/types.go:46`) has no direct test. Move or duplicate from
+      `internal_test.go`.
 
-These were coordinated breaking changes; shipped together in one release.
+## P4 — Documentation
 
-- [x] **Introduce `Money` + `Currency` types** — collapse paired `XxxCents int64` /
-      `XxxCurrency string` fields across `Transaction`, `TransactionExchange`,
-      `Balance`, `ListTransactionsRequest`. Mismatched currency/amount now unrepresentable.
-- [x] **Normalize enum casing** — lowercase for all SDK-facing enums (`BalanceType` normalized
-      from `"STANDARD"` to `"standard"`; `ProfileType` and `TransactionType` already lowercase).
-- [x] **Reconcile `TransactionTypeUnknown`** — removed; `classifyTransactionType` never
-      returned it (default falls back to credit/debit).
-- [x] **Drop the `Result` suffix + move raw types to `internal/raw`** — `ProfileResult` → `Profile`,
-      `BalanceResult` → `Balance`. Raw wire types moved to `internal/raw` package.
-- [x] **Expose `EndOfStatementBalance`** — surfaced as `Money` on `ListTransactionsResponse`.
+- [ ] **Update CONTRIBUTING.md for v0.4.0 API** — three stale references: still
+      cites `AmountCents`/`TotalCents` (`:120`), `ProfileResult`/`BalanceResult`
+      (`:123`), and describes raw types as being in `types.go` not `internal/raw`.
+- [ ] **Godoc examples for `Money` and `Currency`** — add testable examples
+      (`ExampleMoney_String`, `ExampleNewCurrency`) so `go doc` shows usage.
 
-## P3 — v1.0 (lock-in release)
+## P5 — CI / tooling polish
 
-- [x] **Remove `ListTransactionsResponse.HasMore`** — field was always `false`; removed.
-- [x] **Move raw wire types behind `internal/raw`** — `Profile`, `Balance`,
-      `StatementTransaction`, etc. are invisible to consumers.
-- [ ] **Lock the public API** — at v1.0, freeze the surface; future breaking changes
-      require v2. (Pending: final API audit + tag)
-
-## P4 — Documentation polish
-
-- [x] **Add "Mocking the client" README section** — narrow consumer-side interface pattern.
-- [x] **Add "Request middleware via WithHTTPClient" README section** — Transport wrapping.
-- [x] **Document UTC assumption on `Transaction.Date`** — added to README transactions section.
-
-## Done
-
-### 2026-08-08
-
-- [x] Fix depguard config — allow failsafe-go, go-branded-id, go-error-family, onsi in `.golangci.yml`
-- [x] Fix remaining lint issues (varnamelen, makezero, mnd, inamedparam, err113) — 0 issues
-- [x] Introduce `Money` + `Currency` value objects with ISO 4217 validation
-- [x] Refactor all structs to use `Money` (Transaction, TransactionExchange, Balance, ListTransactionsResponse)
-- [x] Normalize `BalanceType` enum casing to lowercase
-- [x] Remove dead `TransactionTypeUnknown` constant
-- [x] Move raw wire types to `internal/raw` package
-- [x] Drop `Result` suffix: `ProfileResult` → `Profile`, `BalanceResult` → `Balance`
-- [x] Remove `HasMore` from `ListTransactionsResponse`
-- [x] Expose `EndOfStatementBalance` as `Money`
-- [x] Add README sections: Mocking, Middleware, UTC timezone note
-- [x] Add `nix:` CI job to `.github/workflows/ci.yml`
-
-### 2026-07-18
-
-- [x] Fix `CARD_PAYMENT` with positive amount being misclassified as `TransactionTypeRefund`
-- [x] Normalize `%d` branded-ID formatting in `transactions.go` error paths (`.Get()` pattern)
-- [x] Add 2 BDD tests for `ListTransactionsRequest.Type` filter forwarding
-- [x] Add 2 unit tests for positive-amount `CARD_PAYMENT` classification
-- [x] Document UTC timezone assumption on `parseWiseDate` and `Transaction.Date`
-- [x] Create `flake.nix` (devShells + checks + treefmt)
-- [x] Create `FEATURES.md`, `TODO_LIST.md`, `ROADMAP.md` (this file)
+- [ ] **Run full `nix flake check` in CI** — currently the GitHub Actions `nix:`
+      job may skip the expensive build; ensure the full check (format + sandboxed
+      test) runs.
+- [ ] **Add `gofumpt` to CI lint job** — currently only runs locally via `nix fmt`.
+- [ ] **Add `go mod tidy` check to `nix flake check`** — currently only in GitHub Actions.

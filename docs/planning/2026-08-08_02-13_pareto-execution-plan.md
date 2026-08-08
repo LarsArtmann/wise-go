@@ -1,6 +1,11 @@
 # wise-go — Pareto Execution Plan
 
 > Generated 2026-08-08 02:13 · Pareto-driven · Source: TODO_LIST.md + ROADMAP.md + live codebase audit
+>
+> **Status: EXECUTED.** All tiers (M1–M15) were completed in the 2026-08-08 session.
+> See `docs/status/2026-08-08_02-53_pareto-plan-v040-implementation.md` for the full
+> execution record. M16 (v1.0 API lock) is partially done — breaking changes shipped
+> but the v1.0 tag is deferred. Success criteria resolved at the bottom of this file.
 
 ## Context
 
@@ -105,6 +110,9 @@ investments:
 ## Comprehensive Plan — Medium Granularity (30-100min tasks)
 
 Sorted by impact × customer-value ÷ effort. Each task is independently shippable.
+
+> **All M1–M15 done** (executed 2026-08-08, verified green). **M16 partial** (breaking
+> changes shipped; v1.0 tag + formal API audit deferred — see TODO_LIST.md P1).
 
 | #   | Task                                                                                      | Impact   | Effort | Value                       | Deps     |
 | --- | ----------------------------------------------------------------------------------------- | -------- | ------ | --------------------------- | -------- |
@@ -400,13 +408,13 @@ HasMore removal, internal/raw relocation, API lock. **~4 hours.** The lock-in re
 
 ## Success Criteria
 
-- [ ] `golangci-lint run` exits 0
-- [ ] `go test -race ./...` passes
-- [ ] `nix flake check` passes
-- [ ] CI has a green Nix job
-- [ ] TODO_LIST reflects reality (no stale `[ ]` items)
-- [ ] AGENTS.md versions match go.mod
-- [ ] `EndOfStatementBalance` is accessible to consumers
-- [ ] README has mocking + middleware + UTC sections
-- [ ] Money/Currency types make mismatched currency/amount unrepresentable
-- [ ] v1.0 API is locked and documented
+- [x] `golangci-lint run` exits 0
+- [x] `go test -race ./...` passes
+- [x] `nix flake check` passes
+- [x] CI has a green Nix job
+- [x] TODO_LIST reflects reality (no stale `[ ]` items) — rebuilt 2026-08-08 docs-health pass
+- [x] AGENTS.md versions match go.mod
+- [x] `EndOfStatementBalance` is accessible to consumers
+- [x] README has mocking + middleware + UTC sections
+- [x] Money/Currency types make mismatched currency/amount unrepresentable
+- [ ] v1.0 API is locked and documented — deferred (TODO_LIST.md P1)
