@@ -90,58 +90,58 @@ The working tree was clean after the TODO change was inspected, and the existing
 
 ## F) UP TO 50 THINGS WE SHOULD GET DONE NEXT
 
-| # | Task | Priority | Completion evidence |
-|---:|---|:---:|---|
-| 1 | Verify the current Wise sandbox endpoint from the approved documentation | P1 | Endpoint decision recorded |
-| 2 | Decide the supported credential type for this SDK's sandbox test | P1 | Credential contract documented |
-| 3 | Define required sandbox environment variables | P1 | Names and secret handling documented |
-| 4 | Define the first live test's supported read-only operations | P1 | Endpoint checklist approved |
-| 5 | Add a build-tagged live integration test file | P1 | `go test -tags=...` discovers it |
-| 6 | Add skip behavior when credentials are absent | P1 | Ordinary test runs remain safe |
-| 7 | Add bounded context timeout for live tests | P1 | Timeout failure is deterministic |
-| 8 | Add live test assertions for profile retrieval | P1 | Profile response validated |
-| 9 | Add live test assertions for balance retrieval | P1 | Balance response validated |
-| 10 | Add live test assertions for transaction retrieval | P1 | Transaction response validated |
-| 11 | Make live assertions independent of fixed IDs | P1 | Tests work with fresh accounts |
-| 12 | Add diagnostic failure categories | P1 | Failures identify likely cause |
-| 13 | Add a protected/manual GitHub Actions workflow | P1 | Workflow cannot run on untrusted forks |
-| 14 | Configure sandbox credentials as repository/environment secrets | P1 | No secrets in source or logs |
-| 15 | Keep live tests out of ordinary PR CI | P1 | Default CI remains credential-free |
-| 16 | Run the first authorized sandbox test locally | P1 | Successful run log exists |
-| 17 | Run the first authorized sandbox test in CI | P1 | Successful workflow run exists |
-| 18 | Record endpoint, date, and covered operations | P1 | Evidence is reproducible |
-| 19 | Reconcile `SandboxURL` with the verified endpoint | P1 | SDK configuration is current |
-| 20 | Update README sandbox documentation | P1 | User instructions match reality |
-| 21 | Update CONTRIBUTING testing documentation | P1 | Mock/live distinction is explicit |
-| 22 | Update FEATURES sandbox status | P1 | Claim accurately reflects evidence |
-| 23 | Add an integration-test troubleshooting section | P2 | Common failures documented |
-| 24 | Add a CI concurrency policy for live tests | P2 | Duplicate runs are limited |
-| 25 | Add a live-test rate-limit budget | P2 | Tests stay within sandbox limits |
-| 26 | Add response redaction to any diagnostic logging | P2 | Sensitive data is not emitted |
-| 27 | Test expired or invalid credentials safely | P2 | Authentication failure classification verified |
-| 28 | Test sandbox-unavailable behavior without repeated retries | P2 | Failure is bounded and clear |
-| 29 | Verify date and currency assumptions against sandbox responses | P2 | Parsing contract confirmed |
-| 30 | Validate transaction date timezone handling with live data | P2 | UTC interpretation confirmed |
-| 31 | Add schema-drift detection for observed response fields | P2 | Unexpected shape fails clearly |
-| 32 | Add a maintainer-only runbook | P2 | Authorized execution is repeatable |
-| 33 | Decide whether the test should use `WithSandbox()` or an explicit URL | P2 | Configuration path is tested |
-| 34 | Test custom base URL override separately from live testing | P2 | Option precedence remains covered |
-| 35 | Pin any CI tooling introduced for live tests | P2 | Workflow is reproducible |
-| 36 | Set a maximum live-test duration | P2 | Workflow cannot hang indefinitely |
-| 37 | Set a retention policy for live-test logs | P2 | Logs avoid unnecessary sensitive retention |
-| 38 | Add a scheduled sandbox verification, if Wise permits stable cadence | P2 | Drift is detected over time |
-| 39 | Add manual approval before scheduled live runs | P2 | External calls are deliberate |
-| 40 | Define ownership for responding to sandbox failures | P2 | Maintainer responsibility documented |
-| 41 | Add a changelog entry after the first verified run | P2 | User-facing evidence recorded |
-| 42 | Reassess the v1.0 gate against live verification | P1 | Release checklist includes interoperability |
-| 43 | Keep write-operation tests blocked until write APIs exist | P2 | Scope remains honest |
-| 44 | Keep webhook tests blocked until webhook support exists | P2 | Scope remains honest |
-| 45 | Evaluate Wise Simulation API separately | P3 | Separate proposal exists |
-| 46 | Define whether mTLS is required for future partner testing | P3 | Authentication roadmap recorded |
-| 47 | Add compatibility notes for Wise API versioning | P3 | Version behavior documented |
-| 48 | Review sandbox endpoint changes on Wise releases | P3 | Maintenance trigger exists |
-| 49 | Add a release checklist item requiring live evidence | P1 | Release process prevents unsupported claims |
-| 50 | Audit all documentation for “sandbox” wording after implementation | P2 | No mock/live ambiguity remains |
+|   # | Task                                                                     | Priority | Completion evidence                            |
+| --: | ------------------------------------------------------------------------ | :------: | ---------------------------------------------- |
+|   1 | Verify the current Wise sandbox endpoint from the approved documentation |    P1    | Endpoint decision recorded                     |
+|   2 | Decide the supported credential type for this SDK's sandbox test         |    P1    | Credential contract documented                 |
+|   3 | Define required sandbox environment variables                            |    P1    | Names and secret handling documented           |
+|   4 | Define the first live test's supported read-only operations              |    P1    | Endpoint checklist approved                    |
+|   5 | Add a build-tagged live integration test file                            |    P1    | `go test -tags=...` discovers it               |
+|   6 | Add skip behavior when credentials are absent                            |    P1    | Ordinary test runs remain safe                 |
+|   7 | Add bounded context timeout for live tests                               |    P1    | Timeout failure is deterministic               |
+|   8 | Add live test assertions for profile retrieval                           |    P1    | Profile response validated                     |
+|   9 | Add live test assertions for balance retrieval                           |    P1    | Balance response validated                     |
+|  10 | Add live test assertions for transaction retrieval                       |    P1    | Transaction response validated                 |
+|  11 | Make live assertions independent of fixed IDs                            |    P1    | Tests work with fresh accounts                 |
+|  12 | Add diagnostic failure categories                                        |    P1    | Failures identify likely cause                 |
+|  13 | Add a protected/manual GitHub Actions workflow                           |    P1    | Workflow cannot run on untrusted forks         |
+|  14 | Configure sandbox credentials as repository/environment secrets          |    P1    | No secrets in source or logs                   |
+|  15 | Keep live tests out of ordinary PR CI                                    |    P1    | Default CI remains credential-free             |
+|  16 | Run the first authorized sandbox test locally                            |    P1    | Successful run log exists                      |
+|  17 | Run the first authorized sandbox test in CI                              |    P1    | Successful workflow run exists                 |
+|  18 | Record endpoint, date, and covered operations                            |    P1    | Evidence is reproducible                       |
+|  19 | Reconcile `SandboxURL` with the verified endpoint                        |    P1    | SDK configuration is current                   |
+|  20 | Update README sandbox documentation                                      |    P1    | User instructions match reality                |
+|  21 | Update CONTRIBUTING testing documentation                                |    P1    | Mock/live distinction is explicit              |
+|  22 | Update FEATURES sandbox status                                           |    P1    | Claim accurately reflects evidence             |
+|  23 | Add an integration-test troubleshooting section                          |    P2    | Common failures documented                     |
+|  24 | Add a CI concurrency policy for live tests                               |    P2    | Duplicate runs are limited                     |
+|  25 | Add a live-test rate-limit budget                                        |    P2    | Tests stay within sandbox limits               |
+|  26 | Add response redaction to any diagnostic logging                         |    P2    | Sensitive data is not emitted                  |
+|  27 | Test expired or invalid credentials safely                               |    P2    | Authentication failure classification verified |
+|  28 | Test sandbox-unavailable behavior without repeated retries               |    P2    | Failure is bounded and clear                   |
+|  29 | Verify date and currency assumptions against sandbox responses           |    P2    | Parsing contract confirmed                     |
+|  30 | Validate transaction date timezone handling with live data               |    P2    | UTC interpretation confirmed                   |
+|  31 | Add schema-drift detection for observed response fields                  |    P2    | Unexpected shape fails clearly                 |
+|  32 | Add a maintainer-only runbook                                            |    P2    | Authorized execution is repeatable             |
+|  33 | Decide whether the test should use `WithSandbox()` or an explicit URL    |    P2    | Configuration path is tested                   |
+|  34 | Test custom base URL override separately from live testing               |    P2    | Option precedence remains covered              |
+|  35 | Pin any CI tooling introduced for live tests                             |    P2    | Workflow is reproducible                       |
+|  36 | Set a maximum live-test duration                                         |    P2    | Workflow cannot hang indefinitely              |
+|  37 | Set a retention policy for live-test logs                                |    P2    | Logs avoid unnecessary sensitive retention     |
+|  38 | Add a scheduled sandbox verification, if Wise permits stable cadence     |    P2    | Drift is detected over time                    |
+|  39 | Add manual approval before scheduled live runs                           |    P2    | External calls are deliberate                  |
+|  40 | Define ownership for responding to sandbox failures                      |    P2    | Maintainer responsibility documented           |
+|  41 | Add a changelog entry after the first verified run                       |    P2    | User-facing evidence recorded                  |
+|  42 | Reassess the v1.0 gate against live verification                         |    P1    | Release checklist includes interoperability    |
+|  43 | Keep write-operation tests blocked until write APIs exist                |    P2    | Scope remains honest                           |
+|  44 | Keep webhook tests blocked until webhook support exists                  |    P2    | Scope remains honest                           |
+|  45 | Evaluate Wise Simulation API separately                                  |    P3    | Separate proposal exists                       |
+|  46 | Define whether mTLS is required for future partner testing               |    P3    | Authentication roadmap recorded                |
+|  47 | Add compatibility notes for Wise API versioning                          |    P3    | Version behavior documented                    |
+|  48 | Review sandbox endpoint changes on Wise releases                         |    P3    | Maintenance trigger exists                     |
+|  49 | Add a release checklist item requiring live evidence                     |    P1    | Release process prevents unsupported claims    |
+|  50 | Audit all documentation for “sandbox” wording after implementation       |    P2    | No mock/live ambiguity remains                 |
 
 ## G) QUESTIONS THAT CANNOT BE FIGURED OUT FROM THE REPOSITORY
 
