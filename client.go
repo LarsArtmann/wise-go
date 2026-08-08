@@ -169,7 +169,11 @@ func (c *Client) getWithQuery(
 
 	if target != nil {
 		if err := jsonDecode(resp, target); err != nil {
-			return errorfamily.WrapCorruption(err, "wise.response.decode", fmt.Sprintf("decode response from %s", fullURL))
+			return errorfamily.WrapCorruption(
+				err,
+				"wise.response.decode",
+				"decode response from "+fullURL,
+			)
 		}
 	}
 
