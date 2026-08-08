@@ -15,9 +15,13 @@ import (
 )
 
 // API Base URLs.
+//
+// Sandbox URLs were migrated in November 2025 from the V1 environment
+// (api.sandbox.transferwise.tech) to the V2 environment (api.wise-sandbox.com).
+// V1 was fully deprecated on June 30, 2026.
 const (
 	ProductionURL = "https://api.wise.com"
-	SandboxURL    = "https://api.sandbox.transferwise.tech"
+	SandboxURL    = "https://api.wise-sandbox.com"
 )
 
 const (

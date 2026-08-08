@@ -27,10 +27,11 @@ type Doer interface {
 
 // Client is the Wise API client.
 type Client struct {
-	apiKey     string
-	baseURL    string
-	httpClient Doer
-	executor   failsafe.Executor[*http.Response]
+	apiKey        string
+	baseURL       string
+	correlationID string
+	httpClient    Doer
+	executor      failsafe.Executor[*http.Response]
 }
 
 // New creates a new Wise API client with the given API key and options.
@@ -80,10 +81,11 @@ func New(apiKey string, opts ...Option) *Client {
 		Build()
 
 	return &Client{
-		apiKey:     apiKey,
-		baseURL:    cfg.baseURL,
-		executor:   failsafe.With(retry),
-		httpClient: httpClient,
+		apiKey:        apiKey,
+		baseURL:       cfg.baseURL,
+		correlationID: cfg.correlationID,
+		executor:      failsafe.With(retry),
+		httpClient:    httpClient,
 	}
 }
 
@@ -150,7 +152,7 @@ func (c *Client) getWithQuery(
 				return nil, fmt.Errorf("create request: %w", reqErr)
 			}
 
-			c.setAuth(req)
+			c.setHeaders(req)
 
 			return c.httpClient.Do(req)
 		})
@@ -174,9 +176,13 @@ func (c *Client) getWithQuery(
 	return nil
 }
 
-func (c *Client) setAuth(req *http.Request) {
+func (c *Client) setHeaders(req *http.Request) {
 	if c.apiKey != "" {
 		req.Header.Set("Authorization", "Bearer "+c.apiKey)
+	}
+
+	if c.correlationID != "" {
+		req.Header.Set("X-External-Correlation-Id", c.correlationID)
 	}
 }
 

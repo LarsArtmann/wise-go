@@ -6,13 +6,14 @@ import (
 
 // config holds the internal client configuration.
 type config struct {
-	apiKey     string
-	baseURL    string
-	timeout    time.Duration
-	maxRetries int
-	retryMin   time.Duration
-	retryMax   time.Duration
-	httpClient Doer
+	apiKey        string
+	baseURL       string
+	timeout       time.Duration
+	maxRetries    int
+	retryMin      time.Duration
+	retryMax      time.Duration
+	httpClient    Doer
+	correlationID string
 }
 
 func defaultConfig() config {
@@ -59,5 +60,17 @@ func WithRetry(maxRetries int, minDelay, maxDelay time.Duration) Option {
 func WithHTTPClient(client Doer) Option {
 	return func(c *config) {
 		c.httpClient = client
+	}
+}
+
+// WithCorrelationID sets a static correlation ID sent as the
+// X-External-Correlation-Id header on every request. This is Wise's
+// documented global header for distributed tracing across the API.
+// If empty, no header is sent.
+//
+// For per-request correlation IDs, use [WithRequestCorrelationID] instead.
+func WithCorrelationID(id string) Option {
+	return func(c *config) {
+		c.correlationID = id
 	}
 }
