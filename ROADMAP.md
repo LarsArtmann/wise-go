@@ -71,13 +71,9 @@ full analysis lives at `docs/brainstorming/2026-07-18_data-model-review.html`.
 
 ### Near-term refinements
 
-- **`Money` arithmetic API** — `Add`, `Sub`, `IsZero`, `IsNegative`, `Equal` with
-  currency-mismatch checks. Consumers currently must handle cents math and currency
-  comparison themselves.
-- **`classifyTransactionType` signature** — still takes `float64` amount, leaking the
-  raw API representation into the clean layer. Should take `Money` or `int64` cents.
 - **`ListTransactionsRequest.Type` typed enum** — currently `string`; should be a
-  typed enum matching the exported `DetailType*` constants.
+  typed enum matching the exported `DetailType*` constants to prevent consumers
+  from sending invalid filter values to the Wise API.
 
 ### v1.0 — the API lock
 

@@ -12,17 +12,13 @@ see [ROADMAP.md](ROADMAP.md). For shipped features see [FEATURES.md](FEATURES.md
       (tagging is irreversible). Deferred from v0.4.0 session
       (`docs/status/2026-08-08_02-53_pareto-plan-v040-implementation.md`).
 
-## P2 — Type-safety refinements
+## P2 — Type-safety refinement
 
-- [ ] **`Money` arithmetic API** — add `Add`, `Sub`, `IsZero`, `IsNegative`, `Equal`
-      methods with currency-mismatch checks. Consumers currently handle cents math
-      and currency comparison themselves. (`types.go:55`)
-- [ ] **`classifyTransactionType` takes `Money` not `float64`** — the classifier
-      leaks the raw API's `float64` representation into the clean layer
-      (`transactions.go:180`). Refactor to accept `int64` cents or `Money`.
 - [ ] **`ListTransactionsRequest.Type` typed enum** — currently `string` (`types.go:182`);
       should be a typed enum matching the exported `DetailType*` constants
-      (`transactions.go:165`).
+      (`transactions.go:165`). The SDK exports the valid values but the request field
+      accepts any string, so nothing prevents a consumer from sending an invalid filter
+      to the Wise API.
 
 ## P3 — Test coverage gaps
 
