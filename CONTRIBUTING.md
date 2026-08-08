@@ -99,7 +99,7 @@ Where it is already wired in:
 
 ## Project Layout
 
-wise-go is a **single-package Go library**. There is no `cmd/`, `internal/`, or `pkg/` — the whole SDK lives in one `package wise` at the repository root.
+wise-go is a **single-package Go library** with one internal subpackage. The public SDK lives in `package wise` at the repository root; raw wire-format types live in `internal/raw`.
 
 ```
 ├── *.go              # package wise — the entire public SDK
@@ -111,16 +111,16 @@ wise-go is a **single-package Go library**. There is no `cmd/`, `internal/`, or 
 └── README.md         # user-facing overview
 ```
 
-Before contributing, read [AGENTS.md](AGENTS.md) — it documents the non-obvious behaviors (dual date formats, `AmountCents` vs `TotalCents`, balance filtering, branded-ID usage, error families).
+Before contributing, read [AGENTS.md](AGENTS.md) — it documents the non-obvious behaviors (dual date formats, `Amount.Cents` vs `Total.Cents`, balance filtering, branded-ID usage, error families).
 
 ---
 
 ## Conventions
 
-- **Money is `int64` cents** — never `float64`. `AmountCents` is absolute; `TotalCents` preserves sign.
+- **Money is `int64` cents** — never `float64`. `Amount.Cents` is absolute; `Total.Cents` preserves sign. Both are `Money` fields (cents + currency paired).
 - **Branded IDs** — `ProfileID`, `BalanceID`, `TransactionID` are distinct phantom types from `go-branded-id`. Mixing them is a compile error. Construct with `NewProfileID` / `NewBalanceID` / `NewTransactionID`; unwrap with `.Get()`.
 - **Behavioral errors** — domain error types implement `go-error-family` interfaces (`ErrorCode()`, `ErrorFamily()`, `IsRetryable()`). Never construct `AuthError` / `NotFoundError` etc. directly outside `newAPIError()` in `errors.go`.
-- **Two-layer types** — raw wire structs (`Profile`, `Balance`, `StatementTransaction`) match Wise's JSON exactly with primitives. Result types (`ProfileResult`, `BalanceResult`, `Transaction`) expose strong Go types. Mapping functions are the only bridge. Do not brand the JSON-decode layer.
+- **Two-layer types** — raw wire structs (`raw.Profile`, `raw.Balance`, `raw.StatementTransaction` in `internal/raw`) match Wise's JSON exactly with primitives. Result types (`Profile`, `Balance`, `Transaction`) expose strong Go types (`Money`, branded IDs, enums). Mapping functions are the only bridge. Do not brand the JSON-decode layer.
 - **Error wrapping at call sites** uses `fmt.Errorf("context: %w", err)`; the inner error carries the classification.
 - **Retries** via `failsafe-go` — only 429, 5xx, and network errors are retried.
 

@@ -118,6 +118,49 @@ func TestBalanceAmountCents(t *testing.T) {
 	}
 }
 
+func TestToMoneyInvalidCurrency(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		currency string
+	}{
+		{name: "empty currency", currency: ""},
+		{name: "too short", currency: "EU"},
+		{name: "too long", currency: "EURO"},
+		{name: "lowercase", currency: "eur"},
+		{name: "digits", currency: "EU1"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := toMoney(raw.BalanceAmount{Value: 100, Currency: tt.currency})
+			if err == nil {
+				t.Fatalf("toMoney with currency %q expected error, got nil", tt.currency)
+			}
+		})
+	}
+}
+
+func TestToMoneyValid(t *testing.T) {
+	t.Parallel()
+
+	got, err := toMoney(raw.BalanceAmount{Value: 12.34, Currency: "EUR"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if got.Cents != 1234 {
+		t.Errorf("Cents = %d, want 1234", got.Cents)
+	}
+
+	if got.Currency != Currency("EUR") {
+		t.Errorf("Currency = %q, want %q", got.Currency, Currency("EUR"))
+	}
+}
+
 func TestMapExchangeNil(t *testing.T) {
 	t.Parallel()
 

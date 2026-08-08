@@ -747,6 +747,31 @@ var _ = Describe("Wise Client", func() {
 			})
 		})
 
+		Context("with a zero end-of-statement balance", func() {
+			BeforeEach(func() {
+				mux.HandleFunc(
+					"/v1/profiles/12345/balance-statements/100/statement.json",
+					func(w http.ResponseWriter, _ *http.Request) {
+						response := raw.StatementResponse{
+							Transactions:          []raw.StatementTransaction{},
+							EndOfStatementBalance: raw.BalanceAmount{Value: 0, Currency: "EUR"},
+						}
+
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.MarshalWrite(w, response)
+					},
+				)
+			})
+
+			It("should return a zero Money value without error", func() {
+				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(resp.Transactions).To(BeEmpty())
+				Expect(resp.EndOfStatementBalance.Cents).To(Equal(int64(0)))
+				Expect(resp.EndOfStatementBalance.Currency).To(Equal(wise.Currency("EUR")))
+			})
+		})
+
 		Context("with a type filter on the request", func() {
 			var capturedRequest *http.Request
 
@@ -772,7 +797,7 @@ var _ = Describe("Wise Client", func() {
 
 			It("should forward the type filter in the query string", func() {
 				req := defaultListTxReq
-				req.Type = "CARD_PAYMENT"
+				req.Type = wise.DetailTypeCardPayment
 
 				_, err := client.ListTransactions(context.Background(), req)
 				Expect(err).ToNot(HaveOccurred())

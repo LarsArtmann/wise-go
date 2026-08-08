@@ -104,6 +104,7 @@
                   ./types.go
                   ./internal/raw/types.go
                   ./internal_test.go
+                  ./example_test.go
                   ./wise_test.go
                 ];
               };
