@@ -1,28 +1,22 @@
 # Public or Private? — Decision Document
 
-**Status:** DECISION PENDING (not blocking; private is the safe default)
-**Last updated:** 2026-07-18
-**Current state:** Private repo, `PROPRIETARY LICENSE` (all rights reserved)
+**Status:** APPROVED — go public. Legal pre-flight nearly complete.
+**Last updated:** 2026-08-08
+**Current state:** Private repo, `Apache-2.0` license (converted 2026-08-08)
 
 ---
 
 ## TL;DR
 
-Recommendation: **Go public, but not today, and not in this shape.**
+Recommendation: **Go public.** The two blockers that held this back are now resolved — the license is Apache-2.0, and the `GOEXPERIMENT=jsonv2` friction is accepted as documented cost-of-doing-business (the maintainer uses it everywhere already; consumers who want this SDK are sophisticated enough to set one env var, and jsonv2 will graduate to default soon anyway).
 
-The asymmetry favors going public — low risk, high upside, mostly documentation work. The only genuine blocker is the `GOEXPERIMENT=jsonv2` friction. Solve that (by waiting for Go to graduate the experiment, or by pinning deps back), then flip.
-
-Sequenced plan in [Recommended path](#recommended-path) below.
+Remaining work is minor legal housekeeping: trademark disclaimer in README, verify Wise developer ToS, and one full-history secrets scan. ~30 minutes, then flip. Sequenced plan in [Recommended path](#recommended-path) below.
 
 ---
 
 ## Critical fact that overrides everything
 
-**The current `LICENSE` makes going public pointless.** It says:
-
-> Unauthorized copying, distribution, modification, or use of this Software … is strictly prohibited.
-
-Going public without changing this means anyone can _read_ the code but nobody can legally `go get` it, use it, or contribute. The single most important decision is **which OSI license to adopt**, not whether to flip the visibility toggle.
+**The `LICENSE` is now Apache-2.0.** The previous proprietary license was the real blocker — it meant anyone could read the code but nobody could legally `go get` it, use it, or contribute. That is resolved (2026-08-08). The remaining decision is just timing and minor legal hygiene.
 
 ---
 
@@ -46,35 +40,38 @@ Going public without changing this means anyone can _read_ the code but nobody c
 | #   | Argument                                                                                                                                                                                                                                                                                                                                                                                                                        | Weight |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
 | 1   | **Implicit SLA.** Public = users will file issues, request write operations (transfers, recipients, quotes, webhooks), expect Wise API drift to be tracked. Solo maintainer with many projects. Private = no obligations.                                                                                                                                                                                                       | High   |
-| 2   | **`GOEXPERIMENT=jsonv2` is a hard sell for casual adopters.** Every consumer must `export GOEXPERIMENT=jsonv2` or hit `build constraints exclude all Go files in encoding/json/v2`. Documented well, but for a public SDK this is friction at the front door. Solve by either waiting for jsonv2 to graduate (likely Go 1.27/1.28) or pinning back to `go-branded-id v0.3.1` + `go-error-family v0.6.x` for a public release.   | High   |
-| 3   | **Legal pre-flight work before flipping the switch.** (a) Replace `LICENSE` with MIT or Apache-2.0. (b) Add trademark disclaimer to README — _"Wise" and "TransferWise" are registered trademarks of Wise Payments Limited. This project is not affiliated with or endorsed by Wise._ (c) Verify Wise's developer ToS explicitly permits third-party SDKs. (d) Add `SECURITY.md` for vuln disclosure. None of this is optional. | High   |
-| 4   | **Reputational exposure on money-handling code.** If a consumer loses money due to a bug (e.g., the CARD_PAYMENT bug that just got fixed in v0.3.0 — refunds were misclassified), blame follows. The `LICENSE` "AS IS" clause is the legal shield; reputation is the real one. Public + pre-1.0 + breaking changes = users will get hurt eventually.                                                                            | Medium |
+| 2   | **`GOEXPERIMENT=jsonv2` is friction for casual adopters** *(accepted, 2026-08-08)*. Every consumer must `export GOEXPERIMENT=jsonv2` or hit `build constraints exclude all Go files in encoding/json/v2`. Documented in README and AGENTS.md. **Decision: accept.** The maintainer already runs jsonv2 everywhere; consumers who want a fintech SDK are sophisticated enough to set one env var; and jsonv2 will graduate to default in Go (likely 1.27/1.28), at which point this vanishes. Not a blocker — just document it well. | Accepted |
+| 3   | **Legal pre-flight work before flipping the switch.** (a) ~~Replace `LICENSE` with Apache-2.0~~ **Done (2026-08-08).** (b) Add trademark disclaimer to README — _"Wise" and "TransferWise" are registered trademarks of Wise Payments Limited. This project is not affiliated with or endorsed by Wise._ (c) Verify Wise's developer ToS explicitly permits third-party SDKs. (~~d~~) ~~Add `SECURITY.md`~~ **Dropped — maintainer opts out.** Remaining: (b) and (c) only. | Low    |
+| 4   | **Reputational exposure on money-handling code.** If a consumer loses money due to a bug (e.g., the CARD_PAYMENT bug that got fixed in v0.3.0 — refunds were misclassified), blame follows. The Apache-2.0 `AS IS` clause is the legal shield; reputation is the real one. Public + pre-1.0 + breaking changes = users will get hurt eventually.                                                                            | Medium |
 | 5   | **Future Wise official SDK conflict.** If Wise ships an official Go SDK later, the namespace (`wise-go`), naming, and consumer mindshare get awkward. Unlikely (they've had years), but possible. Low historical risk — unofficial SDKs usually coexist.                                                                                                                                                                        | Low    |
-| 6   | **v0.3.0 is pre-1.0.** Semver permits breaking changes; reality is that public consumers still get hurt. Either commit to a 1.0 freeze soon after going public, or be very loud about the "early development" status (README already does this).                                                                                                                                                                                | Low    |
+| 6   | **v0.5.0 is pre-1.0.** Semver permits breaking changes; reality is that public consumers still get hurt. Either commit to a 1.0 freeze soon after going public, or be very loud about the "early development" status (README already does this).                                                                                                                                                                                | Low    |
 | 7   | **Maintenance scope creep pressure.** README/ROADMAP currently say "write operations not yet implemented." Public users will push for these. Either build them (scope expansion) or say no publicly (social cost).                                                                                                                                                                                                              | Low    |
 
 ---
 
 ## Recommended path
 
-### Step 1 — Legal pre-flight (reversible, ~1–2 hours)
+### Step 1 — Legal pre-flight (~30 min)
 
-Non-negotiable prerequisites for any public release. Do these first; they cost nothing and unlock the option.
+Minor remaining prerequisites. The big one (license) is done.
 
-- [ ] **Change `LICENSE`** → Apache-2.0 (patent grant is the right choice for fintech-adjacent code; MIT is fine if minimalism matters more). Apache-2.0 is the recommendation.
+- [x] **Change `LICENSE`** → Done: Apache-2.0 (2026-08-08). Patent grant is the right choice for fintech-adjacent code.
 - [ ] **Trademark disclaimer** in README — _"Wise" and "TransferWise" are registered trademarks of Wise Payments Limited. This project is not affiliated with or endorsed by Wise._
 - [ ] **Verify Wise developer ToS** permits third-party SDKs before going public. Link the finding here.
-- [ ] **Add `SECURITY.md`** with a vulnerability disclosure policy (private email → GitHub Security Advisory).
 - [ ] **Audit for secrets** one more time — `git log -p` across history, not just HEAD. `gitleaks` is already in the buildflow pipeline; run a full-history scan.
 
-### Step 2 — Resolve the jsonv2 question (blocking)
+### Step 2 — jsonv2 question: RESOLVED
 
-Two options, mutually exclusive:
+**Decision (2026-08-08): Keep `GOEXPERIMENT=jsonv2`. Accept the friction.**
 
-- **Option A (recommended): Keep v0.3.x private.** Wait for `GOEXPERIMENT=jsonv2` to graduate to default in Go (likely Go 1.27 or 1.28). Then the public release has zero friction. Cleanest, most adoption-friendly.
-- **Option B: Cut a public v0.4.0 that pins back.** `go-branded-id v0.3.1` + `go-error-family v0.6.x`. Removes the experiment requirement at the cost of newer features in both deps. Only choose this if there's external pressure to go public _now_.
+The original two options were (A) wait for jsonv2 to graduate, or (B) pin back deps. Chosen: neither — ship as-is. Rationale:
 
-Option A is the pick. The waiting cost is low (private repo keeps working); the adoption cost of Option B is permanent friction for any consumer who wants the newer dep features later.
+- The maintainer already runs jsonv2 across every project. It's not exotic in this workflow.
+- A consumer who wants a Wise fintech SDK is sophisticated enough to set one env var.
+- jsonv2 will graduate to default in Go (likely 1.27/1.28), at which point this vanishes with zero action.
+- README and AGENTS.md already document the requirement clearly.
+
+Not a blocker.
 
 ### Step 3 — Flip the repo public
 
@@ -98,7 +95,8 @@ After steps 1 and 2:
 
 | Date       | Decision                       | Rationale                                                                                                                           |
 | ---------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-07-18 | Document drafted; no flip yet. | See [Recommended path](#recommended-path). The jsonv2 friction (Contra #2) and legal pre-flight (Contra #3) must be resolved first. |
+| 2026-08-08 | **Approved going public.** Converted LICENSE to Apache-2.0; accepted jsonv2 friction; dropped SECURITY.md requirement. | Both original blockers (license + jsonv2) resolved. Remaining work is trademark disclaimer + Wise ToS verification. See [Recommended path](#recommended-path). |
+| 2026-07-18 | Document drafted; no flip yet. | The jsonv2 friction (Contra #2) and legal pre-flight (Contra #3) must be resolved first.                                            |
 
 ---
 
@@ -107,6 +105,5 @@ After steps 1 and 2:
 Re-open this decision earlier than planned if any of these happen:
 
 - Wise announces an official Go SDK (changes the ecosystem calculus — Contra #5 becomes live).
-- `GOEXPERIMENT=jsonv2` graduates to default in Go (removes Contra #2 — accelerates Step 2 Option A).
 - A specific external user asks to consume wise-go (changes the cost/benefit of staying private).
 - `go-branded-id` or `go-error-family` adoption stalls and wise-go's visibility would unblock it (amplifies Pro #2).
