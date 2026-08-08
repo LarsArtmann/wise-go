@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-08-08
+
+### Changed
+
+- **BREAKING: `ListTransactionsRequest.Type` is now `DetailType`** (was `string`). The `DetailType*` constants (`DetailTypeCardPayment`, `DetailTypeCardRefund`, etc.) are now typed values of `DetailType` instead of untyped string constants. This prevents sending an invalid type filter to the Wise API at compile time. Use `req.Type = wise.DetailTypeCardPayment` instead of `req.Type = "CARD_PAYMENT"`.
+
+### Added
+
+- `DetailType` typed string enum for Wise `details.type` wire values, replacing untyped `DetailType*` constants.
+- Testable godoc examples (`ExampleNewCurrency`, `ExampleMoney_String`, `ExampleMoney_String_negative`) so `go doc` shows usage.
+- Tests for `toMoney` currency validation failure path (invalid currency codes in API responses).
+- BDD test for zero end-of-statement balance edge case.
+
+### Fixed
+
+- CONTRIBUTING.md stale references updated for v0.4.0+ API: `AmountCents`/`TotalCents` → `Amount.Cents`/`Total.Cents`, `ProfileResult`/`BalanceResult` → `Profile`/`Balance`, raw types location corrected to `internal/raw`, `internal/` removed from "no subpackages" claim.
+
+### CI
+
+- Nix flake check in CI no longer uses `--no-build` — the full sandboxed test now runs.
+- gofumpt format check added to the CI lint job.
+
 ## [0.4.0] - 2026-08-08
 
 ### Changed

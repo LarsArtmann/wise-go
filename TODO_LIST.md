@@ -6,44 +6,17 @@ see [ROADMAP.md](ROADMAP.md). For shipped features see [FEATURES.md](FEATURES.md
 
 ## P1 — v1.0 release (API lock)
 
-- [ ] **Lock the public API at v1.0** — formal audit of every exported symbol,
-      godoc review pass, then tag `v1.0.0`. All v0.4.0 breaking changes are shipped
-      and tested; the lock is the logical next milestone. Requires explicit approval
-      (tagging is irreversible). Deferred from v0.4.0 session
-      (`docs/status/2026-08-08_02-53_pareto-plan-v040-implementation.md`).
+[ ] Lock the public API at v1.0 — formal audit of every exported symbol, godoc
+review pass, then tag `v1.0.0`. All v0.5.0 breaking changes are shipped and tested;
+the lock is the logical next milestone. Requires explicit approval (tagging is
+irreversible). The API surface is now stable: `Money`/`Currency` value objects,
+branded IDs, typed enums (`DetailType`, `TransactionType`, `ProfileType`,
+`BalanceType`, `InvestmentState`), and the two-layer raw/result split are all
+finalized.
 
-## P2 — Type-safety refinement
+## P2 — CI speed
 
-- [ ] **`ListTransactionsRequest.Type` typed enum** — currently `string` (`types.go:182`);
-      should be a typed enum matching the exported `DetailType*` constants
-      (`transactions.go:165`). The SDK exports the valid values but the request field
-      accepts any string, so nothing prevents a consumer from sending an invalid filter
-      to the Wise API.
-
-## P3 — Test coverage gaps
-
-- [ ] **Test `toMoney` currency validation failure path** — the error branches in
-      `toMoney` (`helpers.go:17`) are not covered by BDD tests. A malformed currency
-      code in a Wise response currently fails the entire `ListTransactions` call.
-- [ ] **Test `EndOfStatementBalance` with empty/zero values** — the BDD test covers
-      the happy path (`types.go:188`) but not the edge case where Wise returns an
-      empty balance object.
-- [ ] **Test `internal/raw.BalanceAmount.Cents()`** — the `math.Round` path
-      (`internal/raw/types.go:46`) has no direct test. Move or duplicate from
-      `internal_test.go`.
-
-## P4 — Documentation
-
-- [ ] **Update CONTRIBUTING.md for v0.4.0 API** — three stale references: still
-      cites `AmountCents`/`TotalCents` (`:120`), `ProfileResult`/`BalanceResult`
-      (`:123`), and describes raw types as being in `types.go` not `internal/raw`.
-- [ ] **Godoc examples for `Money` and `Currency`** — add testable examples
-      (`ExampleMoney_String`, `ExampleNewCurrency`) so `go doc` shows usage.
-
-## P5 — CI / tooling polish
-
-- [ ] **Run full `nix flake check` in CI** — currently the GitHub Actions `nix:`
-      job may skip the expensive build; ensure the full check (format + sandboxed
-      test) runs.
-- [ ] **Add `gofumpt` to CI lint job** — currently only runs locally via `nix fmt`.
-- [ ] **Add `go mod tidy` check to `nix flake check`** — currently only in GitHub Actions.
+[ ] Add Cachix binary cache to the `nix:` CI job — `nix flake check` no longer
+uses `--no-build` (v0.5.0 change), so the full sandboxed test runs. Without a
+binary cache, building `go_1_26` from nixpkgs source takes 15+ minutes. Add
+`cachix/cachix-action` with a public cache for `nixpkgs` to keep CI under 5 minutes.

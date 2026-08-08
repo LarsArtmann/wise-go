@@ -50,8 +50,8 @@ claim here can be verified against the implementation.
 | -------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------ |
 | `ListTransactions(ctx, ListTransactionsRequest)`         | FULLY_FUNCTIONAL     | `transactions.go:16`; BDD-tested                                                     |
 | `ListTransactionsRequest.Type` filter forwarding         | FULLY_FUNCTIONAL     | `transactions.go:33`; BDD-tested                                                     |
-| Request validation (empty currency, inverted date range) | FULLY_FUNCTIONAL     | `transactions.go:211`; returns `wise.transactions.invalid_request` (`:207`)          |
-| Transaction type classification                          | FULLY_FUNCTIONAL     | `transactions.go:180`; CARD_PAYMENT / CARD_REFUND split fixed 2026-07-18             |
+| Request validation (empty currency, inverted date range) | FULLY_FUNCTIONAL     | `transactions.go:214`; returns `wise.transactions.invalid_request` (`:210`)          |
+| Transaction type classification                          | FULLY_FUNCTIONAL     | `transactions.go:183`; CARD_PAYMENT / CARD_REFUND split fixed 2026-07-18             |
 | Cross-currency transaction mapping                       | FULLY_FUNCTIONAL     | `transactions.go:141` `mapExchange`; uses transaction currency, not request currency |
 | `Transaction.Exchange` (`*TransactionExchange`)          | FULLY_FUNCTIONAL     | `types.go:126`; nil for non-conversion transactions                                  |
 | `EndOfStatementBalance` exposure                         | FULLY_FUNCTIONAL     | `types.go:188`; surfaced as `Money` on `ListTransactionsResponse`                    |
@@ -81,7 +81,7 @@ claim here can be verified against the implementation.
 | Two-layer raw/result split (`internal/raw` boundary)  | FULLY_FUNCTIONAL | Wire types in `internal/raw/types.go`; parsed types in `types.go`; `helpers.go:17` bridge |
 | `ProfileType`, `BalanceType`, `TransactionType` enums | FULLY_FUNCTIONAL | `types.go:135,143,160`                                                                    |
 | `InvestmentState` typed enum                          | FULLY_FUNCTIONAL | `types.go:151`; used for balance filtering (`balances.go:29`)                             |
-| Exported `DetailType` constants                       | FULLY_FUNCTIONAL | `transactions.go:165`; values for `ListTransactionsRequest.Type` filter                   |
+| `DetailType` typed enum + constants                   | FULLY_FUNCTIONAL | `transactions.go:165`; typed filter for `ListTransactionsRequest.Type`              |
 | Enum casing normalization (lowercase SDK values)      | FULLY_FUNCTIONAL | `BalanceType` normalized; `ProfileType`/`TransactionType` already lowercase               |
 
 ## Build & tooling

@@ -71,6 +71,15 @@ jobs:
           version: ${{ env.GOLANGCI_LINT_VERSION }}
           args: --timeout=5m
 
+      - name: Format check (gofumpt)
+        run: |
+          go install mvdan.cc/gofumpt@latest
+          if [ -n "$(gofumpt -l .)" ]; then
+            echo "::error::Files need gofumpt formatting:"
+            gofumpt -l .
+            exit 1
+          fi
+
     timeout-minutes: 15
   govulncheck:
     name: Vulnerability Check
@@ -100,7 +109,7 @@ jobs:
           nix_path: nixpkgs=channel:nixos-unstable
 
       - name: Run nix flake check
-        run: nix flake check --no-build
+        run: nix flake check
 
     timeout-minutes: 30
 concurrency:

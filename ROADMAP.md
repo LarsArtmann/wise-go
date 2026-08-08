@@ -11,18 +11,19 @@ library that is obviously correct, obviously typed, and obviously safe to depend
 Every monetary amount is `Money` (cents paired with `Currency`). Every entity ID is
 branded. Every error is typed and classifiable. Every API call retries intelligently.
 
-As of v0.4.0, the type-safety redesign is shipped: paired `XxxCents`/`XxxCurrency`
+As of v0.5.0, the type-safety redesign is complete: paired `XxxCents`/`XxxCurrency`
 fields are collapsed into `Money`, raw wire types are hidden behind `internal/raw`,
-and enum values are normalized. The SDK covers the read side of three resources
-(profiles, balances, transactions). The roadmap expands the surface along four
-axes — completeness, type-safety, observability, and scale — while preserving the
+enum values are normalized, and `ListTransactionsRequest.Type` is now a typed
+`DetailType` enum. The SDK covers the read side of three resources (profiles,
+balances, transactions). The roadmap expands the surface along four axes —
+completeness, type-safety, observability, and scale — while preserving the
 architectural decisions that make the codebase maintainable.
 
 ## Axis 1: Completeness (API surface)
 
 Today: read-only, 3 resources. The Wise API is much larger.
 
-### Near-term (post-v0.4.0)
+### Near-term (post-v0.5.0)
 
 - **Write operations** — POST/PATCH/DELETE helpers in `client.go` mirroring
   `get`/`getWithQuery`. First candidates: transfers, recipients.
@@ -57,6 +58,17 @@ The v0.4.0 release shipped the major type-safety redesign: `Money`/`Currency` va
 objects, enum normalization, raw-type encapsulation, and dead-code removal. The
 full analysis lives at `docs/brainstorming/2026-07-18_data-model-review.html`.
 
+### Shipped in v0.5.0
+
+- **`DetailType` typed enum** — `ListTransactionsRequest.Type` is now `DetailType`
+  (was `string`). The `DetailType*` constants are typed values, preventing consumers
+  from sending invalid filter values to the Wise API at compile time.
+- **Godoc examples** — testable `Example*` functions for `Money` and `Currency`.
+- **Test coverage** — `toMoney` currency validation failure path, zero end-of-statement
+  balance edge case.
+- **CI hardening** — `nix flake check` no longer skips the build; gofumpt format
+  check added to the lint job.
+
 ### Shipped in v0.4.0
 
 - **`Money` value object** — paired `XxxCents int64` / `XxxCurrency string` collapsed
@@ -68,12 +80,6 @@ full analysis lives at `docs/brainstorming/2026-07-18_data-model-review.html`.
 - **Enum normalization** — `BalanceType` values lowercased; all SDK enums follow one
   casing rule. `TransactionTypeUnknown` removed (never returned by the classifier).
 - **Typed `InvestmentState` enum** and **exported `DetailType` constants**.
-
-### Near-term refinements
-
-- **`ListTransactionsRequest.Type` typed enum** — currently `string`; should be a
-  typed enum matching the exported `DetailType*` constants to prevent consumers
-  from sending invalid filter values to the Wise API.
 
 ### v1.0 — the API lock
 
@@ -150,7 +156,8 @@ structs"); documented in README.
 
 - **v0.x** — breaking changes accepted but coordinated. Each breaking release gets
   a migration table in CHANGELOG.md. v0.4.0 shipped the Money/Currency redesign;
-  v0.5.0+ will add API surface (write operations, quotes, recipients).
+  v0.5.0 added the `DetailType` typed enum and test/CI hardening; v0.6.0+ will add
+  API surface (write operations, quotes, recipients).
 - **v1.0** — public API freeze. After v1.0, breaking changes require v2 and a
   deliberate migration path.
 
