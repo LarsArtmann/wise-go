@@ -54,25 +54,25 @@ func TestClassifyTransactionType(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		wiseType string
+		wiseType DetailType
 		amount   float64
 		want     TransactionType
 	}{
-		{name: "card payment debit", wiseType: "CARD_PAYMENT", amount: -10, want: TransactionTypeCard},
+		{name: "card payment debit", wiseType: DetailTypeCardPayment, amount: -10, want: TransactionTypeCard},
 		{
 			name:     "card payment credit still card (not refund)",
-			wiseType: "CARD_PAYMENT",
+			wiseType: DetailTypeCardPayment,
 			amount:   25,
 			want:     TransactionTypeCard,
 		},
-		{name: "card payment zero still card", wiseType: "CARD_PAYMENT", amount: 0, want: TransactionTypeCard},
-		{name: "card refund positive", wiseType: "CARD_REFUND", amount: 25, want: TransactionTypeRefund},
-		{name: "card refund zero", wiseType: "CARD_REFUND", amount: 0, want: TransactionTypeCard},
-		{name: "transfer", wiseType: "TRANSFER", amount: 100, want: TransactionTypeTransfer},
-		{name: "payment", wiseType: "PAYMENT", amount: -50, want: TransactionTypePayment},
-		{name: "conversion", wiseType: "CONVERSION", amount: -100, want: TransactionTypeExchange},
-		{name: "exchange alias", wiseType: "EXCHANGE", amount: 50, want: TransactionTypeExchange},
-		{name: "fee", wiseType: "FEE", amount: -0.5, want: TransactionTypeFee},
+		{name: "card payment zero still card", wiseType: DetailTypeCardPayment, amount: 0, want: TransactionTypeCard},
+		{name: "card refund positive", wiseType: DetailTypeCardRefund, amount: 25, want: TransactionTypeRefund},
+		{name: "card refund zero", wiseType: DetailTypeCardRefund, amount: 0, want: TransactionTypeCard},
+		{name: "transfer", wiseType: DetailTypeTransfer, amount: 100, want: TransactionTypeTransfer},
+		{name: "payment", wiseType: DetailTypePayment, amount: -50, want: TransactionTypePayment},
+		{name: "conversion", wiseType: DetailTypeConversion, amount: -100, want: TransactionTypeExchange},
+		{name: "exchange alias", wiseType: DetailTypeExchange, amount: 50, want: TransactionTypeExchange},
+		{name: "fee", wiseType: DetailTypeFee, amount: -0.5, want: TransactionTypeFee},
 		{name: "unknown positive is credit", wiseType: "SOMETHING_NEW", amount: 10, want: TransactionTypeCredit},
 		{name: "unknown negative is debit", wiseType: "SOMETHING_NEW", amount: -10, want: TransactionTypeDebit},
 		{name: "unknown zero is debit", wiseType: "SOMETHING_NEW", amount: 0, want: TransactionTypeDebit},

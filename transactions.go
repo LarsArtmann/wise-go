@@ -31,7 +31,7 @@ func (c *Client) ListTransactions(
 		v.Set("intervalEnd", req.To.Format(time.RFC3339))
 
 		if req.Type != "" {
-			v.Set("type", req.Type)
+			v.Set("type", string(req.Type))
 		}
 
 		return v.Encode()
@@ -91,7 +91,7 @@ func mapTransaction(
 		)
 	}
 
-	txType := classifyTransactionType(t.Details.Type, t.Amount.Value)
+	txType := classifyTransactionType(DetailType(t.Details.Type), t.Amount.Value)
 
 	total, err := toMoney(t.Amount)
 	if err != nil {
@@ -160,16 +160,19 @@ func mapExchange(ed *raw.ExchangeDetails) (*TransactionExchange, error) {
 	}, nil
 }
 
+// DetailType represents Wise's wire-format values for details.type.
+// Use the DetailType* constants as ListTransactionsRequest.Type filter values.
+type DetailType string
+
 // DetailType constants are Wise's wire-format values for details.type.
-// Use these as ListTransactionsRequest.Type filter values.
 const (
-	DetailTypeCardPayment = "CARD_PAYMENT"
-	DetailTypeCardRefund  = "CARD_REFUND"
-	DetailTypeTransfer    = "TRANSFER"
-	DetailTypePayment     = "PAYMENT"
-	DetailTypeConversion  = "CONVERSION"
-	DetailTypeExchange    = "EXCHANGE"
-	DetailTypeFee         = "FEE"
+	DetailTypeCardPayment DetailType = "CARD_PAYMENT"
+	DetailTypeCardRefund  DetailType = "CARD_REFUND"
+	DetailTypeTransfer    DetailType = "TRANSFER"
+	DetailTypePayment     DetailType = "PAYMENT"
+	DetailTypeConversion  DetailType = "CONVERSION"
+	DetailTypeExchange    DetailType = "EXCHANGE"
+	DetailTypeFee         DetailType = "FEE"
 )
 
 // classifyTransactionType maps Wise detail types to SDK transaction types.
@@ -177,7 +180,7 @@ const (
 // does not change with sign). CARD_REFUND is amount-dependent: positive amounts
 // are classified as refunds, non-positive fall back to card. See README for the
 // full contract.
-func classifyTransactionType(wiseType string, amount float64) TransactionType {
+func classifyTransactionType(wiseType DetailType, amount float64) TransactionType {
 	switch wiseType {
 	case DetailTypeCardPayment:
 		return TransactionTypeCard

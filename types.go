@@ -179,7 +179,7 @@ type ListTransactionsRequest struct {
 	Currency  Currency
 	From      time.Time
 	To        time.Time
-	Type      string // Optional filter by transaction type. See DetailType* constants.
+	Type      DetailType // Optional filter by transaction type. See DetailType* constants.
 }
 
 // ListTransactionsResponse from listing transactions.
