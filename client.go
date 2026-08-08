@@ -193,5 +193,10 @@ func (c *Client) checkError(resp *http.Response) error {
 
 	body, _ := readBody(resp)
 
-	return newAPIError(resp.StatusCode, body, parseRetryAfter(resp.Header.Get("Retry-After")))
+	return newAPIError(
+		resp.StatusCode,
+		body,
+		parseRetryAfter(resp.Header.Get("Retry-After")),
+		resp.Header.Get("X-Rate-Limited-By"),
+	)
 }

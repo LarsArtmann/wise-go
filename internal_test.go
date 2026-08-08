@@ -230,7 +230,7 @@ func assertErrorClassification(
 ) {
 	t.Helper()
 
-	err := newAPIError(statusCode, body, time.Second)
+	err := newAPIError(statusCode, body, time.Second, "")
 
 	coder, ok := err.(interface{ ErrorCode() string })
 	if !ok {
@@ -261,7 +261,7 @@ func assertErrorClassification(
 func TestNewAPIErrorRetryAfter(t *testing.T) {
 	t.Parallel()
 
-	err := newAPIError(http.StatusTooManyRequests, "{}", 42*time.Second)
+	err := newAPIError(http.StatusTooManyRequests, "{}", 42*time.Second, "ip")
 
 	rle, ok := errors.AsType[*RateLimitError](err)
 	if !ok {
@@ -270,6 +270,10 @@ func TestNewAPIErrorRetryAfter(t *testing.T) {
 
 	if rle.RetryAfter != 42*time.Second {
 		t.Errorf("RetryAfter = %v, want 42s", rle.RetryAfter)
+	}
+
+	if rle.RateLimitedBy != "ip" {
+		t.Errorf("RateLimitedBy = %q, want %q", rle.RateLimitedBy, "ip")
 	}
 }
 
@@ -399,5 +403,63 @@ func TestMoneyString(t *testing.T) {
 				t.Errorf("Money.String() = %q, want %q", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestCheckErrorCapturesRateLimitedBy(t *testing.T) {
+	t.Parallel()
+
+	client := &Client{}
+	resp := &http.Response{
+		StatusCode: http.StatusTooManyRequests,
+		Header: http.Header{
+			"Retry-After":       []string{"2"},
+			"X-Rate-Limited-By": []string{"ip"},
+		},
+		Body: http.NoBody,
+	}
+
+	err := client.checkError(resp)
+
+	var rle *RateLimitError
+	if !errors.As(err, &rle) {
+		t.Fatalf("expected *RateLimitError, got %T", err)
+	}
+
+	if rle.RateLimitedBy != "ip" {
+		t.Errorf("RateLimitedBy = %q, want %q", rle.RateLimitedBy, "ip")
+	}
+
+	if rle.RetryAfter != 2*time.Second {
+		t.Errorf("RetryAfter = %v, want 2s", rle.RetryAfter)
+	}
+}
+
+func TestCheckErrorWithoutRateLimitedBy(t *testing.T) {
+	t.Parallel()
+
+	client := &Client{}
+	resp := &http.Response{
+		StatusCode: http.StatusTooManyRequests,
+		Header: http.Header{
+			"Retry-After": []string{"1"},
+		},
+		Body: http.NoBody,
+	}
+
+	err := client.checkError(resp)
+
+	var rle *RateLimitError
+	if !errors.As(err, &rle) {
+		t.Fatalf("expected *RateLimitError, got %T", err)
+	}
+
+	if rle.RateLimitedBy != "" {
+		t.Errorf("RateLimitedBy = %q, want empty", rle.RateLimitedBy)
+	}
+
+	ctx := rle.ErrorContext()
+	if _, ok := ctx["rate_limited_by"]; ok {
+		t.Errorf("ErrorContext should not contain rate_limited_by when empty")
 	}
 }

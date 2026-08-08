@@ -52,7 +52,8 @@ func (e *APIError) ErrorContext() map[string]string {
 type RateLimitError struct {
 	APIError
 
-	RetryAfter time.Duration
+	RetryAfter    time.Duration
+	RateLimitedBy string
 }
 
 func (e *RateLimitError) ErrorFamily() errorfamily.Family {
@@ -64,10 +65,15 @@ func (e *RateLimitError) IsRetryable() bool {
 }
 
 func (e *RateLimitError) ErrorContext() map[string]string {
-	return map[string]string{
+	ctx := map[string]string{
 		"status_code": strconv.Itoa(e.StatusCode),
 		"retry_after": e.RetryAfter.String(),
 	}
+	if e.RateLimitedBy != "" {
+		ctx["rate_limited_by"] = e.RateLimitedBy
+	}
+
+	return ctx
 }
 
 func (e *RateLimitError) ErrorCode() string {
@@ -109,7 +115,7 @@ func (e *ServerError) ErrorCode() string {
 	return errorCodeServer
 }
 
-func newAPIError(statusCode int, body string, retryAfter time.Duration) error {
+func newAPIError(statusCode int, body string, retryAfter time.Duration, rateLimitedBy string) error {
 	errResp := parseErrorResponse(body)
 
 	msg := body
@@ -132,8 +138,9 @@ func newAPIError(statusCode int, body string, retryAfter time.Duration) error {
 	switch {
 	case statusCode == http.StatusTooManyRequests:
 		return &RateLimitError{
-			APIError:   base,
-			RetryAfter: retryAfter,
+			APIError:      base,
+			RetryAfter:    retryAfter,
+			RateLimitedBy: rateLimitedBy,
 		}
 	case statusCode == http.StatusUnauthorized || statusCode == http.StatusForbidden:
 		return &AuthError{APIError: base}

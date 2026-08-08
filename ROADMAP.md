@@ -104,7 +104,9 @@ decisions without wrapping the HTTP transport themselves (documented in README).
 
 - **Request/response logging hook** — `WithLogger` option for structured request
   logging (method, URL, status, duration, retry count).
-- **Request ID propagation** — `X-Request-ID` header injection for distributed tracing.
+- **Per-request correlation ID** — `WithCorrelationID` now sets a client-wide
+  `X-External-Correlation-Id` header (shipped this session). The next step is
+  per-call override via context for request-level tracing.
 - **Context-aware retry** — thread `context.Context` cancellation through the retry
   policy so callers can abort in-flight retries.
 
@@ -112,8 +114,11 @@ decisions without wrapping the HTTP transport themselves (documented in README).
 
 - **Metrics hook** — `WithMetrics` option exposing counters/histograms for
   Prometheus or OpenTelemetry (request count, latency, retry count, error rate).
-- **mTLS documentation** — Transport wrapping is documented but mTLS configuration
-  is not. Add a dedicated section.
+- **mTLS documentation** — Wise documents mTLS endpoints
+  (`api-mtls.wise.com`, `api-mtls.wise-sandbox.com`). Transport wrapping is
+  documented but mTLS configuration is not. Add a dedicated section.
+- **Exchange rates** — `GET /v1/rates` is self-contained and high-value. Natural
+  first step beyond profiles/balances/transactions.
 
 ## Axis 4: Scale (architecture)
 
