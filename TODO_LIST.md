@@ -6,6 +6,8 @@ see [ROADMAP.md](ROADMAP.md). For shipped features see [FEATURES.md](FEATURES.md
 
 ## P1 — v1.0 release (API lock)
 
+[ ] Add credentialed Wise sandbox integration tests — create a protected or manually triggered live-test workflow using sandbox credentials, cover the supported read-only endpoints, and keep it separate from fork-safe mock tests. This is required to verify that the SDK actually interoperates with Wise's sandbox rather than only matching mocked responses.
+
 [ ] Lock the public API at v1.0 — formal audit of every exported symbol, godoc
 review pass, then tag `v1.0.0`. All v0.5.0 breaking changes are shipped and tested;
 the lock is the logical next milestone. Requires explicit approval (tagging is
