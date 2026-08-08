@@ -11,6 +11,16 @@ import (
 
 const defaultRetryAfter = time.Second
 
+// toMoney converts a raw BalanceAmount to a validated Money value.
+func toMoney(a BalanceAmount) (Money, error) {
+	currency, err := NewCurrency(a.Currency)
+	if err != nil {
+		return Money{}, fmt.Errorf("currency %q: %w", a.Currency, err)
+	}
+
+	return Money{Cents: a.Cents(), Currency: currency}, nil
+}
+
 // parseEnum maps a raw string to a typed enum value via a lookup table.
 // Eliminates the duplicated switch-parser pattern across parseProfileType,
 // parseBalanceType, and future typed enums.

@@ -10,6 +10,7 @@
 package wise
 
 import (
+	"fmt"
 	"math"
 	"time"
 )
@@ -114,6 +115,56 @@ type ErrorDetail struct {
 	Message string `json:"message"`
 }
 
+// --- Value objects ---
+
+// Currency is an ISO 4217 currency code (e.g., "EUR", "USD", "GBP").
+// Construct via NewCurrency for validation, or use Currency("EUR") directly
+// when the value is known to be valid.
+type Currency string
+
+// NewCurrency validates and constructs a Currency from a raw string.
+// Returns an error if the string is not exactly 3 uppercase ASCII letters.
+//
+//nolint:err113 // currency validation needs dynamic error messages with context
+func NewCurrency(s string) (Currency, error) {
+	if len(s) != 3 {
+		return "", fmt.Errorf("currency must be exactly 3 letters, got %d", len(s))
+	}
+
+	for _, c := range s {
+		if c < 'A' || c > 'Z' {
+			return "", fmt.Errorf("currency must be uppercase ASCII letters, got %q", s)
+		}
+	}
+
+	return Currency(s), nil
+}
+
+// Money is a monetary amount in cents paired with its currency.
+// The pairing makes mismatched currency/amount combinations unrepresentable.
+type Money struct {
+	Cents    int64
+	Currency Currency
+}
+
+// String formats Money as "CUR DD.DD" (e.g., "EUR 12.34", "USD -50.00").
+func (m Money) String() string {
+	negative := m.Cents < 0
+	abs := m.Cents
+	if negative {
+		abs = -abs
+	}
+
+	major := abs / centsPerUnit
+	minor := abs % centsPerUnit
+
+	if negative {
+		return fmt.Sprintf("%s -%d.%02d", m.Currency, major, minor)
+	}
+
+	return fmt.Sprintf("%s %d.%02d", m.Currency, major, minor)
+}
+
 // --- Parsed result types (strongly typed, int64 cents, time.Time) ---
 
 // ProfileResult is the parsed representation of a Wise profile.
@@ -127,53 +178,46 @@ type ProfileResult struct {
 
 // BalanceResult is the parsed representation of a Wise balance.
 type BalanceResult struct {
-	ID               BalanceID
-	Currency         string
-	Type             BalanceType
-	Name             string
-	AmountCents      int64
-	AmountCurrency   string
-	ReservedCents    int64
-	ReservedCurrency string
-	Visible          bool
-	CreatedAt        time.Time
+	ID        BalanceID
+	Currency  Currency
+	Type      BalanceType
+	Name      string
+	Amount    Money
+	Reserved  Money
+	Visible   bool
+	CreatedAt time.Time
 }
 
 // Transaction is the parsed representation of a Wise transaction.
-// All monetary amounts are in cents (int64) for precision-safe arithmetic.
+// All monetary amounts are Money values (int64 cents paired with Currency)
+// for precision-safe arithmetic.
 //
 // Date is returned in UTC. Wise statement dates carry no timezone; the SDK
 // interprets them as UTC via time.Parse. Convert explicitly before comparing
 // against local-time values.
 type Transaction struct {
-	ID                     TransactionID
-	ProfileID              ProfileID
-	BalanceID              BalanceID
-	AmountCents            int64
-	AmountCurrency         string
-	FeesCents              int64
-	FeesCurrency           string
-	TotalCents             int64
-	TotalCurrency          string
-	RunningBalanceCents    int64
-	RunningBalanceCurrency string
-	Exchange               *TransactionExchange
-	Type                   TransactionType
-	Description            string
-	Reference              string
-	Category               string
-	MerchantName           string
-	Date                   time.Time
+	ID             TransactionID
+	ProfileID      ProfileID
+	BalanceID      BalanceID
+	Amount         Money
+	Fees           Money
+	Total          Money
+	RunningBalance Money
+	Exchange       *TransactionExchange
+	Type           TransactionType
+	Description    string
+	Reference      string
+	Category       string
+	MerchantName   string
+	Date           time.Time
 }
 
 // TransactionExchange captures the currency-conversion details of an
 // exchange transaction. nil when the transaction is not a conversion.
 type TransactionExchange struct {
-	FromCents    int64
-	FromCurrency string
-	ToCents      int64
-	ToCurrency   string
-	Rate         float64
+	From Money
+	To   Money
+	Rate float64
 }
 
 // --- Enum types ---
@@ -224,7 +268,7 @@ const (
 type ListTransactionsRequest struct {
 	ProfileID ProfileID
 	BalanceID BalanceID
-	Currency  string
+	Currency  Currency
 	From      time.Time
 	To        time.Time
 	Type      string // Optional filter by transaction type. See DetailType* constants.
@@ -234,5 +278,5 @@ type ListTransactionsRequest struct {
 type ListTransactionsResponse struct {
 	Transactions          []Transaction
 	HasMore               bool // Always false for Wise (returns all in one request)
-	EndOfStatementBalance BalanceAmount
+	EndOfStatementBalance Money
 }
