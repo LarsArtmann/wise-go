@@ -5,11 +5,11 @@ Inspired by Domain-Driven Design (DDD) Ubiquitous Language.
 
 ## Glossary
 
-| Term    | Definition                                               | Context          |
-| ------- | -------------------------------------------------------- | ---------------- |
-| wise-go | The Go SDK for the Wise API                              | Project name     |
-| Wise    | The financial platform (formerly TransferWise)           | External service |
-| API Key | Bearer token for authenticating with the Wise API        | Authentication   |
+| Term    | Definition                                                                                                        | Context          |
+| ------- | ----------------------------------------------------------------------------------------------------------------- | ---------------- |
+| wise-go | The Go SDK for the Wise API                                                                                       | Project name     |
+| Wise    | The financial platform (formerly TransferWise)                                                                    | External service |
+| API Key | Bearer token for authenticating with the Wise API                                                                 | Authentication   |
 | Sandbox | Wise test environment at `api.wise-sandbox.com` (V2; V1 `api.sandbox.transferwise.tech` deprecated June 30, 2026) | Development      |
 
 ## Entities

@@ -14,19 +14,19 @@ claim here can be verified against the implementation.
 
 ## Client core
 
-| Feature                                 | Status           | Evidence                                                           |
-| --------------------------------------- | ---------------- | ------------------------------------------------------------------ |
-| `wise.New(apiKey, opts...)` constructor | FULLY_FUNCTIONAL | `client.go:37`; functional-options pattern                         |
-| Bearer-token authentication             | FULLY_FUNCTIONAL | `client.go:177` `setAuth`                                          |
-| Sandbox environment (`WithSandbox`)     | FULLY_FUNCTIONAL | `options.go:26`; `SandboxURL` const in `types.go:20`               |
-| Custom base URL (`WithBaseURL`)         | FULLY_FUNCTIONAL | `options.go:33`                                                    |
-| Custom HTTP timeout (`WithTimeout`)     | FULLY_FUNCTIONAL | `options.go:40`                                                    |
-| Custom retry policy (`WithRetry`)       | FULLY_FUNCTIONAL | `options.go:48`; exponential backoff via failsafe-go               |
-| Custom HTTP client (`WithHTTPClient`)   | FULLY_FUNCTIONAL | `options.go:59`; accepts `Doer` interface (`client.go:24`)         |
+| Feature                                 | Status           | Evidence                                                                 |
+| --------------------------------------- | ---------------- | ------------------------------------------------------------------------ |
+| `wise.New(apiKey, opts...)` constructor | FULLY_FUNCTIONAL | `client.go:37`; functional-options pattern                               |
+| Bearer-token authentication             | FULLY_FUNCTIONAL | `client.go:177` `setAuth`                                                |
+| Sandbox environment (`WithSandbox`)     | FULLY_FUNCTIONAL | `options.go:26`; `SandboxURL` const in `types.go:20`                     |
+| Custom base URL (`WithBaseURL`)         | FULLY_FUNCTIONAL | `options.go:33`                                                          |
+| Custom HTTP timeout (`WithTimeout`)     | FULLY_FUNCTIONAL | `options.go:40`                                                          |
+| Custom retry policy (`WithRetry`)       | FULLY_FUNCTIONAL | `options.go:48`; exponential backoff via failsafe-go                     |
+| Custom HTTP client (`WithHTTPClient`)   | FULLY_FUNCTIONAL | `options.go:59`; accepts `Doer` interface (`client.go:24`)               |
 | Correlation ID (`WithCorrelationID`)    | FULLY_FUNCTIONAL | `options.go:64`; sets `X-External-Correlation-Id` header on all requests |
-| Retry with backoff (429, 5xx, network)  | FULLY_FUNCTIONAL | `client.go:91` `isRetryable`; verified by wise_test.go retry suite |
-| `Authenticate(ctx)`                     | FULLY_FUNCTIONAL | `client.go:101`; delegates to `ListProfiles`                       |
-| `Health(ctx)`                           | FULLY_FUNCTIONAL | `client.go:111`; delegates to `Authenticate`                       |
+| Retry with backoff (429, 5xx, network)  | FULLY_FUNCTIONAL | `client.go:91` `isRetryable`; verified by wise_test.go retry suite       |
+| `Authenticate(ctx)`                     | FULLY_FUNCTIONAL | `client.go:101`; delegates to `ListProfiles`                             |
+| `Health(ctx)`                           | FULLY_FUNCTIONAL | `client.go:111`; delegates to `Authenticate`                             |
 
 ## Profiles
 
@@ -61,16 +61,16 @@ claim here can be verified against the implementation.
 
 ## Error handling
 
-| Feature                                           | Status           | Evidence                                         |
-| ------------------------------------------------- | ---------------- | ------------------------------------------------ |
-| `APIError` base type                              | FULLY_FUNCTIONAL | `errors.go:27`; embeds into all subtypes         |
-| `RateLimitError` (HTTP 429) with `RetryAfter`     | FULLY_FUNCTIONAL | `errors.go:52`; parses delta-seconds + HTTP-date |
-| `RateLimitError.RateLimitedBy` (429 header)        | FULLY_FUNCTIONAL | `errors.go:55`; captures `X-Rate-Limited-By` header |
-| `AuthError` (HTTP 401, 403)                       | FULLY_FUNCTIONAL | `errors.go:78`                                   |
-| `NotFoundError` (HTTP 404)                        | FULLY_FUNCTIONAL | `errors.go:87`                                   |
-| `ServerError` (HTTP 5xx)                          | FULLY_FUNCTIONAL | `errors.go:96`                                   |
-| `ErrorCode()` / `ErrorFamily()` / `IsRetryable()` | FULLY_FUNCTIONAL | All implement go-error-family interfaces         |
-| `errors.As` matching                              | FULLY_FUNCTIONAL | Demonstrated in README; tested                   |
+| Feature                                           | Status           | Evidence                                            |
+| ------------------------------------------------- | ---------------- | --------------------------------------------------- |
+| `APIError` base type                              | FULLY_FUNCTIONAL | `errors.go:27`; embeds into all subtypes            |
+| `RateLimitError` (HTTP 429) with `RetryAfter`     | FULLY_FUNCTIONAL | `errors.go:52`; parses delta-seconds + HTTP-date    |
+| `RateLimitError.RateLimitedBy` (429 header)       | FULLY_FUNCTIONAL | `errors.go:55`; captures `X-Rate-Limited-By` header |
+| `AuthError` (HTTP 401, 403)                       | FULLY_FUNCTIONAL | `errors.go:78`                                      |
+| `NotFoundError` (HTTP 404)                        | FULLY_FUNCTIONAL | `errors.go:87`                                      |
+| `ServerError` (HTTP 5xx)                          | FULLY_FUNCTIONAL | `errors.go:96`                                      |
+| `ErrorCode()` / `ErrorFamily()` / `IsRetryable()` | FULLY_FUNCTIONAL | All implement go-error-family interfaces            |
+| `errors.As` matching                              | FULLY_FUNCTIONAL | Demonstrated in README; tested                      |
 
 ## Type system
 
@@ -99,12 +99,12 @@ claim here can be verified against the implementation.
 
 ## Out of scope (not yet started)
 
-| Feature                      | Status  | Notes                                          |
-| ---------------------------- | ------- | ---------------------------------------------- |
-| Write operations (transfers) | PLANNED | No POST/PATCH/DELETE helpers yet               |
-| Recipients API               | PLANNED | No code                                        |
-| Quotes API                   | PLANNED | No code                                        |
+| Feature                          | Status  | Notes                                                                                       |
+| -------------------------------- | ------- | ------------------------------------------------------------------------------------------- |
+| Write operations (transfers)     | PLANNED | No POST/PATCH/DELETE helpers yet                                                            |
+| Recipients API                   | PLANNED | No code                                                                                     |
+| Quotes API                       | PLANNED | No code                                                                                     |
 | Exchange rates (`GET /v1/rates`) | PLANNED | Self-contained, high-value; see [API docs study](docs/reviews/2026-08-08_api-docs-study.md) |
-| Webhooks                     | PLANNED | No code                                        |
-| Statements (CSV/PDF)         | PLANNED | SDK consumes `statement.json` only             |
-| Service-client sub-structure | PLANNED | Trigger: resource count > 6-8 (see ROADMAP.md) |
+| Webhooks                         | PLANNED | No code                                                                                     |
+| Statements (CSV/PDF)             | PLANNED | SDK consumes `statement.json` only                                                          |
+| Service-client sub-structure     | PLANNED | Trigger: resource count > 6-8 (see ROADMAP.md)                                              |

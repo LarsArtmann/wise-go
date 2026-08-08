@@ -27,25 +27,25 @@ endpoints across 29 categories). Key findings for wise-go:
 
 ### Critical for wise-go
 
-| Date | Entry | Impact on wise-go |
-|------|-------|-------------------|
-| 27 Jul 2026 | Global API versioning (`2026Q4`) — opt-in date-based version | Future: may need version header/param support |
-| 15 Jan 2026 | **int64 ID migration** — transfer ID, recipient ID, card transaction ID, user ID, profile ID, balance ID all documented as int64 | **Already correct** — branded IDs use int64 |
-| 9 Apr 2026 | **Global headers documented** — `X-External-Correlation-Id`, `x-trace-id` on all operations | **Added** `WithCorrelationID` option |
-| 9 Apr 2026 | **429 response documented** — `Retry-After` + `X-Rate-Limited-By` on all operations | **Added** `RateLimitedBy` to `RateLimitError` |
-| 24 Nov 2025 | **Sandbox URL migration** — V1 → V2 sandbox | **Fixed** — updated `SandboxURL` constant |
-| 31 Mar 2026 | OAuth token consolidation — Client Credentials + User Tokens merged into single endpoint | Future: relevant when SDK adds OAuth support |
+| Date        | Entry                                                                                                                            | Impact on wise-go                             |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| 27 Jul 2026 | Global API versioning (`2026Q4`) — opt-in date-based version                                                                     | Future: may need version header/param support |
+| 15 Jan 2026 | **int64 ID migration** — transfer ID, recipient ID, card transaction ID, user ID, profile ID, balance ID all documented as int64 | **Already correct** — branded IDs use int64   |
+| 9 Apr 2026  | **Global headers documented** — `X-External-Correlation-Id`, `x-trace-id` on all operations                                      | **Added** `WithCorrelationID` option          |
+| 9 Apr 2026  | **429 response documented** — `Retry-After` + `X-Rate-Limited-By` on all operations                                              | **Added** `RateLimitedBy` to `RateLimitError` |
+| 24 Nov 2025 | **Sandbox URL migration** — V1 → V2 sandbox                                                                                      | **Fixed** — updated `SandboxURL` constant     |
+| 31 Mar 2026 | OAuth token consolidation — Client Credentials + User Tokens merged into single endpoint                                         | Future: relevant when SDK adds OAuth support  |
 
 ### Informational (no immediate SDK change)
 
-| Date | Entry | Notes |
-|------|-------|-------|
-| 18 Mar 2026 | Webhook schema v4.0.0 — millisecond-precision timestamps | Relevant when webhooks are implemented |
-| 18 Mar 2026 | Event ordering guide — ordering fields for reconciling out-of-order events | Webhook implementation reference |
-| 12 Mar 2026 | `X-External-Correlation-Id` guide published | Confirms header usage pattern |
-| 5 Feb 2025 | Profile `currentState` field added | Could enhance `Profile` struct |
-| 14 Feb 2025 | Profile `externalCustomerId` field added | Could enhance `Profile` struct |
-| 5 Jun 2026 | Client credentials token format migration guide | Future OAuth reference |
+| Date        | Entry                                                                      | Notes                                  |
+| ----------- | -------------------------------------------------------------------------- | -------------------------------------- |
+| 18 Mar 2026 | Webhook schema v4.0.0 — millisecond-precision timestamps                   | Relevant when webhooks are implemented |
+| 18 Mar 2026 | Event ordering guide — ordering fields for reconciling out-of-order events | Webhook implementation reference       |
+| 12 Mar 2026 | `X-External-Correlation-Id` guide published                                | Confirms header usage pattern          |
+| 5 Feb 2025  | Profile `currentState` field added                                         | Could enhance `Profile` struct         |
+| 14 Feb 2025 | Profile `externalCustomerId` field added                                   | Could enhance `Profile` struct         |
+| 5 Jun 2026  | Client credentials token format migration guide                            | Future OAuth reference                 |
 
 ### Deprecations tracked (none affect current SDK scope)
 
@@ -63,36 +63,36 @@ The Wise Platform API has ~135+ endpoints across 29 categories. The SDK covers 3
 
 These align with the existing ROADMAP and are the most common consumer needs:
 
-| Category | Key Endpoints | wise-go Status |
-|----------|---------------|----------------|
-| **Quotes** | `POST /v3/quotes`, `POST /v3/profiles/{id}/quotes`, `GET /v3/profiles/{id}/quotes/{id}`, `GET /v1/quotes/{id}/account-requirements` | PLANNED |
-| **Transfers** | `GET /v1/transfers/{id}`, `GET /v1/delivery-estimates/{id}`, CRUD for transfers | PLANNED |
-| **Recipients** | `GET /v2/accounts`, `GET /v1/accounts/{id}`, `GET /v1/account-requirements` | PLANNED |
-| **Exchange rates** | `GET /v1/rates` | Not planned |
-| **Statements** | `GET /v1/profiles/{id}/balance-statements/{id}/statement.{json,csv,pdf}` | CSV/PDF PLANNED |
+| Category           | Key Endpoints                                                                                                                       | wise-go Status  |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | --------------- |
+| **Quotes**         | `POST /v3/quotes`, `POST /v3/profiles/{id}/quotes`, `GET /v3/profiles/{id}/quotes/{id}`, `GET /v1/quotes/{id}/account-requirements` | PLANNED         |
+| **Transfers**      | `GET /v1/transfers/{id}`, `GET /v1/delivery-estimates/{id}`, CRUD for transfers                                                     | PLANNED         |
+| **Recipients**     | `GET /v2/accounts`, `GET /v1/accounts/{id}`, `GET /v1/account-requirements`                                                         | PLANNED         |
+| **Exchange rates** | `GET /v1/rates`                                                                                                                     | Not planned     |
+| **Statements**     | `GET /v1/profiles/{id}/balance-statements/{id}/statement.{json,csv,pdf}`                                                            | CSV/PDF PLANNED |
 
 ### Tier 2: Moderate-value SDK targets
 
-| Category | Key Endpoints | Notes |
-|----------|---------------|-------|
-| **Users** | `GET /v1/me`, `GET /v1/users/{id}` | Simple read endpoints |
-| **Webhooks** | Profile & application subscription CRUD + signature verification | High-value, self-contained |
-| **Balances (expanded)** | `POST /v4/profiles/{id}/balances` (create), `GET /v1/profiles/{id}/total-funds/{currency}`, `GET /v1/profiles/{id}/balance-capacity` | Natural extension of existing balance support |
-| **Multi-Currency Account** | `GET /v4/profiles/{id}/multi-currency-account`, eligibility, available currencies | MCA details with bank account numbers |
-| **Bank Account Details** | `GET /v1/profiles/{id}/account-details`, `GET /v3/profiles/{id}/bank-details` | IBAN/SortCode/routing info |
-| **Addresses** | `GET /v1/addresses`, `POST /v1/addresses`, `GET /v1/address-requirements` | CRUD for address book |
+| Category                   | Key Endpoints                                                                                                                        | Notes                                         |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
+| **Users**                  | `GET /v1/me`, `GET /v1/users/{id}`                                                                                                   | Simple read endpoints                         |
+| **Webhooks**               | Profile & application subscription CRUD + signature verification                                                                     | High-value, self-contained                    |
+| **Balances (expanded)**    | `POST /v4/profiles/{id}/balances` (create), `GET /v1/profiles/{id}/total-funds/{currency}`, `GET /v1/profiles/{id}/balance-capacity` | Natural extension of existing balance support |
+| **Multi-Currency Account** | `GET /v4/profiles/{id}/multi-currency-account`, eligibility, available currencies                                                    | MCA details with bank account numbers         |
+| **Bank Account Details**   | `GET /v1/profiles/{id}/account-details`, `GET /v3/profiles/{id}/bank-details`                                                        | IBAN/SortCode/routing info                    |
+| **Addresses**              | `GET /v1/addresses`, `POST /v1/addresses`, `GET /v1/address-requirements`                                                            | CRUD for address book                         |
 
 ### Tier 3: Specialized (card issuance, KYC, disputes, SCA)
 
-| Category | Endpoints | Notes |
-|----------|-----------|-------|
-| **Cards** | ~15 endpoints (orders, transactions, limits, spend controls, disputes) | Large surface, card-issuing partners only |
-| **KYC Review** | ~8 endpoints (list, create, submit, verify requirements) | Compliance-focused |
-| **SCA** | One-time tokens, SCA sessions, verification | Strong customer authentication |
-| **Disputes** | ~4 endpoints (list, get, submit, upload evidence) | Card dispute management |
-| **Digital Wallets** | Payment tokens, provisioning, activation | Apple/Google Pay integration |
-| **Batch Groups** | Batch payment initiation and tracking | Bulk payment operations |
-| **Sandbox Simulation** | ~15 simulation endpoints | Testing-only |
+| Category               | Endpoints                                                              | Notes                                     |
+| ---------------------- | ---------------------------------------------------------------------- | ----------------------------------------- |
+| **Cards**              | ~15 endpoints (orders, transactions, limits, spend controls, disputes) | Large surface, card-issuing partners only |
+| **KYC Review**         | ~8 endpoints (list, create, submit, verify requirements)               | Compliance-focused                        |
+| **SCA**                | One-time tokens, SCA sessions, verification                            | Strong customer authentication            |
+| **Disputes**           | ~4 endpoints (list, get, submit, upload evidence)                      | Card dispute management                   |
+| **Digital Wallets**    | Payment tokens, provisioning, activation                               | Apple/Google Pay integration              |
+| **Batch Groups**       | Batch payment initiation and tracking                                  | Bulk payment operations                   |
+| **Sandbox Simulation** | ~15 simulation endpoints                                               | Testing-only                              |
 
 ### Not in scope for wise-go (per ROADMAP non-goals)
 
@@ -107,11 +107,11 @@ These align with the existing ROADMAP and are the most common consumer needs:
 
 ### Current documented URLs
 
-| Environment | TLS | mTLS |
-|-------------|-----|------|
-| **Production** | `https://api.wise.com` | `https://api-mtls.transferwise.com` |
-| **Sandbox V2** (current) | `https://api.wise-sandbox.com` | `https://api-mtls.wise-sandbox.com` |
-| ~~Sandbox V1~~ (deprecated) | ~~`https://api.sandbox.transferwise.tech`~~ | — |
+| Environment                 | TLS                                         | mTLS                                |
+| --------------------------- | ------------------------------------------- | ----------------------------------- |
+| **Production**              | `https://api.wise.com`                      | `https://api-mtls.transferwise.com` |
+| **Sandbox V2** (current)    | `https://api.wise-sandbox.com`              | `https://api-mtls.wise-sandbox.com` |
+| ~~Sandbox V1~~ (deprecated) | ~~`https://api.sandbox.transferwise.tech`~~ | —                                   |
 
 ### V1 → V2 migration notes (Nov 2025)
 
@@ -131,13 +131,13 @@ These align with the existing ROADMAP and are the most common consumer needs:
 
 ## 4. Global Headers (Apr 2026 documentation)
 
-| Header | Purpose | wise-go Status |
-|--------|---------|----------------|
-| `X-External-Correlation-Id` | Distributed tracing across Wise API calls | **Added** `WithCorrelationID` option |
-| `x-trace-id` | Internal Wise trace correlation | Not added (typically set by intermediaries) |
-| `Authorization: Bearer {token}` | Authentication | Already implemented |
-| `Retry-After` (response) | Seconds/date to wait before retrying | Already parsed in `RateLimitError` |
-| `X-Rate-Limited-By` (response) | Identifies rate-limit scope (e.g., "ip", "profile") | **Added** `RateLimitedBy` field |
+| Header                          | Purpose                                             | wise-go Status                              |
+| ------------------------------- | --------------------------------------------------- | ------------------------------------------- |
+| `X-External-Correlation-Id`     | Distributed tracing across Wise API calls           | **Added** `WithCorrelationID` option        |
+| `x-trace-id`                    | Internal Wise trace correlation                     | Not added (typically set by intermediaries) |
+| `Authorization: Bearer {token}` | Authentication                                      | Already implemented                         |
+| `Retry-After` (response)        | Seconds/date to wait before retrying                | Already parsed in `RateLimitError`          |
+| `X-Rate-Limited-By` (response)  | Identifies rate-limit scope (e.g., "ip", "profile") | **Added** `RateLimitedBy` field             |
 
 ---
 
@@ -165,15 +165,15 @@ Previous endpoint-based versions remain available.
 
 ## 7. Actions Taken This Session
 
-| # | Action | Files Changed |
-|---|--------|---------------|
-| 1 | Fixed stale sandbox URL | `types.go`, `docs/DOMAIN_LANGUAGE.md` |
-| 2 | Added `WithCorrelationID` option | `options.go`, `client.go` |
-| 3 | Added `RateLimitedBy` to `RateLimitError` | `errors.go`, `client.go` |
-| 4 | Added correlation ID BDD tests | `wise_test.go` |
-| 5 | Added `checkError` header capture tests | `internal_test.go` |
-| 6 | Created this study report | This file |
-| 7 | Updated project docs | `TODO_LIST.md`, `ROADMAP.md`, `FEATURES.md`, `AGENTS.md` |
+| #   | Action                                    | Files Changed                                            |
+| --- | ----------------------------------------- | -------------------------------------------------------- |
+| 1   | Fixed stale sandbox URL                   | `types.go`, `docs/DOMAIN_LANGUAGE.md`                    |
+| 2   | Added `WithCorrelationID` option          | `options.go`, `client.go`                                |
+| 3   | Added `RateLimitedBy` to `RateLimitError` | `errors.go`, `client.go`                                 |
+| 4   | Added correlation ID BDD tests            | `wise_test.go`                                           |
+| 5   | Added `checkError` header capture tests   | `internal_test.go`                                       |
+| 6   | Created this study report                 | This file                                                |
+| 7   | Updated project docs                      | `TODO_LIST.md`, `ROADMAP.md`, `FEATURES.md`, `AGENTS.md` |
 
 ---
 
