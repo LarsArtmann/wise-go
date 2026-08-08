@@ -117,8 +117,9 @@ is clear.
 ### Trigger: resource count crosses ~6–8
 
 When the SDK grows past profiles + balances + transactions + transfers + recipients
-+ quotes + webhooks + one more, the flat `client.ListX` surface becomes noisy.
-Move to a **service-client sub-structure**:
+
+- quotes + webhooks + one more, the flat `client.ListX` surface becomes noisy.
+  Move to a **service-client sub-structure**:
 
 ```go
 client.Profiles().List(ctx)
@@ -161,3 +162,7 @@ structs"); documented in README.
 - **Auto-generation from OpenAPI** — Wise does not publish a complete OpenAPI spec.
   Hand-written types are correct; auto-gen would lose the two-layer boundary.
 - **Caching / local state** — the SDK is stateless. Caching is the caller's job.
+- **`Money` arithmetic** — `Money` pairs cents+currency to prevent mismatched amounts
+  at the serialization boundary. It is deliberately not a financial math library
+  (`Add`/`Sub`/`IsNegative`/`Equal` etc. are out of scope). Arithmetic is the
+  consumer's domain logic; the SDK is an anti-corruption layer, not a domain model.
