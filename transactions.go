@@ -140,7 +140,7 @@ func mapTransaction(
 // Returns nil when there are no exchange details.
 func mapExchange(ed *ExchangeDetails) (*TransactionExchange, error) {
 	if ed == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil // nil exchange details = nil result, no error
 	}
 
 	from, err := toMoney(ed.FromAmount)

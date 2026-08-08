@@ -284,3 +284,76 @@ func TestMapProfileError(t *testing.T) {
 		t.Fatal("expected error for bad created_at")
 	}
 }
+
+func TestNewCurrency(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		input   string
+		want    Currency
+		wantErr bool
+	}{
+		{name: "valid EUR", input: "EUR", want: Currency("EUR")},
+		{name: "valid USD", input: "USD", want: Currency("USD")},
+		{name: "valid GBP", input: "GBP", want: Currency("GBP")},
+		{name: "empty rejected", input: "", wantErr: true},
+		{name: "two letters rejected", input: "EU", wantErr: true},
+		{name: "four letters rejected", input: "EURO", wantErr: true},
+		{name: "lowercase rejected", input: "eur", wantErr: true},
+		{name: "mixed case rejected", input: "Eur", wantErr: true},
+		{name: "digits rejected", input: "EU1", wantErr: true},
+		{name: "special chars rejected", input: "E-R", wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := NewCurrency(tt.input)
+			if tt.wantErr {
+				if err == nil {
+					t.Fatalf("NewCurrency(%q) expected error, got nil", tt.input)
+				}
+
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("NewCurrency(%q) unexpected error: %v", tt.input, err)
+			}
+
+			if got != tt.want {
+				t.Errorf("NewCurrency(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestMoneyString(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		money Money
+		want  string
+	}{
+		{name: "zero", money: Money{Cents: 0, Currency: Currency("EUR")}, want: "EUR 0.00"},
+		{name: "positive round", money: Money{Cents: 1234, Currency: Currency("USD")}, want: "USD 12.34"},
+		{name: "positive with cents", money: Money{Cents: 12345, Currency: Currency("EUR")}, want: "EUR 123.45"},
+		{name: "negative", money: Money{Cents: -5000, Currency: Currency("GBP")}, want: "GBP -50.00"},
+		{name: "negative with cents", money: Money{Cents: -12345, Currency: Currency("EUR")}, want: "EUR -123.45"},
+		{name: "single cent", money: Money{Cents: 1, Currency: Currency("USD")}, want: "USD 0.01"},
+		{name: "large amount", money: Money{Cents: 999999999, Currency: Currency("EUR")}, want: "EUR 9999999.99"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			if got := tt.money.String(); got != tt.want {
+				t.Errorf("Money.String() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}

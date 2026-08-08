@@ -481,6 +481,10 @@ var _ = Describe("Wise Client", func() {
 										Value:    0.50,
 										Currency: "EUR",
 									},
+									RunningBalance: wise.BalanceAmount{
+										Value:    950.50,
+										Currency: "EUR",
+									},
 									ReferenceNumber: "REF-001",
 									Details: wise.TransactionDetails{
 										Type:         "CARD_PAYMENT",
@@ -497,6 +501,7 @@ var _ = Describe("Wise Client", func() {
 										Currency: "EUR",
 									},
 									TotalFees:       wise.BalanceAmount{Value: 0, Currency: "EUR"},
+									RunningBalance:  wise.BalanceAmount{Value: 1950.50, Currency: "EUR"},
 									ReferenceNumber: "REF-002",
 									Details: wise.TransactionDetails{
 										Type:        "TRANSFER",
@@ -589,6 +594,7 @@ var _ = Describe("Wise Client", func() {
 								testTx("tx-fee", "FEE", -0.50),
 								testTx("tx-payment", "PAYMENT", -200.00),
 							},
+							EndOfStatementBalance: wise.BalanceAmount{Value: 0, Currency: "EUR"},
 						}
 
 						w.Header().Set("Content-Type", "application/json")
@@ -672,6 +678,7 @@ var _ = Describe("Wise Client", func() {
 									},
 								},
 							},
+							EndOfStatementBalance: wise.BalanceAmount{Value: 5000, Currency: "EUR"},
 						}
 
 						w.Header().Set("Content-Type", "application/json")
@@ -720,6 +727,7 @@ var _ = Describe("Wise Client", func() {
 									Details:         wise.TransactionDetails{Type: "CARD_PAYMENT"},
 								},
 							},
+							EndOfStatementBalance: wise.BalanceAmount{Value: 200, Currency: "USD"},
 						}
 
 						w.Header().Set("Content-Type", "application/json")
@@ -753,6 +761,7 @@ var _ = Describe("Wise Client", func() {
 							Transactions: []wise.StatementTransaction{
 								testTx("tx-filtered", "CARD_PAYMENT", -10.00),
 							},
+							EndOfStatementBalance: wise.BalanceAmount{Value: 0, Currency: "EUR"},
 						}
 
 						w.Header().Set("Content-Type", "application/json")

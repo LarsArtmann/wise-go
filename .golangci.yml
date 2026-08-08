@@ -189,6 +189,8 @@ linters:
         - tx
         - ed
         - rc
+        - s
+        - to
       ignore-type-assert-ok: true
   exclusions:
     generated: lax

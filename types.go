@@ -58,7 +58,10 @@ type BalanceAmount struct {
 	Currency string  `json:"currency"`
 }
 
-const centsPerUnit = 100
+const (
+	centsPerUnit       = 100
+	currencyCodeLength = 3
+)
 
 // Cents converts a BalanceAmount to int64 minor units (cents).
 // Uses math.Round to handle IEEE 754 floating-point representation errors.
@@ -127,7 +130,7 @@ type Currency string
 //
 //nolint:err113 // currency validation needs dynamic error messages with context
 func NewCurrency(s string) (Currency, error) {
-	if len(s) != 3 {
+	if len(s) != currencyCodeLength {
 		return "", fmt.Errorf("currency must be exactly 3 letters, got %d", len(s))
 	}
 
@@ -149,16 +152,15 @@ type Money struct {
 
 // String formats Money as "CUR DD.DD" (e.g., "EUR 12.34", "USD -50.00").
 func (m Money) String() string {
-	negative := m.Cents < 0
 	abs := m.Cents
-	if negative {
+	if abs < 0 {
 		abs = -abs
 	}
 
 	major := abs / centsPerUnit
 	minor := abs % centsPerUnit
 
-	if negative {
+	if m.Cents < 0 {
 		return fmt.Sprintf("%s -%d.%02d", m.Currency, major, minor)
 	}
 
