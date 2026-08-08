@@ -38,22 +38,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Migration Guide
 
-| Old (v0.3.0)                          | New (v0.4.0)                           |
-| ------------------------------------- | -------------------------------------- |
-| `tx.AmountCents`                      | `tx.Amount.Cents`                      |
-| `tx.AmountCurrency`                   | `tx.Amount.Currency`                   |
-| `tx.TotalCents`                       | `tx.Total.Cents`                       |
-| `tx.FeesCents`                        | `tx.Fees.Cents`                        |
-| `tx.RunningBalanceCents`              | `tx.RunningBalance.Cents`              |
-| `exch.FromCents` / `exch.FromCurrency`| `exch.From.Cents` / `exch.From.Currency` |
-| `balance.AmountCents`                 | `balance.Amount.Cents`                 |
-| `balance.ReservedCents`               | `balance.Reserved.Cents`               |
-| `wise.ProfileResult`                  | `wise.Profile`                         |
-| `wise.BalanceResult`                  | `wise.Balance`                         |
-| `req.Currency = "EUR"`                | `req.Currency = wise.Currency("EUR")` |
-| `resp.HasMore`                        | *(removed — always false)*             |
-| `wise.TransactionTypeUnknown`         | *(removed — never returned)*           |
-| `BalanceTypeStandard == "STANDARD"`   | `BalanceTypeStandard == "standard"`    |
+| Old (v0.3.0)                           | New (v0.4.0)                             |
+| -------------------------------------- | ---------------------------------------- |
+| `tx.AmountCents`                       | `tx.Amount.Cents`                        |
+| `tx.AmountCurrency`                    | `tx.Amount.Currency`                     |
+| `tx.TotalCents`                        | `tx.Total.Cents`                         |
+| `tx.FeesCents`                         | `tx.Fees.Cents`                          |
+| `tx.RunningBalanceCents`               | `tx.RunningBalance.Cents`                |
+| `exch.FromCents` / `exch.FromCurrency` | `exch.From.Cents` / `exch.From.Currency` |
+| `balance.AmountCents`                  | `balance.Amount.Cents`                   |
+| `balance.ReservedCents`                | `balance.Reserved.Cents`                 |
+| `wise.ProfileResult`                   | `wise.Profile`                           |
+| `wise.BalanceResult`                   | `wise.Balance`                           |
+| `req.Currency = "EUR"`                 | `req.Currency = wise.Currency("EUR")`    |
+| `resp.HasMore`                         | _(removed — always false)_               |
+| `wise.TransactionTypeUnknown`          | _(removed — never returned)_             |
+| `BalanceTypeStandard == "STANDARD"`    | `BalanceTypeStandard == "standard"`      |
 
 ## [0.3.0] - 2026-07-18
 
