@@ -62,8 +62,9 @@ func (c *Client) ListTransactions(
 	}
 
 	return &ListTransactionsResponse{
-		Transactions: transactions,
-		HasMore:      false, // Wise returns all in one request
+		Transactions:          transactions,
+		HasMore:               false, // Wise returns all in one request
+		EndOfStatementBalance: statement.EndOfStatementBalance,
 	}, nil
 }
 

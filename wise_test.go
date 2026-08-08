@@ -567,6 +567,13 @@ var _ = Describe("Wise Client", func() {
 				Expect(resp.Transactions[0].Category).To(Equal("food"))
 				Expect(resp.Transactions[0].Reference).To(Equal("REF-001"))
 			})
+
+			It("should surface end-of-statement balance", func() {
+				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(resp.EndOfStatementBalance.Cents()).To(Equal(int64(95050)))
+				Expect(resp.EndOfStatementBalance.Currency).To(Equal("EUR"))
+			})
 		})
 
 		Context("with transaction type edge cases", func() {

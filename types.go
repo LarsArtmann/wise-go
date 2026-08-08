@@ -232,6 +232,7 @@ type ListTransactionsRequest struct {
 
 // ListTransactionsResponse from listing transactions.
 type ListTransactionsResponse struct {
-	Transactions []Transaction
-	HasMore      bool // Always false for Wise (returns all in one request)
+	Transactions          []Transaction
+	HasMore               bool // Always false for Wise (returns all in one request)
+	EndOfStatementBalance BalanceAmount
 }

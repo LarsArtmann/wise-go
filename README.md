@@ -202,10 +202,63 @@ resp, err := client.ListTransactions(ctx, wise.ListTransactionsRequest{
 - `Exchange` — `*TransactionExchange` with from/to amounts and rate; `nil` for non-conversion transactions
 - All amounts use `int64` minor units (cents) to avoid IEEE 754 floating-point errors
 
+**Date timezone:** `Transaction.Date` is in UTC. Wise statement dates carry no timezone; the SDK interprets them as UTC via `time.Parse`. Convert explicitly before comparing against local-time values to avoid off-by-one-day errors at boundaries.
+
 **Validation** — `ListTransactions` rejects invalid requests before hitting the API:
 
 - Empty `Currency` → `"wise.transactions.invalid_request: currency is required"`
 - `From` after `To` → `"wise.transactions.invalid_request: intervalStart must not be after intervalEnd"`
+
+## Mocking the Client
+
+The SDK returns concrete types (`*wise.Client`, `[]wise.ProfileResult`, etc.), not interfaces.
+This follows Go's "accept interfaces, return structs" proverb: consumers define narrow
+interfaces for the subset of methods they actually use, keeping mocks minimal.
+
+```go
+// Define a narrow interface in your package.
+type ProfileLister interface {
+    ListProfiles(ctx context.Context) ([]wise.ProfileResult, error)
+}
+
+// Your service depends on the interface, not *wise.Client.
+type Service struct {
+    profiles ProfileLister
+}
+
+// In tests, implement the interface with a stub.
+type mockProfileLister struct {
+    profiles []wise.ProfileResult
+    err      error
+}
+
+func (m *mockProfileLister) ListProfiles(ctx context.Context) ([]wise.ProfileResult, error) {
+    return m.profiles, m.err
+}
+```
+
+## Request Middleware
+
+`WithHTTPClient` accepts any type implementing the `Doer` interface
+(`Do(req *http.Request) (*http.Response, error)`). `*http.Client` satisfies this
+implicitly. Inject a custom client to add tracing, logging, or mTLS at the transport layer:
+
+```go
+client := wise.New("key", wise.WithHTTPClient(&http.Client{
+    Transport: &loggingTransport{next: http.DefaultTransport},
+}))
+
+type loggingTransport struct {
+    next http.RoundTripper
+}
+
+func (t *loggingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+    start := time.Now()
+    resp, err := t.next.RoundTrip(req)
+    log.Printf("%s %s -> %d (%s)", req.Method, req.URL, resp.StatusCode, time.Since(start))
+    return resp, err
+}
+```
 
 ## Error Handling
 
