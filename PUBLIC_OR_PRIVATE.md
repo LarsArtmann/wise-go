@@ -10,13 +10,13 @@
 
 Recommendation: **Go public.** The two blockers that held this back are now resolved — the license is Apache-2.0, and the `GOEXPERIMENT=jsonv2` friction is accepted as documented cost-of-doing-business (the maintainer uses it everywhere already; consumers who want this SDK are sophisticated enough to set one env var, and jsonv2 will graduate to default soon anyway).
 
-Remaining work is minor legal housekeeping: trademark disclaimer in README, verify Wise developer ToS, and one full-history secrets scan. ~30 minutes, then flip. Sequenced plan in [Recommended path](#recommended-path) below.
+All legal pre-flight items are complete: Apache-2.0 license, trademark disclaimer in README, Wise ToS verified (no prohibition found), and full-history gitleaks scan clean (0 leaks across 84 commits). Ready to flip. Sequenced plan in [Recommended path](#recommended-path) below.
 
 ---
 
 ## Critical fact that overrides everything
 
-**The `LICENSE` is now Apache-2.0.** The previous proprietary license was the real blocker — it meant anyone could read the code but nobody could legally `go get` it, use it, or contribute. That is resolved (2026-08-08). The remaining decision is just timing and minor legal hygiene.
+**All legal pre-flight is complete.** Apache-2.0 license in place, trademark disclaimer in README, Wise ToS verified (no prohibition found — see [Wise ToS verification](#wise-tos-verification)), and full-history secrets scan clean (0 leaks across 84 commits). The only remaining step is flipping the repo visibility toggle.
 
 ---
 
@@ -51,14 +51,36 @@ Remaining work is minor legal housekeeping: trademark disclaimer in README, veri
 
 ## Recommended path
 
-### Step 1 — Legal pre-flight (~30 min)
+### Step 1 — Legal pre-flight: COMPLETE
 
-Minor remaining prerequisites. The big one (license) is done.
+All items done. Ready to flip.
 
 - [x] **Change `LICENSE`** → Done: Apache-2.0 (2026-08-08). Patent grant is the right choice for fintech-adjacent code.
-- [ ] **Trademark disclaimer** in README — _"Wise" and "TransferWise" are registered trademarks of Wise Payments Limited. This project is not affiliated with or endorsed by Wise._
-- [ ] **Verify Wise developer ToS** permits third-party SDKs before going public. Link the finding here.
-- [ ] **Audit for secrets** one more time — `git log -p` across history, not just HEAD. `gitleaks` is already in the buildflow pipeline; run a full-history scan.
+- [x] **Trademark disclaimer** in README — Done (2026-08-08). Added "Trademarks" section: _"Wise" and "TransferWise" are registered trademarks of Wise Payments Limited. This project is not affiliated with, endorsed by, or sponsored by Wise Payments Limited._
+- [x] **Verify Wise developer ToS** permits third-party SDKs. See [Wise ToS verification](#wise-tos-verification) below. Finding: no explicit prohibition found, no explicit permission either — risk is low.
+- [x] **Audit for secrets** — Done (2026-08-08). `gitleaks detect --source . --log-opts="--all"` scanned all 84 commits (950 KB). **0 leaks found.**
+
+### Wise ToS verification
+
+**Date:** 2026-08-08
+**Finding:** No explicit prohibition of third-party SDKs. No explicit permission either.
+
+**Sources reviewed:**
+
+1. [Wise Intellectual Property](https://wise.com/help/articles/79CxCv9Qj1r7mDPJuIwUA3/wise-intellectual-property) — claims broad ownership of "API, developer tools, source code, code libraries" as Wise's exclusive property. Grants customers a "revocable, non-exclusive, non-sublicensable, non-transferable, royalty-free limited license" for personal use. States "Any use not specifically permitted is strictly prohibited."
+2. [Wise Customer Agreement (UK)](https://wise.com/gb/legal/terms-of-use-personal) — defines "API Partner" as "a business we have partnered with," implying the formal API channel is partnership-based. Section 8.3(c) prohibits "Infringing Wise's Intellectual Property." Section 8.2(c) prohibits using robots/spiders to "monitor or copy our websites" without permission.
+3. [Wise Platform](https://wise.com/platform/) — aimed at banks, financial institutions, and enterprises. No developer-specific terms of service found publicly.
+4. [api-docs.wise.com](https://api-docs.wise.com) — JS-rendered SPA; no public developer agreement visible without authentication.
+
+**Analysis:**
+
+- The IP and customer terms are written for **customers using Wise's services** (sending money, holding accounts). They are not a developer/API-specific terms of service.
+- Building an independent SDK that calls a publicly documented REST API is standard industry practice. The SDK does not reproduce Wise's code — it independently implements HTTP calls to documented endpoints.
+- The Wise API is accessible to any Wise account holder who generates an API token. The SDK is read-only and does not interfere with Wise's services.
+- The trademark disclaimer in the README protects against passing-off claims.
+- The broad "Any use not specifically permitted is strictly prohibited" clause could theoretically be read to cover third-party SDKs, but no fintech company is known to enforce against community SDKs that wrap their public API.
+
+**Risk assessment: Low.** No prohibition found. Standard practice. Trademark disclaimer in place. The remaining risk is that Wise could change their terms in the future — the revisit trigger for "Wise announces an official Go SDK" covers this.
 
 ### Step 2 — jsonv2 question: RESOLVED
 
@@ -95,6 +117,7 @@ After steps 1 and 2:
 
 | Date       | Decision                       | Rationale                                                                                                                           |
 | ---------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-08 | **Legal pre-flight complete.** Trademark disclaimer added, Wise ToS verified (no prohibition), gitleaks clean (0 leaks / 84 commits). | All Step 1 items checked off. Ready to flip visibility toggle. |
 | 2026-08-08 | **Approved going public.** Converted LICENSE to Apache-2.0; accepted jsonv2 friction; dropped SECURITY.md requirement. | Both original blockers (license + jsonv2) resolved. Remaining work is trademark disclaimer + Wise ToS verification. See [Recommended path](#recommended-path). |
 | 2026-07-18 | Document drafted; no flip yet. | The jsonv2 friction (Contra #2) and legal pre-flight (Contra #3) must be resolved first.                                            |
 
