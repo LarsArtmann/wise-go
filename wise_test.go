@@ -39,9 +39,10 @@ func stdBalance(
 func testTx(id, txType string, amount float64) wise.StatementTransaction {
 	return wise.StatementTransaction{
 		TransactionID: id, Date: "2023-01-15 14:30:00",
-		Amount:    wise.BalanceAmount{Value: amount, Currency: "EUR"},
-		TotalFees: wise.BalanceAmount{Value: 0, Currency: "EUR"},
-		Details:   wise.TransactionDetails{Type: txType},
+		Amount:         wise.BalanceAmount{Value: amount, Currency: "EUR"},
+		TotalFees:      wise.BalanceAmount{Value: 0, Currency: "EUR"},
+		RunningBalance: wise.BalanceAmount{Value: 0, Currency: "EUR"},
+		Details:        wise.TransactionDetails{Type: txType},
 	}
 }
 
@@ -84,8 +85,8 @@ func expectProfileID(profiles []wise.ProfileResult, idx int, expectedID int64) {
 func expectBalanceAmountCents(
 	balances []wise.BalanceResult, idx int, expectedAmount, expectedReserved int64,
 ) {
-	Expect(balances[idx].AmountCents).To(Equal(expectedAmount))
-	Expect(balances[idx].ReservedCents).To(Equal(expectedReserved))
+	Expect(balances[idx].Amount.Cents).To(Equal(expectedAmount))
+	Expect(balances[idx].Reserved.Cents).To(Equal(expectedReserved))
 }
 
 func expectTransactionQueryParams(r *http.Request, currency, intervalStart, intervalEnd string) {
@@ -126,7 +127,7 @@ var _ = Describe("Wise Client", func() {
 		defaultListTxReq = wise.ListTransactionsRequest{
 			ProfileID: wise.NewProfileID(12345),
 			BalanceID: wise.NewBalanceID(100),
-			Currency:  "EUR",
+			Currency:  wise.Currency("EUR"),
 			From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
 			To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
 		}
@@ -331,7 +332,7 @@ var _ = Describe("Wise Client", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(balances[0].ID.Get()).To(Equal(int64(100)))
-				Expect(balances[0].Currency).To(Equal("EUR"))
+				Expect(balances[0].Currency).To(Equal(wise.Currency("EUR")))
 				Expect(balances[0].Type).To(Equal(wise.BalanceTypeStandard))
 				Expect(balances[0].Name).To(Equal("Main Account"))
 			})
@@ -447,7 +448,7 @@ var _ = Describe("Wise Client", func() {
 			balance, err := getBalance(context.Background(), client, 100)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(balance.ID.Get()).To(Equal(int64(100)))
-			Expect(balance.AmountCents).To(Equal(int64(100000)))
+			Expect(balance.Amount.Cents).To(Equal(int64(100000)))
 		})
 
 		It("should return error for non-existent balance", func() {
@@ -546,9 +547,9 @@ var _ = Describe("Wise Client", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				// First transaction: -50.00 → totalCents=-5000, amountCents=5000 (abs)
-				Expect(resp.Transactions[0].TotalCents).To(Equal(int64(-5000)))
-				Expect(resp.Transactions[0].AmountCents).To(Equal(int64(5000)))
-				Expect(resp.Transactions[0].FeesCents).To(Equal(int64(50)))
+				Expect(resp.Transactions[0].Total.Cents).To(Equal(int64(-5000)))
+				Expect(resp.Transactions[0].Amount.Cents).To(Equal(int64(5000)))
+				Expect(resp.Transactions[0].Fees.Cents).To(Equal(int64(50)))
 			})
 
 			It("should parse date correctly", func() {
@@ -571,8 +572,8 @@ var _ = Describe("Wise Client", func() {
 			It("should surface end-of-statement balance", func() {
 				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(resp.EndOfStatementBalance.Cents()).To(Equal(int64(95050)))
-				Expect(resp.EndOfStatementBalance.Currency).To(Equal("EUR"))
+				Expect(resp.EndOfStatementBalance.Cents).To(Equal(int64(95050)))
+				Expect(resp.EndOfStatementBalance.Currency).To(Equal(wise.Currency("EUR")))
 			})
 		})
 
@@ -682,8 +683,8 @@ var _ = Describe("Wise Client", func() {
 			It("should map running balance", func() {
 				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(resp.Transactions[0].RunningBalanceCents).To(Equal(int64(500000)))
-				Expect(resp.Transactions[0].RunningBalanceCurrency).To(Equal("EUR"))
+				Expect(resp.Transactions[0].RunningBalance.Cents).To(Equal(int64(500000)))
+				Expect(resp.Transactions[0].RunningBalance.Currency).To(Equal(wise.Currency("EUR")))
 			})
 
 			It("should map exchange details", func() {
@@ -692,10 +693,10 @@ var _ = Describe("Wise Client", func() {
 
 				exch := resp.Transactions[0].Exchange
 				Expect(exch).ToNot(BeNil())
-				Expect(exch.FromCents).To(Equal(int64(10000)))
-				Expect(exch.FromCurrency).To(Equal("EUR"))
-				Expect(exch.ToCents).To(Equal(int64(10850)))
-				Expect(exch.ToCurrency).To(Equal("USD"))
+				Expect(exch.From.Cents).To(Equal(int64(10000)))
+				Expect(exch.From.Currency).To(Equal(wise.Currency("EUR")))
+				Expect(exch.To.Cents).To(Equal(int64(10850)))
+				Expect(exch.To.Currency).To(Equal(wise.Currency("USD")))
 				Expect(exch.Rate).To(Equal(1.085))
 			})
 		})
@@ -732,9 +733,9 @@ var _ = Describe("Wise Client", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				tx := resp.Transactions[0]
-				Expect(tx.AmountCurrency).To(Equal("USD"))
-				Expect(tx.TotalCurrency).To(Equal("USD"))
-				Expect(tx.RunningBalanceCurrency).To(Equal("USD"))
+				Expect(tx.Amount.Currency).To(Equal(wise.Currency("USD")))
+				Expect(tx.Total.Currency).To(Equal(wise.Currency("USD")))
+				Expect(tx.RunningBalance.Currency).To(Equal(wise.Currency("USD")))
 			})
 		})
 

@@ -74,17 +74,30 @@ func mapBalance(b Balance) (BalanceResult, error) {
 		return BalanceResult{}, fmt.Errorf("parse type %q: %w", b.Type, err)
 	}
 
+	currency, err := NewCurrency(b.Currency)
+	if err != nil {
+		return BalanceResult{}, fmt.Errorf("currency %q: %w", b.Currency, err)
+	}
+
+	amount, err := toMoney(b.Amount)
+	if err != nil {
+		return BalanceResult{}, fmt.Errorf("amount: %w", err)
+	}
+
+	reserved, err := toMoney(b.ReservedAmount)
+	if err != nil {
+		return BalanceResult{}, fmt.Errorf("reserved amount: %w", err)
+	}
+
 	return BalanceResult{
-		ID:               id.NewID[BalanceBrand](b.ID),
-		Currency:         b.Currency,
-		Type:             balanceType,
-		Name:             b.Name,
-		AmountCents:      b.Amount.Cents(),
-		AmountCurrency:   b.Amount.Currency,
-		ReservedCents:    b.ReservedAmount.Cents(),
-		ReservedCurrency: b.ReservedAmount.Currency,
-		Visible:          b.Visible,
-		CreatedAt:        createdAt,
+		ID:        id.NewID[BalanceBrand](b.ID),
+		Currency:  currency,
+		Type:      balanceType,
+		Name:      b.Name,
+		Amount:    amount,
+		Reserved:  reserved,
+		Visible:   b.Visible,
+		CreatedAt: createdAt,
 	}, nil
 }
 

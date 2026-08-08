@@ -120,7 +120,8 @@ func TestBalanceAmountCents(t *testing.T) {
 func TestMapExchangeNil(t *testing.T) {
 	t.Parallel()
 
-	if got := mapExchange(nil); got != nil {
+	got, _ := mapExchange(nil)
+	if got != nil {
 		t.Errorf("mapExchange(nil) = %v, want nil", got)
 	}
 }

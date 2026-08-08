@@ -25,7 +25,7 @@ func (c *Client) ListTransactions(
 
 	query := func() string {
 		v := url.Values{}
-		v.Set("currency", req.Currency)
+		v.Set("currency", string(req.Currency))
 		v.Set("intervalStart", req.From.Format(time.RFC3339))
 		v.Set("intervalEnd", req.To.Format(time.RFC3339))
 
@@ -61,10 +61,15 @@ func (c *Client) ListTransactions(
 		transactions = append(transactions, tx)
 	}
 
+	endBalance, err := toMoney(statement.EndOfStatementBalance)
+	if err != nil {
+		return nil, fmt.Errorf("end of statement balance: %w", err)
+	}
+
 	return &ListTransactionsResponse{
 		Transactions:          transactions,
 		HasMore:               false, // Wise returns all in one request
-		EndOfStatementBalance: statement.EndOfStatementBalance,
+		EndOfStatementBalance: endBalance,
 	}, nil
 }
 
@@ -72,7 +77,7 @@ func mapTransaction(
 	t StatementTransaction,
 	profileID ProfileID,
 	balanceID BalanceID,
-	currency string,
+	currency Currency,
 ) (Transaction, error) {
 	date, err := parseWiseDate(t.Date)
 	if err != nil {
@@ -86,52 +91,73 @@ func mapTransaction(
 		)
 	}
 
-	totalCents := t.Amount.Cents()
-
-	// AmountCents is the absolute value of the transaction amount.
-	amountCents := totalCents
-	if amountCents < 0 {
-		amountCents = -amountCents
-	}
-
 	txType := classifyTransactionType(t.Details.Type, t.Amount.Value)
 
+	total, err := toMoney(t.Amount)
+	if err != nil {
+		return Transaction{}, fmt.Errorf("total amount: %w", err)
+	}
+
+	amount := total
+	if amount.Cents < 0 {
+		amount.Cents = -amount.Cents
+	}
+
+	fees, err := toMoney(t.TotalFees)
+	if err != nil {
+		return Transaction{}, fmt.Errorf("fees amount: %w", err)
+	}
+
+	runningBalance, err := toMoney(t.RunningBalance)
+	if err != nil {
+		return Transaction{}, fmt.Errorf("running balance: %w", err)
+	}
+
+	exch, err := mapExchange(t.ExchangeDetails)
+	if err != nil {
+		return Transaction{}, fmt.Errorf("exchange: %w", err)
+	}
+
 	return Transaction{
-		ID:                     id.NewID[TransactionBrand](t.TransactionID),
-		ProfileID:              profileID,
-		BalanceID:              balanceID,
-		AmountCents:            amountCents,
-		AmountCurrency:         t.Amount.Currency,
-		FeesCents:              t.TotalFees.Cents(),
-		FeesCurrency:           t.TotalFees.Currency,
-		TotalCents:             totalCents,
-		TotalCurrency:          t.Amount.Currency,
-		RunningBalanceCents:    t.RunningBalance.Cents(),
-		RunningBalanceCurrency: t.RunningBalance.Currency,
-		Exchange:               mapExchange(t.ExchangeDetails),
-		Type:                   txType,
-		Description:            t.Details.Description,
-		Reference:              t.ReferenceNumber,
-		Category:               t.Details.Category,
-		MerchantName:           t.Details.MerchantName,
-		Date:                   date,
+		ID:             id.NewID[TransactionBrand](t.TransactionID),
+		ProfileID:      profileID,
+		BalanceID:      balanceID,
+		Amount:         amount,
+		Fees:           fees,
+		Total:          total,
+		RunningBalance: runningBalance,
+		Exchange:       exch,
+		Type:           txType,
+		Description:    t.Details.Description,
+		Reference:      t.ReferenceNumber,
+		Category:       t.Details.Category,
+		MerchantName:   t.Details.MerchantName,
+		Date:           date,
 	}, nil
 }
 
 // mapExchange converts raw Wise exchange details into the result type.
 // Returns nil when there are no exchange details.
-func mapExchange(ed *ExchangeDetails) *TransactionExchange {
+func mapExchange(ed *ExchangeDetails) (*TransactionExchange, error) {
 	if ed == nil {
-		return nil
+		return nil, nil
+	}
+
+	from, err := toMoney(ed.FromAmount)
+	if err != nil {
+		return nil, fmt.Errorf("from amount: %w", err)
+	}
+
+	to, err := toMoney(ed.ToAmount)
+	if err != nil {
+		return nil, fmt.Errorf("to amount: %w", err)
 	}
 
 	return &TransactionExchange{
-		FromCents:    ed.FromAmount.Cents(),
-		FromCurrency: ed.FromAmount.Currency,
-		ToCents:      ed.ToAmount.Cents(),
-		ToCurrency:   ed.ToAmount.Currency,
-		Rate:         ed.Rate,
-	}
+		From: from,
+		To:   to,
+		Rate: ed.Rate,
+	}, nil
 }
 
 // DetailType constants are Wise's wire-format values for details.type.
