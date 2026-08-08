@@ -323,4 +323,8 @@ See [FEATURES.md](FEATURES.md) for the full feature inventory by status and [ROA
 
 ## License
 
-Proprietary — see [LICENSE](LICENSE).
+Apache-2.0 — see [LICENSE](LICENSE).
+
+## Trademarks
+
+"Wise" and "TransferWise" are registered trademarks of Wise Payments Limited. This project is not affiliated with, endorsed by, or sponsored by Wise Payments Limited. All trademarks are the property of their respective owners.
