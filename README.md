@@ -11,6 +11,8 @@ Wise publishes no official Go SDK and no complete OpenAPI spec. **wise-go fills 
 
 > **Status: early development (v0.5.0).** Read-only coverage of profiles, balances, and transactions. Write operations (transfers, recipients, quotes, webhooks) are not yet implemented — see [ROADMAP.md](ROADMAP.md).
 
+> **Design story:** [I needed a Go SDK for Wise. Nobody built one.](https://larsartmann.com/blog/when-the-api-has-no-spec-your-types-are-the-spec)
+
 ## Table of Contents
 
 - [Features](#features)
