@@ -107,7 +107,7 @@
                   ./wise_test.go
                 ];
               };
-              vendorHash = "sha256-nzVrM3mDSBHsvcBSguEeTInA2xzjvOk/cQk7/ck+SSM=";
+              vendorHash = "sha256-KW6gSK0c5MK/5bn9aO8q0cMtp9IE+MapLgylkVoHmco=";
               doCheck = true;
               checkPhase = ''
                 runHook preCheck

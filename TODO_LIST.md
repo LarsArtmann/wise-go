@@ -20,9 +20,7 @@ These are small, non-breaking, high-value cleanups identified in the 2026-07-18 
       discover the valid set. (data-model review Step 2)
 - [x] **Accept `Doer` interface in `WithHTTPClient`** — `*http.Client` satisfies it implicitly.
       (architecture review Step 3)
-- [ ] **Verify full `nix flake check`** — run the test + lint derivations end-to-end
-      locally before merging the new `flake.nix`. The `--no-build` variant passes.
-      (nix-flake-migration proposal)
+- [x] **Verify full `nix flake check`** — passes (format + sandboxed test via buildGoModule).
 - [x] **Add `nix flake check` to CI** — `nix:` job added to `.github/workflows/ci.yml`
       using `cachix/install-nix-action`.
 
