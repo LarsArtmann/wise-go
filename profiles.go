@@ -9,7 +9,7 @@ import (
 )
 
 // ListProfiles returns all profiles for the authenticated user.
-func (c *Client) ListProfiles(ctx context.Context) ([]ProfileResult, error) {
+func (c *Client) ListProfiles(ctx context.Context) ([]Profile, error) {
 	var profiles []raw.Profile
 
 	err := c.get(ctx, "/v2/profiles", &profiles)
@@ -17,7 +17,7 @@ func (c *Client) ListProfiles(ctx context.Context) ([]ProfileResult, error) {
 		return nil, fmt.Errorf("list profiles: %w", err)
 	}
 
-	results := make([]ProfileResult, 0, len(profiles))
+	results := make([]Profile, 0, len(profiles))
 	for _, p := range profiles {
 		result, mapErr := mapProfile(p)
 		if mapErr != nil {
@@ -30,7 +30,7 @@ func (c *Client) ListProfiles(ctx context.Context) ([]ProfileResult, error) {
 	return results, nil
 }
 
-func mapProfile(p raw.Profile) (ProfileResult, error) {
+func mapProfile(p raw.Profile) (Profile, error) {
 	name := p.FirstName + " " + p.LastName
 	if p.Type == "BUSINESS" {
 		name = p.BusinessName
@@ -38,15 +38,15 @@ func mapProfile(p raw.Profile) (ProfileResult, error) {
 
 	createdAt, err := parseRFC3339(p.CreatedAt)
 	if err != nil {
-		return ProfileResult{}, fmt.Errorf("parse created_at %q: %w", p.CreatedAt, err)
+		return Profile{}, fmt.Errorf("parse created_at %q: %w", p.CreatedAt, err)
 	}
 
 	profileType, err := parseProfileType(p.Type)
 	if err != nil {
-		return ProfileResult{}, fmt.Errorf("parse type %q: %w", p.Type, err)
+		return Profile{}, fmt.Errorf("parse type %q: %w", p.Type, err)
 	}
 
-	return ProfileResult{
+	return Profile{
 		ID:        id.NewID[ProfileBrand](p.ID),
 		Type:      profileType,
 		Name:      name,

@@ -14,57 +14,46 @@ see [ROADMAP.md](ROADMAP.md). For shipped features see [FEATURES.md](FEATURES.md
 
 These are small, non-breaking, high-value cleanups identified in the 2026-07-18 review pass.
 
-- [x] **Type `InvestmentState`** — promote bare `string` constants at `types.go:192` to
-      `type InvestmentState string`; update filter at `balances.go:28`. Zero API break
-      for typical callers. (data-model review Step 1)
-- [x] **Export `DetailType` constants** — promote the unexported `wiseDetail*` constants
-      in `transactions.go:137-145` so callers of `ListTransactionsRequest.Type` can
-      discover the valid set without reading the README. Keep the field as `string` for
-      backward compat. (data-model review Step 2)
-- [x] **Accept `Doer` interface in `WithHTTPClient`** — change `options.go:58` and
-      `client.go:25` from `*http.Client` to an unexported `doer interface{ Do(...) }`.
-      `*http.Client` satisfies it implicitly. (architecture review Step 3)
+- [x] **Type `InvestmentState`** — promote bare `string` constants to
+      `type InvestmentState string`. (data-model review Step 1)
+- [x] **Export `DetailType` constants** — callers of `ListTransactionsRequest.Type` can
+      discover the valid set. (data-model review Step 2)
+- [x] **Accept `Doer` interface in `WithHTTPClient`** — `*http.Client` satisfies it implicitly.
+      (architecture review Step 3)
 - [ ] **Verify full `nix flake check`** — run the test + lint derivations end-to-end
       locally before merging the new `flake.nix`. The `--no-build` variant passes.
       (nix-flake-migration proposal)
-- [ ] **Add `nix flake check` to CI** — add a `nix:` job to `.github/workflows/ci.yml`
-      using `cachix/install-nix-action`. Caches recommended for the Go module fetch.
+- [x] **Add `nix flake check` to CI** — `nix:` job added to `.github/workflows/ci.yml`
+      using `cachix/install-nix-action`.
 
-## P2 — v0.3.0 (breaking change release)
+## P2 — v0.4.0 (breaking change release)
 
-These are coordinated breaking changes; ship together.
+These were coordinated breaking changes; shipped together in one release.
 
-- [ ] **Introduce `Money` + `Currency` types** — collapse paired `XxxCents int64` /
+- [x] **Introduce `Money` + `Currency` types** — collapse paired `XxxCents int64` /
       `XxxCurrency string` fields across `Transaction`, `TransactionExchange`,
-      `BalanceResult`, `ListTransactionsRequest`. (data-model review Step 3)
-- [ ] **Normalize enum casing** — pick one rule (suggest lowercase for SDK enums) and
-      apply to `ProfileType`, `BalanceType`, `TransactionType`. (data-model review Step 4)
-- [ ] **Reconcile `TransactionTypeUnknown`** — either use it as the actual fallback
-      in `classifyTransactionType` or remove the constant. (data-model review Step 4)
-- [ ] **Drop the `Result` suffix or move raw types to `internal/raw`** — fix the
-      naming inconsistency between `ProfileResult`/`BalanceResult` vs `Transaction`.
-      (naming review)
-- [ ] **Expose `EndOfStatementBalance`** — Wise returns it; the SDK decodes it and
-      throws it away. Surface on `ListTransactionsResponse` (paired with `Money`).
+      `Balance`, `ListTransactionsRequest`. Mismatched currency/amount now unrepresentable.
+- [x] **Normalize enum casing** — lowercase for all SDK-facing enums (`BalanceType` normalized
+      from `"STANDARD"` to `"standard"`; `ProfileType` and `TransactionType` already lowercase).
+- [x] **Reconcile `TransactionTypeUnknown`** — removed; `classifyTransactionType` never
+      returned it (default falls back to credit/debit).
+- [x] **Drop the `Result` suffix + move raw types to `internal/raw`** — `ProfileResult` → `Profile`,
+      `BalanceResult` → `Balance`. Raw wire types moved to `internal/raw` package.
+- [x] **Expose `EndOfStatementBalance`** — surfaced as `Money` on `ListTransactionsResponse`.
 
 ## P3 — v1.0 (lock-in release)
 
-- [ ] **Remove `ListTransactionsResponse.HasMore`** — return `[]Transaction` directly.
-      The field is always `false`; the type lies about its capabilities.
-- [ ] **Move raw wire types behind `internal/raw`** — `Profile`, `Balance`,
-      `StatementTransaction`, etc. become invisible to consumers. (architecture review Step 5)
+- [x] **Remove `ListTransactionsResponse.HasMore`** — field was always `false`; removed.
+- [x] **Move raw wire types behind `internal/raw`** — `Profile`, `Balance`,
+      `StatementTransaction`, etc. are invisible to consumers.
 - [ ] **Lock the public API** — at v1.0, freeze the surface; future breaking changes
-      require v2.
+      require v2. (Pending: final API audit + tag)
 
 ## P4 — Documentation polish
 
-- [ ] **Add "Mocking the client" README section** — show consumers how to define
-      narrow interfaces (`type ProfileLister interface { ... }`) for test mocking.
-      (architecture review Step 1)
-- [ ] **Add "Request middleware via WithHTTPClient" README section** — show how to
-      inject tracing/logging via a custom `http.Client` Transport. (architecture review Step 2)
-- [ ] **Document UTC assumption on `Transaction.Date`** — already added as a field
-      comment on 2026-07-18; mirror in README's transaction section if/when it grows.
+- [x] **Add "Mocking the client" README section** — narrow consumer-side interface pattern.
+- [x] **Add "Request middleware via WithHTTPClient" README section** — Transport wrapping.
+- [x] **Document UTC assumption on `Transaction.Date`** — added to README transactions section.
 
 ## Done
 
@@ -72,6 +61,16 @@ These are coordinated breaking changes; ship together.
 
 - [x] Fix depguard config — allow failsafe-go, go-branded-id, go-error-family, onsi in `.golangci.yml`
 - [x] Fix remaining lint issues (varnamelen, makezero, mnd, inamedparam, err113) — 0 issues
+- [x] Introduce `Money` + `Currency` value objects with ISO 4217 validation
+- [x] Refactor all structs to use `Money` (Transaction, TransactionExchange, Balance, ListTransactionsResponse)
+- [x] Normalize `BalanceType` enum casing to lowercase
+- [x] Remove dead `TransactionTypeUnknown` constant
+- [x] Move raw wire types to `internal/raw` package
+- [x] Drop `Result` suffix: `ProfileResult` → `Profile`, `BalanceResult` → `Balance`
+- [x] Remove `HasMore` from `ListTransactionsResponse`
+- [x] Expose `EndOfStatementBalance` as `Money`
+- [x] Add README sections: Mocking, Middleware, UTC timezone note
+- [x] Add `nix:` CI job to `.github/workflows/ci.yml`
 
 ### 2026-07-18
 

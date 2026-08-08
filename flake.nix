@@ -102,6 +102,7 @@
                   ./client.go
                   ./transactions.go
                   ./types.go
+                  ./internal/raw/types.go
                   ./internal_test.go
                   ./wise_test.go
                 ];

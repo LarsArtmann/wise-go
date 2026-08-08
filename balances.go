@@ -14,7 +14,7 @@ import (
 // Only visible, non-investment balances are returned. Wise exposes no
 // per-balance endpoint, so there is no way to fetch a hidden or invested
 // balance individually through this SDK.
-func (c *Client) ListBalances(ctx context.Context, profileID ProfileID) ([]BalanceResult, error) {
+func (c *Client) ListBalances(ctx context.Context, profileID ProfileID) ([]Balance, error) {
 	path := fmt.Sprintf("/v4/profiles/%d/balances", profileID.Get())
 
 	var balances []raw.Balance
@@ -24,7 +24,7 @@ func (c *Client) ListBalances(ctx context.Context, profileID ProfileID) ([]Balan
 		return nil, fmt.Errorf("list balances for profile %d: %w", profileID.Get(), err)
 	}
 
-	results := make([]BalanceResult, 0, len(balances))
+	results := make([]Balance, 0, len(balances))
 	for _, b := range balances {
 		if !b.Visible || InvestmentState(b.InvestmentState) != InvestmentStateNotInvested {
 			continue
@@ -46,7 +46,7 @@ func (c *Client) GetBalance(
 	ctx context.Context,
 	profileID ProfileID,
 	balanceID BalanceID,
-) (*BalanceResult, error) {
+) (*Balance, error) {
 	balances, err := c.ListBalances(ctx, profileID)
 	if err != nil {
 		return nil, fmt.Errorf("get balance %d for profile %d: %w", balanceID.Get(), profileID.Get(), err)
@@ -64,33 +64,33 @@ func (c *Client) GetBalance(
 	)
 }
 
-func mapBalance(b raw.Balance) (BalanceResult, error) {
+func mapBalance(b raw.Balance) (Balance, error) {
 	createdAt, err := parseRFC3339(b.CreationTime)
 	if err != nil {
-		return BalanceResult{}, fmt.Errorf("parse creation_time %q: %w", b.CreationTime, err)
+		return Balance{}, fmt.Errorf("parse creation_time %q: %w", b.CreationTime, err)
 	}
 
 	balanceType, err := parseBalanceType(b.Type)
 	if err != nil {
-		return BalanceResult{}, fmt.Errorf("parse type %q: %w", b.Type, err)
+		return Balance{}, fmt.Errorf("parse type %q: %w", b.Type, err)
 	}
 
 	currency, err := NewCurrency(b.Currency)
 	if err != nil {
-		return BalanceResult{}, fmt.Errorf("currency %q: %w", b.Currency, err)
+		return Balance{}, fmt.Errorf("currency %q: %w", b.Currency, err)
 	}
 
 	amount, err := toMoney(b.Amount)
 	if err != nil {
-		return BalanceResult{}, fmt.Errorf("amount: %w", err)
+		return Balance{}, fmt.Errorf("amount: %w", err)
 	}
 
 	reserved, err := toMoney(b.ReservedAmount)
 	if err != nil {
-		return BalanceResult{}, fmt.Errorf("reserved amount: %w", err)
+		return Balance{}, fmt.Errorf("reserved amount: %w", err)
 	}
 
-	return BalanceResult{
+	return Balance{
 		ID:        id.NewID[BalanceBrand](b.ID),
 		Currency:  currency,
 		Type:      balanceType,

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/larsartmann/wise-go"
+	"github.com/larsartmann/wise-go/internal/raw"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -26,23 +27,23 @@ func stdBalance(
 	investmentState string,
 	amount, reserved float64,
 	created string,
-) wise.Balance {
-	return wise.Balance{
+) raw.Balance {
+	return raw.Balance{
 		ID: id, Currency: currency, Type: "STANDARD", Name: name,
 		InvestmentState: investmentState, Visible: visible,
-		Amount:         wise.BalanceAmount{Value: amount, Currency: currency},
-		ReservedAmount: wise.BalanceAmount{Value: reserved, Currency: currency},
+		Amount:         raw.BalanceAmount{Value: amount, Currency: currency},
+		ReservedAmount: raw.BalanceAmount{Value: reserved, Currency: currency},
 		CreationTime:   created,
 	}
 }
 
-func testTx(id, txType string, amount float64) wise.StatementTransaction {
-	return wise.StatementTransaction{
+func testTx(id, txType string, amount float64) raw.StatementTransaction {
+	return raw.StatementTransaction{
 		TransactionID: id, Date: "2023-01-15 14:30:00",
-		Amount:         wise.BalanceAmount{Value: amount, Currency: "EUR"},
-		TotalFees:      wise.BalanceAmount{Value: 0, Currency: "EUR"},
-		RunningBalance: wise.BalanceAmount{Value: 0, Currency: "EUR"},
-		Details:        wise.TransactionDetails{Type: txType},
+		Amount:         raw.BalanceAmount{Value: amount, Currency: "EUR"},
+		TotalFees:      raw.BalanceAmount{Value: 0, Currency: "EUR"},
+		RunningBalance: raw.BalanceAmount{Value: 0, Currency: "EUR"},
+		Details:        raw.TransactionDetails{Type: txType},
 	}
 }
 
@@ -57,8 +58,8 @@ func expectListProfilesError(client *wise.Client, substr string) {
 	Expect(err.Error()).To(ContainSubstring(substr))
 }
 
-func testProfiles(id int64, firstName, lastName, email string) []wise.Profile {
-	return []wise.Profile{
+func testProfiles(id int64, firstName, lastName, email string) []raw.Profile {
+	return []raw.Profile{
 		{
 			ID:        id,
 			Type:      "PERSONAL",
@@ -70,20 +71,20 @@ func testProfiles(id int64, firstName, lastName, email string) []wise.Profile {
 	}
 }
 
-func personalProfile(id int64, firstName, lastName, email, createdAt string) wise.Profile {
-	return wise.Profile{
+func personalProfile(id int64, firstName, lastName, email, createdAt string) raw.Profile {
+	return raw.Profile{
 		ID: id, Type: "PERSONAL",
 		FirstName: firstName, LastName: lastName,
 		Email: email, CreatedAt: createdAt,
 	}
 }
 
-func expectProfileID(profiles []wise.ProfileResult, idx int, expectedID int64) {
+func expectProfileID(profiles []wise.Profile, idx int, expectedID int64) {
 	Expect(profiles[idx].ID.Get()).To(Equal(expectedID))
 }
 
 func expectBalanceAmountCents(
-	balances []wise.BalanceResult, idx int, expectedAmount, expectedReserved int64,
+	balances []wise.Balance, idx int, expectedAmount, expectedReserved int64,
 ) {
 	Expect(balances[idx].Amount.Cents).To(Equal(expectedAmount))
 	Expect(balances[idx].Reserved.Cents).To(Equal(expectedReserved))
@@ -100,14 +101,14 @@ func expectTransactionQueryParams(r *http.Request, currency, intervalStart, inte
 	}
 }
 
-func listBalances(ctx context.Context, client *wise.Client) ([]wise.BalanceResult, error) {
+func listBalances(ctx context.Context, client *wise.Client) ([]wise.Balance, error) {
 	//nolint:wrapcheck // transparent pass-through; tests assert on the original error.
 	return client.ListBalances(ctx, wise.NewProfileID(12345))
 }
 
 func getBalance(
 	ctx context.Context, client *wise.Client, balanceID int64,
-) (*wise.BalanceResult, error) {
+) (*wise.Balance, error) {
 	//nolint:wrapcheck // transparent pass-through; tests assert on the original error.
 	return client.GetBalance(ctx, wise.NewProfileID(12345), wise.NewBalanceID(balanceID))
 }
@@ -208,7 +209,7 @@ var _ = Describe("Wise Client", func() {
 		Context("with valid API response", func() {
 			BeforeEach(func() {
 				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {
-					profiles := []wise.Profile{
+					profiles := []raw.Profile{
 						personalProfile(
 							12345, "John", "Doe", "john@example.com", "2023-01-15T10:30:00Z",
 						),
@@ -271,7 +272,7 @@ var _ = Describe("Wise Client", func() {
 		Context("with unknown profile type", func() {
 			BeforeEach(func() {
 				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {
-					profiles := []wise.Profile{
+					profiles := []raw.Profile{
 						{ID: 1, Type: "UNKNOWN_TYPE", CreatedAt: "2023-01-15T10:30:00Z"},
 					}
 
@@ -292,7 +293,7 @@ var _ = Describe("Wise Client", func() {
 				mux.HandleFunc(
 					"/v4/profiles/12345/balances",
 					func(w http.ResponseWriter, _ *http.Request) {
-						balances := []wise.Balance{
+						balances := []raw.Balance{
 							stdBalance(
 								100,
 								"EUR",
@@ -351,7 +352,7 @@ var _ = Describe("Wise Client", func() {
 				mux.HandleFunc(
 					"/v4/profiles/12345/balances",
 					func(w http.ResponseWriter, _ *http.Request) {
-						balances := []wise.Balance{
+						balances := []raw.Balance{
 							stdBalance(
 								100,
 								"EUR",
@@ -425,7 +426,7 @@ var _ = Describe("Wise Client", func() {
 			mux.HandleFunc(
 				"/v4/profiles/12345/balances",
 				func(w http.ResponseWriter, _ *http.Request) {
-					balances := []wise.Balance{
+					balances := []raw.Balance{
 						stdBalance(
 							100,
 							"EUR",
@@ -468,25 +469,25 @@ var _ = Describe("Wise Client", func() {
 							r, "EUR", "2023-01-01T00:00:00Z", "2023-01-31T23:59:59Z",
 						)
 
-						response := wise.StatementResponse{
-							Transactions: []wise.StatementTransaction{
+						response := raw.StatementResponse{
+							Transactions: []raw.StatementTransaction{
 								{
 									TransactionID: "tx-001",
 									Date:          "2023-01-15 14:30:00",
-									Amount: wise.BalanceAmount{
+									Amount: raw.BalanceAmount{
 										Value:    -50.00,
 										Currency: "EUR",
 									},
-									TotalFees: wise.BalanceAmount{
+									TotalFees: raw.BalanceAmount{
 										Value:    0.50,
 										Currency: "EUR",
 									},
-									RunningBalance: wise.BalanceAmount{
+									RunningBalance: raw.BalanceAmount{
 										Value:    950.50,
 										Currency: "EUR",
 									},
 									ReferenceNumber: "REF-001",
-									Details: wise.TransactionDetails{
+									Details: raw.TransactionDetails{
 										Type:         "CARD_PAYMENT",
 										Description:  "Coffee Shop",
 										Category:     "food",
@@ -496,21 +497,21 @@ var _ = Describe("Wise Client", func() {
 								{
 									TransactionID: "tx-002",
 									Date:          "2023-01-20 10:00:00",
-									Amount: wise.BalanceAmount{
+									Amount: raw.BalanceAmount{
 										Value:    1000.00,
 										Currency: "EUR",
 									},
-									TotalFees:       wise.BalanceAmount{Value: 0, Currency: "EUR"},
-									RunningBalance:  wise.BalanceAmount{Value: 1950.50, Currency: "EUR"},
+									TotalFees:       raw.BalanceAmount{Value: 0, Currency: "EUR"},
+									RunningBalance:  raw.BalanceAmount{Value: 1950.50, Currency: "EUR"},
 									ReferenceNumber: "REF-002",
-									Details: wise.TransactionDetails{
+									Details: raw.TransactionDetails{
 										Type:        "TRANSFER",
 										Description: "Salary Payment",
 										Category:    "income",
 									},
 								},
 							},
-							EndOfStatementBalance: wise.BalanceAmount{
+							EndOfStatementBalance: raw.BalanceAmount{
 								Value:    950.50,
 								Currency: "EUR",
 							},
@@ -526,7 +527,6 @@ var _ = Describe("Wise Client", func() {
 				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(resp.Transactions).To(HaveLen(2))
-				Expect(resp.HasMore).To(BeFalse())
 			})
 
 			It("should map transaction ID correctly", func() {
@@ -587,14 +587,14 @@ var _ = Describe("Wise Client", func() {
 				mux.HandleFunc(
 					"/v1/profiles/12345/balance-statements/100/statement.json",
 					func(w http.ResponseWriter, _ *http.Request) {
-						response := wise.StatementResponse{
-							Transactions: []wise.StatementTransaction{
+						response := raw.StatementResponse{
+							Transactions: []raw.StatementTransaction{
 								testTx("tx-refund", "CARD_REFUND", 25.00),
 								testTx("tx-exchange", "CONVERSION", -100.00),
 								testTx("tx-fee", "FEE", -0.50),
 								testTx("tx-payment", "PAYMENT", -200.00),
 							},
-							EndOfStatementBalance: wise.BalanceAmount{Value: 0, Currency: "EUR"},
+							EndOfStatementBalance: raw.BalanceAmount{Value: 0, Currency: "EUR"},
 						}
 
 						w.Header().Set("Content-Type", "application/json")
@@ -657,28 +657,28 @@ var _ = Describe("Wise Client", func() {
 				mux.HandleFunc(
 					"/v1/profiles/12345/balance-statements/100/statement.json",
 					func(w http.ResponseWriter, _ *http.Request) {
-						response := wise.StatementResponse{
-							Transactions: []wise.StatementTransaction{
+						response := raw.StatementResponse{
+							Transactions: []raw.StatementTransaction{
 								{
 									TransactionID: "tx-exch",
 									Date:          "2023-01-15 14:30:00",
-									Amount:        wise.BalanceAmount{Value: -100.00, Currency: "EUR"},
-									TotalFees:     wise.BalanceAmount{Value: 0, Currency: "EUR"},
-									RunningBalance: wise.BalanceAmount{
+									Amount:        raw.BalanceAmount{Value: -100.00, Currency: "EUR"},
+									TotalFees:     raw.BalanceAmount{Value: 0, Currency: "EUR"},
+									RunningBalance: raw.BalanceAmount{
 										Value: 5000.00, Currency: "EUR",
 									},
 									ReferenceNumber: "REF-EXCH",
-									Details:         wise.TransactionDetails{Type: "CONVERSION"},
-									ExchangeDetails: &wise.ExchangeDetails{
-										FromAmount:   wise.BalanceAmount{Value: 100.00, Currency: "EUR"},
-										ToAmount:     wise.BalanceAmount{Value: 108.50, Currency: "USD"},
+									Details:         raw.TransactionDetails{Type: "CONVERSION"},
+									ExchangeDetails: &raw.ExchangeDetails{
+										FromAmount:   raw.BalanceAmount{Value: 100.00, Currency: "EUR"},
+										ToAmount:     raw.BalanceAmount{Value: 108.50, Currency: "USD"},
 										Rate:         1.085,
 										FromCurrency: "EUR",
 										ToCurrency:   "USD",
 									},
 								},
 							},
-							EndOfStatementBalance: wise.BalanceAmount{Value: 5000, Currency: "EUR"},
+							EndOfStatementBalance: raw.BalanceAmount{Value: 5000, Currency: "EUR"},
 						}
 
 						w.Header().Set("Content-Type", "application/json")
@@ -713,21 +713,21 @@ var _ = Describe("Wise Client", func() {
 				mux.HandleFunc(
 					"/v1/profiles/12345/balance-statements/100/statement.json",
 					func(w http.ResponseWriter, _ *http.Request) {
-						response := wise.StatementResponse{
-							Transactions: []wise.StatementTransaction{
+						response := raw.StatementResponse{
+							Transactions: []raw.StatementTransaction{
 								{
 									TransactionID: "tx-usd",
 									Date:          "2023-01-15 14:30:00",
-									Amount:        wise.BalanceAmount{Value: -50.00, Currency: "USD"},
-									TotalFees:     wise.BalanceAmount{Value: 0, Currency: "USD"},
-									RunningBalance: wise.BalanceAmount{
+									Amount:        raw.BalanceAmount{Value: -50.00, Currency: "USD"},
+									TotalFees:     raw.BalanceAmount{Value: 0, Currency: "USD"},
+									RunningBalance: raw.BalanceAmount{
 										Value: 200.00, Currency: "USD",
 									},
 									ReferenceNumber: "REF-USD",
-									Details:         wise.TransactionDetails{Type: "CARD_PAYMENT"},
+									Details:         raw.TransactionDetails{Type: "CARD_PAYMENT"},
 								},
 							},
-							EndOfStatementBalance: wise.BalanceAmount{Value: 200, Currency: "USD"},
+							EndOfStatementBalance: raw.BalanceAmount{Value: 200, Currency: "USD"},
 						}
 
 						w.Header().Set("Content-Type", "application/json")
@@ -757,11 +757,11 @@ var _ = Describe("Wise Client", func() {
 					"/v1/profiles/12345/balance-statements/100/statement.json",
 					func(w http.ResponseWriter, r *http.Request) {
 						capturedRequest = r
-						response := wise.StatementResponse{
-							Transactions: []wise.StatementTransaction{
+						response := raw.StatementResponse{
+							Transactions: []raw.StatementTransaction{
 								testTx("tx-filtered", "CARD_PAYMENT", -10.00),
 							},
-							EndOfStatementBalance: wise.BalanceAmount{Value: 0, Currency: "EUR"},
+							EndOfStatementBalance: raw.BalanceAmount{Value: 0, Currency: "EUR"},
 						}
 
 						w.Header().Set("Content-Type", "application/json")
@@ -828,7 +828,7 @@ var _ = Describe("Wise Client", func() {
 						return
 					}
 
-					profiles := []wise.Profile{
+					profiles := []raw.Profile{
 						{
 							ID: 1, Type: "PERSONAL", FirstName: "Test", LastName: "User",
 							Email: "test@test.com", CreatedAt: "2023-01-01T00:00:00Z",

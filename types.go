@@ -76,8 +76,8 @@ func (m Money) String() string {
 
 // --- Parsed result types (strongly typed, int64 cents, time.Time) ---
 
-// ProfileResult is the parsed representation of a Wise profile.
-type ProfileResult struct {
+// Profile is the parsed representation of a Wise profile.
+type Profile struct {
 	ID        ProfileID
 	Type      ProfileType
 	Name      string
@@ -85,8 +85,8 @@ type ProfileResult struct {
 	CreatedAt time.Time
 }
 
-// BalanceResult is the parsed representation of a Wise balance.
-type BalanceResult struct {
+// Balance is the parsed representation of a Wise balance.
+type Balance struct {
 	ID        BalanceID
 	Currency  Currency
 	Type      BalanceType
@@ -185,6 +185,5 @@ type ListTransactionsRequest struct {
 // ListTransactionsResponse from listing transactions.
 type ListTransactionsResponse struct {
 	Transactions          []Transaction
-	HasMore               bool // Always false for Wise (returns all in one request)
 	EndOfStatementBalance Money
 }

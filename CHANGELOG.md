@@ -6,6 +6,55 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-08
+
+### Changed
+
+- **BREAKING: `Money` + `Currency` value objects.** All paired `XxxCents int64` / `XxxCurrency string` fields are collapsed into single `Money` fields (`Amount`, `Fees`, `Total`, `RunningBalance` on `Transaction`; `From`/`To` on `TransactionExchange`; `Amount`/`Reserved` on `Balance`). `ListTransactionsRequest.Currency` is now `wise.Currency` (not `string`). Mismatched currency/amount is now unrepresentable. Use `wise.Currency("EUR")` for direct construction or `wise.NewCurrency("EUR")` for validated construction.
+- **BREAKING: `ProfileResult` renamed to `Profile`; `BalanceResult` renamed to `Balance`.** Raw wire types moved to `internal/raw`, freeing the clean names. The old `wise.Profile` (raw) and `wise.Balance` (raw) types are no longer exported.
+- **BREAKING: `BalanceType` enum values normalized to lowercase.** `BalanceTypeStandard` changed from `"STANDARD"` to `"standard"`; `BalanceTypeSavings` from `"SAVINGS"` to `"savings"`. `ProfileType` and `TransactionType` were already lowercase. The parser still accepts Wise's uppercase wire format.
+- **BREAKING: `ListTransactionsResponse.HasMore` removed.** The field was always `false`; Wise returns all transactions in a single response.
+- **BREAKING: `TransactionTypeUnknown` constant removed.** `classifyTransactionType` never returned it (default falls back to credit/debit based on amount sign).
+- **BREAKING: `EndOfStatementBalance` exposed as `Money`** on `ListTransactionsResponse`. Previously decoded from the Wise API then discarded.
+- Bump [go-branded-id](https://github.com/larsartmann/go-branded-id) from v0.3.2 to **v0.5.1**.
+- Bump [go-error-family](https://github.com/larsartmann/go-error-family) from v0.7.0 to **v0.10.0**.
+
+### Added
+
+- `Money` struct with `Cents int64` + `Currency Currency` and a `String()` method (`"EUR 12.34"`).
+- `Currency` type with `NewCurrency(s string) (Currency, error)` ISO 4217 validation (3-letter uppercase ASCII).
+- `toMoney(raw.BalanceAmount) (Money, error)` internal helper for raw-to-clean conversion with currency validation.
+- `internal/raw` package containing all Wise wire-format types (previously in the public `wise` package).
+- `nix:` CI job in `.github/workflows/ci.yml` using `cachix/install-nix-action`.
+- README sections: "Mocking the Client", "Request Middleware", UTC timezone note on `Transaction.Date`.
+- Unit tests for `NewCurrency` validation and `Money.String()` formatting.
+- `currencyCodeLength` constant to replace magic number in currency validation.
+
+### Fixed
+
+- **Depguard configuration** — 14 false-positive errors blocking all third-party imports. Added `failsafe-go`, `go-branded-id`, `go-error-family`, and `onsi` to the allow-list.
+- **36 golangci-lint issues resolved** — varnamelen (ignore common short names), makezero (use `make([]T, 0, len(...))`), mnd (extract constants), inamedparam (name `Doer.Do` parameter), err113 (nolint on generic enum parser).
+- Updated stale version references in AGENTS.md and `.buildflow.yml` to match go.mod.
+
+### Migration Guide
+
+| Old (v0.3.0)                          | New (v0.4.0)                           |
+| ------------------------------------- | -------------------------------------- |
+| `tx.AmountCents`                      | `tx.Amount.Cents`                      |
+| `tx.AmountCurrency`                   | `tx.Amount.Currency`                   |
+| `tx.TotalCents`                       | `tx.Total.Cents`                       |
+| `tx.FeesCents`                        | `tx.Fees.Cents`                        |
+| `tx.RunningBalanceCents`              | `tx.RunningBalance.Cents`              |
+| `exch.FromCents` / `exch.FromCurrency`| `exch.From.Cents` / `exch.From.Currency` |
+| `balance.AmountCents`                 | `balance.Amount.Cents`                 |
+| `balance.ReservedCents`               | `balance.Reserved.Cents`               |
+| `wise.ProfileResult`                  | `wise.Profile`                         |
+| `wise.BalanceResult`                  | `wise.Balance`                         |
+| `req.Currency = "EUR"`                | `req.Currency = wise.Currency("EUR")` |
+| `resp.HasMore`                        | *(removed — always false)*             |
+| `wise.TransactionTypeUnknown`         | *(removed — never returned)*           |
+| `BalanceTypeStandard == "STANDARD"`   | `BalanceTypeStandard == "standard"`    |
+
 ## [0.3.0] - 2026-07-18
 
 ### Changed

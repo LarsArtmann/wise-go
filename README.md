@@ -17,7 +17,7 @@ Wise publishes no official Go SDK and no complete OpenAPI spec. **wise-go fills 
 - **Branded IDs prevent entity-mixing bugs** — `ProfileID`, `BalanceID`, and `TransactionID` are distinct types; passing one where another belongs is a compile error.
 - **Automatic retries with backoff** — Exponential backoff on 429 (rate limit), 5xx, and network errors via [failsafe-go](https://github.com/failsafe-go/failsafe-go). Auth, not-found, and client errors fail immediately.
 - **Typed, classifiable errors** — `AuthError`, `RateLimitError` (with parsed `Retry-After`), `NotFoundError`, `ServerError`. Each carries its Wise API detail and implements `ErrorCode()` / `ErrorFamily()` / `IsRetryable()` from [go-error-family](https://github.com/larsartmann/go-error-family).
-- **Two-layer type system** — Raw wire types mirror Wise's JSON exactly; result types expose clean Go. The mapping is the only bridge.
+- **Two-layer type system** — Raw wire types live in `internal/raw`; result types expose clean Go with `Money` value objects and branded `Currency`. The mapping is the only bridge.
 - **Sandbox support** — One-line switch to the Wise sandbox environment.
 - **Minimal dependencies** — Three focused production deps: `failsafe-go`, `go-branded-id`, `go-error-family`.
 
@@ -75,7 +75,7 @@ func main() {
         }
 
         for _, b := range balances {
-            fmt.Printf("  %s %s: %d cents\n", b.Currency, b.Name, b.AmountCents)
+            fmt.Printf("  %s %s: %d cents\n", b.Currency, b.Name, b.Amount.Cents)
         }
     }
 
@@ -83,7 +83,7 @@ func main() {
     resp, err := client.ListTransactions(ctx, wise.ListTransactionsRequest{
         ProfileID: profiles[0].ID,
         BalanceID: balances[0].ID,
-        Currency:  "EUR",
+        Currency:  wise.Currency("EUR"),
         From:      time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
         To:        time.Date(2025, 12, 31, 23, 59, 59, 0, time.UTC),
     })
@@ -93,11 +93,11 @@ func main() {
 
     for _, tx := range resp.Transactions {
         sign := "+"
-        if tx.TotalCents < 0 {
+        if tx.Total.Cents < 0 {
             sign = ""
         }
 
-        fmt.Printf("%s%d cents — %s (%s)\n", sign, tx.TotalCents, tx.Description, tx.Type)
+        fmt.Printf("%s%d cents — %s (%s)\n", sign, tx.Total.Cents, tx.Description, tx.Type)
     }
 }
 ```
@@ -144,7 +144,7 @@ err := client.Health(ctx)
 
 ```go
 profiles, err := client.ListProfiles(ctx)
-// []ProfileResult{
+// []Profile{
 //   {ID: 12345, Type: ProfileTypePersonal, Name: "John Doe", Email: "john@example.com", CreatedAt: ...},
 //   {ID: 67890, Type: ProfileTypeBusiness, Name: "Acme Corp", Email: "billing@acme.com", CreatedAt: ...},
 // }
@@ -155,8 +155,8 @@ profiles, err := client.ListProfiles(ctx)
 ```go
 // List visible, non-investment balances for a profile
 balances, err := client.ListBalances(ctx, profileID)
-// []BalanceResult{
-//   {ID: 100, Currency: "EUR", Type: BalanceTypeStandard, Name: "Main Account", AmountCents: 123456, ...},
+// []Balance{
+//   {ID: 100, Currency: "EUR", Type: BalanceTypeStandard, Name: "Main Account", Amount.Cents: 123456, ...},
 // }
 
 // Get a specific balance by ID
@@ -171,13 +171,12 @@ balance, err := client.GetBalance(ctx, profileID, balanceID)
 resp, err := client.ListTransactions(ctx, wise.ListTransactionsRequest{
     ProfileID: wise.NewProfileID(12345),
     BalanceID: wise.NewBalanceID(100),
-    Currency:  "EUR",
+    Currency:  wise.Currency("EUR"),
     From:      time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
     To:        time.Date(2025, 1, 31, 23, 59, 59, 0, time.UTC),
     Type:      "CARD_PAYMENT", // optional filter
 })
 // resp.Transactions → []Transaction
-// resp.HasMore → always false (Wise returns all in one response)
 ```
 
 **Transaction type classification** — The SDK maps Wise detail types to Go enums:
@@ -196,9 +195,9 @@ resp, err := client.ListTransactions(ctx, wise.ListTransactionsRequest{
 
 **Amount semantics:**
 
-- `AmountCents` — absolute value (always positive)
-- `TotalCents` — signed value (negative for debits, positive for credits)
-- `RunningBalanceCents` — the balance after this transaction (signed `int64`)
+- `Amount.Cents` — absolute value (always positive)
+- `Total.Cents` — signed value (negative for debits, positive for credits)
+- `RunningBalance.Cents` — the balance after this transaction (signed `int64`)
 - `Exchange` — `*TransactionExchange` with from/to amounts and rate; `nil` for non-conversion transactions
 - All amounts use `int64` minor units (cents) to avoid IEEE 754 floating-point errors
 
@@ -211,14 +210,14 @@ resp, err := client.ListTransactions(ctx, wise.ListTransactionsRequest{
 
 ## Mocking the Client
 
-The SDK returns concrete types (`*wise.Client`, `[]wise.ProfileResult`, etc.), not interfaces.
+The SDK returns concrete types (`*wise.Client`, `[]wise.Profile`, etc.), not interfaces.
 This follows Go's "accept interfaces, return structs" proverb: consumers define narrow
 interfaces for the subset of methods they actually use, keeping mocks minimal.
 
 ```go
 // Define a narrow interface in your package.
 type ProfileLister interface {
-    ListProfiles(ctx context.Context) ([]wise.ProfileResult, error)
+    ListProfiles(ctx context.Context) ([]wise.Profile, error)
 }
 
 // Your service depends on the interface, not *wise.Client.
@@ -228,11 +227,11 @@ type Service struct {
 
 // In tests, implement the interface with a stub.
 type mockProfileLister struct {
-    profiles []wise.ProfileResult
+    profiles []wise.Profile
     err      error
 }
 
-func (m *mockProfileLister) ListProfiles(ctx context.Context) ([]wise.ProfileResult, error) {
+func (m *mockProfileLister) ListProfiles(ctx context.Context) ([]wise.Profile, error) {
     return m.profiles, m.err
 }
 ```
@@ -302,13 +301,13 @@ if err != nil {
 
 ## Design Decisions
 
-| Decision                          | Rationale                                                                                                      |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Monetary amounts as `int64` cents | `float64` causes precision loss (e.g., `0.1 + 0.2 ≠ 0.3`). Cents are safe for arithmetic and storage.          |
-| Two-layer type system             | Raw API types mirror JSON exactly. Result types expose clean Go types. Mapping functions convert between them. |
-| `failsafe-go` for retries         | Purpose-built HTTP retry with backoff, not a generic CQRS middleware.                                          |
-| Flat package structure            | Single `package wise` — no sub-packages for 8 files. Import path is the API.                                   |
-| BDD tests with Ginkgo             | `httptest.Server` mock API responses. Tests verify both happy paths and error classification.                  |
+| Decision                          | Rationale                                                                                                                                              |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Monetary amounts as `int64` cents | `float64` causes precision loss (e.g., `0.1 + 0.2 ≠ 0.3`). Cents are safe for arithmetic and storage.                                                  |
+| Two-layer type system             | Raw wire types in `internal/raw` mirror JSON exactly. Result types expose clean Go with `Money` value objects. Mapping functions convert between them. |
+| `failsafe-go` for retries         | Purpose-built HTTP retry with backoff, not a generic CQRS middleware.                                                                                  |
+| Flat package structure            | Single `package wise` — no sub-packages for 8 files. Import path is the API.                                                                           |
+| BDD tests with Ginkgo             | `httptest.Server` mock API responses. Tests verify both happy paths and error classification.                                                          |
 
 ## Testing
 

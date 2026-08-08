@@ -7,6 +7,7 @@ import (
 	"time"
 
 	errorfamily "github.com/larsartmann/go-error-family"
+	"github.com/larsartmann/wise-go/internal/raw"
 )
 
 func TestParseRetryAfter(t *testing.T) {
@@ -109,7 +110,7 @@ func TestBalanceAmountCents(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := BalanceAmount{Value: tt.value}.Cents()
+			got := raw.BalanceAmount{Value: tt.value}.Cents()
 			if got != tt.want {
 				t.Errorf("Cents() = %d, want %d", got, tt.want)
 			}
@@ -270,7 +271,7 @@ func TestParseWiseDateError(t *testing.T) {
 func TestMapBalanceError(t *testing.T) {
 	t.Parallel()
 
-	_, err := mapBalance(Balance{CreationTime: "bad", Type: "STANDARD"})
+	_, err := mapBalance(raw.Balance{CreationTime: "bad", Type: "STANDARD"})
 	if err == nil {
 		t.Fatal("expected error for bad creation time")
 	}
@@ -279,7 +280,7 @@ func TestMapBalanceError(t *testing.T) {
 func TestMapProfileError(t *testing.T) {
 	t.Parallel()
 
-	_, err := mapProfile(Profile{CreatedAt: "bad", Type: "PERSONAL"})
+	_, err := mapProfile(raw.Profile{CreatedAt: "bad", Type: "PERSONAL"})
 	if err == nil {
 		t.Fatal("expected error for bad created_at")
 	}
