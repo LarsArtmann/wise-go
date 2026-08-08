@@ -7,7 +7,7 @@
 
 The unofficial Go SDK for the [Wise](https://wise.com) (TransferWise) API.
 
-Wise publishes no official Go SDK and no complete OpenAPI spec. **wise-go fills that gap** with hand-written types that make invalid states hard to reach: monetary amounts as `int64` cents (never `float64`), branded IDs that prevent mixing `ProfileID` with `BalanceID` at compile time, and behavioral error classification so you can retry on intent rather than string-matching status codes.
+Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise's wire types directly — `float64` for money, untyped string IDs, inconsistent date formats. **wise-go fills that gap** with hand-written types that make invalid states hard to reach: monetary amounts as `int64` cents (never `float64`), branded IDs that prevent mixing `ProfileID` with `BalanceID` at compile time, and behavioral error classification so you can retry on intent rather than string-matching status codes.
 
 > **Status: early development (v0.5.0).** Read-only coverage of profiles, balances, and transactions. Write operations (transfers, recipients, quotes, webhooks) are not yet implemented — see [ROADMAP.md](ROADMAP.md).
 
