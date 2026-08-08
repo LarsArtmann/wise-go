@@ -236,8 +236,8 @@ const (
 type BalanceType string
 
 const (
-	BalanceTypeStandard BalanceType = "STANDARD"
-	BalanceTypeSavings  BalanceType = "SAVINGS"
+	BalanceTypeStandard BalanceType = "standard"
+	BalanceTypeSavings  BalanceType = "savings"
 )
 
 // InvestmentState identifies whether a Wise balance is invested.
@@ -261,7 +261,6 @@ const (
 	TransactionTypeRefund   TransactionType = "refund"
 	TransactionTypeTransfer TransactionType = "transfer"
 	TransactionTypePayment  TransactionType = "payment"
-	TransactionTypeUnknown  TransactionType = "unknown"
 )
 
 // --- Request types ---
