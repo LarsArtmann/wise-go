@@ -5,11 +5,12 @@ import (
 	"fmt"
 
 	id "github.com/larsartmann/go-branded-id"
+	"github.com/larsartmann/wise-go/internal/raw"
 )
 
 // ListProfiles returns all profiles for the authenticated user.
 func (c *Client) ListProfiles(ctx context.Context) ([]ProfileResult, error) {
-	var profiles []Profile
+	var profiles []raw.Profile
 
 	err := c.get(ctx, "/v2/profiles", &profiles)
 	if err != nil {
@@ -29,7 +30,7 @@ func (c *Client) ListProfiles(ctx context.Context) ([]ProfileResult, error) {
 	return results, nil
 }
 
-func mapProfile(p Profile) (ProfileResult, error) {
+func mapProfile(p raw.Profile) (ProfileResult, error) {
 	name := p.FirstName + " " + p.LastName
 	if p.Type == "BUSINESS" {
 		name = p.BusinessName

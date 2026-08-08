@@ -6,6 +6,7 @@ import (
 
 	id "github.com/larsartmann/go-branded-id"
 	errorfamily "github.com/larsartmann/go-error-family"
+	"github.com/larsartmann/wise-go/internal/raw"
 )
 
 // ListBalances returns all balances for a profile.
@@ -16,7 +17,7 @@ import (
 func (c *Client) ListBalances(ctx context.Context, profileID ProfileID) ([]BalanceResult, error) {
 	path := fmt.Sprintf("/v4/profiles/%d/balances", profileID.Get())
 
-	var balances []Balance
+	var balances []raw.Balance
 
 	err := c.get(ctx, path, &balances)
 	if err != nil {
@@ -63,7 +64,7 @@ func (c *Client) GetBalance(
 	)
 }
 
-func mapBalance(b Balance) (BalanceResult, error) {
+func mapBalance(b raw.Balance) (BalanceResult, error) {
 	createdAt, err := parseRFC3339(b.CreationTime)
 	if err != nil {
 		return BalanceResult{}, fmt.Errorf("parse creation_time %q: %w", b.CreationTime, err)

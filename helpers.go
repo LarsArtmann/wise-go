@@ -7,12 +7,14 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/larsartmann/wise-go/internal/raw"
 )
 
 const defaultRetryAfter = time.Second
 
 // toMoney converts a raw BalanceAmount to a validated Money value.
-func toMoney(a BalanceAmount) (Money, error) {
+func toMoney(a raw.BalanceAmount) (Money, error) {
 	currency, err := NewCurrency(a.Currency)
 	if err != nil {
 		return Money{}, fmt.Errorf("currency %q: %w", a.Currency, err)

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	errorfamily "github.com/larsartmann/go-error-family"
+	"github.com/larsartmann/wise-go/internal/raw"
 )
 
 // --- Structured error types ---
@@ -145,8 +146,8 @@ func newAPIError(statusCode int, body string, retryAfter time.Duration) error {
 	}
 }
 
-func parseErrorResponse(body string) *ErrorResponse {
-	var errResp ErrorResponse
+func parseErrorResponse(body string) *raw.ErrorResponse {
+	var errResp raw.ErrorResponse
 	if json.Unmarshal([]byte(body), &errResp) == nil && len(errResp.Errors) > 0 {
 		return &errResp
 	}

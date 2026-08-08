@@ -8,6 +8,7 @@ import (
 
 	id "github.com/larsartmann/go-branded-id"
 	errorfamily "github.com/larsartmann/go-error-family"
+	"github.com/larsartmann/wise-go/internal/raw"
 )
 
 // ListTransactions returns transactions for a balance within a time range.
@@ -36,7 +37,7 @@ func (c *Client) ListTransactions(
 		return v.Encode()
 	}
 
-	var statement StatementResponse
+	var statement raw.StatementResponse
 
 	err := c.getWithQuery(ctx, path, query, &statement)
 	if err != nil {
@@ -74,7 +75,7 @@ func (c *Client) ListTransactions(
 }
 
 func mapTransaction(
-	t StatementTransaction,
+	t raw.StatementTransaction,
 	profileID ProfileID,
 	balanceID BalanceID,
 	currency Currency,
@@ -138,7 +139,7 @@ func mapTransaction(
 
 // mapExchange converts raw Wise exchange details into the result type.
 // Returns nil when there are no exchange details.
-func mapExchange(ed *ExchangeDetails) (*TransactionExchange, error) {
+func mapExchange(ed *raw.ExchangeDetails) (*TransactionExchange, error) {
 	if ed == nil {
 		return nil, nil //nolint:nilnil // nil exchange details = nil result, no error
 	}
