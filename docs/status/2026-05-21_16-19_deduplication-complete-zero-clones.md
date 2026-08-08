@@ -151,6 +151,7 @@ The deduplication work eliminated all semantic clones at threshold 15, bringing 
 The specific issue is:
 
 ```go
+// skip-validate
 func expectBalanceAmountCents(balances []wise.BalanceResult, idx int, expectedAmount, expectedReserved int64) {
 ```
 

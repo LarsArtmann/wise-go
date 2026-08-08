@@ -11,6 +11,26 @@ Wise publishes no official Go SDK and no complete OpenAPI spec. **wise-go fills 
 
 > **Status: early development (v0.5.0).** Read-only coverage of profiles, balances, and transactions. Write operations (transfers, recipients, quotes, webhooks) are not yet implemented — see [ROADMAP.md](ROADMAP.md).
 
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [API Reference](#api-reference)
+  - [Authentication](#authentication)
+  - [Profiles](#profiles)
+  - [Balances](#balances)
+  - [Transactions](#transactions)
+- [Mocking the Client](#mocking-the-client)
+- [Request Middleware](#request-middleware)
+- [Error Handling](#error-handling)
+- [Design Decisions](#design-decisions)
+- [Testing](#testing)
+- [Project Status](#project-status)
+- [Contributing](#contributing)
+- [License](#license)
+
 ## Features
 
 - **Money is never `float64`** — Every amount is `int64` minor units (cents). No IEEE-754 representation error, ever.
@@ -243,10 +263,6 @@ func (m *mockProfileLister) ListProfiles(ctx context.Context) ([]wise.Profile, e
 implicitly. Inject a custom client to add tracing, logging, or mTLS at the transport layer:
 
 ```go
-client := wise.New("key", wise.WithHTTPClient(&http.Client{
-    Transport: &loggingTransport{next: http.DefaultTransport},
-}))
-
 type loggingTransport struct {
     next http.RoundTripper
 }
@@ -259,34 +275,33 @@ func (t *loggingTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 }
 ```
 
+Then inject it via `WithHTTPClient`:
+
+```go
+client := wise.New("key", wise.WithHTTPClient(&http.Client{
+    Transport: &loggingTransport{next: http.DefaultTransport},
+}))
+```
+
 ## Error Handling
 
-The SDK returns typed errors you can match with `errors.As`:
+The SDK returns typed errors you can match with `errors.AsType` (Go 1.26+):
 
 ```go
 import "errors"
 
 balances, err := client.ListBalances(ctx, profileID)
 if err != nil {
-    var rateLimit *wise.RateLimitError
-    var auth *wise.AuthError
-    var notFound *wise.NotFoundError
-    var server *wise.ServerError
-
-    switch {
-    case errors.As(err, &rateLimit):
-        fmt.Printf("rate limited, retry after %s\n", rateLimit.RetryAfter)
-    case errors.As(err, &auth):
+    if rl, ok := errors.AsType[*wise.RateLimitError](err); ok {
+        fmt.Printf("rate limited, retry after %s\n", rl.RetryAfter)
+    } else if auth, ok := errors.AsType[*wise.AuthError](err); ok {
         fmt.Printf("auth failed: %s\n", auth.Message)
-    case errors.As(err, &notFound):
-        fmt.Printf("not found: %s\n", notFound.Message)
-    case errors.As(err, &server):
-        fmt.Printf("server error (%d): %s\n", server.StatusCode, server.Message)
-    default:
-        var apiErr *wise.APIError
-        if errors.As(err, &apiErr) {
-            fmt.Printf("API error (%d): %s\n", apiErr.StatusCode, apiErr.Message)
-        }
+    } else if nf, ok := errors.AsType[*wise.NotFoundError](err); ok {
+        fmt.Printf("not found: %s\n", nf.Message)
+    } else if srv, ok := errors.AsType[*wise.ServerError](err); ok {
+        fmt.Printf("server error (%d): %s\n", srv.StatusCode, srv.Message)
+    } else if apiErr, ok := errors.AsType[*wise.APIError](err); ok {
+        fmt.Printf("API error (%d): %s\n", apiErr.StatusCode, apiErr.Message)
     }
 }
 ```
@@ -320,6 +335,10 @@ Tests use `net/http/httptest` to mock the Wise API — no network access require
 ## Project Status
 
 See [FEATURES.md](FEATURES.md) for the full feature inventory by status and [ROADMAP.md](ROADMAP.md) for long-term direction.
+
+## Contributing
+
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on development setup, code style, and submitting pull requests.
 
 ## License
 
