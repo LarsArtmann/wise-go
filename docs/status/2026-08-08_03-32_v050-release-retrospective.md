@@ -98,13 +98,14 @@ The buildflow pre-commit hook failed because `dprint` (markdown formatter) is no
 
 ### 2. Never ran `nix flake check`
 
-The project's own quality gate (`AGENTS.md` Build & Dev section) lists `nix flake check` as the full check. I only ran `go build`, `go test -race`, and `golangci-lint run`. I never verified the hermetic Nix build passes with the new `example_test.go` file in the fileset. The `vendorHash` *shouldn't* change (no new deps), but the fileset change *could* surface issues in the sandboxed build.
+The project's own quality gate (`AGENTS.md` Build & Dev section) lists `nix flake check` as the full check. I only ran `go build`, `go test -race`, and `golangci-lint run`. I never verified the hermetic Nix build passes with the new `example_test.go` file in the fileset. The `vendorHash` _shouldn't_ change (no new deps), but the fileset change _could_ surface issues in the sandboxed build.
 
 ### 3. Coverage went DOWN from 94.8% to 92.4%
 
 The README badge still claims 94.8%. The actual coverage is now 92.4%. Adding `example_test.go` (which has `panic(err)` that counts as uncovered) and the new test files shifted the ratio. I should have either updated the badge or investigated the drop.
 
 **Uncovered functions at 0%:**
+
 - `errors.go:45` — `ErrorContext()` (on `APIError`)
 - `errors.go:66` — `ErrorContext()` (on `RateLimitError`)
 - `internal/raw/types.go:46` — `Cents()` (the raw version — the white-box test covers it but in a different package, so the `wise` package's coverage report shows 0%)

@@ -81,7 +81,7 @@ claim here can be verified against the implementation.
 | Two-layer raw/result split (`internal/raw` boundary)  | FULLY_FUNCTIONAL | Wire types in `internal/raw/types.go`; parsed types in `types.go`; `helpers.go:17` bridge |
 | `ProfileType`, `BalanceType`, `TransactionType` enums | FULLY_FUNCTIONAL | `types.go:135,143,160`                                                                    |
 | `InvestmentState` typed enum                          | FULLY_FUNCTIONAL | `types.go:151`; used for balance filtering (`balances.go:29`)                             |
-| `DetailType` typed enum + constants                   | FULLY_FUNCTIONAL | `transactions.go:165`; typed filter for `ListTransactionsRequest.Type`              |
+| `DetailType` typed enum + constants                   | FULLY_FUNCTIONAL | `transactions.go:165`; typed filter for `ListTransactionsRequest.Type`                    |
 | Enum casing normalization (lowercase SDK values)      | FULLY_FUNCTIONAL | `BalanceType` normalized; `ProfileType`/`TransactionType` already lowercase               |
 
 ## Build & tooling
