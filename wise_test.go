@@ -314,7 +314,9 @@ var _ = Describe("Wise Client", func() {
 			BeforeEach(func() {
 				mux.HandleFunc(
 					"/v4/profiles/12345/balances",
-					func(w http.ResponseWriter, _ *http.Request) {
+					func(w http.ResponseWriter, r *http.Request) {
+						Expect(r.URL.Query().Get("types")).To(Equal("STANDARD,SAVINGS"))
+
 						balances := []raw.Balance{
 							stdBalance(
 								100,

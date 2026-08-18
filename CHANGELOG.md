@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-08-18
+
+### Fixed
+
+- **`ListBalances` sends the required `types` query parameter.** The live v4 endpoint rejects a bare `/v4/profiles/{id}/balances` with `400 query.types: NotNull`, which made every balance listing fail after authentication succeeded. The SDK now always requests all mappable balance types (`types=STANDARD,SAVINGS`, kept in sync with the `parseBalanceType` table); visibility and investment-state filtering remain client-side, so returned data is unchanged.
+
 ## [0.5.2] - 2026-08-18
 
 ### Fixed

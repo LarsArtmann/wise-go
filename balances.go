@@ -9,13 +9,19 @@ import (
 	"github.com/larsartmann/wise-go/internal/raw"
 )
 
+// balanceTypesQuery lists every balance type the SDK can map (keep in sync
+// with the parseBalanceType table). The v4 balances endpoint rejects requests
+// without a types filter with "query.types: NotNull", so ListBalances always
+// sends the full set and keeps visibility/investment filtering client-side.
+const balanceTypesQuery = "STANDARD,SAVINGS"
+
 // ListBalances returns all balances for a profile.
 //
 // Only visible, non-investment balances are returned. Wise exposes no
 // per-balance endpoint, so there is no way to fetch a hidden or invested
 // balance individually through this SDK.
 func (c *Client) ListBalances(ctx context.Context, profileID ProfileID) ([]Balance, error) {
-	path := fmt.Sprintf("/v4/profiles/%d/balances", profileID.Get())
+	path := fmt.Sprintf("/v4/profiles/%d/balances?types=%s", profileID.Get(), balanceTypesQuery)
 
 	var balances []raw.Balance
 
