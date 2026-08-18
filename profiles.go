@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	id "github.com/larsartmann/go-branded-id"
+	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go/internal/raw"
 )
 
@@ -38,12 +39,20 @@ func mapProfile(p raw.Profile) (Profile, error) {
 
 	createdAt, err := parseWiseTimestamp(p.CreatedAt)
 	if err != nil {
-		return Profile{}, fmt.Errorf("parse created_at %q: %w", p.CreatedAt, err)
+		return Profile{}, errorfamily.WrapCorruption(
+			err,
+			"wise.profile.parse_created_at",
+			fmt.Sprintf("parse created_at %q", p.CreatedAt),
+		)
 	}
 
 	profileType, err := parseProfileType(p.Type)
 	if err != nil {
-		return Profile{}, fmt.Errorf("parse type %q: %w", p.Type, err)
+		return Profile{}, errorfamily.WrapCorruption(
+			err,
+			"wise.profile.parse_type",
+			fmt.Sprintf("parse type %q", p.Type),
+		)
 	}
 
 	return Profile{

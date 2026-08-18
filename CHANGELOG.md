@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-08-18
+
+### Fixed
+
+- **Response-shape parse failures are now classified as `Corruption`.** Mapper errors (unparseable timestamps, unknown enum types, invalid currency codes) were plain errors, so consumers that blanket-wrap SDK failures as `Transient` retried permanent failures with exponential backoff — a bad `createdAt` once silenced a sync for hours. All mapper and money-parse errors now carry `errorfamily` Corruption classification with dot-notation codes (`wise.profile.parse_created_at`, `wise.balance.parse_creation_time`, `wise.transaction.parse_date`, `wise.money.parse`) so consumers can fail fast.
+
 ## [0.5.1] - 2026-08-18
 
 ### Fixed

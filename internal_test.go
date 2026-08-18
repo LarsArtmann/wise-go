@@ -518,3 +518,110 @@ func TestCheckErrorWithoutRateLimitedBy(t *testing.T) {
 		t.Errorf("ErrorContext should not contain rate_limited_by when empty")
 	}
 }
+
+// TestMapperParseErrorsAreCorruption guards the 2026-08-18 incident class:
+// permanent response-shape failures must classify as Corruption so consumers
+// fail fast instead of retrying with backoff. A blanket Transient wrap in a
+// consumer shadows this classification, so keep these assertions exhaustive
+// per mapper.
+func TestMapperParseErrorsAreCorruption(t *testing.T) {
+	t.Parallel()
+
+	const (
+		rawTypePersonal = "PERSONAL"
+		rawCreatedAt    = "2020-05-27T10:27:22"
+	)
+
+	tests := []struct {
+		name string
+		call func() error
+	}{
+		{
+			name: "profile unparseable created_at",
+			call: func() error {
+				_, err := mapProfile(raw.Profile{ID: 1, Type: rawTypePersonal, CreatedAt: "not-a-timestamp"})
+
+				return err
+			},
+		},
+		{
+			name: "profile unknown type",
+			call: func() error {
+				_, err := mapProfile(raw.Profile{ID: 1, Type: "TRUST", CreatedAt: rawCreatedAt})
+
+				return err
+			},
+		},
+		{
+			name: "amount invalid currency",
+			call: func() error {
+				_, err := toMoney(raw.BalanceAmount{Value: 100, Currency: "xx"})
+
+				return err
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := tt.call()
+			if err == nil {
+				t.Fatal("expected error, got nil")
+			}
+
+			if family := errorfamily.Classify(err); family != errorfamily.Corruption {
+				t.Errorf("Classify() = %v, want Corruption (error: %v)", family, err)
+			}
+		})
+	}
+}
+
+func TestMapBalanceParseErrorsAreCorruption(t *testing.T) {
+	t.Parallel()
+
+	const (
+		rawTypeStandard = "STANDARD"
+		rawCreatedAt    = "2020-05-27T10:27:22"
+	)
+
+	tests := []struct {
+		name string
+		call func() error
+	}{
+		{
+			name: "unparseable creation_time",
+			call: func() error {
+				b := raw.Balance{ID: 1, Currency: "EUR", Type: rawTypeStandard, CreationTime: "garbage"}
+				_, err := mapBalance(b)
+
+				return err
+			},
+		},
+		{
+			name: "invalid currency",
+			call: func() error {
+				b := raw.Balance{ID: 1, Currency: "euros", Type: rawTypeStandard, CreationTime: rawCreatedAt}
+				_, err := mapBalance(b)
+
+				return err
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := tt.call()
+			if err == nil {
+				t.Fatal("expected error, got nil")
+			}
+
+			if family := errorfamily.Classify(err); family != errorfamily.Corruption {
+				t.Errorf("Classify() = %v, want Corruption (error: %v)", family, err)
+			}
+		})
+	}
+}

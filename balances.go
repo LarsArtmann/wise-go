@@ -67,17 +67,29 @@ func (c *Client) GetBalance(
 func mapBalance(b raw.Balance) (Balance, error) {
 	createdAt, err := parseWiseTimestamp(b.CreationTime)
 	if err != nil {
-		return Balance{}, fmt.Errorf("parse creation_time %q: %w", b.CreationTime, err)
+		return Balance{}, errorfamily.WrapCorruption(
+			err,
+			"wise.balance.parse_creation_time",
+			fmt.Sprintf("parse creation_time %q", b.CreationTime),
+		)
 	}
 
 	balanceType, err := parseBalanceType(b.Type)
 	if err != nil {
-		return Balance{}, fmt.Errorf("parse type %q: %w", b.Type, err)
+		return Balance{}, errorfamily.WrapCorruption(
+			err,
+			"wise.balance.parse_type",
+			fmt.Sprintf("parse type %q", b.Type),
+		)
 	}
 
 	currency, err := NewCurrency(b.Currency)
 	if err != nil {
-		return Balance{}, fmt.Errorf("currency %q: %w", b.Currency, err)
+		return Balance{}, errorfamily.WrapCorruption(
+			err,
+			"wise.balance.parse_currency",
+			fmt.Sprintf("currency %q", b.Currency),
+		)
 	}
 
 	amount, err := toMoney(b.Amount)

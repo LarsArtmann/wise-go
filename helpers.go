@@ -9,16 +9,19 @@ import (
 	"strconv"
 	"time"
 
+	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go/internal/raw"
 )
 
 const defaultRetryAfter = time.Second
 
 // toMoney converts a raw BalanceAmount to a validated Money value.
+// A malformed amount is permanent response corruption, never a retryable
+// failure, so the error is classified as Corruption.
 func toMoney(a raw.BalanceAmount) (Money, error) {
 	currency, err := NewCurrency(a.Currency)
 	if err != nil {
-		return Money{}, fmt.Errorf("currency %q: %w", a.Currency, err)
+		return Money{}, errorfamily.WrapCorruption(err, "wise.money.parse", fmt.Sprintf("currency %q", a.Currency))
 	}
 
 	return Money{Cents: a.Cents(), Currency: currency}, nil

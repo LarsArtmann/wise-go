@@ -81,14 +81,9 @@ func mapTransaction(
 ) (Transaction, error) {
 	date, err := parseWiseTimestamp(t.Date)
 	if err != nil {
-		return Transaction{}, fmt.Errorf(
-			"parse date %q for profileID=%d balanceID=%d currency=%s: %w",
-			t.Date,
-			profileID.Get(),
-			balanceID.Get(),
-			currency,
-			err,
-		)
+		return Transaction{}, errorfamily.WrapCorruption(err, "wise.transaction.parse_date",
+			fmt.Sprintf("parse date %q for profileID=%d balanceID=%d currency=%s",
+				t.Date, profileID.Get(), balanceID.Get(), currency))
 	}
 
 	txType := classifyTransactionType(DetailType(t.Details.Type), t.Amount.Value)
