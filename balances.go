@@ -65,7 +65,7 @@ func (c *Client) GetBalance(
 }
 
 func mapBalance(b raw.Balance) (Balance, error) {
-	createdAt, err := parseRFC3339(b.CreationTime)
+	createdAt, err := parseWiseTimestamp(b.CreationTime)
 	if err != nil {
 		return Balance{}, fmt.Errorf("parse creation_time %q: %w", b.CreationTime, err)
 	}

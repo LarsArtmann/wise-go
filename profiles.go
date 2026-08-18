@@ -36,7 +36,7 @@ func mapProfile(p raw.Profile) (Profile, error) {
 		name = p.BusinessName
 	}
 
-	createdAt, err := parseRFC3339(p.CreatedAt)
+	createdAt, err := parseWiseTimestamp(p.CreatedAt)
 	if err != nil {
 		return Profile{}, fmt.Errorf("parse created_at %q: %w", p.CreatedAt, err)
 	}

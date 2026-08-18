@@ -2,6 +2,7 @@ package wise
 
 import (
 	"encoding/json/v2"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -68,19 +69,30 @@ func parseRetryAfter(value string) time.Duration {
 	return defaultRetryAfter
 }
 
-// parseWiseDate parses a Wise statement date string of the form "2006-01-02 15:04:05".
-// Wise does not transmit a timezone; time.Parse interprets these values as UTC.
-// Callers comparing the resulting time.Time to a local-time value must convert
-// explicitly to avoid silent off-by-one-day errors at boundaries.
-func parseWiseDate(s string) (time.Time, error) {
-	t, err := time.Parse("2006-01-02 15:04:05", s)
-	if err != nil {
-		return time.Time{}, err
+// parseWiseTimestamp parses a Wise API timestamp. Wise is inconsistent about
+// separators and zone designators across endpoints: some emit full RFC3339
+// ("2020-05-27T10:27:22Z"), others omit the zone ("2020-05-27T10:27:22") or
+// use a space separator ("2020-05-27 10:27:22"). Zoneless values are
+// interpreted as UTC. Callers comparing the resulting time.Time to a
+// local-time value must convert explicitly to avoid silent off-by-one-day
+// errors at boundaries.
+func parseWiseTimestamp(s string) (time.Time, error) {
+	layouts := []string{
+		time.RFC3339,
+		"2006-01-02T15:04:05",
+		"2006-01-02 15:04:05",
 	}
 
-	return t, nil
-}
+	var errs []error
 
-func parseRFC3339(s string) (time.Time, error) {
-	return time.Parse(time.RFC3339, s)
+	for _, layout := range layouts {
+		t, err := time.Parse(layout, s)
+		if err == nil {
+			return t, nil
+		}
+
+		errs = append(errs, err)
+	}
+
+	return time.Time{}, errors.Join(errs...)
 }

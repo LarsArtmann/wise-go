@@ -269,6 +269,28 @@ var _ = Describe("Wise Client", func() {
 			})
 		})
 
+		Context("with zoneless createdAt (live /v2/profiles format)", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {
+					profiles := []raw.Profile{
+						// Exact createdAt value observed from the live Wise API
+						// on 2026-08-18: no zone designator.
+						personalProfile(14757634, "Lars", "Artmann", "lars@example.com", "2020-05-27T10:27:22"),
+					}
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, profiles)
+				})
+			})
+
+			It("should parse createdAt as UTC and return the profile", func() {
+				profiles, err := client.ListProfiles(context.Background())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(profiles).To(HaveLen(1))
+				Expect(profiles[0].CreatedAt).To(Equal(time.Date(2020, time.May, 27, 10, 27, 22, 0, time.UTC)))
+			})
+		})
+
 		Context("with unknown profile type", func() {
 			BeforeEach(func() {
 				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {

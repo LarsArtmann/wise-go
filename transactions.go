@@ -79,7 +79,7 @@ func mapTransaction(
 	balanceID BalanceID,
 	currency Currency,
 ) (Transaction, error) {
-	date, err := parseWiseDate(t.Date)
+	date, err := parseWiseTimestamp(t.Date)
 	if err != nil {
 		return Transaction{}, fmt.Errorf(
 			"parse date %q for profileID=%d balanceID=%d currency=%s: %w",

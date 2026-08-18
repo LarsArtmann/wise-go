@@ -306,12 +306,67 @@ func TestWithHTTPClient(t *testing.T) {
 	}
 }
 
-func TestParseWiseDateError(t *testing.T) {
+func TestParseWiseTimestamp(t *testing.T) {
 	t.Parallel()
 
-	_, err := parseWiseDate("not-a-date")
-	if err == nil {
-		t.Fatal("expected error for invalid date")
+	tests := []struct {
+		name    string
+		input   string
+		want    time.Time
+		wantErr bool
+	}{
+		{
+			name:  "RFC3339 with Z suffix",
+			input: "2023-01-15T10:30:00Z",
+			want:  time.Date(2023, time.January, 15, 10, 30, 0, 0, time.UTC),
+		},
+		{
+			name:  "RFC3339 with offset",
+			input: "2023-01-15T10:30:00+02:00",
+			want:  time.Date(2023, time.January, 15, 8, 30, 0, 0, time.UTC),
+		},
+		{
+			name:  "RFC3339 with fractional seconds",
+			input: "2023-01-15T10:30:00.123Z",
+			want:  time.Date(2023, time.January, 15, 10, 30, 0, 123000000, time.UTC),
+		},
+		{
+			name: "zoneless with T separator (live /v2/profiles format)",
+			// Exact value observed from the live Wise API on 2026-08-18.
+			input: "2020-05-27T10:27:22",
+			want:  time.Date(2020, time.May, 27, 10, 27, 22, 0, time.UTC),
+		},
+		{
+			name:  "zoneless with space separator (statement date format)",
+			input: "2023-01-15 14:30:00",
+			want:  time.Date(2023, time.January, 15, 14, 30, 0, 0, time.UTC),
+		},
+		{name: "empty rejected", input: "", wantErr: true},
+		{name: "date only rejected", input: "2023-01-15", wantErr: true},
+		{name: "garbage rejected", input: "not-a-date", wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := parseWiseTimestamp(tt.input)
+			if tt.wantErr {
+				if err == nil {
+					t.Fatalf("parseWiseTimestamp(%q) succeeded, want error", tt.input)
+				}
+
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("parseWiseTimestamp(%q) failed: %v", tt.input, err)
+			}
+
+			if !got.Equal(tt.want) {
+				t.Errorf("parseWiseTimestamp(%q) = %v, want %v", tt.input, got, tt.want)
+			}
+		})
 	}
 }
 

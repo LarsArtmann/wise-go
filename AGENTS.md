@@ -2,7 +2,7 @@
 
 ## Gotchas
 
-- **Dual date formats** — Wise uses RFC3339 for profile/balance timestamps but `"2006-01-02 15:04:05"` for transaction dates. Two different parsers (`parseRFC3339` vs `parseWiseDate`) — use the right one.
+- **Inconsistent timestamp formats** — Wise emits timestamps inconsistently: full RFC3339 (`2020-05-27T10:27:22Z`), zoneless `T`-separated (live `/v2/profiles` `createdAt`), and space-separated statement dates (`2020-05-27 10:27:22`). One tolerant parser (`parseWiseTimestamp`) handles all of them; zoneless values are UTC. Never parse Wise timestamps with a single strict layout.
 - **Amount vs Total** — `Transaction.Amount.Cents` is absolute value (always positive). `Transaction.Total.Cents` preserves sign (negative for debits). Getting this wrong silently produces wrong data. Both are `Money` fields (cents + currency paired).
 - **CARD_PAYMENT vs CARD_REFUND classification** — `CARD_PAYMENT` always maps to `TransactionTypeCard` regardless of amount sign. Only `CARD_REFUND` is amount-dependent (positive → `TransactionTypeRefund`, non-positive → `TransactionTypeCard`). Do not re-group these into one case branch — the README contract requires separate handling.
 - **Balance filtering** — `ListBalances` silently drops `Visible: false` and `InvestmentState != "NOT_INVESTED"` balances. `GetBalance` has no direct API endpoint — it calls `ListBalances` then linear-scans, so it also inherits this filtering. There is no `WithHiddenBalances` option (the old doc comment lied).

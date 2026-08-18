@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-08-18
+
+### Fixed
+
+- **Zoneless timestamps from the live Wise API now parse.** The `/v2/profiles` endpoint returns `createdAt` without a zone designator (e.g. `"2020-05-27T10:27:22"`), which made `ListProfiles` (and therefore `Authenticate`) fail with `parsing time ... cannot parse "" as "Z07:00"`. All timestamps now go through one tolerant parser (`parseWiseTimestamp`) that accepts RFC3339 (with `Z` or offset), zoneless `T`-separated, and space-separated statement dates; zoneless values are interpreted as UTC. Replaces the two strict parsers (`parseRFC3339`, `parseWiseDate`).
+
 ## [0.5.0] - 2026-08-08
 
 ### Changed
