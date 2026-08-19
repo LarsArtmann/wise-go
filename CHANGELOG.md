@@ -8,6 +8,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- `CancelTransfer` (`PUT /v1/transfers/{id}/cancel`): cancel a transfer before it
+  is processed. Cancellation is final; the API rejects cancellations of
+  transfers in `funds_converted` or later states with 409.
+- `GetDeliveryEstimate` (`GET /v1/delivery-estimates/{id}`): live expected
+  delivery time for a transfer, with an optional IANA `timezone` query
+  parameter for the formatted estimate text.
+- `ValidateTransferRequirements` (`POST /v1/transfer-requirements`): discover
+  the dynamic transfer-detail fields required for a quote + recipient
+  combination before creating the transfer. Introduces
+  `ValidateTransferRequirementsRequest`, `TransferRequirement` (dynamic form),
+  `TransferRequirementForm`, `TransferRequirementField`, and
+  `TransferRequirementValue`. Fields flagged `RefreshRequirementsOnChange` mean
+  the validation must be repeated once populated.
+- `Quote` expansion: `paymentOptions` (per pay-in/pay-out combination fee
+  breakdown, source/target amounts, estimated delivery, `PayInProduct`,
+  `FeePercentage`), `notices` (user-facing messages; a BLOCKED notice means the
+  quote must not be used), `RateType` (FIXED/FLOATING), `ProvidedAmountType`,
+  `GuaranteedTargetAmountAllowed`, `GuaranteedTargetAmount`.
+- `parseWiseTimestamp` now also accepts Wise's delivery-estimate layout
+  (`2006-01-02T15:04:05.000+0000`).
 - `GetProfile` (`GET /v2/profiles/{id}`): retrieve a single profile by ID.
 - `GetExchangeRate` (`GET /v1/rates`): current and historical exchange rates between two currencies.
 - `GetTransfer` (`GET /v1/transfers/{id}`): retrieve a single transfer by ID.

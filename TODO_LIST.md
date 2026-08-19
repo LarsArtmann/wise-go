@@ -38,9 +38,17 @@ binary cache, building `go_1_26` from nixpkgs source takes 15+ minutes. Add
 [x] Add `GetTransfer` and `CreateTransfer` — `GET /v1/transfers/{id}`,
 `POST /v1/transfers`.
 
-[ ] Add `CancelTransfer` — `PUT /v1/transfers/{id}/cancel`.
+[x] Add `CancelTransfer` — `PUT /v1/transfers/{id}/cancel`.
 
-[ ] Add `GetDeliveryEstimate` — `GET /v1/delivery-estimates/{id}`.
+[x] Add `GetDeliveryEstimate` — `GET /v1/delivery-estimates/{id}`.
+
+[x] Expand `Quote` with `paymentOptions`, fees, and notices — the quote now
+exposes per pay-in/pay-out option fee breakdowns, estimated delivery times,
+`RateType`, `ProvidedAmountType`, guaranteed-target-amount flags, and
+user-facing notices. (2026-08-19)
+
+[x] Add `ValidateTransferRequirements` — `POST /v1/transfer-requirements`.
+(2026-08-19)
 
 [ ] Add per-request correlation ID override — currently `WithCorrelationID` sets
 a client-wide header. Allow per-call override via context or request struct for

@@ -9,7 +9,11 @@ The unofficial Go SDK for the [Wise](https://wise.com) (TransferWise) API.
 
 Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise's wire types directly — `float64` for money, untyped string IDs, inconsistent date formats. **wise-go fills that gap** with hand-written types that make invalid states hard to reach: monetary amounts as `int64` cents (never `float64`), branded IDs that prevent mixing `ProfileID` with `BalanceID` at compile time, and behavioral error classification so you can retry on intent rather than string-matching status codes.
 
-> **Status: early development (v0.5.0).** Read-only coverage of profiles, balances, and transactions. Write operations (transfers, recipients, quotes, webhooks) are not yet implemented — see [ROADMAP.md](ROADMAP.md).
+> **Status: active development (v0.8.0).** The core transfer flow is implemented
+> end-to-end: profiles, balances, transactions, exchange rates, quotes (with
+> `paymentOptions` + fees), recipients, transfers (create / get / list /
+> cancel), delivery estimates, and transfer-requirements validation. See
+> [ROADMAP.md](ROADMAP.md) for what's next.
 
 > **Design story:** [I needed a Go SDK for Wise. Nobody built one.](https://larsartmann.com/blog/when-the-api-has-no-spec-your-types-are-the-spec)
 
@@ -24,6 +28,8 @@ Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise'
   - [Profiles](#profiles)
   - [Balances](#balances)
   - [Transactions](#transactions)
+  - [Transfers](#transfers)
+  - [Core transfer flow](#core-transfer-flow-quote--recipient--transfer)
 - [Mocking the Client](#mocking-the-client)
 - [Request Middleware](#request-middleware)
 - [Error Handling](#error-handling)
@@ -36,10 +42,11 @@ Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise'
 ## Features
 
 - **Money is never `float64`** — Every amount is `int64` minor units (cents). No IEEE-754 representation error, ever.
-- **Branded IDs prevent entity-mixing bugs** — `ProfileID`, `BalanceID`, and `TransactionID` are distinct types; passing one where another belongs is a compile error.
+- **Branded IDs prevent entity-mixing bugs** — `ProfileID`, `BalanceID`, `TransactionID`, `TransferID`, `RecipientID`, and `QuoteID` are distinct types; passing one where another belongs is a compile error.
 - **Automatic retries with backoff** — Exponential backoff on 429 (rate limit), 5xx, and network errors via [failsafe-go](https://github.com/failsafe-go/failsafe-go). Auth, not-found, and client errors fail immediately.
 - **Typed, classifiable errors** — `AuthError`, `RateLimitError` (with parsed `Retry-After`), `NotFoundError`, `ServerError`. Each carries its Wise API detail and implements `ErrorCode()` / `ErrorFamily()` / `IsRetryable()` from [go-error-family](https://github.com/larsartmann/go-error-family).
 - **Two-layer type system** — Raw wire types live in `internal/raw`; result types expose clean Go with `Money` value objects and branded `Currency`. The mapping is the only bridge.
+- **Write operations** — create quotes (authenticated and unauthenticated), recipients, and transfers; cancel transfers; validate transfer requirements; fetch delivery estimates.
 - **Sandbox support** — One-line switch to the Wise sandbox environment.
 - **Minimal dependencies** — Three focused production deps: `failsafe-go`, `go-branded-id`, `go-error-family`.
 
@@ -247,6 +254,88 @@ Unlike balance statements, `GET /v1/transfers` is **not SCA-protected** and is a
 `TransferStatus` is an open string enum: documented lifecycle values are provided as constants (`TransferStatusDelivered`, `TransferStatusCancelled`, …), and unknown values from Wise pass through unchanged.
 
 `Transfer.Created` is parsed tolerantly (RFC3339 or Wise's space-separated format; zoneless values are UTC).
+
+### Core transfer flow: quote → recipient → transfer
+
+The 1% Pareto core. A consumer with `GetProfile`, `CreateQuote`, `CreateRecipient`,
+and `CreateTransfer` can move money end-to-end:
+
+```go
+ctx := context.Background()
+
+// 1. Quote — locks the rate for 30 minutes.
+//    PreferredPayIn=BALANCE keeps quote fees consistent with transfer fees when
+//    funding from a multi-currency balance.
+quote, err := client.CreateQuote(ctx, profile.ID, wise.CreateQuoteRequest{
+    SourceCurrency: wise.Currency("EUR"),
+    TargetCurrency: wise.Currency("USD"),
+    SourceAmount:   &wise.Money{Cents: 100_000, Currency: wise.Currency("EUR")},
+    PreferredPayIn: wise.PayInBalance,
+    PayOut:         wise.PayOutBankTransfer,
+})
+if err != nil {
+    log.Fatal(err)
+}
+
+// 1b. Optional: discover required details before creating the transfer.
+//     Fields flagged RefreshRequirementsOnChange mean re-calling this once the
+//     field is populated reveals lower-level required fields.
+requirements, err := client.ValidateTransferRequirements(ctx, wise.ValidateTransferRequirementsRequest{
+    TargetAccount: wise.NewRecipientID(recipient.ID.Get()),
+    QuoteID:       quote.ID,
+})
+if err != nil {
+    log.Fatal(err)
+}
+
+// 2. Recipient — a bank account to send to. Required details vary by currency
+//    and route; the account-requirements endpoint discovers them per corridor.
+recipient, err := client.CreateRecipient(ctx, wise.CreateRecipientRequest{
+    ProfileID:         profile.ID,
+    Currency:          wise.Currency("GBP"),
+    Type:              "sort_code",
+    AccountHolderName: "Jane Doe",
+    Details: map[string]string{
+        "sortCode":      "040075",
+        "accountNumber": "37778842",
+    },
+})
+if err != nil {
+    log.Fatal(err)
+}
+
+// 3. Transfer — customerTransactionId is your idempotency key (a UUID).
+//    Reusing it with the same quote + targetAccount returns the existing
+//    transfer instead of creating a duplicate.
+transfer, err := client.CreateTransfer(ctx, wise.CreateTransferRequest{
+    QuoteID:               quote.ID,
+    TargetAccount:         recipient.ID,
+    CustomerTransactionID: "22244c35-9fe8-4c32-b7fd-d05c2a7734bf",
+})
+if err != nil {
+    log.Fatal(err)
+}
+
+// 4. Track — poll GetTransfer until it leaves waiting_for_funds, then
+//    fund the transfer from a balance and poll until delivered.
+estimate, err := client.GetDeliveryEstimate(ctx, transfer.ID, "Europe/Berlin")
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Printf("expected arrival: %s\n", estimate.EstimatedDeliveryDate)
+
+// 5. Cancel — only possible before the transfer is processed.
+cancelled, err := client.CancelTransfer(ctx, transfer.ID)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Printf("cancelled: %s\n", cancelled.Status)
+```
+
+`Quote.PaymentOptions` lists every pay-in/pay-out combination with its fee
+breakdown (`Fee.Total` is the value to display) and estimated delivery; a
+`QuoteNotice` of type `BLOCKED` means the quote must not be used to create a
+transfer.
 
 ## Mocking the Client
 

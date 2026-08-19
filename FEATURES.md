@@ -106,8 +106,12 @@ claim here can be verified against the implementation.
 | `GetExchangeRate`                    | FULLY_FUNCTIONAL | `rates.go:16`      |
 | `GetTransfer`                        | FULLY_FUNCTIONAL | `transfers.go:116` |
 | Quotes API (create + get)            | FULLY_FUNCTIONAL | `quotes.go`        |
+| `Quote.paymentOptions` + `notices`   | FULLY_FUNCTIONAL | `quotes.go` mapper; BDD-tested with fees/delivery/notices |
 | Recipients API (list + get + create) | FULLY_FUNCTIONAL | `recipients.go`    |
 | `CreateTransfer`                     | FULLY_FUNCTIONAL | `transfers.go:15`  |
+| `CancelTransfer`                     | FULLY_FUNCTIONAL | `transfers.go:231` |
+| `GetDeliveryEstimate`                | FULLY_FUNCTIONAL | `delivery_estimates.go` |
+| `ValidateTransferRequirements`       | FULLY_FUNCTIONAL | `transfer_requirements.go` |
 
 ## Out of scope (not yet started)
 
@@ -116,5 +120,3 @@ claim here can be verified against the implementation.
 | Webhooks                     | PLANNED | No code                                        |
 | Statements (CSV/PDF)         | PLANNED | SDK consumes `statement.json` only             |
 | Service-client sub-structure | PLANNED | Trigger: resource count > 6-8 (see ROADMAP.md) |
-| `CancelTransfer`             | PLANNED | `PUT /v1/transfers/{id}/cancel`                |
-| `GetDeliveryEstimate`        | PLANNED | `GET /v1/delivery-estimates/{id}`              |
