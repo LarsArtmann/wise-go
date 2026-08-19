@@ -3,6 +3,7 @@ package wise
 import (
 	"context"
 	"fmt"
+	"time"
 
 	id "github.com/larsartmann/go-branded-id"
 	errorfamily "github.com/larsartmann/go-error-family"
@@ -184,9 +185,9 @@ func (r CreateQuoteRequest) toWire(authenticated bool) map[string]any {
 }
 
 func mapQuote(quote raw.Quote, profileID ProfileID) (*Quote, error) {
-	created, createdErr := parseQuoteCreated(quote)
-	if createdErr != nil {
-		return nil, createdErr
+	created, expiration, timeErr := parseQuoteCreated(quote)
+	if timeErr != nil {
+		return nil, timeErr
 	}
 
 	source, target, monetaryErr := mapQuoteMonetary(quote)
