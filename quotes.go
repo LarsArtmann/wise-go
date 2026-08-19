@@ -202,22 +202,22 @@ func mapQuote(quote raw.Quote, profileID ProfileID) (*Quote, error) {
 	notices := mapQuoteNotices(quote.Notices)
 
 	return &Quote{
-		ID:                           id.NewID[QuoteBrand](quote.ID),
-		Source:                       source,
-		Target:                       target,
-		PayIn:                        PayIn(quote.PayIn),
-		PayOut:                       PayOut(quote.PayOut),
-		Rate:                         quote.Rate,
-		Created:                      created,
-		ExpirationTime:               expiration,
-		Status:                       QuoteStatus(quote.Status),
-		Profile:                      profileID,
-		RateType:                     QuoteRateType(quote.RateType),
-		ProvidedAmountType:           QuoteProvidedAmountType(quote.ProvidedAmountType),
+		ID:                            id.NewID[QuoteBrand](quote.ID),
+		Source:                        source,
+		Target:                        target,
+		PayIn:                         PayIn(quote.PayIn),
+		PayOut:                        PayOut(quote.PayOut),
+		Rate:                          quote.Rate,
+		Created:                       created,
+		ExpirationTime:                expiration,
+		Status:                        QuoteStatus(quote.Status),
+		Profile:                       profileID,
+		RateType:                      QuoteRateType(quote.RateType),
+		ProvidedAmountType:            QuoteProvidedAmountType(quote.ProvidedAmountType),
 		GuaranteedTargetAmountAllowed: quote.GuaranteedTargetAmountAllowed,
-		GuaranteedTargetAmount:       quote.GuaranteedTargetAmount,
-		PaymentOptions:               options,
-		Notices:                      notices,
+		GuaranteedTargetAmount:        quote.GuaranteedTargetAmount,
+		PaymentOptions:                options,
+		Notices:                       notices,
 	}, nil
 }
 

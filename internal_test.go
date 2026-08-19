@@ -692,8 +692,8 @@ func TestMapQuoteParseErrorsAreCorruption(t *testing.T) {
 		{
 			name: "unparseable created_time",
 			call: func() error {
-				q := raw.Quote{ID: "quote-1", SourceCurrency: "EUR", TargetCurrency: "USD", CreatedTime: "garbage"}
-				_, err := mapQuote(q, ProfileID{})
+				wireQuote := raw.Quote{ID: "quote-1", SourceCurrency: "EUR", TargetCurrency: "USD", CreatedTime: "garbage"}
+				_, err := mapQuote(wireQuote, ProfileID{})
 
 				return err
 			},
@@ -701,11 +701,11 @@ func TestMapQuoteParseErrorsAreCorruption(t *testing.T) {
 		{
 			name: "invalid source currency",
 			call: func() error {
-				q := raw.Quote{
+				wireQuote := raw.Quote{
 					ID: "quote-1", SourceCurrency: "euros", TargetCurrency: "USD",
 					CreatedTime: "2023-01-15T10:30:00Z", ExpirationTime: "2023-01-15T11:00:00Z",
 				}
-				_, err := mapQuote(q, ProfileID{})
+				_, err := mapQuote(wireQuote, ProfileID{})
 
 				return err
 			},

@@ -141,17 +141,17 @@ func mapTransferRequirementForm(form raw.TransferRequirementForm) TransferRequir
 
 func mapTransferRequirementField(field raw.TransferRequirementField) TransferRequirementField {
 	return TransferRequirementField{
-		Key:                        field.Key,
-		Name:                       field.Name,
-		Type:                       field.Type,
+		Key:                         field.Key,
+		Name:                        field.Name,
+		Type:                        field.Type,
 		RefreshRequirementsOnChange: field.RefreshRequirementsOnChange,
-		Required:                   field.Required,
-		DisplayFormat:              field.DisplayFormat,
-		Example:                    field.Example,
-		MinLength:                  field.MinLength,
-		MaxLength:                  field.MaxLength,
-		ValidationRegexp:           field.ValidationRegexp,
-		ValuesAllowed:              mapTransferRequirementValues(field.ValuesAllowed),
+		Required:                    field.Required,
+		DisplayFormat:               field.DisplayFormat,
+		Example:                     field.Example,
+		MinLength:                   field.MinLength,
+		MaxLength:                   field.MaxLength,
+		ValidationRegexp:            field.ValidationRegexp,
+		ValuesAllowed:               mapTransferRequirementValues(field.ValuesAllowed),
 	}
 }
 

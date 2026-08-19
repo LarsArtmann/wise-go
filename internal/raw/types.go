@@ -107,24 +107,24 @@ type Recipient struct {
 // Quote from Wise API (/v3/quotes).
 // ID is a UUID string; it is omitted for unauthenticated quotes.
 type Quote struct {
-	ID                          string                `json:"id,omitempty"`
-	SourceCurrency              string                `json:"sourceCurrency"`
-	TargetCurrency              string                `json:"targetCurrency"`
-	SourceAmount                float64               `json:"sourceAmount"`
-	TargetAmount                float64               `json:"targetAmount"`
-	PayIn                       string                `json:"payIn"`
-	PayOut                      string                `json:"payOut"`
-	Rate                        float64               `json:"rate"`
-	CreatedTime                 string                `json:"createdTime"`
-	ExpirationTime              string                `json:"expirationTime"`
-	Status                      string                `json:"status"`
-	Profile                     int64                 `json:"profile"`
-	RateType                    string                `json:"rateType"`
-	ProvidedAmountType          string                `json:"providedAmountType"`
-	GuaranteedTargetAmountAllowed bool                `json:"guaranteedTargetAmountAllowed"`
-	GuaranteedTargetAmount      bool                  `json:"guaranteedTargetAmount"`
-	PaymentOptions              []QuotePaymentOption  `json:"paymentOptions"`
-	Notices                     []QuoteNotice         `json:"notices"`
+	ID                            string               `json:"id,omitempty"`
+	SourceCurrency                string               `json:"sourceCurrency"`
+	TargetCurrency                string               `json:"targetCurrency"`
+	SourceAmount                  float64              `json:"sourceAmount"`
+	TargetAmount                  float64              `json:"targetAmount"`
+	PayIn                         string               `json:"payIn"`
+	PayOut                        string               `json:"payOut"`
+	Rate                          float64              `json:"rate"`
+	CreatedTime                   string               `json:"createdTime"`
+	ExpirationTime                string               `json:"expirationTime"`
+	Status                        string               `json:"status"`
+	Profile                       int64                `json:"profile"`
+	RateType                      string               `json:"rateType"`
+	ProvidedAmountType            string               `json:"providedAmountType"`
+	GuaranteedTargetAmountAllowed bool                 `json:"guaranteedTargetAmountAllowed"`
+	GuaranteedTargetAmount        bool                 `json:"guaranteedTargetAmount"`
+	PaymentOptions                []QuotePaymentOption `json:"paymentOptions"`
+	Notices                       []QuoteNotice        `json:"notices"`
 }
 
 // QuotePaymentOption is one payment method combination available for a quote.

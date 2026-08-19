@@ -250,22 +250,22 @@ const (
 // requires to be shown to the user (a BLOCKED notice means the quote must not
 // be used to create a transfer).
 type Quote struct {
-	ID             QuoteID
-	Source         Money
-	Target         Money
-	PayIn          PayIn
-	PayOut         PayOut
-	Rate           float64
-	Created        time.Time
-	ExpirationTime time.Time
-	Status         QuoteStatus
-	Profile        ProfileID // Zero for unauthenticated quotes.
-	RateType       QuoteRateType
-	ProvidedAmountType QuoteProvidedAmountType
+	ID                            QuoteID
+	Source                        Money
+	Target                        Money
+	PayIn                         PayIn
+	PayOut                        PayOut
+	Rate                          float64
+	Created                       time.Time
+	ExpirationTime                time.Time
+	Status                        QuoteStatus
+	Profile                       ProfileID // Zero for unauthenticated quotes.
+	RateType                      QuoteRateType
+	ProvidedAmountType            QuoteProvidedAmountType
 	GuaranteedTargetAmountAllowed bool
-	GuaranteedTargetAmount bool
-	PaymentOptions []QuotePaymentOption
-	Notices        []QuoteNotice
+	GuaranteedTargetAmount        bool
+	PaymentOptions                []QuotePaymentOption
+	Notices                       []QuoteNotice
 }
 
 // QuotePaymentOption is one pay-in/pay-out combination available for a quote,
@@ -429,11 +429,11 @@ type CreateTransferRequest struct {
 // optional; originatorLegalEntityType is required from March 2026 for
 // Correspondent Send integrations (PRIVATE or BUSINESS).
 type ValidateTransferRequirementsRequest struct {
-	TargetAccount            RecipientID
-	QuoteID                  QuoteID
-	CustomerTransactionID    string
+	TargetAccount             RecipientID
+	QuoteID                   QuoteID
+	CustomerTransactionID     string
 	OriginatorLegalEntityType string
-	Details                  TransferRequirementsDetails // Optional; populated from the response.
+	Details                   TransferRequirementsDetails // Optional; populated from the response.
 }
 
 // TransferRequirementsDetails mirrors the free-form details block accepted
@@ -464,17 +464,17 @@ type TransferRequirementForm struct {
 // TransferRequirementField describes a single dynamic form control.
 // ValuesAllowed is populated only for select fields.
 type TransferRequirementField struct {
-	Key                        string
-	Name                       string
-	Type                       string
+	Key                         string
+	Name                        string
+	Type                        string
 	RefreshRequirementsOnChange bool
-	Required                   bool
-	DisplayFormat              *string
-	Example                    *string
-	MinLength                  *int32
-	MaxLength                  *int32
-	ValidationRegexp           *string
-	ValuesAllowed              []TransferRequirementValue
+	Required                    bool
+	DisplayFormat               *string
+	Example                     *string
+	MinLength                   *int32
+	MaxLength                   *int32
+	ValidationRegexp            *string
+	ValuesAllowed               []TransferRequirementValue
 }
 
 // TransferRequirementValue is one allowed value of a select field.

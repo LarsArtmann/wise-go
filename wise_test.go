@@ -1416,7 +1416,7 @@ var _ = Describe("Wise Client", func() {
 										{
 											Key: "reference", Name: "Transfer reference", Type: "text",
 											RefreshRequirementsOnChange: false, Required: false,
-											MaxLength:       int32Ptr(10),
+											MaxLength:        int32Ptr(10),
 											ValidationRegexp: strPtr("[a-zA-Z0-9- ]*"),
 										},
 									},
@@ -1485,14 +1485,14 @@ var _ = Describe("Wise Client", func() {
 					func(w http.ResponseWriter, _ *http.Request) {
 						w.Header().Set("Content-Type", "application/json")
 						_ = json.MarshalWrite(w, raw.Quote{
-							ID: "33344c35-9fe8-4c32-b7fd-d05c2a7734bf",
+							ID:             "33344c35-9fe8-4c32-b7fd-d05c2a7734bf",
 							SourceCurrency: "GBP", TargetCurrency: "USD",
 							SourceAmount: 100, TargetAmount: 129.24,
 							PayOut: "BANK_TRANSFER", PayIn: "BALANCE",
-							Rate: 1.30445,
+							Rate:        1.30445,
 							CreatedTime: "2023-01-15T10:30:00Z", ExpirationTime: "2023-01-15T11:00:00Z",
-							Status: "PENDING",
-							Profile: 12345,
+							Status:   "PENDING",
+							Profile:  12345,
 							RateType: "FIXED", ProvidedAmountType: "SOURCE",
 							GuaranteedTargetAmountAllowed: true, GuaranteedTargetAmount: false,
 							PaymentOptions: []raw.QuotePaymentOption{
@@ -1503,7 +1503,7 @@ var _ = Describe("Wise Client", func() {
 									Fee: raw.QuoteFee{
 										TransferWise: 3.04, PayIn: 0, Discount: 2.27, Partner: 0, Total: 0.77,
 									},
-									SourceAmount:   100, TargetAmount: 129.24,
+									SourceAmount: 100, TargetAmount: 129.24,
 									SourceCurrency: "GBP", TargetCurrency: "USD",
 									PayIn: "BALANCE", PayOut: "BANK_TRANSFER",
 									PayInProduct: "CHEAP", FeePercentage: 0.0092,
