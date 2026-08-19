@@ -191,3 +191,42 @@ type ListTransactionsResponse struct {
 	Transactions          []Transaction
 	EndOfStatementBalance Money
 }
+
+// Transfer is the parsed representation of a Wise transfer — a payment order
+// to a recipient account based on a quote. Unlike statement transactions,
+// transfers are retrievable with a personal API token without SCA approval.
+//
+// Created is parsed via the SDK's tolerant timestamp handling; zoneless
+// values are interpreted as UTC.
+type Transfer struct {
+	ID                    TransferID
+	RecipientID           RecipientID
+	Status                TransferStatus
+	Rate                  float64
+	Source                Money
+	Target                Money
+	Created               time.Time
+	Reference             string
+	CustomerTransactionID string
+	HasActiveIssues       bool
+}
+
+// TransferStatus is a Wise transfer lifecycle status. Wise may add values;
+// unrecognised statuses are preserved as-is, so comparisons should use the
+// constants only for the states they handle.
+type TransferStatus string
+
+// Documented transfer lifecycle statuses (see Wise "Tracking transfers").
+const (
+	TransferStatusIncomingPaymentWaiting TransferStatus = "incoming_payment_waiting"
+	TransferStatusWaitingForFunds        TransferStatus = "waiting_for_funds"
+	TransferStatusProcessing             TransferStatus = "processing"
+	TransferStatusFundsConverted         TransferStatus = "funds_converted"
+	TransferStatusOutgoingPaymentSent    TransferStatus = "outgoing_payment_sent"
+	TransferStatusBouncesCompleted       TransferStatus = "bounces_completed"
+	TransferStatusDelivered              TransferStatus = "delivered"
+	TransferStatusRefunded               TransferStatus = "refunded"
+	TransferStatusCancelled              TransferStatus = "cancelled"
+	TransferStatusUnsuccessful           TransferStatus = "unsuccessful"
+	TransferStatusChargedBack            TransferStatus = "charged_back"
+)

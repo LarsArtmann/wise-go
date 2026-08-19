@@ -13,6 +13,12 @@ type BalanceBrand struct{}
 // TransactionBrand is a phantom type for TransactionID.
 type TransactionBrand struct{}
 
+// TransferBrand is a phantom type for TransferID.
+type TransferBrand struct{}
+
+// RecipientBrand is a phantom type for RecipientID.
+type RecipientBrand struct{}
+
 // ProfileID is a strongly-typed identifier for Wise profiles.
 type ProfileID = id.ID[ProfileBrand, int64]
 
@@ -21,6 +27,12 @@ type BalanceID = id.ID[BalanceBrand, int64]
 
 // TransactionID is a strongly-typed identifier for Wise transactions.
 type TransactionID = id.ID[TransactionBrand, string]
+
+// TransferID is a strongly-typed identifier for Wise transfers.
+type TransferID = id.ID[TransferBrand, int64]
+
+// RecipientID is a strongly-typed identifier for Wise recipient accounts.
+type RecipientID = id.ID[RecipientBrand, int64]
 
 // NewProfileID creates a new ProfileID from an int64 value.
 func NewProfileID(v int64) ProfileID {
@@ -35,4 +47,14 @@ func NewBalanceID(v int64) BalanceID {
 // NewTransactionID creates a new TransactionID from a string value.
 func NewTransactionID(v string) TransactionID {
 	return id.NewID[TransactionBrand](v)
+}
+
+// NewTransferID creates a new TransferID from an int64 value.
+func NewTransferID(v int64) TransferID {
+	return id.NewID[TransferBrand](v)
+}
+
+// NewRecipientID creates a new RecipientID from an int64 value.
+func NewRecipientID(v int64) RecipientID {
+	return id.NewID[RecipientBrand](v)
 }
