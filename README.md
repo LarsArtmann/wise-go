@@ -237,6 +237,60 @@ resp, err := client.ListTransactions(ctx, wise.ListTransactionsRequest{
 - Empty `Currency` → `"wise.transactions.invalid_request: currency is required"`
 - `From` after `To` → `"wise.transactions.invalid_request: intervalStart must not be after intervalEnd"`
 
+### Quotes
+
+```go
+// Authenticated quote locks the rate for 30 minutes and can back a transfer.
+// preferredPayIn=BALANCE keeps fees consistent when funding from a balance.
+quote, err := client.CreateQuote(ctx, profileID, wise.CreateQuoteRequest{
+    SourceCurrency: wise.Currency("EUR"),
+    TargetCurrency: wise.Currency("USD"),
+    SourceAmount:   &wise.Money{Cents: 100_000, Currency: wise.Currency("EUR")},
+    PreferredPayIn: wise.PayInBalance,
+    PayOut:         wise.PayOutBankTransfer,
+})
+// quote.PaymentOptions → per pay-in/pay-out fee breakdown + estimated delivery
+// quote.Notices → messages to show the user (BLOCKED means: don't use it)
+
+// Fetch an existing quote
+quote, err = client.GetQuote(ctx, profileID, quote.ID)
+
+// Illustrative quote without a user token (no ID, cannot back a transfer)
+quote, err = client.CreateUnauthenticatedQuote(ctx, req)
+```
+
+### Recipients
+
+```go
+recipient, err := client.CreateRecipient(ctx, wise.CreateRecipientRequest{
+    ProfileID:         profileID,
+    Currency:          wise.Currency("GBP"),
+    Type:              "sort_code",
+    AccountHolderName: "Jane Doe",
+    Details: map[string]string{
+        "sortCode":      "040075",
+        "accountNumber": "37778842",
+    },
+})
+
+recipient, err = client.GetRecipient(ctx, recipient.ID)
+recipients, err := client.ListRecipients(ctx, wise.ListRecipientsRequest{
+    ProfileID: profileID,
+})
+```
+
+`Recipient.Details` is a `map[string]string`; required keys vary by currency and
+route — use the account-requirements endpoint to discover them per corridor.
+
+### Exchange rates
+
+```go
+// Current rate
+rate, err := client.GetExchangeRate(ctx, wise.Currency("EUR"), wise.Currency("USD"), time.Time{})
+// Historical rate (pass a time.Time; UTC recommended)
+rate, err = client.GetExchangeRate(ctx, wise.Currency("EUR"), wise.Currency("USD"), someTime)
+```
+
 ### Transfers
 
 ```go

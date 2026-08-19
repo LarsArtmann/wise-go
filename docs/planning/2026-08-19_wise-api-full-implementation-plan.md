@@ -39,19 +39,19 @@ This plan maps the full API surface, applies Pareto prioritisation, and defines 
 
 | #  | Category       | Method | Path                                        | SDK method                                            | Status  |
 | -- | -------------- | ------ | ------------------------------------------- | ----------------------------------------------------- | ------- |
-| 1  | Profiles       | GET    | `/v2/profiles/{profileId}`                  | `GetProfile(ctx, ProfileID)`                          | PLANNED |
-| 2  | Quotes         | POST   | `/v3/quotes`                                | `CreateUnauthenticatedQuote(ctx, CreateQuoteRequest)` | PLANNED |
-| 3  | Quotes         | POST   | `/v3/profiles/{profileId}/quotes`           | `CreateQuote(ctx, ProfileID, CreateQuoteRequest)`     | PLANNED |
-| 4  | Quotes         | GET    | `/v3/profiles/{profileId}/quotes/{quoteId}` | `GetQuote(ctx, ProfileID, QuoteID)`                   | PLANNED |
+| 1  | Profiles       | GET    | `/v2/profiles/{profileId}`                  | `GetProfile(ctx, ProfileID)`                          | DONE    |
+| 2  | Quotes         | POST   | `/v3/quotes`                                | `CreateUnauthenticatedQuote(ctx, CreateQuoteRequest)` | DONE    |
+| 3  | Quotes         | POST   | `/v3/profiles/{profileId}/quotes`           | `CreateQuote(ctx, ProfileID, CreateQuoteRequest)`     | DONE    |
+| 4  | Quotes         | GET    | `/v3/profiles/{profileId}/quotes/{quoteId}` | `GetQuote(ctx, ProfileID, QuoteID)`                   | DONE    |
 | 5  | Quotes         | GET    | `/v1/quotes/{quoteId}/account-requirements` | `GetQuoteAccountRequirements(ctx, QuoteID)`           | PLANNED |
-| 6  | Recipients     | GET    | `/v2/accounts`                              | `ListRecipients(ctx, ListRecipientsRequest)`          | PLANNED |
-| 7  | Recipients     | GET    | `/v1/accounts/{accountId}`                  | `GetRecipient(ctx, RecipientID)`                      | PLANNED |
-| 8  | Recipients     | POST   | `/v1/accounts`                              | `CreateRecipient(ctx, CreateRecipientRequest)`        | PLANNED |
-| 9  | Transfers      | GET    | `/v1/transfers/{transferId}`                | `GetTransfer(ctx, TransferID)`                        | PLANNED |
-| 10 | Transfers      | POST   | `/v1/transfers`                             | `CreateTransfer(ctx, CreateTransferRequest)`          | PLANNED |
-| 11 | Transfers      | PUT    | `/v1/transfers/{transferId}/cancel`         | `CancelTransfer(ctx, TransferID)`                     | PLANNED |
-| 12 | Transfers      | GET    | `/v1/delivery-estimates/{transferId}`       | `GetDeliveryEstimate(ctx, TransferID)`                | PLANNED |
-| 13 | Exchange rates | GET    | `/v1/rates`                                 | `GetExchangeRate(ctx, source, target, time)`          | PLANNED |
+| 6  | Recipients     | GET    | `/v2/accounts`                              | `ListRecipients(ctx, ListRecipientsRequest)`          | DONE    |
+| 7  | Recipients     | GET    | `/v1/accounts/{accountId}`                  | `GetRecipient(ctx, RecipientID)`                      | DONE    |
+| 8  | Recipients     | POST   | `/v1/accounts`                              | `CreateRecipient(ctx, CreateRecipientRequest)`        | DONE    |
+| 9  | Transfers      | GET    | `/v1/transfers/{transferId}`                | `GetTransfer(ctx, TransferID)`                        | DONE    |
+| 10 | Transfers      | POST   | `/v1/transfers`                             | `CreateTransfer(ctx, CreateTransferRequest)`          | DONE    |
+| 11 | Transfers      | PUT    | `/v1/transfers/{transferId}/cancel`         | `CancelTransfer(ctx, TransferID)`                     | DONE    |
+| 12 | Transfers      | GET    | `/v1/delivery-estimates/{transferId}`       | `GetDeliveryEstimate(ctx, TransferID)`                | DONE    |
+| 13 | Exchange rates | GET    | `/v1/rates`                                 | `GetExchangeRate(ctx, source, target, time)`          | DONE    |
 
 ### Tier 2 — High-value, self-contained
 

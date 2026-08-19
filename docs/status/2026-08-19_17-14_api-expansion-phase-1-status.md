@@ -106,12 +106,12 @@ Nothing is broken or shipped in a dangerous state. Honest missteps:
 
 ### Immediate (core transfer flow — highest value)
 
-1. `CancelTransfer`
-2. `GetDeliveryEstimate`
-3. `ValidateTransferRequirements`
+1. ~~`CancelTransfer`~~ **DONE (2026-08-19)**
+2. ~~`GetDeliveryEstimate`~~ **DONE (2026-08-19)**
+3. ~~`ValidateTransferRequirements`~~ **DONE (2026-08-19)**
 4. `FundTransfer` (balance funding)
-5. Expand `Quote` with `paymentOptions`, fees, and notices
-6. Add README example for quote → recipient → transfer
+5. ~~Expand `Quote` with `paymentOptions`, fees, and notices~~ **DONE (2026-08-19)**
+6. ~~Add README example for quote → recipient → transfer~~ **DONE (2026-08-19)**
 7. Add error-response BDD tests for POST endpoints
 8. Add validation edge-case unit tests
 9. Add `GetTransfer` error tests (404, auth, SCA)
