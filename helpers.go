@@ -21,7 +21,7 @@ const defaultRetryAfter = time.Second
 // get-by-id endpoints so the public methods stay short and resource-specific.
 func fetchByID[T any](
 	ctx context.Context,
-	c *Client,
+	client *Client,
 	id int64,
 	resource string,
 	path string,
@@ -34,7 +34,7 @@ func fetchByID[T any](
 		)
 	}
 
-	if err := c.get(ctx, path, target); err != nil {
+	if err := client.get(ctx, path, target); err != nil {
 		return fmt.Errorf("get %s %d: %w", resource, id, err)
 	}
 

@@ -93,6 +93,20 @@ type ExchangeRate struct {
 	Time   string  `json:"time"`
 }
 
+// Quote from Wise API (/v3/quotes).
+type Quote struct {
+	ID             int64   `json:"id"`
+	SourceCurrency string  `json:"sourceCurrency"`
+	TargetCurrency string  `json:"targetCurrency"`
+	SourceAmount   float64 `json:"sourceAmount"`
+	TargetAmount   float64 `json:"targetAmount"`
+	PayIn          string  `json:"payIn"`
+	PayOut         string  `json:"payOut"`
+	Rate           float64 `json:"rate"`
+	CreatedTime    string  `json:"createdTime"`
+	Status         string  `json:"status"`
+}
+
 // ErrorResponse from Wise API.
 type ErrorResponse struct {
 	Errors []ErrorDetail `json:"errors"`

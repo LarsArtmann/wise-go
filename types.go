@@ -240,3 +240,60 @@ const (
 	TransferStatusUnsuccessful           TransferStatus = "unsuccessful"
 	TransferStatusChargedBack            TransferStatus = "charged_back"
 )
+
+// Quote is the parsed representation of a Wise quote — a locked exchange rate
+// offer used to create a transfer. Authenticated quotes expire after 30 minutes.
+type Quote struct {
+	ID       QuoteID
+	Source   Money
+	Target   Money
+	PayIn    PayIn
+	PayOut   PayOut
+	Rate     float64
+	Created  time.Time
+	Status   QuoteStatus
+	Profile  ProfileID // Zero for unauthenticated quotes.
+}
+
+// QuoteStatus is a Wise quote lifecycle status.
+type QuoteStatus string
+
+// Documented quote statuses.
+const (
+	QuoteStatusPending  QuoteStatus = "pending"
+	QuoteStatusActive   QuoteStatus = "active"
+	QuoteStatusExpired  QuoteStatus = "expired"
+)
+
+// PayIn identifies how a quote is funded.
+type PayIn string
+
+// PayIn values sent to the Wise API.
+const (
+	PayInBankTransfer PayIn = "BANK_TRANSFER"
+	PayInBalance      PayIn = "BALANCE"
+	PayInCard         PayIn = "CARD"
+)
+
+// PayOut identifies how a quote is paid out.
+type PayOut string
+
+// PayOut values sent to the Wise API.
+const (
+	PayOutBankTransfer PayOut = "BANK_TRANSFER"
+	PayOutBalance      PayOut = "BALANCE"
+	PayOutSwift        PayOut = "SWIFT"
+	PayOutSwiftOur     PayOut = "SWIFT_OUR"
+)
+
+// CreateQuoteRequest parameters for creating an authenticated or
+// unauthenticated quote. Exactly one of SourceAmount or TargetAmount must be
+// set, and its currency must match the corresponding currency field.
+type CreateQuoteRequest struct {
+	SourceCurrency Currency
+	TargetCurrency Currency
+	SourceAmount   *Money // Optional; sets sourceAmount on the wire.
+	TargetAmount   *Money // Optional; sets targetAmount on the wire.
+	PayIn          PayIn
+	PayOut         PayOut
+}

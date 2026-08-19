@@ -163,6 +163,37 @@ func (c *Client) request(
 		}
 	}
 
+	resp, err := c.doRequest(ctx, method, fullURL, body)
+	if err != nil {
+		return err
+	}
+
+	rc := &responseCloser{resp: resp}
+	defer rc.close()
+
+	if err := c.checkError(resp); err != nil {
+		return fmt.Errorf("request %s %s: %w", method, fullURL, err)
+	}
+
+	if target != nil {
+		if err := jsonDecode(resp, target); err != nil {
+			return errorfamily.WrapCorruption(
+				err,
+				"wise.response.decode",
+				"decode response from "+fullURL,
+			)
+		}
+	}
+
+	return nil
+}
+
+func (c *Client) doRequest(
+	ctx context.Context,
+	method string,
+	fullURL string,
+	body any,
+) (*http.Response, error) {
 	resp, err := c.executor.WithContext(ctx).
 		//nolint:contextcheck
 		GetWithExecution(func(exec failsafe.Execution[*http.Response]) (*http.Response, error) {
@@ -191,27 +222,10 @@ func (c *Client) request(
 			return c.httpClient.Do(req)
 		})
 	if err != nil {
-		return fmt.Errorf("request %s %s failed: %w", method, fullURL, err)
+		return nil, fmt.Errorf("execute %s %s: %w", method, fullURL, err)
 	}
 
-	rc := &responseCloser{resp: resp}
-	defer rc.close()
-
-	if err := c.checkError(resp); err != nil {
-		return fmt.Errorf("request %s %s: %w", method, fullURL, err)
-	}
-
-	if target != nil {
-		if err := jsonDecode(resp, target); err != nil {
-			return errorfamily.WrapCorruption(
-				err,
-				"wise.response.decode",
-				"decode response from "+fullURL,
-			)
-		}
-	}
-
-	return nil
+	return resp, nil
 }
 
 func (c *Client) setHeaders(req *http.Request) {
