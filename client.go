@@ -1,8 +1,11 @@
 package wise
 
 import (
+	"bytes"
 	"context"
+	"encoding/json/v2"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -138,6 +141,41 @@ func (c *Client) getWithQuery(
 	query func() string,
 	target any,
 ) error {
+	return c.request(ctx, http.MethodGet, path, query, nil, target)
+}
+
+func (c *Client) post(ctx context.Context, path string, body, target any) error {
+	return c.request(ctx, http.MethodPost, path, nil, body, target)
+}
+
+func (c *Client) postWithQuery(
+	ctx context.Context,
+	path string,
+	body, target any,
+	query func() string,
+) error {
+	return c.request(ctx, http.MethodPost, path, query, body, target)
+}
+
+func (c *Client) patch(ctx context.Context, path string, body, target any) error {
+	return c.request(ctx, http.MethodPatch, path, nil, body, target)
+}
+
+func (c *Client) put(ctx context.Context, path string, body, target any) error {
+	return c.request(ctx, http.MethodPut, path, nil, body, target)
+}
+
+func (c *Client) delete(ctx context.Context, path string, target any) error {
+	return c.request(ctx, http.MethodDelete, path, nil, nil, target)
+}
+
+func (c *Client) request(
+	ctx context.Context,
+	method string,
+	path string,
+	query func() string,
+	body, target any,
+) error {
 	fullURL := c.baseURL + path
 
 	if query != nil {
@@ -149,24 +187,37 @@ func (c *Client) getWithQuery(
 	resp, err := c.executor.WithContext(ctx).
 		//nolint:contextcheck
 		GetWithExecution(func(exec failsafe.Execution[*http.Response]) (*http.Response, error) {
-			req, reqErr := http.NewRequestWithContext(exec.Context(), http.MethodGet, fullURL, nil)
+			var bodyReader io.Reader
+			if body != nil {
+				b, marshalErr := json.Marshal(body)
+				if marshalErr != nil {
+					return nil, fmt.Errorf("encode request body for %s %s: %w", method, fullURL, marshalErr)
+				}
+
+				bodyReader = bytes.NewReader(b)
+			}
+
+			req, reqErr := http.NewRequestWithContext(exec.Context(), method, fullURL, bodyReader)
 			if reqErr != nil {
-				return nil, fmt.Errorf("create request for %s: %w", fullURL, reqErr)
+				return nil, fmt.Errorf("create request for %s %s: %w", method, fullURL, reqErr)
 			}
 
 			c.setHeaders(req)
+			if body != nil {
+				req.Header.Set("Content-Type", "application/json")
+			}
 
 			return c.httpClient.Do(req)
 		})
 	if err != nil {
-		return fmt.Errorf("request to %s failed: %w", fullURL, err)
+		return fmt.Errorf("request %s %s failed: %w", method, fullURL, err)
 	}
 
 	rc := &responseCloser{resp: resp}
 	defer rc.close()
 
 	if err := c.checkError(resp); err != nil {
-		return fmt.Errorf("request to %s: %w", fullURL, err)
+		return fmt.Errorf("request %s %s: %w", method, fullURL, err)
 	}
 
 	if target != nil {
