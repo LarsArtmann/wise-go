@@ -346,3 +346,67 @@ type CreateTransferRequest struct {
 	TransferPurposeInvoiceNumber      string
 	TransferPurposeSubTransferPurpose string
 }
+
+// ValidateTransferRequirementsRequest asks Wise which dynamic transfer
+// details are required for a specific quote and recipient combination.
+// Requirements vary by currency route, transfer amount, and regulatory
+// region; calling this before CreateTransfer avoids delays caused by
+// missing details.
+//
+// targetAccount and quoteUuid are required. customerTransactionId is
+// optional; originatorLegalEntityType is required from March 2026 for
+// Correspondent Send integrations (PRIVATE or BUSINESS).
+type ValidateTransferRequirementsRequest struct {
+	TargetAccount            RecipientID
+	QuoteID                  QuoteID
+	CustomerTransactionID    string
+	OriginatorLegalEntityType string
+	Details                  TransferRequirementsDetails // Optional; populated from the response.
+}
+
+// TransferRequirementsDetails mirrors the free-form details block accepted
+// by the validation endpoint.
+type TransferRequirementsDetails struct {
+	Reference                         string
+	SourceOfFunds                     string
+	SourceOfFundsOther                string
+	TransferPurpose                   string
+	TransferPurposeSubTransferPurpose string
+	TransferPurposeInvoiceNumber      string
+	TransferNature                    string
+}
+
+// TransferRequirement is the parsed representation of one dynamic form from
+// the transfer-requirements response.
+type TransferRequirement struct {
+	Type   string
+	Fields []TransferRequirementForm
+}
+
+// TransferRequirementForm is a labelled group of related form fields.
+type TransferRequirementForm struct {
+	Name  string
+	Group []TransferRequirementField
+}
+
+// TransferRequirementField describes a single dynamic form control.
+// ValuesAllowed is populated only for select fields.
+type TransferRequirementField struct {
+	Key                        string
+	Name                       string
+	Type                       string
+	RefreshRequirementsOnChange bool
+	Required                   bool
+	DisplayFormat              *string
+	Example                    *string
+	MinLength                  *int32
+	MaxLength                  *int32
+	ValidationRegexp           *string
+	ValuesAllowed              []TransferRequirementValue
+}
+
+// TransferRequirementValue is one allowed value of a select field.
+type TransferRequirementValue struct {
+	Key  string
+	Name string
+}

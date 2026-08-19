@@ -98,6 +98,15 @@ func parseRetryAfter(value string) time.Duration {
 	return defaultRetryAfter
 }
 
+const cErrTransferIDRequired = "transferID is required"
+
+func errTransferIDRequired() error {
+	return errorfamily.NewRejection(
+		"wise.transfer.invalid_request",
+		cErrTransferIDRequired,
+	)
+}
+
 // parseWiseTimestamp parses a Wise API timestamp. Wise is inconsistent about
 // separators and zone designators across endpoints: some emit full RFC3339
 // ("2020-05-27T10:27:22Z"), others omit the zone ("2020-05-27T10:27:22") or

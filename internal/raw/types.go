@@ -128,6 +128,42 @@ type DeliveryEstimate struct {
 	FormattedEstimatedDeliveryDate string `json:"formattedEstimatedDeliveryDate"`
 }
 
+// TransferRequirement from Wise API (POST /v1/transfer-requirements).
+// Fields is a dynamic form description: each entry groups one or more form
+// controls (keyed by the JSON field name they map to) with validation
+// metadata and, for selects, the list of allowed values.
+type TransferRequirement struct {
+	Type   string                    `json:"type"`
+	Fields []TransferRequirementForm `json:"fields"`
+}
+
+// TransferRequirementForm is a labelled group of related form fields.
+type TransferRequirementForm struct {
+	Name  string                     `json:"name"`
+	Group []TransferRequirementField `json:"group"`
+}
+
+// TransferRequirementField describes a single dynamic form control.
+type TransferRequirementField struct {
+	Key                         string                     `json:"key"`
+	Name                        string                     `json:"name"`
+	Type                        string                     `json:"type"`
+	RefreshRequirementsOnChange bool                       `json:"refreshRequirementsOnChange"`
+	Required                    bool                       `json:"required"`
+	DisplayFormat               *string                    `json:"displayFormat"`
+	Example                     *string                    `json:"example"`
+	MinLength                   *int32                     `json:"minLength"`
+	MaxLength                   *int32                     `json:"maxLength"`
+	ValidationRegexp            *string                    `json:"validationRegexp"`
+	ValuesAllowed               []TransferRequirementValue `json:"valuesAllowed"`
+}
+
+// TransferRequirementValue is one allowed value of a select field.
+type TransferRequirementValue struct {
+	Key  string `json:"key"`
+	Name string `json:"name"`
+}
+
 // ErrorResponse from Wise API.
 type ErrorResponse struct {
 	Errors []ErrorDetail `json:"errors"`

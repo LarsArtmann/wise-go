@@ -5,7 +5,14 @@ import (
 	"fmt"
 	"net/url"
 	"time"
+
+	errorfamily "github.com/larsartmann/go-error-family"
+	"github.com/larsartmann/wise-go/internal/raw"
 )
+
+// rawDeliveryEstimate avoids exposing internal/raw types in this file's
+// signature while keeping the wire decoding inside the package.
+type rawDeliveryEstimate = raw.DeliveryEstimate
 
 // DeliveryEstimate is the parsed representation of the estimated delivery
 // time for a transfer. EstimatedDeliveryDate is the raw timestamp, and
