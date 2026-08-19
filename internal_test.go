@@ -382,7 +382,8 @@ func assertTimestampCases(t *testing.T, tests []struct {
 	input   string
 	want    time.Time
 	wantErr bool
-}) {
+},
+) {
 	t.Helper()
 
 	for _, tt := range tests {

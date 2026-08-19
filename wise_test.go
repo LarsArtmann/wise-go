@@ -2,8 +2,8 @@ package wise_test
 
 import (
 	"context"
-	stdjson "encoding/json"
 	"encoding/json/v2"
+	stdjson "encoding/json/v2"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -114,12 +114,6 @@ func getBalance(
 	return client.GetBalance(ctx, wise.NewProfileID(12345), wise.NewBalanceID(balanceID))
 }
 
-// strPtr and int32Ptr exist so call sites read as named constants instead of
-// inline new(...) allocations; the linter's newexpr suggestion is acceptable.
-//nolint:modernize // readability helpers, not deviating wrappers
-func strPtr(s string) *string { return &s }
-
-func int32Ptr(v int32) *int32 { return &v }
 var _ = Describe("Wise Client", func() {
 	var (
 		server           *httptest.Server
@@ -1096,7 +1090,7 @@ var _ = Describe("Wise Client", func() {
 					Expect(r.Header.Get("Content-Type")).To(Equal("application/json"))
 
 					var body map[string]any
-					Expect(stdjson.NewDecoder(r.Body).Decode(&body)).To(Succeed())
+					Expect(stdjson.UnmarshalRead(r.Body, &body)).To(Succeed())
 					Expect(body["sourceCurrency"]).To(Equal("EUR"))
 					Expect(body["targetCurrency"]).To(Equal("USD"))
 					Expect(body["sourceAmount"]).To(Equal(10.0))
@@ -1238,7 +1232,7 @@ var _ = Describe("Wise Client", func() {
 					Expect(r.Header.Get("Content-Type")).To(Equal("application/json"))
 
 					var body map[string]any
-					Expect(stdjson.NewDecoder(r.Body).Decode(&body)).To(Succeed())
+					Expect(stdjson.UnmarshalRead(r.Body, &body)).To(Succeed())
 					Expect(body["currency"]).To(Equal("GBP"))
 					Expect(body["type"]).To(Equal("sort_code"))
 
@@ -1280,7 +1274,7 @@ var _ = Describe("Wise Client", func() {
 					Expect(r.Header.Get("Content-Type")).To(Equal("application/json"))
 
 					var body map[string]any
-					Expect(stdjson.NewDecoder(r.Body).Decode(&body)).To(Succeed())
+					Expect(stdjson.UnmarshalRead(r.Body, &body)).To(Succeed())
 					Expect(body["targetAccount"]).To(Equal(float64(98765432)))
 					Expect(body["quoteUuid"]).To(Equal("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"))
 					Expect(body["customerTransactionId"]).To(Equal("22244c35-9fe8-4c32-b7fd-d05c2a7734bf"))
@@ -1397,7 +1391,7 @@ var _ = Describe("Wise Client", func() {
 					Expect(r.Header.Get("Content-Type")).To(Equal("application/json"))
 
 					var reqBody map[string]any
-					Expect(stdjson.NewDecoder(r.Body).Decode(&reqBody)).To(Succeed())
+					Expect(stdjson.UnmarshalRead(r.Body, &reqBody)).To(Succeed())
 					Expect(reqBody["targetAccount"]).To(Equal(float64(98765432)))
 					Expect(reqBody["quoteUuid"]).To(Equal("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"))
 					Expect(reqBody["originatorLegalEntityType"]).To(Equal("PRIVATE"))
@@ -1417,7 +1411,7 @@ var _ = Describe("Wise Client", func() {
 										{
 											Key: "reference", Name: "Transfer reference", Type: "text",
 											RefreshRequirementsOnChange: false, Required: false,
-											MaxLength:       new(int32(10)),
+											MaxLength:        new(int32(10)),
 											ValidationRegexp: new("[a-zA-Z0-9- ]*"),
 										},
 									},
@@ -1429,7 +1423,10 @@ var _ = Describe("Wise Client", func() {
 											Key: "transferPurpose", Name: "Transfer purpose", Type: "select",
 											RefreshRequirementsOnChange: true, Required: true,
 											ValuesAllowed: []raw.TransferRequirementValue{
-												{Key: "verification.transfers.purpose.pay.bills", Name: "Rent or other property expenses"},
+												{
+													Key:  "verification.transfers.purpose.pay.bills",
+													Name: "Rent or other property expenses",
+												},
 											},
 										},
 									},
@@ -1441,14 +1438,17 @@ var _ = Describe("Wise Client", func() {
 			})
 
 			It("should validate and map the dynamic form", func() {
-				requirements, err := client.ValidateTransferRequirements(context.Background(), wise.ValidateTransferRequirementsRequest{
-					TargetAccount:             wise.NewRecipientID(98765432),
-					QuoteID:                   wise.NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
-					OriginatorLegalEntityType: "PRIVATE",
-					Details: wise.TransferRequirementsDetails{
-						Reference: "Invoice 2026-001",
+				requirements, err := client.ValidateTransferRequirements(
+					context.Background(),
+					wise.ValidateTransferRequirementsRequest{
+						TargetAccount:             wise.NewRecipientID(98765432),
+						QuoteID:                   wise.NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
+						OriginatorLegalEntityType: "PRIVATE",
+						Details: wise.TransferRequirementsDetails{
+							Reference: "Invoice 2026-001",
+						},
 					},
-				})
+				)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(requirements).To(HaveLen(1))
 				Expect(requirements[0].Type).To(Equal("transfer"))
@@ -1470,9 +1470,12 @@ var _ = Describe("Wise Client", func() {
 
 		Context("with missing quote ID", func() {
 			It("should return a rejection without calling the API", func() {
-				_, err := client.ValidateTransferRequirements(context.Background(), wise.ValidateTransferRequirementsRequest{
-					TargetAccount: wise.NewRecipientID(98765432),
-				})
+				_, err := client.ValidateTransferRequirements(
+					context.Background(),
+					wise.ValidateTransferRequirementsRequest{
+						TargetAccount: wise.NewRecipientID(98765432),
+					},
+				)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("quoteUuid is required"))
 			})
@@ -1511,7 +1514,10 @@ var _ = Describe("Wise Client", func() {
 								},
 							},
 							Notices: []raw.QuoteNotice{
-								{Text: "You can have a maximum of 3 open transfers with a guaranteed rate.", Type: "WARNING"},
+								{
+									Text: "You can have a maximum of 3 open transfers with a guaranteed rate.",
+									Type: "WARNING",
+								},
 							},
 						})
 					})
