@@ -230,6 +230,24 @@ resp, err := client.ListTransactions(ctx, wise.ListTransactionsRequest{
 - Empty `Currency` → `"wise.transactions.invalid_request: currency is required"`
 - `From` after `To` → `"wise.transactions.invalid_request: intervalStart must not be after intervalEnd"`
 
+### Transfers
+
+```go
+transfers, err := client.ListTransfers(ctx, wise.ListTransfersRequest{
+    ProfileID: wise.NewProfileID(12345),                          // optional, defaults to personal profile
+    From:      time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),       // optional createdDateStart
+    To:        time.Date(2025, 12, 31, 23, 59, 59, 0, time.UTC),  // optional createdDateEnd
+    Status:    []wise.TransferStatus{wise.TransferStatusDelivered}, // optional status filter
+})
+// transfers → []wise.Transfer (auto-paginated, 100 per page)
+```
+
+Unlike balance statements, `GET /v1/transfers` is **not SCA-protected** and is available to personal API tokens in all regions — it is the reliable source for outgoing transfer history (amount, fees via rate, status, recipient, reference, timestamps). It does not include deposits, card payments, conversions, or interest; those remain statement-only.
+
+`TransferStatus` is an open string enum: documented lifecycle values are provided as constants (`TransferStatusDelivered`, `TransferStatusCancelled`, …), and unknown values from Wise pass through unchanged.
+
+`Transfer.Created` is parsed tolerantly (RFC3339 or Wise's space-separated format; zoneless values are UTC).
+
 ## Mocking the Client
 
 The SDK returns concrete types (`*wise.Client`, `[]wise.Profile`, etc.), not interfaces.

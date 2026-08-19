@@ -858,6 +858,130 @@ var _ = Describe("Wise Client", func() {
 		})
 	})
 
+	Describe("ListTransfers", func() {
+		transferFixture := func(id int64, status string, created string) raw.Transfer {
+			return raw.Transfer{
+				ID: id, User: 4342275, TargetAccount: 8692237,
+				Status: status, Rate: 0.89, Created: created,
+				Details:         raw.TransferDetails{Reference: "Rent November"},
+				HasActiveIssues: false,
+				SourceCurrency:  "EUR", SourceValue: 168.54,
+				TargetCurrency: "GBP", TargetValue: 150.0,
+				CustomerTransactionID: "54a6bc09-cef9-49a8-9041-f1f0c654cd88",
+			}
+		}
+
+		Context("with a single page", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.URL.Query().Get("profile")).To(Equal("12345"))
+					Expect(r.URL.Query().Get("createdDateStart")).To(Equal("2023-01-01T00:00:00Z"))
+					Expect(r.URL.Query().Get("createdDateEnd")).To(Equal("2023-12-31T23:59:59Z"))
+					Expect(r.URL.Query().Get("status")).To(Equal("delivered,cancelled"))
+					Expect(r.URL.Query().Get("limit")).To(Equal("100"))
+
+					response := []raw.Transfer{
+						transferFixture(16521632, "delivered", "2023-11-24 10:47:49"),
+						transferFixture(16521633, "cancelled", "2023-12-02T08:15:00Z"),
+					}
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, response)
+				})
+			})
+
+			It("maps transfer fields", func() {
+				transfers, err := client.ListTransfers(context.Background(), wise.ListTransfersRequest{
+					ProfileID: wise.NewProfileID(12345),
+					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					To:        time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
+					Status:    []wise.TransferStatus{wise.TransferStatusDelivered, wise.TransferStatusCancelled},
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(transfers).To(HaveLen(2))
+
+				first := transfers[0]
+				Expect(first.ID.Get()).To(Equal(int64(16521632)))
+				Expect(first.RecipientID.Get()).To(Equal(int64(8692237)))
+				Expect(first.Status).To(Equal(wise.TransferStatusDelivered))
+				Expect(first.Rate).To(Equal(0.89))
+				Expect(first.Source.Cents).To(Equal(int64(16854)))
+				Expect(first.Source.Currency).To(Equal(wise.Currency("EUR")))
+				Expect(first.Target.Cents).To(Equal(int64(15000)))
+				Expect(first.Target.Currency).To(Equal(wise.Currency("GBP")))
+				Expect(first.Created).To(Equal(
+					time.Date(2023, 11, 24, 10, 47, 49, 0, time.UTC),
+				))
+				Expect(first.Reference).To(Equal("Rent November"))
+				Expect(first.CustomerTransactionID).To(Equal("54a6bc09-cef9-49a8-9041-f1f0c654cd88"))
+				Expect(first.HasActiveIssues).To(BeFalse())
+			})
+
+			It("parses both space-separated and RFC3339 created timestamps", func() {
+				transfers, err := client.ListTransfers(context.Background(), wise.ListTransfersRequest{
+					ProfileID: wise.NewProfileID(12345),
+					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					To:        time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
+					Status:    []wise.TransferStatus{wise.TransferStatusDelivered, wise.TransferStatusCancelled},
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(transfers[0].Created.Format(time.RFC3339)).To(Equal("2023-11-24T10:47:49Z"))
+				Expect(transfers[1].Created.Format(time.RFC3339)).To(Equal("2023-12-02T08:15:00Z"))
+			})
+		})
+
+		Context("across multiple pages", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers", func(w http.ResponseWriter, r *http.Request) {
+					offset := r.URL.Query().Get("offset")
+
+					var response []raw.Transfer
+
+					if offset == "0" {
+						response = make([]raw.Transfer, 0, 100)
+						for i := range 100 {
+							response = append(
+								response,
+								transferFixture(int64(1000+i), "delivered", "2023-11-24 10:47:49"),
+							)
+						}
+					} else {
+						response = []raw.Transfer{transferFixture(2000, "delivered", "2023-12-01 09:00:00")}
+					}
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, response)
+				})
+			})
+
+			It("fetches until a short page", func() {
+				transfers, err := client.ListTransfers(context.Background(), wise.ListTransfersRequest{
+					ProfileID: wise.NewProfileID(12345),
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(transfers).To(HaveLen(101))
+				Expect(transfers[100].ID.Get()).To(Equal(int64(2000)))
+			})
+		})
+
+		Context("with an unparseable created timestamp", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers", func(w http.ResponseWriter, _ *http.Request) {
+					response := []raw.Transfer{transferFixture(1, "delivered", "not-a-timestamp")}
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, response)
+				})
+			})
+
+			It("returns a corruption error naming the transfer", func() {
+				_, err := client.ListTransfers(context.Background(), wise.ListTransfersRequest{})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("map transfer 1"))
+			})
+		})
+	})
+
 	Describe("Retry", func() {
 		Context("on 429 with Retry-After header", func() {
 			var callCount int

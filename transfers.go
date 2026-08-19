@@ -75,12 +75,7 @@ func (c *Client) listTransfersPage(
 		}
 
 		if len(req.Status) > 0 {
-			statuses := make([]string, len(req.Status))
-			for i, s := range req.Status {
-				statuses[i] = string(s)
-			}
-
-			v.Set("status", strings.Join(statuses, ","))
+			v.Set("status", joinStatuses(req.Status))
 		}
 
 		return v.Encode()
@@ -105,6 +100,16 @@ func (c *Client) listTransfersPage(
 	}
 
 	return result, nil
+}
+
+// joinStatuses renders a status filter as Wise's comma-separated list.
+func joinStatuses(statuses []TransferStatus) string {
+	parts := make([]string, 0, len(statuses))
+	for _, s := range statuses {
+		parts = append(parts, string(s))
+	}
+
+	return strings.Join(parts, ",")
 }
 
 // mapTransfer converts a raw wire transfer into the parsed Transfer type.
