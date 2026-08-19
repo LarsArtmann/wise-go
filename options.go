@@ -6,14 +6,15 @@ import (
 
 // config holds the internal client configuration.
 type config struct {
-	apiKey        string
-	baseURL       string
-	timeout       time.Duration
-	maxRetries    int
-	retryMin      time.Duration
-	retryMax      time.Duration
-	httpClient    Doer
-	correlationID string
+	apiKey           string
+	baseURL          string
+	timeout          time.Duration
+	maxRetries       int
+	retryMin         time.Duration
+	retryMax         time.Duration
+	httpClient       Doer
+	correlationID    string
+	scaApprovalToken string
 }
 
 func defaultConfig() config {
@@ -72,5 +73,17 @@ func WithHTTPClient(client Doer) Option {
 func WithCorrelationID(id string) Option {
 	return func(c *config) {
 		c.correlationID = id
+	}
+}
+
+// WithSCAApprovalToken sends the given one-time token (OTT) as the
+// x-2fa-approval header on every request. Configure it after receiving an
+// [SCAChallengeError] and approving the challenge in the Wise app to clear
+// Wise's Strong Customer Authentication (required once per ~90 days for
+// SCA-protected endpoints such as balance statements on UK/EEA profiles).
+// Once the challenge window is satisfied, remove the token again.
+func WithSCAApprovalToken(token string) Option {
+	return func(c *config) {
+		c.scaApprovalToken = token
 	}
 }

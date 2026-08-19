@@ -1,8 +1,11 @@
 package wise
 
 import (
+	"context"
 	"errors"
+	"io"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -230,7 +233,7 @@ func assertErrorClassification(
 ) {
 	t.Helper()
 
-	err := newAPIError(statusCode, body, time.Second, "")
+	err := newAPIError(statusCode, body, nil, time.Second, "")
 
 	coder, ok := err.(interface{ ErrorCode() string })
 	if !ok {
@@ -261,7 +264,7 @@ func assertErrorClassification(
 func TestNewAPIErrorRetryAfter(t *testing.T) {
 	t.Parallel()
 
-	err := newAPIError(http.StatusTooManyRequests, "{}", 42*time.Second, "ip")
+	err := newAPIError(http.StatusTooManyRequests, "{}", nil, 42*time.Second, "ip")
 
 	rle, ok := errors.AsType[*RateLimitError](err)
 	if !ok {
@@ -517,4 +520,100 @@ func TestCheckErrorWithoutRateLimitedBy(t *testing.T) {
 	if _, ok := ctx["rate_limited_by"]; ok {
 		t.Errorf("ErrorContext should not contain rate_limited_by when empty")
 	}
+}
+
+func TestCheckErrorClassifiesSCAChallenge(t *testing.T) {
+	t.Parallel()
+
+	client := &Client{}
+	scaHeader := http.Header{}
+	scaHeader.Set(HeaderTwoFAApproval, "bb676aeb-7c4d-4930-bb55-ab949fd3fd87")
+	scaHeader.Set(HeaderTwoFAApprovalResult, "REJECTED")
+	resp := &http.Response{
+		StatusCode: http.StatusForbidden,
+		Header:     scaHeader,
+		Body:       http.NoBody,
+	}
+
+	err := client.checkError(resp)
+
+	sca, ok := errors.AsType[*SCAChallengeError](err)
+	if !ok {
+		t.Fatalf("expected *SCAChallengeError, got %T: %v", err, err)
+	}
+
+	if sca.TwoFAApprovalToken() != "bb676aeb-7c4d-4930-bb55-ab949fd3fd87" {
+		t.Errorf("TwoFAApprovalToken() = %q, want the x-2fa-approval value", sca.TwoFAApprovalToken())
+	}
+
+	if sca.ErrorFamily() != errorfamily.Rejection {
+		t.Errorf("ErrorFamily() = %v, want Rejection", sca.ErrorFamily())
+	}
+
+	if !strings.Contains(sca.Error(), "x-2fa-approval") {
+		t.Errorf("Error() should surface the SCA header names, got: %s", sca.Error())
+	}
+
+	if !strings.Contains(sca.Error(), "bb676aeb-7c4d-4930-bb55-ab949fd3fd87") {
+		t.Errorf("Error() should surface the one-time token, got: %s", sca.Error())
+	}
+}
+
+func TestCheckErrorForbiddenWithoutSCAHeadersStaysAuthError(t *testing.T) {
+	t.Parallel()
+
+	client := &Client{}
+	resp := &http.Response{
+		StatusCode: http.StatusForbidden,
+		Header:     http.Header{},
+		Body:       http.NoBody,
+	}
+
+	err := client.checkError(resp)
+
+	if _, ok := errors.AsType[*SCAChallengeError](err); ok {
+		t.Fatalf("plain 403 without 2FA headers must stay AuthError, got SCAChallengeError")
+	}
+
+	auth, ok := errors.AsType[*AuthError](err)
+	if !ok {
+		t.Fatalf("expected *AuthError, got %T", err)
+	}
+
+	if auth.Headers == nil {
+		t.Errorf("Headers should be captured (non-nil) even when empty")
+	}
+}
+
+func TestWithSCAApprovalTokenSendsHeader(t *testing.T) {
+	t.Parallel()
+
+	var gotHeader string
+
+	doer := roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		gotHeader = req.Header.Get(HeaderTwoFAApproval)
+
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{"application/json"}},
+			Body:       io.NopCloser(strings.NewReader(`[]`)),
+			Request:    req,
+		}, nil
+	})
+
+	client := New("test-key", WithHTTPClient(doer), WithSCAApprovalToken("ott-123"))
+
+	if err := client.Authenticate(context.Background()); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if gotHeader != "ott-123" {
+		t.Errorf("x-2fa-approval header = %q, want %q", gotHeader, "ott-123")
+	}
+}
+
+type roundTripFunc func(req *http.Request) (*http.Response, error)
+
+func (f roundTripFunc) Do(req *http.Request) (*http.Response, error) {
+	return f(req)
 }

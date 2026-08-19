@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-19
+
+### Added
+
+- **SCA (Strong Customer Authentication) support.** Wise answers SCA-protected endpoints (balance statements for UK/EEA profiles among them) with HTTP 403 and an EMPTY body — the verdict and the one-time token live in the `x-2fa-approval-result` / `x-2fa-approval` response headers, which the client previously discarded. Now:
+  - `APIError.Headers` carries the response headers on every API error.
+  - A 403 carrying Wise's two-factor headers is classified as the new `*SCAChallengeError` (error code `wise.sca_challenge`, family Rejection) instead of a bare `*AuthError`. Its `Error()` names the header values so logs finally show WHY the request was denied; `TwoFAApprovalToken()` returns the one-time token (OTT).
+  - `WithSCAApprovalToken(token)` option sends the cleared OTT as `x-2fa-approval` on every request, completing the challenge flow after user approval.
+  - Header name constants `HeaderTwoFAApproval` / `HeaderTwoFAApprovalResult`.
+
+## [0.5.3] - 2026-08-18
+
+### Fixed
+
+- **Send the required `types` parameter when listing balances.** The live v4 balances endpoint requires `types=STANDARD,SAVINGS`; without it every listing failed with 400 `query.types: NotNull`.
+
+## [0.5.2] - 2026-08-18
+
+### Fixed
+
+- **Response parse failures classify as Corruption, not retryable.** A body that decodes but maps to invalid domain values no longer triggers hopeless retries.
+
 ## [0.5.1] - 2026-08-18
 
 ### Fixed

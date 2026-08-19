@@ -27,11 +27,12 @@ type Doer interface {
 
 // Client is the Wise API client.
 type Client struct {
-	apiKey        string
-	baseURL       string
-	correlationID string
-	httpClient    Doer
-	executor      failsafe.Executor[*http.Response]
+	apiKey           string
+	baseURL          string
+	correlationID    string
+	scaApprovalToken string
+	httpClient       Doer
+	executor         failsafe.Executor[*http.Response]
 }
 
 // New creates a new Wise API client with the given API key and options.
@@ -81,11 +82,12 @@ func New(apiKey string, opts ...Option) *Client {
 		Build()
 
 	return &Client{
-		apiKey:        apiKey,
-		baseURL:       cfg.baseURL,
-		correlationID: cfg.correlationID,
-		executor:      failsafe.With(retry),
-		httpClient:    httpClient,
+		apiKey:           apiKey,
+		baseURL:          cfg.baseURL,
+		correlationID:    cfg.correlationID,
+		scaApprovalToken: cfg.scaApprovalToken,
+		executor:         failsafe.With(retry),
+		httpClient:       httpClient,
 	}
 }
 
@@ -188,6 +190,10 @@ func (c *Client) setHeaders(req *http.Request) {
 	if c.correlationID != "" {
 		req.Header.Set("X-External-Correlation-Id", c.correlationID)
 	}
+
+	if c.scaApprovalToken != "" {
+		req.Header.Set(HeaderTwoFAApproval, c.scaApprovalToken)
+	}
 }
 
 func (c *Client) checkError(resp *http.Response) error {
@@ -200,6 +206,7 @@ func (c *Client) checkError(resp *http.Response) error {
 	return newAPIError(
 		resp.StatusCode,
 		body,
+		resp.Header.Clone(),
 		parseRetryAfter(resp.Header.Get("Retry-After")),
 		resp.Header.Get("X-Rate-Limited-By"),
 	)
