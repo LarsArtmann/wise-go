@@ -114,6 +114,10 @@ func getBalance(
 	return client.GetBalance(ctx, wise.NewProfileID(12345), wise.NewBalanceID(balanceID))
 }
 
+func strPtr(s string) *string { return &s }
+
+func int32Ptr(v int32) *int32 { return &v }
+
 var _ = Describe("Wise Client", func() {
 	var (
 		server           *httptest.Server
@@ -1304,6 +1308,239 @@ var _ = Describe("Wise Client", func() {
 				Expect(transfer).ToNot(BeNil())
 				Expect(transfer.ID.Get()).To(Equal(int64(16521633)))
 				Expect(transfer.Status).To(Equal(wise.TransferStatusIncomingPaymentWaiting))
+			})
+		})
+	})
+
+	Describe("CancelTransfer", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/16521634/cancel", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Method).To(Equal(http.MethodPut))
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, raw.Transfer{
+						ID:             16521634,
+						Status:         "cancelled",
+						TargetAccount:  98765432,
+						SourceCurrency: "EUR",
+						SourceValue:    1000,
+						TargetCurrency: "USD",
+						TargetValue:    1085.70,
+						Rate:           1.0857,
+						Created:        "2023-11-24 10:47:49",
+					})
+				})
+			})
+
+			It("should cancel and map the transfer", func() {
+				transfer, err := client.CancelTransfer(context.Background(), wise.NewTransferID(16521634))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(transfer).ToNot(BeNil())
+				Expect(transfer.ID.Get()).To(Equal(int64(16521634)))
+				Expect(transfer.Status).To(Equal(wise.TransferStatusCancelled))
+			})
+		})
+
+		Context("with zero transfer ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.CancelTransfer(context.Background(), wise.TransferID{})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("transferID is required"))
+			})
+		})
+	})
+
+	Describe("GetDeliveryEstimate", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/delivery-estimates/16521634", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.URL.Query().Get("timezone")).To(Equal("Asia/Singapore"))
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, raw.DeliveryEstimate{
+						EstimatedDeliveryDate:          "2018-01-10T12:15:00.000+0000",
+						FormattedEstimatedDeliveryDate: "in seconds",
+					})
+				})
+			})
+
+			It("should return the mapped estimate", func() {
+				estimate, err := client.GetDeliveryEstimate(
+					context.Background(),
+					wise.NewTransferID(16521634),
+					"Asia/Singapore",
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(estimate).ToNot(BeNil())
+				Expect(estimate.EstimatedDeliveryDate.UTC()).
+					To(Equal(time.Date(2018, time.January, 10, 12, 15, 0, 0, time.UTC)))
+				Expect(estimate.FormattedEstimatedDeliveryDate).To(Equal("in seconds"))
+			})
+		})
+
+		Context("with zero transfer ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetDeliveryEstimate(context.Background(), wise.TransferID{}, "")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("transferID is required"))
+			})
+		})
+	})
+
+	Describe("ValidateTransferRequirements", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfer-requirements", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Header.Get("Content-Type")).To(Equal("application/json"))
+
+					var reqBody map[string]any
+					Expect(stdjson.UnmarshalRead(r.Body, &reqBody)).To(Succeed())
+					Expect(reqBody["targetAccount"]).To(Equal(float64(98765432)))
+					Expect(reqBody["quoteUuid"]).To(Equal("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"))
+					Expect(reqBody["originatorLegalEntityType"]).To(Equal("PRIVATE"))
+
+					details, ok := reqBody["details"].(map[string]any)
+					Expect(ok).To(BeTrue())
+					Expect(details["reference"]).To(Equal("Invoice 2026-001"))
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, []raw.TransferRequirement{
+						{
+							Type: "transfer",
+							Fields: []raw.TransferRequirementForm{
+								{
+									Name: "Transfer reference",
+									Group: []raw.TransferRequirementField{
+										{
+											Key: "reference", Name: "Transfer reference", Type: "text",
+											RefreshRequirementsOnChange: false, Required: false,
+											MaxLength:       int32Ptr(10),
+											ValidationRegexp: strPtr("[a-zA-Z0-9- ]*"),
+										},
+									},
+								},
+								{
+									Name: "Transfer purpose",
+									Group: []raw.TransferRequirementField{
+										{
+											Key: "transferPurpose", Name: "Transfer purpose", Type: "select",
+											RefreshRequirementsOnChange: true, Required: true,
+											ValuesAllowed: []raw.TransferRequirementValue{
+												{Key: "verification.transfers.purpose.pay.bills", Name: "Rent or other property expenses"},
+											},
+										},
+									},
+								},
+							},
+						},
+					})
+				})
+			})
+
+			It("should validate and map the dynamic form", func() {
+				requirements, err := client.ValidateTransferRequirements(context.Background(), wise.ValidateTransferRequirementsRequest{
+					TargetAccount:             wise.NewRecipientID(98765432),
+					QuoteID:                   wise.NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
+					OriginatorLegalEntityType: "PRIVATE",
+					Details: wise.TransferRequirementsDetails{
+						Reference: "Invoice 2026-001",
+					},
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(requirements).To(HaveLen(1))
+				Expect(requirements[0].Type).To(Equal("transfer"))
+				Expect(requirements[0].Fields).To(HaveLen(2))
+
+				reference := requirements[0].Fields[0].Group[0]
+				Expect(reference.Key).To(Equal("reference"))
+				Expect(reference.MaxLength).ToNot(BeNil())
+				Expect(*reference.MaxLength).To(Equal(int32(10)))
+				Expect(*reference.ValidationRegexp).To(Equal("[a-zA-Z0-9- ]*"))
+
+				purpose := requirements[0].Fields[1].Group[0]
+				Expect(purpose.Required).To(BeTrue())
+				Expect(purpose.RefreshRequirementsOnChange).To(BeTrue())
+				Expect(purpose.ValuesAllowed).To(HaveLen(1))
+				Expect(purpose.ValuesAllowed[0].Key).To(Equal("verification.transfers.purpose.pay.bills"))
+			})
+		})
+
+		Context("with missing quote ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.ValidateTransferRequirements(context.Background(), wise.ValidateTransferRequirementsRequest{
+					TargetAccount: wise.NewRecipientID(98765432),
+				})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("quoteUuid is required"))
+			})
+		})
+	})
+
+	Describe("Quote payment options", func() {
+		Context("when a quote includes paymentOptions and notices", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v3/profiles/12345/quotes/33344c35-9fe8-4c32-b7fd-d05c2a7734bf",
+					func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.MarshalWrite(w, raw.Quote{
+							ID: "33344c35-9fe8-4c32-b7fd-d05c2a7734bf",
+							SourceCurrency: "GBP", TargetCurrency: "USD",
+							SourceAmount: 100, TargetAmount: 129.24,
+							PayOut: "BANK_TRANSFER", PayIn: "BALANCE",
+							Rate: 1.30445,
+							CreatedTime: "2023-01-15T10:30:00Z", ExpirationTime: "2023-01-15T11:00:00Z",
+							Status: "PENDING",
+							Profile: 12345,
+							RateType: "FIXED", ProvidedAmountType: "SOURCE",
+							GuaranteedTargetAmountAllowed: true, GuaranteedTargetAmount: false,
+							PaymentOptions: []raw.QuotePaymentOption{
+								{
+									Disabled:                   false,
+									EstimatedDelivery:          "2023-01-16T12:30:00Z",
+									FormattedEstimatedDelivery: "by Jan 16",
+									Fee: raw.QuoteFee{
+										TransferWise: 3.04, PayIn: 0, Discount: 2.27, Partner: 0, Total: 0.77,
+									},
+									SourceAmount:   100, TargetAmount: 129.24,
+									SourceCurrency: "GBP", TargetCurrency: "USD",
+									PayIn: "BALANCE", PayOut: "BANK_TRANSFER",
+									PayInProduct: "CHEAP", FeePercentage: 0.0092,
+								},
+							},
+							Notices: []raw.QuoteNotice{
+								{Text: "You can have a maximum of 3 open transfers with a guaranteed rate.", Type: "WARNING"},
+							},
+						})
+					})
+			})
+
+			It("should map payment options and notices", func() {
+				quote, err := client.GetQuote(
+					context.Background(),
+					wise.NewProfileID(12345),
+					wise.NewQuoteID("33344c35-9fe8-4c32-b7fd-d05c2a7734bf"),
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(quote).ToNot(BeNil())
+				Expect(quote.RateType).To(Equal(wise.QuoteRateTypeFixed))
+				Expect(quote.ProvidedAmountType).To(Equal(wise.QuoteProvidedAmountTypeSource))
+				Expect(quote.GuaranteedTargetAmountAllowed).To(BeTrue())
+				Expect(quote.GuaranteedTargetAmount).To(BeFalse())
+
+				Expect(quote.PaymentOptions).To(HaveLen(1))
+				option := quote.PaymentOptions[0]
+				Expect(option.Disabled).To(BeFalse())
+				Expect(option.FormattedEstimatedDelivery).To(Equal("by Jan 16"))
+				Expect(option.Fee.Total).To(Equal(0.77))
+				Expect(option.Source.Cents).To(Equal(int64(10000)))
+				Expect(option.PayIn).To(Equal(wise.PayInBalance))
+				Expect(option.PayOut).To(Equal(wise.PayOutBankTransfer))
+				Expect(option.PayInProduct).To(Equal("CHEAP"))
+
+				Expect(quote.Notices).To(HaveLen(1))
+				Expect(quote.Notices[0].Type).To(Equal(wise.QuoteNoticeTypeWarning))
+				Expect(quote.Notices[0].Link).To(BeNil())
 			})
 		})
 	})

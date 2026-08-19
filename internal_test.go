@@ -344,6 +344,11 @@ func TestParseWiseTimestamp(t *testing.T) {
 			input: "2023-01-15 14:30:00",
 			want:  time.Date(2023, time.January, 15, 14, 30, 0, 0, time.UTC),
 		},
+		{
+			name:  "milliseconds with numeric zone (delivery estimate format)",
+			input: "2018-01-10T12:15:00.000+0000",
+			want:  time.Date(2018, time.January, 10, 12, 15, 0, 0, time.UTC),
+		},
 		{name: "empty rejected", input: "", wantErr: true},
 		{name: "date only rejected", input: "2023-01-15", wantErr: true},
 		{name: "garbage rejected", input: "not-a-date", wantErr: true},
@@ -674,6 +679,93 @@ func TestMapperParseErrorsAreCorruption(t *testing.T) {
 				t.Errorf("Classify() = %v, want Corruption (error: %v)", family, err)
 			}
 		})
+	}
+}
+
+func TestMapQuoteParseErrorsAreCorruption(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		call func() error
+	}{
+		{
+			name: "unparseable created_time",
+			call: func() error {
+				q := raw.Quote{ID: "quote-1", SourceCurrency: "EUR", TargetCurrency: "USD", CreatedTime: "garbage"}
+				_, err := mapQuote(q, ProfileID{})
+
+				return err
+			},
+		},
+		{
+			name: "invalid source currency",
+			call: func() error {
+				q := raw.Quote{
+					ID: "quote-1", SourceCurrency: "euros", TargetCurrency: "USD",
+					CreatedTime: "2023-01-15T10:30:00Z", ExpirationTime: "2023-01-15T11:00:00Z",
+				}
+				_, err := mapQuote(q, ProfileID{})
+
+				return err
+			},
+		},
+		{
+			name: "unparseable payment option delivery",
+			call: func() error {
+				q := raw.Quote{
+					ID: "quote-1", SourceCurrency: "EUR", TargetCurrency: "USD",
+					CreatedTime: "2023-01-15T10:30:00Z", ExpirationTime: "2023-01-15T11:00:00Z",
+					PaymentOptions: []raw.QuotePaymentOption{
+						{EstimatedDelivery: "not-a-timestamp", SourceCurrency: "EUR", TargetCurrency: "USD"},
+					},
+				}
+				_, err := mapQuote(q, ProfileID{})
+
+				return err
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := tt.call()
+			if err == nil {
+				t.Fatal("expected error, got nil")
+			}
+
+			if family := errorfamily.Classify(err); family != errorfamily.Corruption {
+				t.Errorf("Classify() = %v, want Corruption (error: %v)", family, err)
+			}
+		})
+	}
+}
+
+func TestMapDeliveryEstimateParseErrorIsCorruption(t *testing.T) {
+	t.Parallel()
+
+	const dateLayout = "2006-01-02T15:04:05.000Z0700"
+
+	// Assert the parser handles Wise's actual wire layout so a regression in
+	// parseWiseTimestamp cannot silently break delivery estimates.
+	got, err := time.Parse(dateLayout, "2018-01-10T12:15:00.000+0000")
+	if err != nil {
+		t.Fatalf("wise delivery-estimate timestamp layout must stay parseable: %v", err)
+	}
+
+	if got.UTC() != time.Date(2018, time.January, 10, 12, 15, 0, 0, time.UTC) {
+		t.Errorf("parsed delivery estimate = %v, want 2018-01-10T12:15:00Z", got.UTC())
+	}
+
+	_, err = mapDeliveryEstimate(raw.DeliveryEstimate{EstimatedDeliveryDate: "garbage"})
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	if family := errorfamily.Classify(err); family != errorfamily.Corruption {
+		t.Errorf("Classify() = %v, want Corruption (error: %v)", family, err)
 	}
 }
 

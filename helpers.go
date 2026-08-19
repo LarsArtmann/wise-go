@@ -117,6 +117,11 @@ func errTransferIDRequired() error {
 func parseWiseTimestamp(s string) (time.Time, error) {
 	layouts := []string{
 		time.RFC3339,
+		// Wise's delivery-estimate timestamps carry milliseconds and a
+		// numeric zone ("2018-01-10T12:15:00.000+0000"), which RFC3339
+		// without fractional-second tolerance rejects.
+		"2006-01-02T15:04:05.000-0700",
+		"2006-01-02T15:04:05.000Z0700",
 		"2006-01-02T15:04:05",
 		"2006-01-02 15:04:05",
 	}

@@ -184,51 +184,22 @@ func (r CreateQuoteRequest) toWire(authenticated bool) map[string]any {
 }
 
 func mapQuote(quote raw.Quote, profileID ProfileID) (*Quote, error) {
-	created, err := parseWiseTimestamp(quote.CreatedTime)
-	if err != nil {
-		return nil, errorfamily.WrapCorruption(
-			err,
-			"wise.quote.parse_created",
-			fmt.Sprintf("parse createdTime %q", quote.CreatedTime),
-		)
+	created, createdErr := parseQuoteCreated(quote)
+	if createdErr != nil {
+		return nil, createdErr
 	}
 
-	expiration, err := parseWiseTimestamp(quote.ExpirationTime)
-	if err != nil {
-		return nil, errorfamily.WrapCorruption(
-			err,
-			"wise.quote.parse_expiration",
-			fmt.Sprintf("parse expirationTime %q", quote.ExpirationTime),
-		)
+	source, target, monetaryErr := mapQuoteMonetary(quote)
+	if monetaryErr != nil {
+		return nil, monetaryErr
 	}
 
-	sourceCurrency, err := NewCurrency(quote.SourceCurrency)
-	if err != nil {
-		return nil, errorfamily.WrapCorruption(
-			err,
-			"wise.quote.parse_source_currency",
-			fmt.Sprintf("source currency %q", quote.SourceCurrency),
-		)
+	options, optionErr := mapQuotePaymentOptions(quote.PaymentOptions)
+	if optionErr != nil {
+		return nil, optionErr
 	}
 
-	targetCurrency, err := NewCurrency(quote.TargetCurrency)
-	if err != nil {
-		return nil, errorfamily.WrapCorruption(
-			err,
-			"wise.quote.parse_target_currency",
-			fmt.Sprintf("target currency %q", quote.TargetCurrency),
-		)
-	}
-
-	options, err := mapQuotePaymentOptions(quote.PaymentOptions)
-	if err != nil {
-		return nil, err
-	}
-
-	notices, err := mapQuoteNotices(quote.Notices)
-	if err != nil {
-		return nil, err
-	}
+	notices := mapQuoteNotices(quote.Notices)
 
 	return &Quote{
 		ID:             id.NewID[QuoteBrand](quote.ID),
