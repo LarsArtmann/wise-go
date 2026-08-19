@@ -30,14 +30,14 @@
         --warning: var(--color-yellow);
         --radius: 0px;
         --font-heading:
-          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Helvetica, Arial, sans-serif;
+          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         --font-body:
-          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Helvetica, Arial, sans-serif;
+          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         --font-mono:
-          ui-monospace, "Cascadia Code", "Source Code Pro", "JetBrains Mono", Menlo, Consolas,
-          monospace;
+          ui-monospace, "Cascadia Code", "Source Code Pro", "JetBrains Mono",
+          Menlo, Consolas, monospace;
       }
       * {
         box-sizing: border-box;
@@ -180,11 +180,19 @@
       }
       .card-solution {
         border-left-color: var(--solution);
-        background: color-mix(in srgb, var(--solution) 8%, var(--surface-raised));
+        background: color-mix(
+          in srgb,
+          var(--solution) 8%,
+          var(--surface-raised)
+        );
       }
       .card-warning {
         border-left-color: var(--warning);
-        background: color-mix(in srgb, var(--warning) 8%, var(--surface-raised));
+        background: color-mix(
+          in srgb,
+          var(--warning) 8%,
+          var(--surface-raised)
+        );
       }
       .badge {
         display: inline-block;
@@ -340,10 +348,11 @@
       <div class="hero-badge">Status: flake.nix created &amp; verified</div>
       <h1>wise-go Nix Flake Migration</h1>
       <p class="hero-subtitle">
-        wise-go had no flake.nix, no justfile, no Makefile. The LarsArtmann convention is to use
-        <code>flake.nix</code> for all build/task automation. This proposal records the greenfield
-        adoption: what was created, what it replaces, the before/after command matrix, and the
-        verification steps performed.
+        wise-go had no flake.nix, no justfile, no Makefile. The LarsArtmann
+        convention is to use
+        <code>flake.nix</code> for all build/task automation. This proposal
+        records the greenfield adoption: what was created, what it replaces, the
+        before/after command matrix, and the verification steps performed.
       </p>
     </div>
 
@@ -370,9 +379,10 @@
     <h2>Migration Type</h2>
     <p>
       Per the skill's migration matrix, this is
-      <strong>"No formatter / No checks → standard flake"</strong>. wise-go has no prior task runner
-      — just direct <code>go</code> commands and a CI workflow. The new
-      <code>flake.nix</code> codifies the same operations as reproducible Nix derivations.
+      <strong>"No formatter / No checks → standard flake"</strong>. wise-go has
+      no prior task runner — just direct <code>go</code> commands and a CI
+      workflow. The new <code>flake.nix</code> codifies the same operations as
+      reproducible Nix derivations.
     </p>
 
     <h2>Command Matrix — Before vs. After</h2>
@@ -400,35 +410,39 @@
             <td>Build</td>
             <td><code>go build ./...</code></td>
             <td>
-              <code>go build ./...</code> (inside <code>nix develop</code>) — library, no binary to
-              package
+              <code>go build ./...</code> (inside <code>nix develop</code>) —
+              library, no binary to package
             </td>
           </tr>
           <tr>
             <td>Test</td>
             <td><code>go test -race ./...</code></td>
             <td>
-              <code>nix flake check</code> (runs <code>checks.test</code>) <em>or</em>
-              <code>go test ./...</code> in devShell
+              <code>nix flake check</code> (runs <code>checks.test</code>)
+              <em>or</em> <code>go test ./...</code> in devShell
             </td>
           </tr>
           <tr>
             <td>Lint</td>
             <td><code>golangci-lint run</code></td>
             <td>
-              <code>nix flake check</code> (runs <code>checks.lint</code>) <em>or</em> direct
-              <code>golangci-lint run</code> in devShell
+              <code>nix flake check</code> (runs <code>checks.lint</code>)
+              <em>or</em> direct <code>golangci-lint run</code> in devShell
             </td>
           </tr>
           <tr>
             <td>Format</td>
             <td>(none; golangci-lint formatters only)</td>
-            <td><code>nix fmt</code> (gofumpt + goimports + nixfmt via treefmt)</td>
+            <td>
+              <code>nix fmt</code> (gofumpt + goimports + nixfmt via treefmt)
+            </td>
           </tr>
           <tr>
             <td>Format check</td>
             <td><code>golangci-lint run</code> (indirectly)</td>
-            <td><code>nix flake check</code> (runs <code>checks.format</code>)</td>
+            <td>
+              <code>nix flake check</code> (runs <code>checks.format</code>)
+            </td>
           </tr>
         </tbody>
       </table>
@@ -440,62 +454,81 @@
       <h4>flake.nix (188 lines)</h4>
       <p>
         Standard stack: <code>flake-parts</code> + <code>treefmt-nix</code> +
-        <code>git-hooks.nix</code> + <code>systems</code> input + <code>nixos-unstable</code>. Two
-        <code>devShells</code> (<code>default</code> for local dev with gopls,
-        <code>ci</code> minimal). Four checks (<code>format</code>, <code>test</code>,
-        <code>lint</code>, plus <code>treefmt</code>). No <code>packages.default</code> — wise-go is
-        a library, not a binary.
+        <code>git-hooks.nix</code> + <code>systems</code> input +
+        <code>nixos-unstable</code>. Two <code>devShells</code> (<code
+          >default</code
+        >
+        for local dev with gopls, <code>ci</code> minimal). Four checks
+        (<code>format</code>, <code>test</code>, <code>lint</code>, plus
+        <code>treefmt</code>). No <code>packages.default</code> — wise-go is a
+        library, not a binary.
       </p>
     </div>
 
     <div class="card card-solution">
       <h4>flake.lock</h4>
-      <p>Auto-generated by Nix; pins all transitive flake inputs for reproducibility.</p>
+      <p>
+        Auto-generated by Nix; pins all transitive flake inputs for
+        reproducibility.
+      </p>
     </div>
 
     <div class="card card-solution">
       <h4>.gitignore additions</h4>
       <p>
-        Added <code>result</code>, <code>result-*</code>, <code>.direnv/</code> to .gitignore to
-        keep Nix build outputs out of git.
+        Added <code>result</code>, <code>result-*</code>,
+        <code>.direnv/</code> to .gitignore to keep Nix build outputs out of
+        git.
       </p>
     </div>
 
     <h2>Library-Specific Adjustments to the Standard Template</h2>
 
     <p>
-      The skill's Go template assumes a binary (<code>packages.default = buildGoModule {...}</code
+      The skill's Go template assumes a binary (<code
+        >packages.default = buildGoModule {...}</code
       >). wise-go is a library, so:
     </p>
 
     <ul>
       <li>
-        <strong>No <code>packages.default</code>.</strong> Consumers do not <code>nix run</code> or
-        install wise-go via Nix; they <code>go get github.com/larsartmann/wise-go</code>. The
+        <strong>No <code>packages.default</code>.</strong> Consumers do not
+        <code>nix run</code> or install wise-go via Nix; they
+        <code>go get github.com/larsartmann/wise-go</code>. The
         <code>buildGoModule</code> derivation would build nothing useful.
       </li>
       <li>
-        <strong><code>checks.test</code> uses <code>stdenvNoCC.mkDerivation</code></strong> instead
-        of <code>buildGoModule</code>. It runs
-        <code>go test -race -coverprofile=coverage.out</code> in a hermetic sandbox and installs the
-        coverage report to <code>$out</code>.
+        <strong
+          ><code>checks.test</code> uses
+          <code>stdenvNoCC.mkDerivation</code></strong
+        >
+        instead of <code>buildGoModule</code>. It runs
+        <code>go test -race -coverprofile=coverage.out</code> in a hermetic
+        sandbox and installs the coverage report to <code>$out</code>.
       </li>
       <li>
         <strong><code>checks.lint</code> mirrors the structure.</strong> Runs
-        <code>golangci-lint run --timeout=5m</code> against the same source fileset.
+        <code>golangci-lint run --timeout=5m</code> against the same source
+        fileset.
       </li>
       <li>
-        <strong>Source fileset is explicit</strong> via <code>lib.fileset.unions [...]</code> — only
-        <code>.go</code> files, <code>go.mod</code>/<code>go.sum</code>, and the lint config enter
-        the sandbox. No <code>docs/</code>, no <code>.github/</code>, no review artifacts.
+        <strong>Source fileset is explicit</strong> via
+        <code>lib.fileset.unions [...]</code> — only <code>.go</code> files,
+        <code>go.mod</code>/<code>go.sum</code>, and the lint config enter the
+        sandbox. No <code>docs/</code>, no <code>.github/</code>, no review
+        artifacts.
       </li>
       <li>
-        <strong><code>GOWORK=off</code> + <code>GOPRIVATE=github.com/larsartmann</code></strong>
+        <strong
+          ><code>GOWORK=off</code> +
+          <code>GOPRIVATE=github.com/larsartmann</code></strong
+        >
         pinned in both devShells, matching the existing convention.
       </li>
       <li>
-        <strong><code>go_1_26</code> pinned</strong> via the <code>goPkg</code> let-binding,
-        matching <code>go.mod</code>'s <code>go 1.26.4</code>.
+        <strong><code>go_1_26</code> pinned</strong> via the
+        <code>goPkg</code> let-binding, matching <code>go.mod</code>'s
+        <code>go 1.26.4</code>.
       </li>
     </ul>
 
@@ -515,22 +548,25 @@
             <td>Flake evaluates cleanly</td>
             <td><code>nix flake check --no-build</code></td>
             <td>
-              <span class="badge badge-fixed">PASS</span> "all checks passed" — all 4 checks +
-              devShells + formatter evaluated
+              <span class="badge badge-fixed">PASS</span> "all checks passed" —
+              all 4 checks + devShells + formatter evaluated
             </td>
           </tr>
           <tr>
             <td>Formatter runs</td>
             <td><code>nix fmt</code></td>
             <td>
-              <span class="badge badge-fixed">PASS</span> "traversed 44 files, formatted 12, 1
-              changed"
+              <span class="badge badge-fixed">PASS</span> "traversed 44 files,
+              formatted 12, 1 changed"
             </td>
           </tr>
           <tr>
             <td>Existing tests still pass</td>
             <td><code>go test ./...</code></td>
-            <td><span class="badge badge-fixed">PASS</span> 94.8% coverage maintained</td>
+            <td>
+              <span class="badge badge-fixed">PASS</span> 94.8% coverage
+              maintained
+            </td>
           </tr>
           <tr>
             <td>Existing lint still clean</td>
@@ -541,8 +577,9 @@
             <td>Full check build (test + lint derivations)</td>
             <td><code>nix flake check</code></td>
             <td>
-              <span class="badge badge-high">Verify locally</span> Skipped here to avoid 5+ minute
-              first-time Go-module fetch; user should run before merging
+              <span class="badge badge-high">Verify locally</span> Skipped here
+              to avoid 5+ minute first-time Go-module fetch; user should run
+              before merging
             </td>
           </tr>
         </tbody>
@@ -581,19 +618,30 @@
             <td><span class="badge badge-fixed">Done</span></td>
           </tr>
           <tr>
-            <td><code>checks.format</code> and <code>checks.test</code> defined</td>
-            <td><span class="badge badge-fixed">Done</span> (+ <code>checks.lint</code>)</td>
+            <td>
+              <code>checks.format</code> and <code>checks.test</code> defined
+            </td>
+            <td>
+              <span class="badge badge-fixed">Done</span> (+
+              <code>checks.lint</code>)
+            </td>
           </tr>
           <tr>
             <td><code>packages.default</code> populated</td>
-            <td><span class="badge badge-high">N/A — library, no binary</span></td>
+            <td>
+              <span class="badge badge-high">N/A — library, no binary</span>
+            </td>
           </tr>
           <tr>
             <td><code>meta.maintainers</code> populated</td>
-            <td><span class="badge badge-high">N/A — no package to brand</span></td>
+            <td>
+              <span class="badge badge-high">N/A — no package to brand</span>
+            </td>
           </tr>
           <tr>
-            <td>Run <code>nix flake check</code> (full, with build) before merge</td>
+            <td>
+              Run <code>nix flake check</code> (full, with build) before merge
+            </td>
             <td><span class="badge badge-high">Action: user</span></td>
           </tr>
         </tbody>
@@ -604,15 +652,18 @@
 
     <ul>
       <li>
-        <code>.buildflow.yml</code> stays — it serves a different purpose (code-quality analysis
-        reports), not build automation.
+        <code>.buildflow.yml</code> stays — it serves a different purpose
+        (code-quality analysis reports), not build automation.
       </li>
       <li>
-        <code>.github/workflows/ci.yml</code> stays — the GitHub Actions CI and the Nix checks are
-        complementary. CI runs on every push; <code>nix flake check</code> is the local
-        reproducibility layer.
+        <code>.github/workflows/ci.yml</code> stays — the GitHub Actions CI and
+        the Nix checks are complementary. CI runs on every push;
+        <code>nix flake check</code> is the local reproducibility layer.
       </li>
-      <li><code>.golangci.yml</code> stays — referenced by <code>checks.lint</code>.</li>
+      <li>
+        <code>.golangci.yml</code> stays — referenced by
+        <code>checks.lint</code>.
+      </li>
       <li>All Go source files untouched.</li>
     </ul>
 
@@ -622,32 +673,36 @@
       <h4>Add <code>nix flake check</code> to GitHub Actions</h4>
       <p>
         Optional but recommended: add a <code>nix:</code> job to
-        <code>.github/workflows/ci.yml</code> using <code>cachix/install-nix-action</code> +
-        <code>nix flake check</code>. This catches non-reproducible builds in CI, not just locally.
-        Cachix caching recommended for the Go module fetch step.
+        <code>.github/workflows/ci.yml</code> using
+        <code>cachix/install-nix-action</code> + <code>nix flake check</code>.
+        This catches non-reproducible builds in CI, not just locally. Cachix
+        caching recommended for the Go module fetch step.
       </p>
     </div>
 
     <div class="card card-warning">
       <h4>Add <code>.envrc</code> for direnv integration</h4>
       <p>
-        Once the devShell is trusted, a one-line <code>.envrc</code> (<code>use flake</code>) makes
-        the devShell load automatically on <code>cd</code>. Already covered by the
-        <code>.direnv/</code> entry in .gitignore.
+        Once the devShell is trusted, a one-line <code>.envrc</code> (<code
+          >use flake</code
+        >) makes the devShell load automatically on <code>cd</code>. Already
+        covered by the <code>.direnv/</code> entry in .gitignore.
       </p>
     </div>
 
     <div class="callout callout-solution">
       <strong>Verdict</strong>
-      The <code>flake.nix</code> is in place, evaluates cleanly, and <code>nix fmt</code> works. The
-      flake does not replace the existing CI; it complements it with reproducible local tooling
-      aligned to the LarsArtmann ecosystem convention. The user should run
-      <code>nix flake check</code> once locally to confirm the test + lint derivations build
-      end-to-end before merging.
+      The <code>flake.nix</code> is in place, evaluates cleanly, and
+      <code>nix fmt</code> works. The flake does not replace the existing CI; it
+      complements it with reproducible local tooling aligned to the LarsArtmann
+      ecosystem convention. The user should run
+      <code>nix flake check</code> once locally to confirm the test + lint
+      derivations build end-to-end before merging.
     </div>
 
     <footer class="footer">
-      Generated 2026-07-18 · nix-flake-migration skill · flake.nix created and verified via
+      Generated 2026-07-18 · nix-flake-migration skill · flake.nix created and
+      verified via
       <code>nix flake check --no-build</code>
     </footer>
   </body>

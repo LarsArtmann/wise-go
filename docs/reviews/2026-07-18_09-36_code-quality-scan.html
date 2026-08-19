@@ -32,14 +32,14 @@
 
         --radius: 0px;
         --font-heading:
-          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Helvetica, Arial, sans-serif;
+          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         --font-body:
-          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Helvetica, Arial, sans-serif;
+          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         --font-mono:
-          ui-monospace, "Cascadia Code", "Source Code Pro", "JetBrains Mono", Menlo, Consolas,
-          monospace;
+          ui-monospace, "Cascadia Code", "Source Code Pro", "JetBrains Mono",
+          Menlo, Consolas, monospace;
       }
       * {
         box-sizing: border-box;
@@ -233,15 +233,27 @@
       }
       .card-problem {
         border-left-color: var(--problem);
-        background: color-mix(in srgb, var(--problem) 8%, var(--surface-raised));
+        background: color-mix(
+          in srgb,
+          var(--problem) 8%,
+          var(--surface-raised)
+        );
       }
       .card-solution {
         border-left-color: var(--solution);
-        background: color-mix(in srgb, var(--solution) 8%, var(--surface-raised));
+        background: color-mix(
+          in srgb,
+          var(--solution) 8%,
+          var(--surface-raised)
+        );
       }
       .card-warning {
         border-left-color: var(--warning);
-        background: color-mix(in srgb, var(--warning) 8%, var(--surface-raised));
+        background: color-mix(
+          in srgb,
+          var(--warning) 8%,
+          var(--surface-raised)
+        );
       }
       .issue {
         background: var(--surface-raised);
@@ -252,15 +264,27 @@
       }
       .issue-critical {
         border-left-color: var(--problem);
-        background: color-mix(in srgb, var(--problem) 8%, var(--surface-raised));
+        background: color-mix(
+          in srgb,
+          var(--problem) 8%,
+          var(--surface-raised)
+        );
       }
       .issue-important {
         border-left-color: var(--warning);
-        background: color-mix(in srgb, var(--warning) 8%, var(--surface-raised));
+        background: color-mix(
+          in srgb,
+          var(--warning) 8%,
+          var(--surface-raised)
+        );
       }
       .issue-nice {
         border-left-color: var(--solution);
-        background: color-mix(in srgb, var(--solution) 8%, var(--surface-raised));
+        background: color-mix(
+          in srgb,
+          var(--solution) 8%,
+          var(--surface-raised)
+        );
       }
       .issue h3 {
         margin-bottom: 0.3rem;
@@ -545,10 +569,11 @@
           <div class="hero-badge">Snapshot · Build + Lint + Duplication</div>
           <h1>wise-go Code Quality Scan</h1>
           <p class="hero-subtitle">
-            Mechanical health snapshot of the <code>github.com/larsartmann/wise-go</code> Go SDK (8
-            source files, ~1.3k LOC of non-test Go). Build, vet, 60+-linter golangci-lint, and jscpd
-            duplication analysis were all run on a clean tree at commit <code>218c2d3</code> on
-            2026-07-18.
+            Mechanical health snapshot of the
+            <code>github.com/larsartmann/wise-go</code> Go SDK (8 source files,
+            ~1.3k LOC of non-test Go). Build, vet, 60+-linter golangci-lint, and
+            jscpd duplication analysis were all run on a clean tree at commit
+            <code>218c2d3</code> on 2026-07-18.
           </p>
         </div>
 
@@ -577,12 +602,14 @@
         </div>
 
         <p>
-          The codebase is in <strong>excellent mechanical shape</strong>. There are no compiler
-          warnings, no vet findings, zero lint issues across 60+ enabled linters (including
-          <code>dupl</code> at threshold 100, <code>gocognit</code>, <code>gocyclo</code>,
-          <code>funlen</code>, <code>errcheck</code>, <code>wrapcheck</code>, <code>gosec</code>),
-          and zero token-level duplication clones from jscpd at &gt;= 8 lines / 60 tokens. Two
-          advisory-level inconsistencies are noted below for follow-up in the deeper reviews.
+          The codebase is in <strong>excellent mechanical shape</strong>. There
+          are no compiler warnings, no vet findings, zero lint issues across 60+
+          enabled linters (including <code>dupl</code> at threshold 100,
+          <code>gocognit</code>, <code>gocyclo</code>, <code>funlen</code>,
+          <code>errcheck</code>, <code>wrapcheck</code>, <code>gosec</code>),
+          and zero token-level duplication clones from jscpd at &gt;= 8 lines /
+          60 tokens. Two advisory-level inconsistencies are noted below for
+          follow-up in the deeper reviews.
         </p>
 
         <h2 id="checks"><span class="num">01</span>Mechanical Checks</h2>
@@ -636,7 +663,10 @@
               </tr>
               <tr>
                 <td>Formatting</td>
-                <td><code>gofumpt</code> + <code>goimports</code> + <code>golines</code> (120)</td>
+                <td>
+                  <code>gofumpt</code> + <code>goimports</code> +
+                  <code>golines</code> (120)
+                </td>
                 <td><span class="badge badge-fixed">PASS</span></td>
                 <td>Formatters configured, no drift</td>
               </tr>
@@ -647,35 +677,44 @@
         <div class="card card-solution">
           <h4>Tooling command for future runs</h4>
           <p>
-            The project uses <code>.buildflow.yml</code> for higher-level orchestration but the
-            canonical mechanical gates are plain Go:
+            The project uses <code>.buildflow.yml</code> for higher-level
+            orchestration but the canonical mechanical gates are plain Go:
             <code
-              >go build ./... &amp;&amp; go vet ./... &amp;&amp; go test ./... &amp;&amp;
-              golangci-lint run</code
-            >. There is no <code>flake.nix</code>, <code>justfile</code>, or <code>Makefile</code>.
+              >go build ./... &amp;&amp; go vet ./... &amp;&amp; go test ./...
+              &amp;&amp; golangci-lint run</code
+            >. There is no <code>flake.nix</code>, <code>justfile</code>, or
+            <code>Makefile</code>.
           </p>
         </div>
 
-        <h2 id="advisories"><span class="num">02</span>Advisories (Low Severity)</h2>
+        <h2 id="advisories">
+          <span class="num">02</span>Advisories (Low Severity)
+        </h2>
 
         <p>
-          These did <strong>not</strong> trip any linter and have no functional impact today, but
-          they are inconsistencies a careful reviewer would flag for cleanup. Both will be revisited
-          in the full-code-review and data-model-review phases.
+          These did <strong>not</strong> trip any linter and have no functional
+          impact today, but they are inconsistencies a careful reviewer would
+          flag for cleanup. Both will be revisited in the full-code-review and
+          data-model-review phases.
         </p>
 
         <div class="issue issue-important">
           <span class="severity severity-important">Low · Consistency</span>
           <h3>Inconsistent branded-ID formatting in error messages</h3>
-          <div class="where">transactions.go:43-44 and transactions.go:52-56</div>
+          <div class="where">
+            transactions.go:43-44 and transactions.go:52-56
+          </div>
           <p>
-            The <code>fmt.Errorf</code> call sites in <code>ListTransactions</code> pass
-            <code>req.ProfileID</code> and <code>req.BalanceID</code> directly to the
-            <code>%d</code> verb, while the sibling <code>mapTransaction</code> error path
-            (transactions.go:79-85) and all of <code>balances.go</code> correctly unwrap with
-            <code>.Get()</code>. The branded ID is <code>id.ID[Brand, int64]</code>, so
-            <code>%d</code> happens to print today, but the inconsistency is a smell and silently
-            masks any future change to the branded-ID's underlying representation.
+            The <code>fmt.Errorf</code> call sites in
+            <code>ListTransactions</code> pass <code>req.ProfileID</code> and
+            <code>req.BalanceID</code> directly to the <code>%d</code> verb,
+            while the sibling <code>mapTransaction</code> error path
+            (transactions.go:79-85) and all of
+            <code>balances.go</code> correctly unwrap with <code>.Get()</code>.
+            The branded ID is <code>id.ID[Brand, int64]</code>, so
+            <code>%d</code> happens to print today, but the inconsistency is a
+            smell and silently masks any future change to the branded-ID's
+            underlying representation.
           </p>
           <div class="callout callout-solution">
             <strong>Fix</strong>
@@ -689,14 +728,17 @@
           <h3>Transaction classification table vs. code path</h3>
           <div class="where">transactions.go:148-171 vs README.md:172-183</div>
           <p>
-            <code>classifyTransactionType</code> groups <code>CARD_PAYMENT</code> and
-            <code>CARD_REFUND</code> into a single case branch that dispatches on amount sign. The
-            README documents <code>CARD_PAYMENT</code> as always mapping to
-            <code>TransactionTypeCard</code> and only <code>CARD_REFUND</code> as amount-dependent.
-            The grouped implementation means a positive-amount <code>CARD_PAYMENT</code> would
-            currently be classified as <code>TransactionTypeRefund</code>, which contradicts the
-            documented contract. The full-code-review phase will reconcile the code against the
-            tests and README.
+            <code>classifyTransactionType</code> groups
+            <code>CARD_PAYMENT</code> and <code>CARD_REFUND</code> into a single
+            case branch that dispatches on amount sign. The README documents
+            <code>CARD_PAYMENT</code> as always mapping to
+            <code>TransactionTypeCard</code> and only
+            <code>CARD_REFUND</code> as amount-dependent. The grouped
+            implementation means a positive-amount
+            <code>CARD_PAYMENT</code> would currently be classified as
+            <code>TransactionTypeRefund</code>, which contradicts the documented
+            contract. The full-code-review phase will reconcile the code against
+            the tests and README.
           </p>
         </div>
 
@@ -707,11 +749,14 @@
             <div class="text">
               <strong>Strict linter configuration enforced</strong>
               <span>
-                <code>.golangci.yml</code> v2 enables 63 linters including <code>bodyclose</code>,
-                <code>contextcheck</code>, <code>errcheck</code>, <code>errorlint</code>,
-                <code>exhaustive</code>, <code>gocognit</code>, <code>gocyclo</code>,
-                <code>gosec</code>, <code>nilnesserr</code>, <code>wrapcheck</code> — and the
-                codebase passes them all with zero exclusions on production code.
+                <code>.golangci.yml</code> v2 enables 63 linters including
+                <code>bodyclose</code>, <code>contextcheck</code>,
+                <code>errcheck</code>, <code>errorlint</code>,
+                <code>exhaustive</code>, <code>gocognit</code>,
+                <code>gocyclo</code>, <code>gosec</code>,
+                <code>nilnesserr</code>, <code>wrapcheck</code> — and the
+                codebase passes them all with zero exclusions on production
+                code.
               </span>
             </div>
           </div>
@@ -720,9 +765,10 @@
             <div class="text">
               <strong>Strong type discipline</strong>
               <span>
-                Phantom-branded IDs (<code>ProfileID</code>, <code>BalanceID</code>,
-                <code>TransactionID</code>) make entity-ID mixing a compile-time error. Monetary
-                amounts are <code>int64</code> cents, never <code>float64</code>.
+                Phantom-branded IDs (<code>ProfileID</code>,
+                <code>BalanceID</code>, <code>TransactionID</code>) make
+                entity-ID mixing a compile-time error. Monetary amounts are
+                <code>int64</code> cents, never <code>float64</code>.
               </span>
             </div>
           </div>
@@ -732,9 +778,10 @@
               <strong>Two-layer type system with clear boundary</strong>
               <span>
                 Raw API structs (<code>Profile</code>, <code>Balance</code>,
-                <code>StatementTransaction</code>) mirror Wise's JSON wire format; result types
-                (<code>ProfileResult</code>, <code>BalanceResult</code>, <code>Transaction</code>)
-                expose clean Go types. Mapping functions are the only bridge.
+                <code>StatementTransaction</code>) mirror Wise's JSON wire
+                format; result types (<code>ProfileResult</code>,
+                <code>BalanceResult</code>, <code>Transaction</code>) expose
+                clean Go types. Mapping functions are the only bridge.
               </span>
             </div>
           </div>
@@ -743,9 +790,11 @@
             <div class="text">
               <strong>Behavioral error classification</strong>
               <span>
-                Every domain error implements <code>ErrorCode</code>, <code>ErrorFamily</code>, and
-                (when relevant) <code>IsRetryable</code> from <code>go-error-family</code>. Retry
-                decisions are data-driven, not hard-coded switch statements at call sites.
+                Every domain error implements <code>ErrorCode</code>,
+                <code>ErrorFamily</code>, and (when relevant)
+                <code>IsRetryable</code> from <code>go-error-family</code>.
+                Retry decisions are data-driven, not hard-coded switch
+                statements at call sites.
               </span>
             </div>
           </div>
@@ -754,8 +803,8 @@
             <div class="text">
               <strong>Zero duplication, zero dead code</strong>
               <span>
-                Both jscpd (token-level) and dupl (AST-level) report 0 clones. No unused exports, no
-                commented-out blocks, no TODO graveyards.
+                Both jscpd (token-level) and dupl (AST-level) report 0 clones.
+                No unused exports, no commented-out blocks, no TODO graveyards.
               </span>
             </div>
           </div>
@@ -764,8 +813,9 @@
             <div class="text">
               <strong>High test coverage with mock-server pattern</strong>
               <span>
-                94.8% statement coverage via <code>net/http/httptest</code> mock servers — no
-                network required, deterministic, fast (1.42s full suite).
+                94.8% statement coverage via <code>net/http/httptest</code> mock
+                servers — no network required, deterministic, fast (1.42s full
+                suite).
               </span>
             </div>
           </div>
@@ -790,8 +840,8 @@
                 <td><span class="badge badge-high">Low</span></td>
                 <td><code>transactions.go:43,52</code></td>
                 <td>
-                  Branded IDs passed to <code>%d</code> directly; inconsistent with
-                  <code>.Get()</code> pattern elsewhere
+                  Branded IDs passed to <code>%d</code> directly; inconsistent
+                  with <code>.Get()</code> pattern elsewhere
                 </td>
                 <td>Normalize to <code>.Get()</code></td>
                 <td><span class="badge badge-low">Open</span></td>
@@ -799,12 +849,16 @@
               <tr>
                 <td>2</td>
                 <td><span class="badge badge-medium">Low</span></td>
-                <td><code>transactions.go:148</code> ↔ <code>README.md:172</code></td>
                 <td>
-                  <code>CARD_PAYMENT</code>+<code>CARD_REFUND</code> grouped case may misclassify
-                  positive card payments as Refund
+                  <code>transactions.go:148</code> ↔ <code>README.md:172</code>
                 </td>
-                <td>Split cases or update README — pending test reconciliation</td>
+                <td>
+                  <code>CARD_PAYMENT</code>+<code>CARD_REFUND</code> grouped
+                  case may misclassify positive card payments as Refund
+                </td>
+                <td>
+                  Split cases or update README — pending test reconciliation
+                </td>
                 <td><span class="badge badge-low">Open</span></td>
               </tr>
             </tbody>
@@ -812,8 +866,8 @@
         </div>
 
         <footer class="footer">
-          Generated 2026-07-18 from commit 218c2d3 · go 1.26.4 · golangci-lint v2.12.2 · jscpd · All
-          claims verified against source
+          Generated 2026-07-18 from commit 218c2d3 · go 1.26.4 · golangci-lint
+          v2.12.2 · jscpd · All claims verified against source
         </footer>
       </main>
     </div>

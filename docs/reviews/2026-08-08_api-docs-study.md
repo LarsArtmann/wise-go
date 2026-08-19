@@ -165,15 +165,15 @@ Previous endpoint-based versions remain available.
 
 ## 7. Actions Taken This Session
 
-| #   | Action                                    | Files Changed                                            |
-| --- | ----------------------------------------- | -------------------------------------------------------- |
-| 1   | Fixed stale sandbox URL                   | `types.go`, `docs/DOMAIN_LANGUAGE.md`                    |
-| 2   | Added `WithCorrelationID` option          | `options.go`, `client.go`                                |
-| 3   | Added `RateLimitedBy` to `RateLimitError` | `errors.go`, `client.go`                                 |
-| 4   | Added correlation ID BDD tests            | `wise_test.go`                                           |
-| 5   | Added `checkError` header capture tests   | `internal_test.go`                                       |
-| 6   | Created this study report                 | This file                                                |
-| 7   | Updated project docs                      | `TODO_LIST.md`, `ROADMAP.md`, `FEATURES.md`, `AGENTS.md` |
+| # | Action                                    | Files Changed                                            |
+| - | ----------------------------------------- | -------------------------------------------------------- |
+| 1 | Fixed stale sandbox URL                   | `types.go`, `docs/DOMAIN_LANGUAGE.md`                    |
+| 2 | Added `WithCorrelationID` option          | `options.go`, `client.go`                                |
+| 3 | Added `RateLimitedBy` to `RateLimitError` | `errors.go`, `client.go`                                 |
+| 4 | Added correlation ID BDD tests            | `wise_test.go`                                           |
+| 5 | Added `checkError` header capture tests   | `internal_test.go`                                       |
+| 6 | Created this study report                 | This file                                                |
+| 7 | Updated project docs                      | `TODO_LIST.md`, `ROADMAP.md`, `FEATURES.md`, `AGENTS.md` |
 
 ---
 

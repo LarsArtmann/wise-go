@@ -1,7 +1,7 @@
 # wise-go Status Report
 
-**Generated:** 2026-05-23 00:49  
-**Project:** wise-go (Wise/TransferWise API Go Client)  
+**Generated:** 2026-05-23 00:49\
+**Project:** wise-go (Wise/TransferWise API Go Client)\
 **Status:** ✅ HEALTHY - All Systems Operational
 
 ---
@@ -194,8 +194,8 @@ wise-go
 
 ## Git Status
 
-**Branch:** master  
-**Working Tree:** Clean (all changes committed)  
+**Branch:** master\
+**Working Tree:** Clean (all changes committed)\
 **Last Commit:** See git log
 
 **Pending Changes:** None - all work committed

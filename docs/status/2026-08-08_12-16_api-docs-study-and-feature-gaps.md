@@ -109,58 +109,58 @@ The original prompt said "Execute and Verify them one by at the time. Repeat unt
 
 ## F) UP TO 50 THINGS WE SHOULD GET DONE NEXT
 
-|   # | Task                                                                                  | Priority | Completion evidence                                                |
-| --: | ------------------------------------------------------------------------------------- | :------: | ------------------------------------------------------------------ |
-|   1 | Re-add BDD test for `WithCorrelationID` header propagation                            |    P0    | `wise_test.go` has `Describe("WithCorrelationID")` that passes     |
-|   2 | Add `WithCorrelationID` to README Features list and Options section                   |    P0    | README mentions the option                                         |
-|   3 | Add `RateLimitError.RateLimitedBy` to README error handling example                   |    P0    | README shows `rl.RateLimitedBy` usage                              |
-|   4 | Update CHANGELOG `[Unreleased]` with all three features                               |    P0    | CHANGELOG has sandbox fix, correlation ID, rate-limited-by entries |
-|   5 | Add godoc example for `WithCorrelationID`                                             |    P1    | `ExampleWithCorrelationID` in `example_test.go`                    |
-|   6 | Add a test that verifies `setHeaders` sets both Authorization and correlation headers |    P1    | Test exists and passes                                             |
-|   7 | Add sandbox URL migration note to README for existing users                           |    P1    | README has migration callout                                       |
-|   8 | Add `GetProfile(ctx, ProfileID)` — simplest single-endpoint addition                  |    P1    | Method exists, tested                                              |
-|   9 | Update open-banking comparison doc sandbox URL (or add note that it's point-in-time)  |    P2    | Doc no longer misleads                                             |
-|  10 | Verify `api.wise-sandbox.com` DNS resolves                                            |    P2    | Verification recorded                                              |
-|  11 | Add exchange rates endpoint (`GET /v1/rates`)                                         |    P2    | Method exists, tested                                              |
-|  12 | Add Quotes API (`POST /v3/quotes` etc.)                                               |    P2    | Methods exist, tested                                              |
-|  13 | Add Recipients API (`GET /v2/accounts` etc.)                                          |    P2    | Methods exist, tested                                              |
-|  14 | Add Transfers API (`GET /v1/transfers/{id}` etc.)                                     |    P2    | Methods exist, tested                                              |
-|  15 | Add per-request correlation ID override via context                                   |    P2    | `WithRequestCorrelationID` or context key                          |
-|  16 | Add mTLS endpoint support or documentation                                            |    P3    | `WithMTLS` option or README section                                |
-|  17 | Add webhook signature verification helper                                             |    P3    | `VerifyWebhookSignature` exists, tested                            |
-|  18 | Add Statements format parameter (CSV/PDF)                                             |    P3    | `GetStatement(ctx, format)` exists                                 |
-|  19 | Add bank account details endpoint                                                     |    P3    | `ListBankDetails(ctx, profileID)` exists                           |
-|  20 | Add Multi-Currency Account endpoint                                                   |    P3    | `GetMCA(ctx, profileID)` exists                                    |
-|  21 | Add `Profile.currentState` field to `Profile` struct                                  |    P3    | Field mapped from Wise API                                         |
-|  22 | Add `Profile.externalCustomerId` field to `Profile` struct                            |    P3    | Field mapped from Wise API                                         |
-|  23 | Add OAuth token endpoint support (consolidated Mar 2026)                              |    P3    | OAuth flow documented or implemented                               |
-|  24 | Document global API versioning (`2026Q4`) in ROADMAP                                  |    P3    | ROADMAP mentions versioning                                        |
-|  25 | Add `x-trace-id` header support or document why it's omitted                          |    P3    | Decision recorded                                                  |
-|  26 | Review all existing docs for stale sandbox URL references                             |    P2    | `grep -r "sandbox.transferwise"` returns nothing actionable        |
-|  27 | Add a CI job that validates sandbox URL is current                                    |    P3    | Scheduled check exists                                             |
-|  28 | Add credentialed Wise sandbox integration test (P1 from TODO)                         |    P1    | Build-tagged live test passes                                      |
-|  29 | Add sandbox simulation endpoints for testing                                          |    P3    | Simulation methods exist                                           |
-|  30 | Add `WithLogger` option for structured request logging                                |    P3    | Option exists, tested                                              |
-|  31 | Add metrics hook (`WithMetrics`) for Prometheus/OTel                                  |    P3    | Option exists, tested                                              |
-|  32 | Lock public API at v1.0 (P1 from TODO)                                                |    P1    | v1.0.0 tagged                                                      |
-|  33 | Add Cachix binary cache to CI nix job (P2 from TODO)                                  |    P2    | CI under 5 minutes                                                 |
-|  34 | Add webhook event typed structs                                                       |    P3    | Event types parsed                                                 |
-|  35 | Add batch payment endpoints                                                           |    P3    | Methods exist                                                      |
-|  36 | Add address CRUD endpoints                                                            |    P3    | Methods exist                                                      |
-|  37 | Add user endpoints (`GET /v1/me`)                                                     |    P3    | Method exists                                                      |
-|  38 | Add delivery estimates endpoint                                                       |    P3    | Method exists                                                      |
-|  39 | Add balance creation endpoint (`POST /v4/.../balances`)                               |    P3    | Method exists                                                      |
-|  40 | Add total funds endpoint (`GET /v1/profiles/{id}/total-funds/{currency}`)             |    P3    | Method exists                                                      |
-|  41 | Review the 15 Jan 2026 int64 migration list against all SDK types                     |    P3    | All ID fields verified int64                                       |
-|  42 | Add rate-limit budget for live tests                                                  |    P3    | Test stays within limits                                           |
-|  43 | Add response redaction to diagnostic logging                                          |    P3    | Sensitive data not emitted                                         |
-|  44 | Test expired/invalid credential handling                                              |    P3    | Auth failure classified correctly                                  |
-|  45 | Add schema-drift detection for unexpected response fields                             |    P3    | Unknown fields fail clearly                                        |
-|  46 | Evaluate Wise Open Banking API as separate package                                    |    P3    | Decision recorded                                                  |
-|  47 | Review whether JOSE/JWE webhook encryption is in scope                                |    P3    | Decision recorded                                                  |
-|  48 | Add `x-trace-id` propagation from correlation ID                                      |    P3    | Header set when correlation ID is set                              |
-|  49 | Add service-client sub-structure trigger assessment                                   |    P3    | Decision documented                                                |
-|  50 | Re-run full code review after all fixes applied                                       |    P2    | Review report exists                                               |
+|  # | Task                                                                                  | Priority | Completion evidence                                                |
+| -: | ------------------------------------------------------------------------------------- | :------: | ------------------------------------------------------------------ |
+|  1 | Re-add BDD test for `WithCorrelationID` header propagation                            |    P0    | `wise_test.go` has `Describe("WithCorrelationID")` that passes     |
+|  2 | Add `WithCorrelationID` to README Features list and Options section                   |    P0    | README mentions the option                                         |
+|  3 | Add `RateLimitError.RateLimitedBy` to README error handling example                   |    P0    | README shows `rl.RateLimitedBy` usage                              |
+|  4 | Update CHANGELOG `[Unreleased]` with all three features                               |    P0    | CHANGELOG has sandbox fix, correlation ID, rate-limited-by entries |
+|  5 | Add godoc example for `WithCorrelationID`                                             |    P1    | `ExampleWithCorrelationID` in `example_test.go`                    |
+|  6 | Add a test that verifies `setHeaders` sets both Authorization and correlation headers |    P1    | Test exists and passes                                             |
+|  7 | Add sandbox URL migration note to README for existing users                           |    P1    | README has migration callout                                       |
+|  8 | Add `GetProfile(ctx, ProfileID)` — simplest single-endpoint addition                  |    P1    | Method exists, tested                                              |
+|  9 | Update open-banking comparison doc sandbox URL (or add note that it's point-in-time)  |    P2    | Doc no longer misleads                                             |
+| 10 | Verify `api.wise-sandbox.com` DNS resolves                                            |    P2    | Verification recorded                                              |
+| 11 | Add exchange rates endpoint (`GET /v1/rates`)                                         |    P2    | Method exists, tested                                              |
+| 12 | Add Quotes API (`POST /v3/quotes` etc.)                                               |    P2    | Methods exist, tested                                              |
+| 13 | Add Recipients API (`GET /v2/accounts` etc.)                                          |    P2    | Methods exist, tested                                              |
+| 14 | Add Transfers API (`GET /v1/transfers/{id}` etc.)                                     |    P2    | Methods exist, tested                                              |
+| 15 | Add per-request correlation ID override via context                                   |    P2    | `WithRequestCorrelationID` or context key                          |
+| 16 | Add mTLS endpoint support or documentation                                            |    P3    | `WithMTLS` option or README section                                |
+| 17 | Add webhook signature verification helper                                             |    P3    | `VerifyWebhookSignature` exists, tested                            |
+| 18 | Add Statements format parameter (CSV/PDF)                                             |    P3    | `GetStatement(ctx, format)` exists                                 |
+| 19 | Add bank account details endpoint                                                     |    P3    | `ListBankDetails(ctx, profileID)` exists                           |
+| 20 | Add Multi-Currency Account endpoint                                                   |    P3    | `GetMCA(ctx, profileID)` exists                                    |
+| 21 | Add `Profile.currentState` field to `Profile` struct                                  |    P3    | Field mapped from Wise API                                         |
+| 22 | Add `Profile.externalCustomerId` field to `Profile` struct                            |    P3    | Field mapped from Wise API                                         |
+| 23 | Add OAuth token endpoint support (consolidated Mar 2026)                              |    P3    | OAuth flow documented or implemented                               |
+| 24 | Document global API versioning (`2026Q4`) in ROADMAP                                  |    P3    | ROADMAP mentions versioning                                        |
+| 25 | Add `x-trace-id` header support or document why it's omitted                          |    P3    | Decision recorded                                                  |
+| 26 | Review all existing docs for stale sandbox URL references                             |    P2    | `grep -r "sandbox.transferwise"` returns nothing actionable        |
+| 27 | Add a CI job that validates sandbox URL is current                                    |    P3    | Scheduled check exists                                             |
+| 28 | Add credentialed Wise sandbox integration test (P1 from TODO)                         |    P1    | Build-tagged live test passes                                      |
+| 29 | Add sandbox simulation endpoints for testing                                          |    P3    | Simulation methods exist                                           |
+| 30 | Add `WithLogger` option for structured request logging                                |    P3    | Option exists, tested                                              |
+| 31 | Add metrics hook (`WithMetrics`) for Prometheus/OTel                                  |    P3    | Option exists, tested                                              |
+| 32 | Lock public API at v1.0 (P1 from TODO)                                                |    P1    | v1.0.0 tagged                                                      |
+| 33 | Add Cachix binary cache to CI nix job (P2 from TODO)                                  |    P2    | CI under 5 minutes                                                 |
+| 34 | Add webhook event typed structs                                                       |    P3    | Event types parsed                                                 |
+| 35 | Add batch payment endpoints                                                           |    P3    | Methods exist                                                      |
+| 36 | Add address CRUD endpoints                                                            |    P3    | Methods exist                                                      |
+| 37 | Add user endpoints (`GET /v1/me`)                                                     |    P3    | Method exists                                                      |
+| 38 | Add delivery estimates endpoint                                                       |    P3    | Method exists                                                      |
+| 39 | Add balance creation endpoint (`POST /v4/.../balances`)                               |    P3    | Method exists                                                      |
+| 40 | Add total funds endpoint (`GET /v1/profiles/{id}/total-funds/{currency}`)             |    P3    | Method exists                                                      |
+| 41 | Review the 15 Jan 2026 int64 migration list against all SDK types                     |    P3    | All ID fields verified int64                                       |
+| 42 | Add rate-limit budget for live tests                                                  |    P3    | Test stays within limits                                           |
+| 43 | Add response redaction to diagnostic logging                                          |    P3    | Sensitive data not emitted                                         |
+| 44 | Test expired/invalid credential handling                                              |    P3    | Auth failure classified correctly                                  |
+| 45 | Add schema-drift detection for unexpected response fields                             |    P3    | Unknown fields fail clearly                                        |
+| 46 | Evaluate Wise Open Banking API as separate package                                    |    P3    | Decision recorded                                                  |
+| 47 | Review whether JOSE/JWE webhook encryption is in scope                                |    P3    | Decision recorded                                                  |
+| 48 | Add `x-trace-id` propagation from correlation ID                                      |    P3    | Header set when correlation ID is set                              |
+| 49 | Add service-client sub-structure trigger assessment                                   |    P3    | Decision documented                                                |
+| 50 | Re-run full code review after all fixes applied                                       |    P2    | Review report exists                                               |
 
 ---
 

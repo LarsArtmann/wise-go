@@ -135,7 +135,7 @@ The tool generates significant noise for idiomatic Go codebases. I should have b
 ### Error Architecture
 
 1. **Evaluate samber/oops vs current fmt.Errorf+go-error-family approach** — The current approach works but lacks structured key-value context. oops would give us `oops.With("url", fullURL)` instead of format strings. Need to determine if oops and go-error-family can coexist.
-2. _*Include raw input values in map* function errors_* — When `toMoney` fails, include the raw amount/currency that caused the failure, not just "total amount: %w".
+2. __Include raw input values in map_ function errors_* — When `toMoney` fails, include the raw amount/currency that caused the failure, not just "total amount: %w".
 3. **Improve `body, _ := readBody(resp)`** — Capture the read error and include it in the API error message so callers get diagnostic context even when body read fails.
 4. **Document the error wrapping convention** — AGENTS.md should specify: "all `getWithQuery` error paths include `fullURL`; all map* functions include entity IDs in error context."
 

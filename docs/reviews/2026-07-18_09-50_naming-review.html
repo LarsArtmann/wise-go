@@ -30,14 +30,14 @@
         --warning: var(--color-yellow);
         --radius: 0px;
         --font-heading:
-          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Helvetica, Arial, sans-serif;
+          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         --font-body:
-          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Helvetica, Arial, sans-serif;
+          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         --font-mono:
-          ui-monospace, "Cascadia Code", "Source Code Pro", "JetBrains Mono", Menlo, Consolas,
-          monospace;
+          ui-monospace, "Cascadia Code", "Source Code Pro", "JetBrains Mono",
+          Menlo, Consolas, monospace;
       }
       * {
         box-sizing: border-box;
@@ -231,15 +231,27 @@
       }
       .card-problem {
         border-left-color: var(--problem);
-        background: color-mix(in srgb, var(--problem) 8%, var(--surface-raised));
+        background: color-mix(
+          in srgb,
+          var(--problem) 8%,
+          var(--surface-raised)
+        );
       }
       .card-solution {
         border-left-color: var(--solution);
-        background: color-mix(in srgb, var(--solution) 8%, var(--surface-raised));
+        background: color-mix(
+          in srgb,
+          var(--solution) 8%,
+          var(--surface-raised)
+        );
       }
       .card-warning {
         border-left-color: var(--warning);
-        background: color-mix(in srgb, var(--warning) 8%, var(--surface-raised));
+        background: color-mix(
+          in srgb,
+          var(--warning) 8%,
+          var(--surface-raised)
+        );
       }
       .severity {
         display: inline-block;
@@ -504,10 +516,12 @@
           <div class="hero-badge">Identifier Audit</div>
           <h1>wise-go Naming Review</h1>
           <p class="hero-subtitle">
-            Every exported and unexported identifier in the <code>wise</code> package reviewed
-            against honesty, clarity, precision, domain alignment, and consistency. The codebase is
-            naming-clean at the automated level — zero Manager/Handler/Impl smells — leaving only a
-            small number of judgment-call issues to weigh.
+            Every exported and unexported identifier in the
+            <code>wise</code> package reviewed against honesty, clarity,
+            precision, domain alignment, and consistency. The codebase is
+            naming-clean at the automated level — zero Manager/Handler/Impl
+            smells — leaving only a small number of judgment-call issues to
+            weigh.
           </p>
         </div>
 
@@ -536,21 +550,29 @@
         </div>
 
         <p>
-          Automated detection across <code>revive</code>/<code>golangci-lint</code> and targeted
-          <code>rg</code> patterns found <strong>zero</strong> Manager/Handler/Processor/Helper/Util
-          classes, <strong>zero</strong> vague <code>Data</code>/<code>Info</code>/<code
+          Automated detection across <code>revive</code>/<code
+            >golangci-lint</code
+          >
+          and targeted <code>rg</code> patterns found
+          <strong>zero</strong> Manager/Handler/Processor/Helper/Util classes,
+          <strong>zero</strong> vague <code>Data</code>/<code>Info</code>/<code
             >Record</code
           >
-          suffixes, <strong>zero</strong> <code>Impl</code>/<code>Base</code>/<code>Abstract</code>
-          leakage, and <strong>zero</strong> single-letter variables outside idiomatic loop indices.
-          The package is in the top tier for naming hygiene. The remaining findings are one systemic
-          inconsistency (the <code>Result</code> suffix) and a handful of low-severity judgment
+          suffixes, <strong>zero</strong>
+          <code>Impl</code>/<code>Base</code>/<code>Abstract</code> leakage, and
+          <strong>zero</strong> single-letter variables outside idiomatic loop
+          indices. The package is in the top tier for naming hygiene. The
+          remaining findings are one systemic inconsistency (the
+          <code>Result</code> suffix) and a handful of low-severity judgment
           calls.
         </p>
 
         <h2 id="glossary"><span class="num">01</span>Naming Glossary</h2>
 
-        <p>The package has one domain — the Wise (TransferWise) API — with these concept groups:</p>
+        <p>
+          The package has one domain — the Wise (TransferWise) API — with these
+          concept groups:
+        </p>
 
         <div class="table-wrap">
           <table>
@@ -565,8 +587,9 @@
               <tr>
                 <td><strong>Identity (branded)</strong></td>
                 <td>
-                  <code>ProfileID</code>, <code>BalanceID</code>, <code>TransactionID</code>,
-                  <code>ProfileBrand</code>, <code>BalanceBrand</code>,
+                  <code>ProfileID</code>, <code>BalanceID</code>,
+                  <code>TransactionID</code>, <code>ProfileBrand</code>,
+                  <code>BalanceBrand</code>,
                   <code>TransactionBrand</code>
                 </td>
                 <td>No — one term per entity, branded phantom types</td>
@@ -574,8 +597,9 @@
               <tr>
                 <td><strong>Raw wire types</strong></td>
                 <td>
-                  <code>Profile</code>, <code>Balance</code>, <code>BalanceAmount</code>,
-                  <code>StatementResponse</code>, <code>StatementTransaction</code>,
+                  <code>Profile</code>, <code>Balance</code>,
+                  <code>BalanceAmount</code>, <code>StatementResponse</code>,
+                  <code>StatementTransaction</code>,
                   <code>TransactionDetails</code>, <code>ExchangeDetails</code>,
                   <code>ErrorResponse</code>, <code>ErrorDetail</code>
                 </td>
@@ -584,7 +608,8 @@
               <tr>
                 <td><strong>Parsed result types</strong></td>
                 <td>
-                  <code>ProfileResult</code>, <code>BalanceResult</code>, <code>Transaction</code>,
+                  <code>ProfileResult</code>, <code>BalanceResult</code>,
+                  <code>Transaction</code>,
                   <code>TransactionExchange</code>
                 </td>
                 <td>
@@ -594,22 +619,27 @@
               <tr>
                 <td><strong>Enums (typed)</strong></td>
                 <td>
-                  <code>ProfileType</code>, <code>BalanceType</code>, <code>TransactionType</code>
+                  <code>ProfileType</code>, <code>BalanceType</code>,
+                  <code>TransactionType</code>
                 </td>
                 <td>No — but casing inconsistent (see data-model review)</td>
               </tr>
               <tr>
                 <td><strong>Enums (untyped)</strong></td>
                 <td>
-                  <code>InvestmentStateNotInvested</code>, <code>InvestmentStateInvested</code>
+                  <code>InvestmentStateNotInvested</code>,
+                  <code>InvestmentStateInvested</code>
                 </td>
-                <td><strong>Yes — bare string constants, type missing</strong></td>
+                <td>
+                  <strong>Yes — bare string constants, type missing</strong>
+                </td>
               </tr>
               <tr>
                 <td><strong>Errors</strong></td>
                 <td>
-                  <code>APIError</code>, <code>RateLimitError</code>, <code>AuthError</code>,
-                  <code>NotFoundError</code>, <code>ServerError</code>
+                  <code>APIError</code>, <code>RateLimitError</code>,
+                  <code>AuthError</code>, <code>NotFoundError</code>,
+                  <code>ServerError</code>
                 </td>
                 <td>No — uniform <code>*Error</code> suffix</td>
               </tr>
@@ -617,23 +647,26 @@
                 <td><strong>Client surface</strong></td>
                 <td>
                   <code>Client</code>, <code>New</code>, <code>Option</code>,
-                  <code>WithSandbox</code>, <code>WithBaseURL</code>, <code>WithTimeout</code>,
-                  <code>WithRetry</code>, <code>WithHTTPClient</code>
+                  <code>WithSandbox</code>, <code>WithBaseURL</code>,
+                  <code>WithTimeout</code>, <code>WithRetry</code>,
+                  <code>WithHTTPClient</code>
                 </td>
                 <td>No — textbook functional-options pattern</td>
               </tr>
               <tr>
                 <td><strong>Resource methods</strong></td>
                 <td>
-                  <code>ListProfiles</code>, <code>ListBalances</code>, <code>GetBalance</code>,
-                  <code>ListTransactions</code>, <code>Authenticate</code>, <code>Health</code>
+                  <code>ListProfiles</code>, <code>ListBalances</code>,
+                  <code>GetBalance</code>, <code>ListTransactions</code>,
+                  <code>Authenticate</code>, <code>Health</code>
                 </td>
                 <td>No — verb + resource</td>
               </tr>
               <tr>
                 <td><strong>Internal mappers</strong></td>
                 <td>
-                  <code>mapProfile</code>, <code>mapBalance</code>, <code>mapTransaction</code>,
+                  <code>mapProfile</code>, <code>mapBalance</code>,
+                  <code>mapTransaction</code>,
                   <code>mapExchange</code>
                 </td>
                 <td>Minor — <code>map</code> verb slightly ambiguous</td>
@@ -645,7 +678,9 @@
                   <code>parseWiseDate</code>, <code>parseRFC3339</code>,
                   <code>parseRetryAfter</code>, <code>parseErrorResponse</code>
                 </td>
-                <td>Minor — <code>Wise</code> vs <code>RFC3339</code> axis mix</td>
+                <td>
+                  Minor — <code>Wise</code> vs <code>RFC3339</code> axis mix
+                </td>
               </tr>
             </tbody>
           </table>
@@ -657,12 +692,15 @@
           <span class="severity severity-low">No findings · Clean</span>
           <h3>No lying names, no hidden side effects</h3>
           <p>
-            <code>Authenticate(ctx)</code> does validate auth (via <code>ListProfiles</code>), even
-            though it has a network side effect. The intent in the name matches the intent of the
-            caller. <code>Health</code> delegates to <code>Authenticate</code> and is honest about
-            being a reachability check. <code>GetBalance</code> fetches one balance.
-            <code>ListTransactions</code> lists transactions. No euphemisms (<code>sanitize</code>
-            for delete, <code>adjust</code> for truncate), no misleading scope.
+            <code>Authenticate(ctx)</code> does validate auth (via
+            <code>ListProfiles</code>), even though it has a network side
+            effect. The intent in the name matches the intent of the caller.
+            <code>Health</code> delegates to <code>Authenticate</code> and is
+            honest about being a reachability check.
+            <code>GetBalance</code> fetches one balance.
+            <code>ListTransactions</code> lists transactions. No euphemisms
+            (<code>sanitize</code> for delete, <code>adjust</code> for
+            truncate), no misleading scope.
           </p>
         </div>
 
@@ -672,75 +710,91 @@
           <span class="severity severity-medium">Medium · Ambiguous verb</span>
           <h3>map* mappers use the verb "map"</h3>
           <p>
-            <strong>Where:</strong> <code>mapProfile</code>, <code>mapBalance</code>,
-            <code>mapTransaction</code>, <code>mapExchange</code>.
+            <strong>Where:</strong> <code>mapProfile</code>,
+            <code>mapBalance</code>, <code>mapTransaction</code>,
+            <code>mapExchange</code>.
           </p>
           <p>
-            "Map" in Go frequently denotes the <code>map[K]V</code> data structure or the
-            higher-order <code>slices.Map</code> transform. The four functions here actually
-            <em>convert a raw wire struct to its parsed result counterpart</em>. The intent is clear
-            from context, but a reader's first glance could be tripped up. Stronger alternatives:
-            <code>toProfileResult</code>, <code>parseProfile</code>, <code>convertBalance</code>, or
+            "Map" in Go frequently denotes the <code>map[K]V</code> data
+            structure or the higher-order <code>slices.Map</code> transform. The
+            four functions here actually
+            <em>convert a raw wire struct to its parsed result counterpart</em>.
+            The intent is clear from context, but a reader's first glance could
+            be tripped up. Stronger alternatives: <code>toProfileResult</code>,
+            <code>parseProfile</code>, <code>convertBalance</code>, or
             <code>profileFromAPI</code>.
           </p>
           <div class="callout callout-warning">
             <strong>Judgment</strong>
-            Borderline. The current names are honest and consistent with each other, and the "raw →
-            result" intent is clear from the signature. Renaming is optional. If renamed, do all
-            four in one pass for symmetry.
+            Borderline. The current names are honest and consistent with each
+            other, and the "raw → result" intent is clear from the signature.
+            Renaming is optional. If renamed, do all four in one pass for
+            symmetry.
           </div>
         </div>
 
         <div class="card card-warning">
-          <span class="severity severity-low">Low · Asymmetric parser names</span>
+          <span class="severity severity-low"
+            >Low · Asymmetric parser names</span
+          >
           <h3>parseWiseDate vs parseRFC3339</h3>
           <p><strong>Where:</strong> <code>helpers.go:44-55</code>.</p>
           <p>
-            <code>parseWiseDate</code> is named for the vendor ("Wise"); <code>parseRFC3339</code>
-            is named for the standard ("RFC3339"). Both parse strings Wise sends. Mixing axes is a
-            minor inconsistency. Either name both by vendor (<code>parseWiseDate</code>,
-            <code>parseWiseTimestamp</code>) or both by standard (<code>parseDateNoTZ</code>,
-            <code>parseRFC3339</code>).
+            <code>parseWiseDate</code> is named for the vendor ("Wise");
+            <code>parseRFC3339</code>
+            is named for the standard ("RFC3339"). Both parse strings Wise
+            sends. Mixing axes is a minor inconsistency. Either name both by
+            vendor (<code>parseWiseDate</code>,
+            <code>parseWiseTimestamp</code>) or both by standard
+            (<code>parseDateNoTZ</code>, <code>parseRFC3339</code>).
           </p>
         </div>
 
         <h2 id="consistency"><span class="num">04</span>Consistency</h2>
 
         <div class="card card-problem">
-          <span class="severity severity-high">High · Systemic suffix inconsistency</span>
+          <span class="severity severity-high"
+            >High · Systemic suffix inconsistency</span
+          >
           <h3>ProfileResult / BalanceResult vs. Transaction</h3>
           <p><strong>Where:</strong> <code>types.go:118, 127, 142</code>.</p>
           <p>The three parsed result types do not follow one rule:</p>
           <ul>
             <li><code>ProfileResult</code> — has <code>Result</code> suffix</li>
             <li><code>BalanceResult</code> — has <code>Result</code> suffix</li>
-            <li><code>Transaction</code> — no suffix, collides visually with raw API types</li>
+            <li>
+              <code>Transaction</code> — no suffix, collides visually with raw
+              API types
+            </li>
             <li><code>TransactionExchange</code> — sub-type, no suffix</li>
           </ul>
           <p>
             The root cause is that the raw API also has <code>Profile</code> and
-            <code>Balance</code> types — the <code>Result</code> suffix disambiguates. But
-            <code>Transaction</code> happens to not collide (the raw type is
-            <code>StatementTransaction</code>), so no suffix was added. The result is two rules in
-            the same file: "result types get <code>Result</code> suffix" and "result types get no
-            suffix when there's no collision." A contributor cannot predict which rule applies to
-            the next type they add.
+            <code>Balance</code> types — the <code>Result</code> suffix
+            disambiguates. But <code>Transaction</code> happens to not collide
+            (the raw type is <code>StatementTransaction</code>), so no suffix
+            was added. The result is two rules in the same file: "result types
+            get <code>Result</code> suffix" and "result types get no suffix when
+            there's no collision." A contributor cannot predict which rule
+            applies to the next type they add.
           </p>
 
           <div class="callout callout-solution">
             <strong>Fix · preferred</strong>
-            Drop the <code>Result</code> suffix entirely and rename the raw wire types to live
-            behind a clear boundary — either a <code>raw.</code> subpackage
-            (<code>raw.Profile</code>, <code>raw.Balance</code>,
-            <code>raw.StatementTransaction</code>) or a <code>Wire</code> prefix
-            (<code>WireProfile</code>, <code>WireBalance</code>). The public result types become
-            just <code>Profile</code>, <code>Balance</code>, <code>Transaction</code> — the names
-            callers actually want to type.
+            Drop the <code>Result</code> suffix entirely and rename the raw wire
+            types to live behind a clear boundary — either a
+            <code>raw.</code> subpackage (<code>raw.Profile</code>,
+            <code>raw.Balance</code>, <code>raw.StatementTransaction</code>) or
+            a <code>Wire</code> prefix (<code>WireProfile</code>,
+            <code>WireBalance</code>). The public result types become just
+            <code>Profile</code>, <code>Balance</code>,
+            <code>Transaction</code> — the names callers actually want to type.
           </div>
           <div class="callout callout-warning">
             <strong>Fix · minimal</strong>
-            Rename <code>Transaction</code> to <code>TransactionResult</code> to match the other
-            two. Cheaper, but enshrines the <code>Result</code> suffix as the rule and pushes the
+            Rename <code>Transaction</code> to <code>TransactionResult</code> to
+            match the other two. Cheaper, but enshrines the
+            <code>Result</code> suffix as the rule and pushes the
             raw-types-collision problem forward rather than solving it.
           </div>
         </div>
@@ -750,31 +804,41 @@
           <h3>InvestmentState constants have no named type</h3>
           <p><strong>Where:</strong> <code>types.go:192-195</code>.</p>
           <p>
-            Every other enum (<code>ProfileType</code>, <code>BalanceType</code>,
-            <code>TransactionType</code>) is a named string type with constants of that type.
-            <code>InvestmentStateNotInvested</code> and <code>InvestmentStateInvested</code> are
-            bare <code>string</code> constants — the named type <code>InvestmentState</code> does
-            not exist. This is a naming inconsistency that is also a type-safety inconsistency (see
-            the data-model review for the full fix).
+            Every other enum (<code>ProfileType</code>,
+            <code>BalanceType</code>, <code>TransactionType</code>) is a named
+            string type with constants of that type.
+            <code>InvestmentStateNotInvested</code> and
+            <code>InvestmentStateInvested</code> are bare
+            <code>string</code> constants — the named type
+            <code>InvestmentState</code> does not exist. This is a naming
+            inconsistency that is also a type-safety inconsistency (see the
+            data-model review for the full fix).
           </p>
         </div>
 
         <div class="card card-warning">
-          <span class="severity severity-low">Low · Pointer/value mismatch</span>
+          <span class="severity severity-low"
+            >Low · Pointer/value mismatch</span
+          >
           <h3>GetBalance returns *BalanceResult but never nil</h3>
           <p><strong>Where:</strong> <code>balances.go:44-64</code>.</p>
           <p>
-            <code>GetBalance</code> returns <code>(*BalanceResult, error)</code> and signals
-            not-found via an <code>errorfamily.NewRejection</code> error, never via a nil pointer.
-            <code>ListBalances</code> returns <code>[]BalanceResult</code> (value elements). The
-            pointer is not strictly necessary on the success path. Idiomatic Go would either return
-            <code>(BalanceResult, error)</code> (value, since it is never nil) or document why the
-            pointer is used (e.g., "future mutable methods"). This is a style nit — the current code
-            is correct and the pointer is defensive.
+            <code>GetBalance</code> returns
+            <code>(*BalanceResult, error)</code> and signals not-found via an
+            <code>errorfamily.NewRejection</code> error, never via a nil
+            pointer. <code>ListBalances</code> returns
+            <code>[]BalanceResult</code> (value elements). The pointer is not
+            strictly necessary on the success path. Idiomatic Go would either
+            return <code>(BalanceResult, error)</code> (value, since it is never
+            nil) or document why the pointer is used (e.g., "future mutable
+            methods"). This is a style nit — the current code is correct and the
+            pointer is defensive.
           </p>
         </div>
 
-        <h2 id="strengths"><span class="num">05</span>Strengths (preserve these)</h2>
+        <h2 id="strengths">
+          <span class="num">05</span>Strengths (preserve these)
+        </h2>
 
         <div class="strengths">
           <div class="strength">
@@ -782,10 +846,11 @@
             <div class="text">
               <strong>Branded-ID naming is exemplary</strong>
               <span>
-                <code>ProfileID</code>, <code>BalanceID</code>, <code>TransactionID</code> with
-                phantom <code>*Brand</code> types and <code>New*</code> constructors. The names read
-                as the domain speaks. Compile-time entity-ID separation flows directly from the
-                names.
+                <code>ProfileID</code>, <code>BalanceID</code>,
+                <code>TransactionID</code> with phantom
+                <code>*Brand</code> types and <code>New*</code> constructors.
+                The names read as the domain speaks. Compile-time entity-ID
+                separation flows directly from the names.
               </span>
             </div>
           </div>
@@ -794,10 +859,12 @@
             <div class="text">
               <strong>Functional-options pattern is textbook</strong>
               <span>
-                <code>Option</code> type + <code>With*</code> functions (<code>WithSandbox</code>,
-                <code>WithBaseURL</code>, <code>WithTimeout</code>, <code>WithRetry</code>,
-                <code>WithHTTPClient</code>). Verb-first, uniform prefix, composable. This is the Go
-                community's canonical pattern, executed without embellishment.
+                <code>Option</code> type + <code>With*</code> functions
+                (<code>WithSandbox</code>, <code>WithBaseURL</code>,
+                <code>WithTimeout</code>, <code>WithRetry</code>,
+                <code>WithHTTPClient</code>). Verb-first, uniform prefix,
+                composable. This is the Go community's canonical pattern,
+                executed without embellishment.
               </span>
             </div>
           </div>
@@ -806,10 +873,12 @@
             <div class="text">
               <strong>Error type names are uniform</strong>
               <span>
-                <code>APIError</code>, <code>RateLimitError</code>, <code>AuthError</code>,
-                <code>NotFoundError</code>, <code>ServerError</code> — every error type ends in
-                <code>Error</code>. No <code>Exception</code>, no <code>Fault</code>, no
-                <code>Failure</code>. One rule, followed everywhere.
+                <code>APIError</code>, <code>RateLimitError</code>,
+                <code>AuthError</code>, <code>NotFoundError</code>,
+                <code>ServerError</code> — every error type ends in
+                <code>Error</code>. No <code>Exception</code>, no
+                <code>Fault</code>, no <code>Failure</code>. One rule, followed
+                everywhere.
               </span>
             </div>
           </div>
@@ -818,8 +887,9 @@
             <div class="text">
               <strong>No Manager / Handler / Helper / Util trash cans</strong>
               <span>
-                The codebase has zero "trash-can" types that collect unrelated behavior. Every type
-                has a single, named responsibility. This is rarer than it sounds.
+                The codebase has zero "trash-can" types that collect unrelated
+                behavior. Every type has a single, named responsibility. This is
+                rarer than it sounds.
               </span>
             </div>
           </div>
@@ -828,9 +898,10 @@
             <div class="text">
               <strong>Resource methods are verb + noun</strong>
               <span>
-                <code>ListProfiles</code>, <code>ListBalances</code>, <code>GetBalance</code>,
-                <code>ListTransactions</code>. "List" for collections, "Get" for single. One verb
-                vocabulary for read operations. (When write operations land, the natural verbs are
+                <code>ListProfiles</code>, <code>ListBalances</code>,
+                <code>GetBalance</code>, <code>ListTransactions</code>. "List"
+                for collections, "Get" for single. One verb vocabulary for read
+                operations. (When write operations land, the natural verbs are
                 <code>Create</code>, <code>Update</code>, <code>Delete</code>.)
               </span>
             </div>
@@ -841,9 +912,10 @@
               <strong>Receiver names match type's first letter</strong>
               <span>
                 <code>(c *Client)</code>, <code>(e *APIError)</code>,
-                <code>(a BalanceAmount)</code>, <code>(r ListTransactionsRequest)</code>,
-                <code>(rc *responseCloser)</code>. All receivers are short, consistent, and never
-                <code>this</code>/<code>self</code>.
+                <code>(a BalanceAmount)</code>,
+                <code>(r ListTransactionsRequest)</code>,
+                <code>(rc *responseCloser)</code>. All receivers are short,
+                consistent, and never <code>this</code>/<code>self</code>.
               </span>
             </div>
           </div>
@@ -852,10 +924,12 @@
             <div class="text">
               <strong>Internal/external boundary is clean</strong>
               <span>
-                Raw wire types are exported (because <code>encoding/json</code> needs them) but
-                visually distinct from result types. Helpers are unexported. The package's
-                <code>wise_test.go</code> (external) vs <code>internal_test.go</code> (internal)
-                split reinforces the boundary at the file level.
+                Raw wire types are exported (because
+                <code>encoding/json</code> needs them) but visually distinct
+                from result types. Helpers are unexported. The package's
+                <code>wise_test.go</code> (external) vs
+                <code>internal_test.go</code> (internal) split reinforces the
+                boundary at the file level.
               </span>
             </div>
           </div>
@@ -882,12 +956,17 @@
                 <td><code>types.go</code></td>
                 <td>118, 127, 142</td>
                 <td>
-                  <code>ProfileResult</code>, <code>BalanceResult</code>, <code>Transaction</code>
+                  <code>ProfileResult</code>, <code>BalanceResult</code>,
+                  <code>Transaction</code>
                 </td>
-                <td>Inconsistent <code>Result</code> suffix — two rules for the same concept</td>
                 <td>
-                  Drop suffix + move raw types to <code>raw.*</code> subpackage; or rename
-                  <code>Transaction</code> → <code>TransactionResult</code>
+                  Inconsistent <code>Result</code> suffix — two rules for the
+                  same concept
+                </td>
+                <td>
+                  Drop suffix + move raw types to <code>raw.*</code> subpackage;
+                  or rename <code>Transaction</code> →
+                  <code>TransactionResult</code>
                 </td>
               </tr>
             </tbody>
@@ -913,23 +992,30 @@
                 <td><code>types.go</code></td>
                 <td>192</td>
                 <td><code>InvestmentState*</code></td>
-                <td>Constants have no named type; inconsistent with other enums</td>
-                <td><code>type InvestmentState string</code> (see data-model review)</td>
+                <td>
+                  Constants have no named type; inconsistent with other enums
+                </td>
+                <td>
+                  <code>type InvestmentState string</code> (see data-model
+                  review)
+                </td>
               </tr>
               <tr>
                 <td>3</td>
                 <td>
-                  <code>profiles.go</code>, <code>balances.go</code>, <code>transactions.go</code>
+                  <code>profiles.go</code>, <code>balances.go</code>,
+                  <code>transactions.go</code>
                 </td>
                 <td>—</td>
                 <td>
-                  <code>mapProfile</code>, <code>mapBalance</code>, <code>mapTransaction</code>,
+                  <code>mapProfile</code>, <code>mapBalance</code>,
+                  <code>mapTransaction</code>,
                   <code>mapExchange</code>
                 </td>
                 <td>"map" verb slightly ambiguous vs <code>map[K]V</code></td>
                 <td>
-                  <code>toProfileResult</code> / <code>parseProfile</code> (optional — rename all 4
-                  together)
+                  <code>toProfileResult</code> /
+                  <code>parseProfile</code> (optional — rename all 4 together)
                 </td>
               </tr>
             </tbody>
@@ -956,23 +1042,36 @@
                 <td>44, 53</td>
                 <td><code>parseWiseDate</code>, <code>parseRFC3339</code></td>
                 <td>Asymmetric naming axis (vendor vs standard)</td>
-                <td>Pick one axis (<code>parseWiseDate</code>/<code>parseWiseTimestamp</code>)</td>
+                <td>
+                  Pick one axis
+                  (<code>parseWiseDate</code>/<code>parseWiseTimestamp</code>)
+                </td>
               </tr>
               <tr>
                 <td>5</td>
                 <td><code>balances.go</code></td>
                 <td>44</td>
-                <td><code>GetBalance</code> returns <code>*BalanceResult</code></td>
+                <td>
+                  <code>GetBalance</code> returns <code>*BalanceResult</code>
+                </td>
                 <td>Pointer return but never nil on success</td>
-                <td>Return value <code>BalanceResult</code>, or document why pointer</td>
+                <td>
+                  Return value <code>BalanceResult</code>, or document why
+                  pointer
+                </td>
               </tr>
               <tr>
                 <td>6</td>
                 <td><code>types.go</code></td>
                 <td>209</td>
                 <td><code>TransactionTypeUnknown</code></td>
-                <td>Defined but never returned; lying name (suggests a classification path)</td>
-                <td>Remove, or use as the actual fallback for unrecognized types</td>
+                <td>
+                  Defined but never returned; lying name (suggests a
+                  classification path)
+                </td>
+                <td>
+                  Remove, or use as the actual fallback for unrecognized types
+                </td>
               </tr>
             </tbody>
           </table>
@@ -980,15 +1079,16 @@
 
         <div class="callout callout-solution">
           <strong>Bottom line</strong>
-          The wise-go package is in the top tier for naming hygiene. Six findings total, zero
-          critical. The one systemic issue (the <code>Result</code> suffix) is worth fixing for
-          v0.3.0 because it blocks the data-model redesign's "raw subpackage" move. Everything else
-          is a judgment call that can ride along with that release.
+          The wise-go package is in the top tier for naming hygiene. Six
+          findings total, zero critical. The one systemic issue (the
+          <code>Result</code> suffix) is worth fixing for v0.3.0 because it
+          blocks the data-model redesign's "raw subpackage" move. Everything
+          else is a judgment call that can ride along with that release.
         </div>
 
         <footer class="footer">
-          Generated 2026-07-18 from commit 218c2d3 · 82 identifiers reviewed · All findings
-          cross-referenced against source
+          Generated 2026-07-18 from commit 218c2d3 · 82 identifiers reviewed ·
+          All findings cross-referenced against source
         </footer>
       </main>
     </div>

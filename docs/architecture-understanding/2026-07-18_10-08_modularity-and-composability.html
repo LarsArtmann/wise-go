@@ -30,14 +30,14 @@
         --warning: var(--color-yellow);
         --radius: 0px;
         --font-heading:
-          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Helvetica, Arial, sans-serif;
+          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         --font-body:
-          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Helvetica, Arial, sans-serif;
+          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         --font-mono:
-          ui-monospace, "Cascadia Code", "Source Code Pro", "JetBrains Mono", Menlo, Consolas,
-          monospace;
+          ui-monospace, "Cascadia Code", "Source Code Pro", "JetBrains Mono",
+          Menlo, Consolas, monospace;
       }
       * {
         box-sizing: border-box;
@@ -231,15 +231,27 @@
       }
       .card-problem {
         border-left-color: var(--problem);
-        background: color-mix(in srgb, var(--problem) 8%, var(--surface-raised));
+        background: color-mix(
+          in srgb,
+          var(--problem) 8%,
+          var(--surface-raised)
+        );
       }
       .card-solution {
         border-left-color: var(--solution);
-        background: color-mix(in srgb, var(--solution) 8%, var(--surface-raised));
+        background: color-mix(
+          in srgb,
+          var(--solution) 8%,
+          var(--surface-raised)
+        );
       }
       .card-warning {
         border-left-color: var(--warning);
-        background: color-mix(in srgb, var(--warning) 8%, var(--surface-raised));
+        background: color-mix(
+          in srgb,
+          var(--warning) 8%,
+          var(--surface-raised)
+        );
       }
       .severity {
         display: inline-block;
@@ -561,11 +573,12 @@
           <div class="hero-badge">Architecture Review</div>
           <h1>wise-go Architecture Review</h1>
           <p class="hero-subtitle">
-            How scalable, modular, service-oriented, and composable is the wise-go SDK? The short
-            answer: intentionally minimal, correctly so. The longer answer: this review maps every
-            file, dependency, and coupling edge in the package, then identifies the exact point at
-            which the current flat design should give way to a more service-oriented shape — and
-            what that shape should be.
+            How scalable, modular, service-oriented, and composable is the
+            wise-go SDK? The short answer: intentionally minimal, correctly so.
+            The longer answer: this review maps every file, dependency, and
+            coupling edge in the package, then identifies the exact point at
+            which the current flat design should give way to a more
+            service-oriented shape — and what that shape should be.
           </p>
         </div>
 
@@ -594,38 +607,47 @@
         </div>
 
         <p>
-          wise-go is a deliberately flat, single-package Go SDK that wraps the Wise (TransferWise)
-          REST API. It is in the <em>early</em> phase of the architecture lifecycle: 3 resources
-          implemented (profiles, balances, transactions), all read-only, all in one
-          <code>package wise</code>. For this scope, the flat design is correct — it minimizes
-          import paths, eliminates artificial boundaries, and matches how callers actually use the
-          library. The review identifies the exact growth signals that should trigger a move to a
-          more service-oriented shape.
+          wise-go is a deliberately flat, single-package Go SDK that wraps the
+          Wise (TransferWise) REST API. It is in the <em>early</em> phase of the
+          architecture lifecycle: 3 resources implemented (profiles, balances,
+          transactions), all read-only, all in one <code>package wise</code>.
+          For this scope, the flat design is correct — it minimizes import
+          paths, eliminates artificial boundaries, and matches how callers
+          actually use the library. The review identifies the exact growth
+          signals that should trigger a move to a more service-oriented shape.
         </p>
 
         <h2 id="structure"><span class="num">01</span>Structure</h2>
 
-        <p>The package has a clear internal分层, expressed through file boundaries:</p>
+        <p>
+          The package has a clear internal分层, expressed through file
+          boundaries:
+        </p>
 
         <div class="dep-tree">
-          <span class="root">package wise</span> ├── <span class="ok">ids.go</span> Branded ID
-          phantom types + constructors (zero deps) ├── <span class="ok">types.go</span> All public
-          types: raw wire + parsed result + enums + requests ├──
-          <span class="ok">options.go</span> Functional options (With* config setters) ├──
-          <span class="ok">helpers.go</span> Body parsers, date parsers, Retry-After parser ├──
-          <span class="ok">errors.go</span> Domain error types + status→type factory ├──
-          <span class="ok">client.go</span> HTTP core: Client struct, New(), retry executor,
-          getWithQuery ├── <span class="ok">profiles.go</span> ListProfiles resource method +
-          mapProfile ├── <span class="ok">balances.go</span> ListBalances + GetBalance + mapBalance
-          └── <span class="ok">transactions.go</span> ListTransactions + classify + mapTransaction +
-          validate
+          <span class="root">package wise</span> ├──
+          <span class="ok">ids.go</span> Branded ID phantom types + constructors
+          (zero deps) ├── <span class="ok">types.go</span> All public types: raw
+          wire + parsed result + enums + requests ├──
+          <span class="ok">options.go</span> Functional options (With* config
+          setters) ├── <span class="ok">helpers.go</span> Body parsers, date
+          parsers, Retry-After parser ├──
+          <span class="ok">errors.go</span> Domain error types + status→type
+          factory ├── <span class="ok">client.go</span> HTTP core: Client
+          struct, New(), retry executor, getWithQuery ├──
+          <span class="ok">profiles.go</span> ListProfiles resource method +
+          mapProfile ├── <span class="ok">balances.go</span> ListBalances +
+          GetBalance + mapBalance └──
+          <span class="ok">transactions.go</span> ListTransactions + classify +
+          mapTransaction + validate
         </div>
 
         <p>
-          Every file has a single responsibility. Every file's role is obvious from its name. The
-          dependency direction is strictly <em>downward</em> in this list — resource files depend on
-          client/types/helpers/ids/errors, never the reverse. There are no cycles, no god files, no
-          grab-bag utilities.
+          Every file has a single responsibility. Every file's role is obvious
+          from its name. The dependency direction is strictly
+          <em>downward</em> in this list — resource files depend on
+          client/types/helpers/ids/errors, never the reverse. There are no
+          cycles, no god files, no grab-bag utilities.
         </p>
 
         <h2 id="coupling"><span class="num">02</span>Coupling</h2>
@@ -644,55 +666,65 @@
                 <td><code>wise</code> → <code>failsafe-go</code></td>
                 <td>Direct (RetryPolicy, Executor)</td>
                 <td>
-                  <span class="badge badge-fixed">Correct</span> Purpose-built HTTP retry, contained
-                  to <code>client.go</code>. Unexported executor field — no leak.
+                  <span class="badge badge-fixed">Correct</span> Purpose-built
+                  HTTP retry, contained to <code>client.go</code>. Unexported
+                  executor field — no leak.
                 </td>
               </tr>
               <tr>
                 <td><code>wise</code> → <code>go-branded-id</code></td>
                 <td>Direct (phantom ID generic)</td>
                 <td>
-                  <span class="badge badge-fixed">Correct</span> Compile-time ID safety. Contained
-                  to <code>ids.go</code> + result types.
+                  <span class="badge badge-fixed">Correct</span> Compile-time ID
+                  safety. Contained to <code>ids.go</code> + result types.
                 </td>
               </tr>
               <tr>
                 <td><code>wise</code> → <code>go-error-family</code></td>
                 <td>Direct (interfaces + constructors)</td>
                 <td>
-                  <span class="badge badge-fixed">Correct</span> Behavioral classification.
-                  Contained to <code>errors.go</code> + <code>transactions.go:validate</code>.
+                  <span class="badge badge-fixed">Correct</span> Behavioral
+                  classification. Contained to <code>errors.go</code> +
+                  <code>transactions.go:validate</code>.
                 </td>
               </tr>
               <tr>
                 <td>
-                  <code>wise</code> → stdlib <code>net/http</code>, <code>encoding/json</code>,
-                  <code>time</code>, <code>strconv</code>
+                  <code>wise</code> → stdlib <code>net/http</code>,
+                  <code>encoding/json</code>, <code>time</code>,
+                  <code>strconv</code>
                 </td>
                 <td>Direct</td>
                 <td>
-                  <span class="badge badge-fixed">Correct</span> Unavoidable; standard library.
+                  <span class="badge badge-fixed">Correct</span> Unavoidable;
+                  standard library.
                 </td>
               </tr>
               <tr>
                 <td>Resource files → <code>Client</code></td>
                 <td>Receiver methods on <code>*Client</code></td>
-                <td><span class="badge badge-fixed">Standard</span> Textbook Go SDK pattern.</td>
+                <td>
+                  <span class="badge badge-fixed">Standard</span> Textbook Go
+                  SDK pattern.
+                </td>
               </tr>
               <tr>
-                <td>Resource files → raw/result types in <code>types.go</code></td>
+                <td>
+                  Resource files → raw/result types in <code>types.go</code>
+                </td>
                 <td>Structural</td>
                 <td>
-                  <span class="badge badge-medium">High but unavoidable</span> The price of a flat
-                  package; see "Service Orientation" for the v1.0 alternative.
+                  <span class="badge badge-medium">High but unavoidable</span>
+                  The price of a flat package; see "Service Orientation" for the
+                  v1.0 alternative.
                 </td>
               </tr>
               <tr>
                 <td>Raw types ↔ Result types</td>
                 <td>Mapping functions only</td>
                 <td>
-                  <span class="badge badge-fixed">Excellent</span> The two-layer boundary is the
-                  best decision in the codebase.
+                  <span class="badge badge-fixed">Excellent</span> The two-layer
+                  boundary is the best decision in the codebase.
                 </td>
               </tr>
             </tbody>
@@ -700,9 +732,10 @@
         </div>
 
         <p>
-          Coupling grade: <strong>A</strong>. Three focused, stable, single-purpose external
-          dependencies. No transitive bloat (see <code>go.sum</code>: every indirect dep is pulled
-          by ginkgo/gomega for tests, not by production code). No internal cycles. No framework
+          Coupling grade: <strong>A</strong>. Three focused, stable,
+          single-purpose external dependencies. No transitive bloat (see
+          <code>go.sum</code>: every indirect dep is pulled by ginkgo/gomega for
+          tests, not by production code). No internal cycles. No framework
           lock-in.
         </p>
 
@@ -713,18 +746,20 @@
         <div class="card card-solution">
           <h4>+ Adding a new resource (e.g. transfers, recipients, quotes)</h4>
           <p>
-            One new file (<code>transfers.go</code>) following the existing shape: a method on
+            One new file (<code>transfers.go</code>) following the existing
+            shape: a method on
             <code>*Client</code>, a <code>mapTransfer</code> function, types in
-            <code>types.go</code>. Cost: O(1) files, O(1) decisions. No refactoring. Scales cleanly
-            to ~8 resources.
+            <code>types.go</code>. Cost: O(1) files, O(1) decisions. No
+            refactoring. Scales cleanly to ~8 resources.
           </p>
         </div>
 
         <div class="card card-solution">
           <h4>+ Adding a new error type</h4>
           <p>
-            One new struct embedding <code>APIError</code>, one new <code>ErrorCode()</code> method,
-            one new case in <code>newAPIError()</code>. Existing call sites and retry logic are
+            One new struct embedding <code>APIError</code>, one new
+            <code>ErrorCode()</code> method, one new case in
+            <code>newAPIError()</code>. Existing call sites and retry logic are
             untouched. Scales indefinitely.
           </p>
         </div>
@@ -732,28 +767,30 @@
         <div class="card card-solution">
           <h4>+ Adding a new configuration option</h4>
           <p>
-            One new <code>WithX()</code> function in <code>options.go</code>, one new field on the
-            unexported <code>config</code> struct, one new branch in <code>New()</code>. Scales
-            indefinitely.
+            One new <code>WithX()</code> function in <code>options.go</code>,
+            one new field on the unexported <code>config</code> struct, one new
+            branch in <code>New()</code>. Scales indefinitely.
           </p>
         </div>
 
         <div class="card card-solution">
           <h4>+ Adding write operations (POST/PATCH/DELETE)</h4>
           <p>
-            Add a <code>post()</code>/<code>patch()</code>/<code>delete()</code> helper alongside
-            <code>get()</code>/<code>getWithQuery()</code> in <code>client.go</code>. Same retry
-            executor, same error checking, same body lifecycle. The architecture is ready.
+            Add a <code>post()</code>/<code>patch()</code>/<code>delete()</code>
+            helper alongside <code>get()</code>/<code>getWithQuery()</code> in
+            <code>client.go</code>. Same retry executor, same error checking,
+            same body lifecycle. The architecture is ready.
           </p>
         </div>
 
         <div class="card card-warning">
           <h4>~ Adding pagination (when Wise eventually requires it)</h4>
           <p>
-            The current <code>ListTransactionsResponse.HasMore</code> is a forward-compatibility
-            stub. If Wise adds cursor pagination, the architecture supports adding a
-            <code>Page[Cursor]</code> generic and a <code>FetchMore</code> method without breaking
-            the existing API. <code>ListTransactionsResponse</code> gains a
+            The current <code>ListTransactionsResponse.HasMore</code> is a
+            forward-compatibility stub. If Wise adds cursor pagination, the
+            architecture supports adding a <code>Page[Cursor]</code> generic and
+            a <code>FetchMore</code> method without breaking the existing API.
+            <code>ListTransactionsResponse</code> gains a
             <code>NextCursor</code> field. No client-struct change needed.
           </p>
         </div>
@@ -761,12 +798,14 @@
         <div class="card card-problem">
           <h4>− Adding request middleware (logging, tracing, metrics)</h4>
           <p>
-            <strong>This is the only architectural gap.</strong> The current code routes every
-            request through <code>getWithQuery</code>, which is unexported. Callers who want to add
-            OpenTelemetry tracing, structured logging, or metrics must either (a) wrap via
-            <code>WithHTTPClient</code> with a custom <code>http.Client</code> + Transport, or (b)
-            forgo the SDK's retry layer entirely. Option (a) works but is not obvious. The README
-            should document this pattern; see Roadmap step 2.
+            <strong>This is the only architectural gap.</strong> The current
+            code routes every request through <code>getWithQuery</code>, which
+            is unexported. Callers who want to add OpenTelemetry tracing,
+            structured logging, or metrics must either (a) wrap via
+            <code>WithHTTPClient</code> with a custom <code>http.Client</code> +
+            Transport, or (b) forgo the SDK's retry layer entirely. Option (a)
+            works but is not obvious. The README should document this pattern;
+            see Roadmap step 2.
           </p>
         </div>
 
@@ -776,14 +815,18 @@
           <div class="strength">
             <div class="check">+</div>
             <div class="text">
-              <strong>Functional-options pattern is composable by construction</strong>
+              <strong
+                >Functional-options pattern is composable by
+                construction</strong
+              >
               <span>
                 <code
-                  >wise.New(key, WithSandbox(), WithTimeout(...), WithRetry(...),
-                  WithHTTPClient(...))</code
+                  >wise.New(key, WithSandbox(), WithTimeout(...),
+                  WithRetry(...), WithHTTPClient(...))</code
                 >
-                — every <code>WithX</code> is independently combinable. Adding new dimensions of
-                configuration never breaks existing call sites.
+                — every <code>WithX</code> is independently combinable. Adding
+                new dimensions of configuration never breaks existing call
+                sites.
               </span>
             </div>
           </div>
@@ -792,34 +835,43 @@
             <div class="text">
               <strong>HTTP client is injectable</strong>
               <span>
-                <code>WithHTTPClient(*http.Client)</code> lets callers inject a client with a custom
-                Transport, Timeout, or proxy. This is the composition seam for everything the SDK
-                does not natively do (tracing, logging, mTLS).
+                <code>WithHTTPClient(*http.Client)</code> lets callers inject a
+                client with a custom Transport, Timeout, or proxy. This is the
+                composition seam for everything the SDK does not natively do
+                (tracing, logging, mTLS).
               </span>
             </div>
           </div>
           <div class="strength">
             <div class="check">+</div>
             <div class="text">
-              <strong>"Accept interfaces, return structs" is followed correctly</strong>
+              <strong
+                >"Accept interfaces, return structs" is followed
+                correctly</strong
+              >
               <span>
-                The SDK returns concrete <code>*Client</code> and concrete result types. It does not
-                declare interfaces. Downstream consumers define their own narrow interfaces for
-                mocking (Go proverb). This is the right default — but it could be documented in the
-                README so consumers do not have to discover the pattern themselves.
+                The SDK returns concrete <code>*Client</code> and concrete
+                result types. It does not declare interfaces. Downstream
+                consumers define their own narrow interfaces for mocking (Go
+                proverb). This is the right default — but it could be documented
+                in the README so consumers do not have to discover the pattern
+                themselves.
               </span>
             </div>
           </div>
           <div class="strength">
             <div class="check">+</div>
             <div class="text">
-              <strong>Errors compose via embedding and classify via interface</strong>
+              <strong
+                >Errors compose via embedding and classify via interface</strong
+              >
               <span>
-                <code>RateLimitError</code> embeds <code>APIError</code> by value and overrides only
-                the methods that differ. New error types can be added without touching existing
-                ones. Behavioral classification (<code>ErrorFamily()</code>,
-                <code>IsRetryable()</code>) lets callers handle errors by intent, not by string
-                matching.
+                <code>RateLimitError</code> embeds <code>APIError</code> by
+                value and overrides only the methods that differ. New error
+                types can be added without touching existing ones. Behavioral
+                classification (<code>ErrorFamily()</code>,
+                <code>IsRetryable()</code>) lets callers handle errors by
+                intent, not by string matching.
               </span>
             </div>
           </div>
@@ -829,46 +881,58 @@
           <span class="severity severity-medium">Medium · Composition gap</span>
           <h3>HTTP client accepted as *http.Client, not as interface</h3>
           <p>
-            <strong>Where:</strong> <code>options.go:58</code>, stored on <code>client.go:25</code>.
+            <strong>Where:</strong> <code>options.go:58</code>, stored on
+            <code>client.go:25</code>.
           </p>
           <p>
-            <code>WithHTTPClient(c *http.Client)</code> requires the caller to pass a concrete
-            <code>*http.Client</code>. The Go convention is to accept a narrow interface (<code
+            <code>WithHTTPClient(c *http.Client)</code> requires the caller to
+            pass a concrete <code>*http.Client</code>. The Go convention is to
+            accept a narrow interface (<code
               >doer interface{ Do(*http.Request) (*http.Response, error) }</code
-            >) so callers can substitute any type that implements <code>Do</code>. This is a
-            one-line change with no behavior impact and unlocks easier mocking. The default in
-            <code>New()</code> still constructs a <code>*http.Client</code>.
+            >) so callers can substitute any type that implements
+            <code>Do</code>. This is a one-line change with no behavior impact
+            and unlocks easier mocking. The default in <code>New()</code> still
+            constructs a <code>*http.Client</code>.
           </p>
           <div class="callout callout-solution">
             <strong>Fix</strong>
             Define an unexported
-            <code>type doer interface{ Do(*http.Request) (*http.Response, error) }</code> in
-            client.go, change <code>Client.httpClient</code> to that interface, change
-            <code>WithHTTPClient</code> to accept it. <code>*http.Client</code> satisfies it
-            implicitly. Backward-compatible.
+            <code
+              >type doer interface{ Do(*http.Request) (*http.Response, error)
+              }</code
+            >
+            in client.go, change <code>Client.httpClient</code> to that
+            interface, change <code>WithHTTPClient</code> to accept it.
+            <code>*http.Client</code> satisfies it implicitly.
+            Backward-compatible.
           </div>
         </div>
 
         <div class="card card-warning">
           <span class="severity severity-low">Low · Power-user gap</span>
           <h3>Retry policy is configurable but not injectable</h3>
-          <p><strong>Where:</strong> <code>client.go:69-73</code>, <code>options.go:49</code>.</p>
           <p>
-            <code>WithRetry(maxRetries, minDelay, maxDelay)</code> tunes the built-in
-            <code>failsafe.RetryPolicy</code>. Callers who want a fundamentally different policy
-            (e.g., retry on 400 for idempotent operations, or use a jitter strategy not offered by
-            the SDK) cannot inject one. Add
-            <code>WithRetryPolicy(failsafe.RetryPolicy[*http.Response])</code> for power users —
-            defaults to <code>nil</code> (use the configured builder).
+            <strong>Where:</strong> <code>client.go:69-73</code>,
+            <code>options.go:49</code>.
+          </p>
+          <p>
+            <code>WithRetry(maxRetries, minDelay, maxDelay)</code> tunes the
+            built-in <code>failsafe.RetryPolicy</code>. Callers who want a
+            fundamentally different policy (e.g., retry on 400 for idempotent
+            operations, or use a jitter strategy not offered by the SDK) cannot
+            inject one. Add
+            <code>WithRetryPolicy(failsafe.RetryPolicy[*http.Response])</code>
+            for power users — defaults to <code>nil</code> (use the configured
+            builder).
           </p>
         </div>
 
         <h2 id="service"><span class="num">05</span>Service Orientation</h2>
 
         <p>
-          A common question for SDKs: should <code>Client</code> expose resource methods directly
-          (<code>client.ListProfiles()</code>) or via a service-client sub-structure
-          (<code>client.Profiles().List()</code>)?
+          A common question for SDKs: should <code>Client</code> expose resource
+          methods directly (<code>client.ListProfiles()</code>) or via a
+          service-client sub-structure (<code>client.Profiles().List()</code>)?
         </p>
 
         <div class="card card-solution">
@@ -878,53 +942,63 @@ profiles, _ := client.<span class="tok-func">ListProfiles</span>(ctx)
 balances, _ := client.<span class="tok-func">ListBalances</span>(ctx, profileID)
 txns, _     := client.<span class="tok-func">ListTransactions</span>(ctx, req)</code></pre>
           <p>
-            <strong>Pros:</strong> shortest call sites; one type to learn; the natural shape for a
-            library with 3–8 resources. <strong>Cons:</strong> the <code>Client</code> type's method
-            set grows without bound; tab-completion gets noisier as resources accumulate.
+            <strong>Pros:</strong> shortest call sites; one type to learn; the
+            natural shape for a library with 3–8 resources.
+            <strong>Cons:</strong> the <code>Client</code> type's method set
+            grows without bound; tab-completion gets noisier as resources
+            accumulate.
           </p>
         </div>
 
         <div class="card card-solution">
-          <h4>Alternative: service-client sub-structure (AWS / Stripe pattern)</h4>
+          <h4>
+            Alternative: service-client sub-structure (AWS / Stripe pattern)
+          </h4>
           <pre><code>client := wise.<span class="tok-func">New</span>(key)
 profiles, _ := client.<span class="tok-func">Profiles</span>().<span class="tok-func">List</span>(ctx)
 balances, _ := client.<span class="tok-func">Balances</span>().<span class="tok-func">List</span>(ctx, profileID)
 txns, _     := client.<span class="tok-func">Transactions</span>().<span class="tok-func">List</span>(ctx, req)</code></pre>
           <p>
-            <strong>Pros:</strong> method sets are scoped per resource; the <code>Client</code> type
-            stays small; easier to inject narrow service-clients into handlers (<code
-              >type ProfileLister interface { List(ctx) ([]ProfileResult, error) }</code
-            >). <strong>Cons:</strong> more types; one extra call per operation; over-engineered for
-            3 resources.
+            <strong>Pros:</strong> method sets are scoped per resource; the
+            <code>Client</code> type stays small; easier to inject narrow
+            service-clients into handlers (<code
+              >type ProfileLister interface { List(ctx) ([]ProfileResult, error)
+              }</code
+            >). <strong>Cons:</strong> more types; one extra call per operation;
+            over-engineered for 3 resources.
           </p>
         </div>
 
         <div class="callout callout-solution">
           <strong>Recommendation</strong>
-          Stay flat until the SDK has <strong>~6–8 resources</strong> or until a downstream caller
-          asks to inject a narrow service interface (the real-world trigger). At that point, the
-          move is mechanical: extract each resource file's methods into a
+          Stay flat until the SDK has <strong>~6–8 resources</strong> or until a
+          downstream caller asks to inject a narrow service interface (the
+          real-world trigger). At that point, the move is mechanical: extract
+          each resource file's methods into a
           <code>type ProfileService struct{ client *Client }</code>, add a
-          <code>func (c *Client) Profiles() *ProfileService</code> accessor, and keep the flat
-          methods as thin wrappers for one release cycle to ease migration. The current architecture
-          is ready for this move; nothing about today's design blocks it.
+          <code>func (c *Client) Profiles() *ProfileService</code> accessor, and
+          keep the flat methods as thin wrappers for one release cycle to ease
+          migration. The current architecture is ready for this move; nothing
+          about today's design blocks it.
         </div>
 
         <h3>Service-oriented decomposition: not yet warranted</h3>
         <p>
-          "Service-oriented" in the microservices sense does not apply to a single-process SDK. In
-          the Go-idiomatic sense — small interfaces accepted at function boundaries, concrete types
-          returned, narrow consumer-defined interfaces for mocking — the codebase already follows
-          the right patterns. The one missing piece is documentation: the README should show an
-          example of defining <code>type ProfileLister interface { ... }</code> on the consumer side
+          "Service-oriented" in the microservices sense does not apply to a
+          single-process SDK. In the Go-idiomatic sense — small interfaces
+          accepted at function boundaries, concrete types returned, narrow
+          consumer-defined interfaces for mocking — the codebase already follows
+          the right patterns. The one missing piece is documentation: the README
+          should show an example of defining
+          <code>type ProfileLister interface { ... }</code> on the consumer side
           so users do not try to mock the concrete <code>*wise.Client</code>.
         </p>
 
         <h2 id="roadmap"><span class="num">06</span>Roadmap</h2>
 
         <p>
-          Prioritized by architectural impact. None of these are urgent; the codebase is sound
-          today.
+          Prioritized by architectural impact. None of these are urgent; the
+          codebase is sound today.
         </p>
 
         <div class="migration-step">
@@ -932,9 +1006,11 @@ txns, _     := client.<span class="tok-func">Transactions</span>().<span class="
           <div class="migration-content">
             <h4>Document the consumer-side interface pattern in README</h4>
             <p>
-              <strong>Effort: 30 min.</strong> Add a "Mocking the client" section showing how to
-              define <code>type ProfileLister interface { ... }</code> at the call site. Costs
-              nothing, prevents a class of "how do I mock wise.Client?" questions forever.
+              <strong>Effort: 30 min.</strong> Add a "Mocking the client"
+              section showing how to define
+              <code>type ProfileLister interface { ... }</code> at the call
+              site. Costs nothing, prevents a class of "how do I mock
+              wise.Client?" questions forever.
             </p>
           </div>
         </div>
@@ -944,9 +1020,10 @@ txns, _     := client.<span class="tok-func">Transactions</span>().<span class="
           <div class="migration-content">
             <h4>Document request middleware via WithHTTPClient</h4>
             <p>
-              <strong>Effort: 30 min.</strong> Add a README section showing how to inject an
-              <code>http.Client</code> with a logging/tracing Transport. This closes the "middleware
-              gap" identified in the Scalability section without changing any code.
+              <strong>Effort: 30 min.</strong> Add a README section showing how
+              to inject an <code>http.Client</code> with a logging/tracing
+              Transport. This closes the "middleware gap" identified in the
+              Scalability section without changing any code.
             </p>
           </div>
         </div>
@@ -957,9 +1034,10 @@ txns, _     := client.<span class="tok-func">Transactions</span>().<span class="
             <h4>Accept a Doer interface instead of *http.Client</h4>
             <p>
               <strong>Effort: 1 hr. Backward-compatible.</strong> Change
-              <code>WithHTTPClient</code> and <code>Client.httpClient</code> to accept an unexported
-              <code>doer</code> interface. <code>*http.Client</code> satisfies it. Unlocks easier
-              mocking for downstream users.
+              <code>WithHTTPClient</code> and <code>Client.httpClient</code> to
+              accept an unexported <code>doer</code> interface.
+              <code>*http.Client</code> satisfies it. Unlocks easier mocking for
+              downstream users.
             </p>
           </div>
         </div>
@@ -969,8 +1047,10 @@ txns, _     := client.<span class="tok-func">Transactions</span>().<span class="
           <div class="migration-content">
             <h4>Add WithRetryPolicy for power users</h4>
             <p>
-              <strong>Effort: 1 hr.</strong> Optional advanced knob. Defaults to <code>nil</code>
-              (use the configured builder). Only add if/when requested — premature for now.
+              <strong>Effort: 1 hr.</strong> Optional advanced knob. Defaults to
+              <code>nil</code>
+              (use the configured builder). Only add if/when requested —
+              premature for now.
             </p>
           </div>
         </div>
@@ -980,10 +1060,11 @@ txns, _     := client.<span class="tok-func">Transactions</span>().<span class="
           <div class="migration-content">
             <h4>Move raw wire types to an internal/ subpackage (v1.0)</h4>
             <p>
-              <strong>Effort: 2 hr. Breaking.</strong> Pair with the data-model redesign's "drop
-              <code>Result</code> suffix" change. <code>raw.Profile</code>,
-              <code>raw.Balance</code>, etc. become unexported outside the SDK. The public surface
-              shrinks to result types only. v1.0 only.
+              <strong>Effort: 2 hr. Breaking.</strong> Pair with the data-model
+              redesign's "drop <code>Result</code> suffix" change.
+              <code>raw.Profile</code>, <code>raw.Balance</code>, etc. become
+              unexported outside the SDK. The public surface shrinks to result
+              types only. v1.0 only.
             </p>
           </div>
         </div>
@@ -991,12 +1072,17 @@ txns, _     := client.<span class="tok-func">Transactions</span>().<span class="
         <div class="migration-step">
           <div class="migration-num">6</div>
           <div class="migration-content">
-            <h4>Service-client sub-structure (when resource count crosses ~6–8)</h4>
+            <h4>
+              Service-client sub-structure (when resource count crosses ~6–8)
+            </h4>
             <p>
-              <strong>Effort: 4 hr. Breaking.</strong> Convert flat methods to per-resource service
-              structs (<code>client.Profiles().List()</code>). Trigger: the SDK grows past
-              profiles/balances/transactions/recipients/quotes/transfers/webhooks, or a downstream
-              caller asks to inject a narrow service interface. Not warranted today.
+              <strong>Effort: 4 hr. Breaking.</strong> Convert flat methods to
+              per-resource service structs
+              (<code>client.Profiles().List()</code>). Trigger: the SDK grows
+              past
+              profiles/balances/transactions/recipients/quotes/transfers/webhooks,
+              or a downstream caller asks to inject a narrow service interface.
+              Not warranted today.
             </p>
           </div>
         </div>
@@ -1004,18 +1090,21 @@ txns, _     := client.<span class="tok-func">Transactions</span>().<span class="
         <h2>Verdict</h2>
 
         <blockquote class="callout callout-solution">
-          The wise-go architecture is <strong>intentionally minimal and correctly so</strong> for
-          its current scope (3 read-only resources, ~1.3k LOC). Coupling is tight but well-bounded;
-          composability via functional options and injectable HTTP client is textbook; the two-layer
-          type boundary is the single best decision in the codebase. The only structural gap —
-          request middleware — is closable with README documentation, not code. Growth past ~6–8
-          resources is the trigger for service-client decomposition; everything below that trigger
-          is over-engineering. Do not modularize prematurely.
+          The wise-go architecture is
+          <strong>intentionally minimal and correctly so</strong> for its
+          current scope (3 read-only resources, ~1.3k LOC). Coupling is tight
+          but well-bounded; composability via functional options and injectable
+          HTTP client is textbook; the two-layer type boundary is the single
+          best decision in the codebase. The only structural gap — request
+          middleware — is closable with README documentation, not code. Growth
+          past ~6–8 resources is the trigger for service-client decomposition;
+          everything below that trigger is over-engineering. Do not modularize
+          prematurely.
         </blockquote>
 
         <footer class="footer">
-          Generated 2026-07-18 from commit 218c2d3 · Architecture review · 1 package, 8 files, 3
-          external deps
+          Generated 2026-07-18 from commit 218c2d3 · Architecture review · 1
+          package, 8 files, 3 external deps
         </footer>
       </main>
     </div>

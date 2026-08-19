@@ -1,8 +1,8 @@
 # Twelve-Factor Compliance Review: wise-go
 
-**Assessment date:** 2026-07-23  
-**Repository:** `github.com/larsartmann/wise-go`  
-**Reference:** [The Twelve-Factor App](https://12factor.net/)  
+**Assessment date:** 2026-07-23\
+**Repository:** `github.com/larsartmann/wise-go`\
+**Reference:** [The Twelve-Factor App](https://12factor.net/)\
 **Scope:** Repository structure, Go library implementation, development tooling, CI configuration, and documented operating model.
 
 ## Executive summary

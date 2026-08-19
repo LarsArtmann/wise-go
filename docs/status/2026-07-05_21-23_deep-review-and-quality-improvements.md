@@ -145,33 +145,33 @@ The raw `ExchangeDetails` struct in `types.go` still has `FromCurrency` and `ToC
 
 ## f) Up to 25 Things to Get Done Next
 
-| #   | Priority | Task                                                                                    |
-| --- | -------- | --------------------------------------------------------------------------------------- |
-| 1   | HIGH     | Replace `classifyTransactionType`'s `amount float64` param with `totalCents int64`      |
-| 2   | HIGH     | Wire `Retry-After` into failsafe-go's backoff policy (custom delay computation)         |
-| 3   | HIGH     | Register domain error types with `errorfamily.RegisterClassification`                   |
-| 4   | MED      | Add a `GetProfile` method (single-profile endpoint) if Wise supports it                 |
-| 5   | MED      | Remove or reach `TransactionTypeUnknown` (currently unreachable)                        |
-| 6   | MED      | Extract `wiseDateFormat` constant from `parseWiseDate`                                  |
-| 7   | MED      | Add integration test with a real Wise sandbox (gated behind build tag or env var)       |
-| 8   | MED      | Document `GetBalance` O(n) cost and consider optional in-memory caching                 |
-| 9   | LOW      | Add `fmt.Stringer` implementations for `ProfileType`, `BalanceType`, `TransactionType`  |
-| 10  | LOW      | Consider `ExchangeDetails.Rate` as a string or decimal type for precision               |
-| 11  | LOW      | Add `Profile.UserID` to `ProfileResult` (the raw `Profile.UserID` is currently dropped) |
-| 12  | LOW      | Add `Profile.PublicID` to `ProfileResult` (currently dropped)                           |
-| 13  | LOW      | Add a `Roundtripper` interface for request/response logging or debugging                |
-| 14  | LOW      | Add `context.Context` propagation into failsafe-go retry logging                        |
-| 15  | LOW      | Add `Exchange` field to the transaction type classification docs in README              |
-| 16  | LOW      | Add benchmarks for hot paths (`Cents()`, `classifyTransactionType`, `mapTransaction`)   |
-| 17  | LOW      | Add `Example_` test functions for godoc                                                 |
-| 18  | LOW      | Consider `go:generate` for enum string-to-value maps (parseXType functions)             |
-| 19  | LOW      | Add `CHANGELOG.md` entry for this session's changes                                     |
-| 20  | LOW      | Consider splitting `internal_test.go` by domain (errors_test.go, helpers_test.go)       |
-| 21  | LOW      | Add `WithUserAgent` option (currently no custom User-Agent header)                      |
-| 22  | LOW      | Add `WithLogger` option for structured debug logging                                    |
-| 23  | LOW      | Consider a `Money` type (cents + currency) instead of separate fields                   |
-| 24  | LOW      | Add `StatementResponse.EndOfStatementBalance` to `ListTransactionsResponse`             |
-| 25  | LOW      | Write operations: transfers, quotes, payouts (major feature work)                       |
+| #  | Priority | Task                                                                                    |
+| -- | -------- | --------------------------------------------------------------------------------------- |
+| 1  | HIGH     | Replace `classifyTransactionType`'s `amount float64` param with `totalCents int64`      |
+| 2  | HIGH     | Wire `Retry-After` into failsafe-go's backoff policy (custom delay computation)         |
+| 3  | HIGH     | Register domain error types with `errorfamily.RegisterClassification`                   |
+| 4  | MED      | Add a `GetProfile` method (single-profile endpoint) if Wise supports it                 |
+| 5  | MED      | Remove or reach `TransactionTypeUnknown` (currently unreachable)                        |
+| 6  | MED      | Extract `wiseDateFormat` constant from `parseWiseDate`                                  |
+| 7  | MED      | Add integration test with a real Wise sandbox (gated behind build tag or env var)       |
+| 8  | MED      | Document `GetBalance` O(n) cost and consider optional in-memory caching                 |
+| 9  | LOW      | Add `fmt.Stringer` implementations for `ProfileType`, `BalanceType`, `TransactionType`  |
+| 10 | LOW      | Consider `ExchangeDetails.Rate` as a string or decimal type for precision               |
+| 11 | LOW      | Add `Profile.UserID` to `ProfileResult` (the raw `Profile.UserID` is currently dropped) |
+| 12 | LOW      | Add `Profile.PublicID` to `ProfileResult` (currently dropped)                           |
+| 13 | LOW      | Add a `Roundtripper` interface for request/response logging or debugging                |
+| 14 | LOW      | Add `context.Context` propagation into failsafe-go retry logging                        |
+| 15 | LOW      | Add `Exchange` field to the transaction type classification docs in README              |
+| 16 | LOW      | Add benchmarks for hot paths (`Cents()`, `classifyTransactionType`, `mapTransaction`)   |
+| 17 | LOW      | Add `Example_` test functions for godoc                                                 |
+| 18 | LOW      | Consider `go:generate` for enum string-to-value maps (parseXType functions)             |
+| 19 | LOW      | Add `CHANGELOG.md` entry for this session's changes                                     |
+| 20 | LOW      | Consider splitting `internal_test.go` by domain (errors_test.go, helpers_test.go)       |
+| 21 | LOW      | Add `WithUserAgent` option (currently no custom User-Agent header)                      |
+| 22 | LOW      | Add `WithLogger` option for structured debug logging                                    |
+| 23 | LOW      | Consider a `Money` type (cents + currency) instead of separate fields                   |
+| 24 | LOW      | Add `StatementResponse.EndOfStatementBalance` to `ListTransactionsResponse`             |
+| 25 | LOW      | Write operations: transfers, quotes, payouts (major feature work)                       |
 
 ---
 

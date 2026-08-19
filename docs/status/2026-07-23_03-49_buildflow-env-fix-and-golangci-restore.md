@@ -109,15 +109,15 @@ When I first ran `buildflow -s go-fix` (without `--fix`), I got "no executable n
 
 ## e) WHAT WE SHOULD IMPROVE
 
-| #   | Improvement                                                                                                                                                                                                                                           | Urgency |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| 1   | **Commit the changes** — `.buildflow.yml` env key, AGENTS.md updates are ready. Need user decision on `.gitattributes` + `flake.lock`.                                                                                                                | High    |
-| 2   | **Fix direnv** — Run `direnv allow` so the flake devShell sets GOEXPERIMENT in interactive shells. The `.buildflow.yml` env key covers buildflow, but manual `go build`/`go test` still needs the shell var.                                          | High    |
-| 3   | **Fix the Nix home-manager go env** — Add `GOEXPERIMENT=jsonv2` to the home-manager config so `go env GOEXPERIMENT` returns it globally. The `env.local` file exists but Go ignores it.                                                               | Medium  |
-| 4   | **Document go-fix `--fix` behavior in AGENTS.md** — So future sessions don't waste time on "no executable nodes."                                                                                                                                     | Low     |
-| 5   | **Address the 15 `root-package-files` findings** — Buildflow flags all Go files in the repo root (not in `internal/`). This is intentional for a small library, but the findings are noisy. Consider suppressing this check or moving to `internal/`. | Low     |
-| 6   | **Pin GitHub Actions to SHA** — 3 `github-actions-pinned` findings (actions using `@v4` instead of SHA). Supply-chain security best practice.                                                                                                         | Low     |
-| 7   | **The prior session's incident report is stale** — `docs/status/2026-07-18_20-21_*.md` lists CI as "WILL BREAK" but commit `9d2a47f` already fixed it. Should be annotated/updated.                                                                   | Low     |
+| # | Improvement                                                                                                                                                                                                                                           | Urgency |
+| - | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| 1 | **Commit the changes** — `.buildflow.yml` env key, AGENTS.md updates are ready. Need user decision on `.gitattributes` + `flake.lock`.                                                                                                                | High    |
+| 2 | **Fix direnv** — Run `direnv allow` so the flake devShell sets GOEXPERIMENT in interactive shells. The `.buildflow.yml` env key covers buildflow, but manual `go build`/`go test` still needs the shell var.                                          | High    |
+| 3 | **Fix the Nix home-manager go env** — Add `GOEXPERIMENT=jsonv2` to the home-manager config so `go env GOEXPERIMENT` returns it globally. The `env.local` file exists but Go ignores it.                                                               | Medium  |
+| 4 | **Document go-fix `--fix` behavior in AGENTS.md** — So future sessions don't waste time on "no executable nodes."                                                                                                                                     | Low     |
+| 5 | **Address the 15 `root-package-files` findings** — Buildflow flags all Go files in the repo root (not in `internal/`). This is intentional for a small library, but the findings are noisy. Consider suppressing this check or moving to `internal/`. | Low     |
+| 6 | **Pin GitHub Actions to SHA** — 3 `github-actions-pinned` findings (actions using `@v4` instead of SHA). Supply-chain security best practice.                                                                                                         | Low     |
+| 7 | **The prior session's incident report is stale** — `docs/status/2026-07-18_20-21_*.md` lists CI as "WILL BREAK" but commit `9d2a47f` already fixed it. Should be annotated/updated.                                                                   | Low     |
 
 ---
 
@@ -125,108 +125,108 @@ When I first ran `buildflow -s go-fix` (without `--fix`), I got "no executable n
 
 ### P0 — Commit and finalize this session's work
 
-| #   | Task                                                                 | Effort |
-| --- | -------------------------------------------------------------------- | ------ |
-| 1   | Commit `.buildflow.yml` env key + AGENTS.md updates                  | 2 min  |
-| 2   | Decide on `.gitattributes` (`* text=auto eol=lf`) — commit or revert | 1 min  |
-| 3   | Decide on `flake.lock` nixpkgs bump — commit or revert               | 1 min  |
-| 4   | Run `direnv allow` to fix interactive shell GOEXPERIMENT             | 1 min  |
+| # | Task                                                                 | Effort |
+| - | -------------------------------------------------------------------- | ------ |
+| 1 | Commit `.buildflow.yml` env key + AGENTS.md updates                  | 2 min  |
+| 2 | Decide on `.gitattributes` (`* text=auto eol=lf`) — commit or revert | 1 min  |
+| 3 | Decide on `flake.lock` nixpkgs bump — commit or revert               | 1 min  |
+| 4 | Run `direnv allow` to fix interactive shell GOEXPERIMENT             | 1 min  |
 
 ### P1 — Fix the root cause for interactive shells
 
-| #   | Task                                                                    | Effort |
-| --- | ----------------------------------------------------------------------- | ------ |
-| 5   | Add `GOEXPERIMENT=jsonv2` to Nix home-manager go env config             | 10 min |
-| 6   | Verify `go env GOEXPERIMENT` returns `jsonv2` after home-manager switch | 2 min  |
-| 7   | Remove the stale `~/.config/go/env.local` file (Go doesn't read it)     | 1 min  |
+| # | Task                                                                    | Effort |
+| - | ----------------------------------------------------------------------- | ------ |
+| 5 | Add `GOEXPERIMENT=jsonv2` to Nix home-manager go env config             | 10 min |
+| 6 | Verify `go env GOEXPERIMENT` returns `jsonv2` after home-manager switch | 2 min  |
+| 7 | Remove the stale `~/.config/go/env.local` file (Go doesn't read it)     | 1 min  |
 
 ### P2 — Pre-existing buildflow findings (structural)
 
-| #   | Task                                                                                     | Effort |
-| --- | ---------------------------------------------------------------------------------------- | ------ |
-| 8   | Suppress `root-package-files` finding for this library (Go files in root is intentional) | 5 min  |
-| 9   | Pin GitHub Actions to SHA hashes (actions/checkout@v4 → @<sha>)                          | 15 min |
-| 10  | Address `assets-directory` and `internal-directory` warnings (or suppress)               | 5 min  |
+| #  | Task                                                                                     | Effort |
+| -- | ---------------------------------------------------------------------------------------- | ------ |
+| 8  | Suppress `root-package-files` finding for this library (Go files in root is intentional) | 5 min  |
+| 9  | Pin GitHub Actions to SHA hashes (actions/checkout@v4 → @<sha>)                          | 15 min |
+| 10 | Address `assets-directory` and `internal-directory` warnings (or suppress)               | 5 min  |
 
 ### P3 — Documentation accuracy
 
-| #   | Task                                                                                           | Effort |
-| --- | ---------------------------------------------------------------------------------------------- | ------ |
-| 11  | Update/annotate prior incident report (`docs/status/2026-07-18_*.md`) — CI is no longer broken | 5 min  |
-| 12  | Document go-fix `--fix` flag requirement in AGENTS.md                                          | 5 min  |
-| 13  | Add `.buildflow.yml` env key to CONTRIBUTING.md "How to upgrade dependencies safely" section   | 10 min |
+| #  | Task                                                                                           | Effort |
+| -- | ---------------------------------------------------------------------------------------------- | ------ |
+| 11 | Update/annotate prior incident report (`docs/status/2026-07-18_*.md`) — CI is no longer broken | 5 min  |
+| 12 | Document go-fix `--fix` flag requirement in AGENTS.md                                          | 5 min  |
+| 13 | Add `.buildflow.yml` env key to CONTRIBUTING.md "How to upgrade dependencies safely" section   | 10 min |
 
 ### P4 — Quality improvements (from prior Pareto plan, still open)
 
-| #   | Task                                                            | Effort |
-| --- | --------------------------------------------------------------- | ------ |
-| 14  | Wire `Retry-After` header into failsafe-go backoff policy       | 60 min |
-| 15  | Register error types with `errorfamily.RegisterClassification`  | 30 min |
-| 16  | Extract `wiseDateFormat` constant                               | 5 min  |
-| 17  | Document `GetBalance` O(n) linear-scan cost in doc comment      | 5 min  |
-| 18  | Add `WithUserAgent` option                                      | 20 min |
-| 19  | Add `WithLogger` option                                         | 45 min |
-| 20  | Add benchmarks for hot paths (parseWiseDate, amount conversion) | 45 min |
-| 21  | Add `Example_*` test functions for godoc                        | 30 min |
-| 22  | Add `fmt.Stringer` for enum types                               | 30 min |
+| #  | Task                                                            | Effort |
+| -- | --------------------------------------------------------------- | ------ |
+| 14 | Wire `Retry-After` header into failsafe-go backoff policy       | 60 min |
+| 15 | Register error types with `errorfamily.RegisterClassification`  | 30 min |
+| 16 | Extract `wiseDateFormat` constant                               | 5 min  |
+| 17 | Document `GetBalance` O(n) linear-scan cost in doc comment      | 5 min  |
+| 18 | Add `WithUserAgent` option                                      | 20 min |
+| 19 | Add `WithLogger` option                                         | 45 min |
+| 20 | Add benchmarks for hot paths (parseWiseDate, amount conversion) | 45 min |
+| 21 | Add `Example_*` test functions for godoc                        | 30 min |
+| 22 | Add `fmt.Stringer` for enum types                               | 30 min |
 
 ### P5 — v0.3.0 breaking changes (from ROADMAP)
 
-| #   | Task                                                           | Effort |
-| --- | -------------------------------------------------------------- | ------ |
-| 23  | Introduce `Money` value object                                 | 4 hr   |
-| 24  | Introduce `Currency` branded type                              | 2 hr   |
-| 25  | Migrate Transaction/TransactionExchange/BalanceResult to Money | 3 hr   |
-| 26  | Normalize enum casing                                          | 1 hr   |
-| 27  | Reconcile `TransactionTypeUnknown`                             | 15 min |
-| 28  | Drop `Result` suffix or move raw types to `internal/raw`       | 2 hr   |
+| #  | Task                                                           | Effort |
+| -- | -------------------------------------------------------------- | ------ |
+| 23 | Introduce `Money` value object                                 | 4 hr   |
+| 24 | Introduce `Currency` branded type                              | 2 hr   |
+| 25 | Migrate Transaction/TransactionExchange/BalanceResult to Money | 3 hr   |
+| 26 | Normalize enum casing                                          | 1 hr   |
+| 27 | Reconcile `TransactionTypeUnknown`                             | 15 min |
+| 28 | Drop `Result` suffix or move raw types to `internal/raw`       | 2 hr   |
 
 ### P6 — CI and tooling
 
-| #   | Task                                                                  | Effort |
-| --- | --------------------------------------------------------------------- | ------ |
-| 29  | Add `nix` job to ci.yml (cachix/install-nix-action + nix flake check) | 30 min |
-| 30  | Run `govulncheck` locally                                             | 5 min  |
-| 31  | Consider `go:generate` for enum maps                                  | 60 min |
-| 32  | Add nix CI caching (cachix)                                           | 30 min |
+| #  | Task                                                                  | Effort |
+| -- | --------------------------------------------------------------------- | ------ |
+| 29 | Add `nix` job to ci.yml (cachix/install-nix-action + nix flake check) | 30 min |
+| 30 | Run `govulncheck` locally                                             | 5 min  |
+| 31 | Consider `go:generate` for enum maps                                  | 60 min |
+| 32 | Add nix CI caching (cachix)                                           | 30 min |
 
 ### P7 — Ecosystem investigation
 
-| #   | Task                                                                                             | Effort |
-| --- | ------------------------------------------------------------------------------------------------ | ------ |
-| 33  | Evaluate whether GOEXPERIMENT=jsonv2 will graduate in Go 1.27 (removing the experiment flag)     | 30 min |
-| 34  | Assess impact of jsonv2 requirement on downstream wise-go consumers                              | 30 min |
-| 35  | Consider whether go-branded-id/go-error-family should vendor jsonv2 to avoid the experiment flag | 45 min |
+| #  | Task                                                                                             | Effort |
+| -- | ------------------------------------------------------------------------------------------------ | ------ |
+| 33 | Evaluate whether GOEXPERIMENT=jsonv2 will graduate in Go 1.27 (removing the experiment flag)     | 30 min |
+| 34 | Assess impact of jsonv2 requirement on downstream wise-go consumers                              | 30 min |
+| 35 | Consider whether go-branded-id/go-error-family should vendor jsonv2 to avoid the experiment flag | 45 min |
 
 ### P8 — Testing depth
 
-| #   | Task                                             | Effort |
-| --- | ------------------------------------------------ | ------ |
-| 36  | Add integration test skeleton (live build tag)   | 60 min |
-| 37  | Investigate the 5.2% coverage gap (94.8% → 100%) | 30 min |
-| 38  | Add BDD tests for critical user journeys         | 60 min |
-| 39  | Add error path tests for all API error types     | 45 min |
+| #  | Task                                             | Effort |
+| -- | ------------------------------------------------ | ------ |
+| 36 | Add integration test skeleton (live build tag)   | 60 min |
+| 37 | Investigate the 5.2% coverage gap (94.8% → 100%) | 30 min |
+| 38 | Add BDD tests for critical user journeys         | 60 min |
+| 39 | Add error path tests for all API error types     | 45 min |
 
 ### P9 — README and public docs
 
-| #   | Task                                                             | Effort |
-| --- | ---------------------------------------------------------------- | ------ |
-| 40  | Add README "Mocking the client" section (Doer interface)         | 10 min |
-| 41  | Add README "Request middleware via WithHTTPClient" section       | 10 min |
-| 42  | Document GOEXPERIMENT=jsonv2 requirement in README for consumers | 10 min |
-| 43  | Review CONTRIBUTING.md for drift                                 | 15 min |
+| #  | Task                                                             | Effort |
+| -- | ---------------------------------------------------------------- | ------ |
+| 40 | Add README "Mocking the client" section (Doer interface)         | 10 min |
+| 41 | Add README "Request middleware via WithHTTPClient" section       | 10 min |
+| 42 | Document GOEXPERIMENT=jsonv2 requirement in README for consumers | 10 min |
+| 43 | Review CONTRIBUTING.md for drift                                 | 15 min |
 
 ### P10 — Architecture and design
 
-| #   | Task                                                         | Effort |
-| --- | ------------------------------------------------------------ | ------ |
-| 44  | Expose `EndOfStatementBalance` on `ListTransactionsResponse` | 30 min |
-| 45  | Consider removing `HasMore` (always false, misleading)       | 30 min |
-| 46  | Write ADR for GOEXPERIMENT=jsonv2 decision                   | 30 min |
-| 47  | Run `brutal-self-review` skill on the codebase               | 45 min |
-| 48  | Run `data-model-review` skill on types.go                    | 60 min |
-| 49  | Run `library-deep-dive` on failsafe-go                       | 45 min |
-| 50  | Run `library-deep-dive` on go-branded-id                     | 30 min |
+| #  | Task                                                         | Effort |
+| -- | ------------------------------------------------------------ | ------ |
+| 44 | Expose `EndOfStatementBalance` on `ListTransactionsResponse` | 30 min |
+| 45 | Consider removing `HasMore` (always false, misleading)       | 30 min |
+| 46 | Write ADR for GOEXPERIMENT=jsonv2 decision                   | 30 min |
+| 47 | Run `brutal-self-review` skill on the codebase               | 45 min |
+| 48 | Run `data-model-review` skill on types.go                    | 60 min |
+| 49 | Run `library-deep-dive` on failsafe-go                       | 45 min |
+| 50 | Run `library-deep-dive` on go-branded-id                     | 30 min |
 
 ---
 

@@ -479,8 +479,8 @@ func TestCheckErrorCapturesRateLimitedBy(t *testing.T) {
 
 	err := client.checkError(resp)
 
-	var rle *RateLimitError
-	if !errors.As(err, &rle) {
+	rle, ok := errors.AsType[*RateLimitError](err)
+	if !ok {
 		t.Fatalf("expected *RateLimitError, got %T", err)
 	}
 
@@ -507,8 +507,8 @@ func TestCheckErrorWithoutRateLimitedBy(t *testing.T) {
 
 	err := client.checkError(resp)
 
-	var rle *RateLimitError
-	if !errors.As(err, &rle) {
+	rle, ok := errors.AsType[*RateLimitError](err)
+	if !ok {
 		t.Fatalf("expected *RateLimitError, got %T", err)
 	}
 
@@ -617,6 +617,7 @@ type roundTripFunc func(req *http.Request) (*http.Response, error)
 func (f roundTripFunc) Do(req *http.Request) (*http.Response, error) {
 	return f(req)
 }
+
 // TestMapperParseErrorsAreCorruption guards the 2026-08-18 incident class:
 // permanent response-shape failures must classify as Corruption so consumers
 // fail fast instead of retrying with backoff. A blanket Transient wrap in a

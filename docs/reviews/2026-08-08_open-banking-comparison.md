@@ -1,7 +1,7 @@
 # wise-go SDK vs. Wise Open Banking API — Comparison Analysis
 
-**Date:** 2026-08-08  
-**Author:** Research session  
+**Date:** 2026-08-08\
+**Author:** Research session\
 **Sources:** wise-go source code analysis + [Wise Open Banking docs](https://docs.wise.com/guides/developer/open-banking) + [Production OIDC config](https://wise.com/openbanking/.well-known/openid-configuration)
 
 ---
@@ -188,21 +188,21 @@ func (c *Client) setAuth(req *http.Request) {
 
 ```json
 {
-	"AccountId": "504",
-	"Currency": "GBP",
-	"AccountType": "Personal",
-	"AccountSubType": "EMoney",
-	"Account": [
-		{
-			"SchemeName": "UK.OBIE.SortCodeAccountNumber",
-			"Identification": "230xxx1000xxxx",
-			"Name": "John Smith (GBP)"
-		}
-	],
-	"Servicer": {
-		"SchemeName": "UK.OBIE.BICFI",
-		"Identification": "TRWIGB22"
-	}
+  "AccountId": "504",
+  "Currency": "GBP",
+  "AccountType": "Personal",
+  "AccountSubType": "EMoney",
+  "Account": [
+    {
+      "SchemeName": "UK.OBIE.SortCodeAccountNumber",
+      "Identification": "230xxx1000xxxx",
+      "Name": "John Smith (GBP)"
+    }
+  ],
+  "Servicer": {
+    "SchemeName": "UK.OBIE.BICFI",
+    "Identification": "TRWIGB22"
+  }
 }
 ```
 
@@ -314,7 +314,7 @@ Wise offers a **Connected Applications API** as a secondary/backup providing the
 
 ## Appendix A: wise-go SDK Quick Reference
 
-**Module:** `github.com/larsartmann/wise-go` v0.5.0  
+**Module:** `github.com/larsartmann/wise-go` v0.5.0\
 **Go:** 1.26.5 (requires `GOEXPERIMENT=jsonv2`)
 
 ### Client Methods

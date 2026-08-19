@@ -30,14 +30,14 @@
         --warning: var(--color-yellow);
         --radius: 0px;
         --font-heading:
-          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Helvetica, Arial, sans-serif;
+          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         --font-body:
-          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Helvetica, Arial, sans-serif;
+          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         --font-mono:
-          ui-monospace, "Cascadia Code", "Source Code Pro", "JetBrains Mono", Menlo, Consolas,
-          monospace;
+          ui-monospace, "Cascadia Code", "Source Code Pro", "JetBrains Mono",
+          Menlo, Consolas, monospace;
       }
       * {
         box-sizing: border-box;
@@ -187,11 +187,19 @@
       }
       .card-solution {
         border-left-color: var(--solution);
-        background: color-mix(in srgb, var(--solution) 8%, var(--surface-raised));
+        background: color-mix(
+          in srgb,
+          var(--solution) 8%,
+          var(--surface-raised)
+        );
       }
       .card-warning {
         border-left-color: var(--warning);
-        background: color-mix(in srgb, var(--warning) 8%, var(--surface-raised));
+        background: color-mix(
+          in srgb,
+          var(--warning) 8%,
+          var(--surface-raised)
+        );
       }
       .severity {
         display: inline-block;
@@ -309,10 +317,11 @@
       <div class="hero-badge">Verdict: Do not modularize</div>
       <h1>wise-go Modularization Assessment</h1>
       <p class="hero-subtitle">
-        Applying the <em>When NOT to Modularize</em> decision framework from the go-modularize skill
-        to wise-go. The framework is direction-neutral — split, merge, or stay are all valid
-        outcomes. For this codebase, the evidence is unambiguous: <strong>stay</strong>. This
-        document records why, and the exact signals that would change the verdict.
+        Applying the <em>When NOT to Modularize</em> decision framework from the
+        go-modularize skill to wise-go. The framework is direction-neutral —
+        split, merge, or stay are all valid outcomes. For this codebase, the
+        evidence is unambiguous: <strong>stay</strong>. This document records
+        why, and the exact signals that would change the verdict.
       </p>
     </div>
 
@@ -342,8 +351,10 @@
 
     <p>
       Per the skill's rule:
-      <em>"3+ High signals → Stop. Do not modularize. Discuss with the user."</em> wise-go triggers
-      three high signals. The verdict is to stay single-module.
+      <em
+        >"3+ High signals → Stop. Do not modularize. Discuss with the user."</em
+      >
+      wise-go triggers three high signals. The verdict is to stay single-module.
     </p>
 
     <h2>Signal Detail</h2>
@@ -364,9 +375,10 @@
             <td><span class="badge badge-critical">High</span></td>
             <td><span class="badge badge-fixed">YES</span></td>
             <td>
-              1 package (<code>github.com/larsartmann/wise-go</code>), 8 source files, 3 resource
-              methods, ~1.3k LOC of non-test Go. The skill's threshold is "under 10 packages, single
-              domain." wise-go is one package, one domain.
+              1 package (<code>github.com/larsartmann/wise-go</code>), 8 source
+              files, 3 resource methods, ~1.3k LOC of non-test Go. The skill's
+              threshold is "under 10 packages, single domain." wise-go is one
+              package, one domain.
             </td>
           </tr>
           <tr>
@@ -374,9 +386,11 @@
             <td><span class="badge badge-critical">High</span></td>
             <td><span class="badge badge-fixed">YES</span></td>
             <td>
-              README says <em>"Early development. Covers core read endpoints."</em> Version is
-              v0.2.0 (pre-1.0). Write operations, webhooks, quotes, recipients, transfers are all
-              unimplemented. Module boundaries should follow a stabilized design, not precede it.
+              README says
+              <em>"Early development. Covers core read endpoints."</em> Version
+              is v0.2.0 (pre-1.0). Write operations, webhooks, quotes,
+              recipients, transfers are all unimplemented. Module boundaries
+              should follow a stabilized design, not precede it.
             </td>
           </tr>
           <tr>
@@ -384,8 +398,8 @@
             <td><span class="badge badge-critical">High</span></td>
             <td><span class="badge badge-fixed">N/A — trivially true</span></td>
             <td>
-              There is exactly one package. It changes together with itself by definition. A second
-              module would have nothing to compose against.
+              There is exactly one package. It changes together with itself by
+              definition. A second module would have nothing to compose against.
             </td>
           </tr>
           <tr>
@@ -393,9 +407,10 @@
             <td><span class="badge badge-high">Medium</span></td>
             <td><span class="badge badge-fixed">Likely YES</span></td>
             <td>
-              Pre-1.0 library; downstream consumers (if any) are unknown. Even if present, the
-              import path <code>github.com/larsartmann/wise-go</code> is the entire API. No consumer
-              benefits from importing a subset — there is no subset.
+              Pre-1.0 library; downstream consumers (if any) are unknown. Even
+              if present, the import path
+              <code>github.com/larsartmann/wise-go</code> is the entire API. No
+              consumer benefits from importing a subset — there is no subset.
             </td>
           </tr>
         </tbody>
@@ -407,31 +422,35 @@
     <div class="card card-solution">
       <h4>Composition is already optimal</h4>
       <p>
-        A consumer who wants only profiles imports <code>github.com/larsartmann/wise-go</code> and
-        uses <code>client.ListProfiles</code>. The compiler pulls in everything. Splitting into
-        <code>wise-go-profiles</code>, <code>wise-go-balances</code>,
-        <code>wise-go-transactions</code> would force consumers to import three modules to do what
-        one import does today — a net loss in composability, the opposite of Unix philosophy.
+        A consumer who wants only profiles imports
+        <code>github.com/larsartmann/wise-go</code> and uses
+        <code>client.ListProfiles</code>. The compiler pulls in everything.
+        Splitting into <code>wise-go-profiles</code>,
+        <code>wise-go-balances</code>, <code>wise-go-transactions</code> would
+        force consumers to import three modules to do what one import does today
+        — a net loss in composability, the opposite of Unix philosophy.
       </p>
     </div>
 
     <div class="card card-solution">
       <h4>Co-change is total, by construction</h4>
       <p>
-        <code>types.go</code>, <code>client.go</code>, and the resource files all change together
-        for any feature addition. There is no independent evolution path. Module boundaries that are
-        crossed by every commit are artificial — they impose cost without payoff.
+        <code>types.go</code>, <code>client.go</code>, and the resource files
+        all change together for any feature addition. There is no independent
+        evolution path. Module boundaries that are crossed by every commit are
+        artificial — they impose cost without payoff.
       </p>
     </div>
 
     <div class="card card-solution">
       <h4>The two-layer type system is one design unit</h4>
       <p>
-        Raw wire types, mapping functions, and result types form a single anti-corruption layer.
-        Splitting them across modules would either expose raw wire types publicly (bad — breaks
-        encapsulation) or force awkward interface modules (bad — over-engineering for ~1k LOC). The
-        current <em>convention</em> of two-layer separation inside one package is the right shape
-        for this scope.
+        Raw wire types, mapping functions, and result types form a single
+        anti-corruption layer. Splitting them across modules would either expose
+        raw wire types publicly (bad — breaks encapsulation) or force awkward
+        interface modules (bad — over-engineering for ~1k LOC). The current
+        <em>convention</em> of two-layer separation inside one package is the
+        right shape for this scope.
       </p>
     </div>
 
@@ -439,19 +458,19 @@
       <h4>Dependencies are already isolated to the production code</h4>
       <p>
         The three production dependencies (<code>failsafe-go</code>,
-        <code>go-branded-id</code>, <code>go-error-family</code>) are focused, stable, and each
-        pulled by a single file (<code>client.go</code>, <code>ids.go</code>,
-        <code>errors.go</code> respectively). There is no transitive bloat to isolate. Test deps
-        (ginkgo, gomega) sit correctly in the test files and never leak into production
-        <code>go.mod</code>.
+        <code>go-branded-id</code>, <code>go-error-family</code>) are focused,
+        stable, and each pulled by a single file (<code>client.go</code>,
+        <code>ids.go</code>, <code>errors.go</code> respectively). There is no
+        transitive bloat to isolate. Test deps (ginkgo, gomega) sit correctly in
+        the test files and never leak into production <code>go.mod</code>.
       </p>
     </div>
 
     <h2>What Would Change the Verdict</h2>
 
     <p>
-      Modularization becomes worth the cost when one of these signals appears. Track them; revisit
-      this assessment when one fires.
+      Modularization becomes worth the cost when one of these signals appears.
+      Track them; revisit this assessment when one fires.
     </p>
 
     <div class="table-wrap">
@@ -467,41 +486,54 @@
           <tr>
             <td>Resource count grows past ~6–8</td>
             <td>
-              profiles, balances, transactions + transfers, recipients, quotes, webhooks + one more
+              profiles, balances, transactions + transfers, recipients, quotes,
+              webhooks + one more
             </td>
             <td>
               Within-package
-              <strong>service-client sub-structure</strong> (<code>client.Profiles().List()</code>)
-              — still single-module. See architecture-review step 6.
+              <strong>service-client sub-structure</strong>
+              (<code>client.Profiles().List()</code>) — still single-module. See
+              architecture-review step 6.
             </td>
           </tr>
           <tr>
             <td>A consumer wants a strict subset of the API</td>
             <td>Real-world request from a downstream user</td>
-            <td>Extract that subset into its own module. Demand-driven; not speculative.</td>
+            <td>
+              Extract that subset into its own module. Demand-driven; not
+              speculative.
+            </td>
           </tr>
           <tr>
             <td>Write operations introduce heavy new dependencies</td>
-            <td>e.g. an ID generation library, a crypto package, a retry-policy engine</td>
             <td>
-              Move write-side code to a sibling module so read-only consumers do not pull the new
-              deps.
+              e.g. an ID generation library, a crypto package, a retry-policy
+              engine
+            </td>
+            <td>
+              Move write-side code to a sibling module so read-only consumers do
+              not pull the new deps.
             </td>
           </tr>
           <tr>
             <td>The raw wire types leak into consumers' code</td>
-            <td>Users start constructing <code>wise.Profile{}</code> directly</td>
             <td>
-              Move raw types behind <code>internal/raw</code>. Still single-module — see
-              architecture-review step 5.
+              Users start constructing <code>wise.Profile{}</code> directly
+            </td>
+            <td>
+              Move raw types behind <code>internal/raw</code>. Still
+              single-module — see architecture-review step 5.
             </td>
           </tr>
           <tr>
             <td>An SDK companion CLI appears</td>
-            <td>A separate <code>cmd/wise-go</code> binary that wraps the SDK</td>
             <td>
-              Convert to a Go workspace (<code>go.work</code>) with <code>./sdk</code> and
-              <code>./cmd</code> modules. Two modules, not many.
+              A separate <code>cmd/wise-go</code> binary that wraps the SDK
+            </td>
+            <td>
+              Convert to a Go workspace (<code>go.work</code>) with
+              <code>./sdk</code> and <code>./cmd</code> modules. Two modules,
+              not many.
             </td>
           </tr>
         </tbody>
@@ -514,9 +546,10 @@
       <span class="severity severity-low">Rejected · Premature</span>
       <h4>Do not split per resource</h4>
       <p>
-        <code>wise-profiles</code>, <code>wise-balances</code>, <code>wise-transactions</code> as
-        separate modules. Every consumer would import all three. The boundaries have no
-        composability payoff — the classic FM#8 (over-modularization) failure mode.
+        <code>wise-profiles</code>, <code>wise-balances</code>,
+        <code>wise-transactions</code> as separate modules. Every consumer would
+        import all three. The boundaries have no composability payoff — the
+        classic FM#8 (over-modularization) failure mode.
       </p>
     </div>
 
@@ -524,10 +557,12 @@
       <span class="severity severity-low">Rejected · Premature</span>
       <h4>Do not split raw/result types into separate modules</h4>
       <p>
-        <code>wise-wire</code> (raw JSON types) + <code>wise</code> (result types). The result layer
-        consumes the raw layer; consumers consume the result layer. Two modules, one consumer of the
-        seam, zero payoff. Use a within-package <code>internal/raw</code>
-        subpackage if raw-type leakage becomes a problem (architecture-review step 5).
+        <code>wise-wire</code> (raw JSON types) + <code>wise</code> (result
+        types). The result layer consumes the raw layer; consumers consume the
+        result layer. Two modules, one consumer of the seam, zero payoff. Use a
+        within-package <code>internal/raw</code>
+        subpackage if raw-type leakage becomes a problem (architecture-review
+        step 5).
       </p>
     </div>
 
@@ -535,26 +570,29 @@
       <span class="severity severity-low">Rejected · Premature</span>
       <h4>Do not extract a "domain core" module</h4>
       <p>
-        Tempting pattern: <code>wise-domain</code> with pure types and interfaces,
-        <code>wise</code> with the HTTP implementation. Justified for infrastructure plug-in
-        swapping (e.g., multiple HTTP backends). wise-go has one implementation, one transport, one
-        retry library. The seam would be unused.
+        Tempting pattern: <code>wise-domain</code> with pure types and
+        interfaces, <code>wise</code> with the HTTP implementation. Justified
+        for infrastructure plug-in swapping (e.g., multiple HTTP backends).
+        wise-go has one implementation, one transport, one retry library. The
+        seam would be unused.
       </p>
     </div>
 
     <h2>Verdict</h2>
 
     <blockquote class="callout callout-solution">
-      <strong>Stay single-module.</strong> wise-go is a focused, ~1.3k-LOC, one-domain library with
-      three production dependencies. It scores three High signals on the
-      <em>do-not-modularize</em> test. The current <code>go.mod</code> boundary is in the right
-      place. Re-open this assessment only when one of the triggers above fires — most likely the
-      "resource count crosses 6–8" signal, which itself triggers an in-package refactor, not a
-      module split.
+      <strong>Stay single-module.</strong> wise-go is a focused, ~1.3k-LOC,
+      one-domain library with three production dependencies. It scores three
+      High signals on the <em>do-not-modularize</em> test. The current
+      <code>go.mod</code> boundary is in the right place. Re-open this
+      assessment only when one of the triggers above fires — most likely the
+      "resource count crosses 6–8" signal, which itself triggers an in-package
+      refactor, not a module split.
     </blockquote>
 
     <footer class="footer">
-      Generated 2026-07-18 · go-modularize skill, direction-neutral · Verdict: stay (3 High signals)
+      Generated 2026-07-18 · go-modularize skill, direction-neutral · Verdict:
+      stay (3 High signals)
     </footer>
   </body>
 </html>

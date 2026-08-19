@@ -30,14 +30,14 @@
         --warning: var(--color-yellow);
         --radius: 0px;
         --font-heading:
-          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Helvetica, Arial, sans-serif;
+          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         --font-body:
-          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Helvetica, Arial, sans-serif;
+          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         --font-mono:
-          ui-monospace, "Cascadia Code", "Source Code Pro", "JetBrains Mono", Menlo, Consolas,
-          monospace;
+          ui-monospace, "Cascadia Code", "Source Code Pro", "JetBrains Mono",
+          Menlo, Consolas, monospace;
       }
       * {
         box-sizing: border-box;
@@ -231,15 +231,27 @@
       }
       .card-problem {
         border-left-color: var(--problem);
-        background: color-mix(in srgb, var(--problem) 8%, var(--surface-raised));
+        background: color-mix(
+          in srgb,
+          var(--problem) 8%,
+          var(--surface-raised)
+        );
       }
       .card-solution {
         border-left-color: var(--solution);
-        background: color-mix(in srgb, var(--solution) 8%, var(--surface-raised));
+        background: color-mix(
+          in srgb,
+          var(--solution) 8%,
+          var(--surface-raised)
+        );
       }
       .card-warning {
         border-left-color: var(--warning);
-        background: color-mix(in srgb, var(--warning) 8%, var(--surface-raised));
+        background: color-mix(
+          in srgb,
+          var(--warning) 8%,
+          var(--surface-raised)
+        );
       }
       .severity {
         display: inline-block;
@@ -598,11 +610,12 @@
           <div class="hero-badge">Architecture Deep-Dive</div>
           <h1>wise-go Data Model Review</h1>
           <p class="hero-subtitle">
-            A first-principles review of every type in <code>types.go</code>, <code>ids.go</code>,
-            <code>errors.go</code>, and the request/response structs. The existing model is already
-            disciplined — branded IDs, two-layer raw/result split, int64 cents. This review catalogs
-            what separates it from a model where invalid states are <em>unrepresentable</em>, not
-            merely rejected at runtime.
+            A first-principles review of every type in <code>types.go</code>,
+            <code>ids.go</code>, <code>errors.go</code>, and the
+            request/response structs. The existing model is already disciplined
+            — branded IDs, two-layer raw/result split, int64 cents. This review
+            catalogs what separates it from a model where invalid states are
+            <em>unrepresentable</em>, not merely rejected at runtime.
           </p>
         </div>
 
@@ -631,19 +644,24 @@
         </div>
 
         <p>
-          The model is structurally sound. The raw-vs-result split correctly isolates the
-          JSON-decode layer from the public API. Branded IDs (<code>ProfileID</code>,
-          <code>BalanceID</code>, <code>TransactionID</code>) already eliminate an entire class of
-          "passed the wrong ID" bugs at compile time. The error types compose via embedding and
-          classify behaviorally via <code>go-error-family</code>.
+          The model is structurally sound. The raw-vs-result split correctly
+          isolates the JSON-decode layer from the public API. Branded IDs
+          (<code>ProfileID</code>,
+          <code>BalanceID</code>, <code>TransactionID</code>) already eliminate
+          an entire class of "passed the wrong ID" bugs at compile time. The
+          error types compose via embedding and classify behaviorally via
+          <code>go-error-family</code>.
         </p>
 
         <p>
           The remaining problems cluster around two systemic roots:
-          <strong>(a) money is modeled as paired primitive fields instead of a value object</strong
-          >, and <strong>(b) several domain enums remain stringly-typed</strong>. Both are classic
-          "organic growth" patterns — easy to write once, expensive to maintain, and exactly what
-          this skill exists to correct.
+          <strong
+            >(a) money is modeled as paired primitive fields instead of a value
+            object</strong
+          >, and
+          <strong>(b) several domain enums remain stringly-typed</strong>. Both
+          are classic "organic growth" patterns — easy to write once, expensive
+          to maintain, and exactly what this skill exists to correct.
         </p>
 
         <h2 id="catalog"><span class="num">01</span>Problem Catalog</h2>
@@ -653,20 +671,23 @@
           <h3>Money is smashed into primitive pairs</h3>
           <p>
             <strong>Where:</strong> <code>Transaction</code> (6 pairs),
-            <code>TransactionExchange</code> (2 pairs), <code>BalanceResult</code> (2 pairs).
+            <code>TransactionExchange</code> (2 pairs),
+            <code>BalanceResult</code> (2 pairs).
           </p>
           <p>
-            Every monetary amount is modeled as <code>XxxCents int64</code> paired with
+            Every monetary amount is modeled as
+            <code>XxxCents int64</code> paired with
             <code>XxxCurrency string</code>. <code>Transaction</code> alone has
-            <em>twelve</em> fields for four logical amounts. Nothing prevents constructing a
-            <code>Transaction</code> with <code>TotalCents</code> in USD but
-            <code>TotalCurrency</code> set to <code>"EUR"</code>. The pairing is an invariant the
-            type system does not enforce.
+            <em>twelve</em> fields for four logical amounts. Nothing prevents
+            constructing a <code>Transaction</code> with
+            <code>TotalCents</code> in USD but <code>TotalCurrency</code> set to
+            <code>"EUR"</code>. The pairing is an invariant the type system does
+            not enforce.
           </p>
           <div class="callout callout-solution">
             <strong>Fix</strong>
-            Introduce a <code>Money</code> value object. Each pair collapses to one field.
-            Mismatched currency/amount becomes unrepresentable.
+            Introduce a <code>Money</code> value object. Each pair collapses to
+            one field. Mismatched currency/amount becomes unrepresentable.
           </div>
         </div>
 
@@ -675,19 +696,22 @@
           <h3>Currency is a raw string</h3>
           <p>
             <strong>Where:</strong> every <code>Currency string</code> field,
-            <code>ListTransactionsRequest.Currency</code>, <code>BalanceAmount.Currency</code>.
+            <code>ListTransactionsRequest.Currency</code>,
+            <code>BalanceAmount.Currency</code>.
           </p>
           <p>
-            ISO 4217 currency codes are a closed, well-known set of exactly 3 uppercase letters.
-            Modeling them as <code>string</code> means any caller can pass <code>"usd"</code>,
-            <code>"USD "</code>, <code>"euros"</code>, or <code>""</code> and the type system will
+            ISO 4217 currency codes are a closed, well-known set of exactly 3
+            uppercase letters. Modeling them as <code>string</code> means any
+            caller can pass <code>"usd"</code>, <code>"USD "</code>,
+            <code>"euros"</code>, or <code>""</code> and the type system will
             not help. The empty-string case is so real that
-            <code>ListTransactionsRequest.validate()</code> already special-cases it.
+            <code>ListTransactionsRequest.validate()</code> already
+            special-cases it.
           </p>
           <div class="callout callout-solution">
             <strong>Fix</strong>
-            <code>type Currency string</code> with a constructor that validates length-3 uppercase
-            ASCII. Pairs naturally with <code>Money</code>.
+            <code>type Currency string</code> with a constructor that validates
+            length-3 uppercase ASCII. Pairs naturally with <code>Money</code>.
           </div>
         </div>
 
@@ -699,18 +723,22 @@
             <code>balances.go:28</code>.
           </p>
           <p>
-            <code>InvestmentStateNotInvested</code> and <code>InvestmentStateInvested</code> are
-            bare <code>string</code> constants with no named type. The filter at
+            <code>InvestmentStateNotInvested</code> and
+            <code>InvestmentStateInvested</code> are bare
+            <code>string</code> constants with no named type. The filter at
             <code>balances.go:28</code> compares
-            <code>b.InvestmentState != InvestmentStateNotInvested</code> against an untyped string.
-            Adding a third state in the future would silently slip past this. Compare to
-            <code>BalanceType</code> and <code>ProfileType</code>, which are properly typed — this
-            is an inconsistency within the same file.
+            <code>b.InvestmentState != InvestmentStateNotInvested</code> against
+            an untyped string. Adding a third state in the future would silently
+            slip past this. Compare to <code>BalanceType</code> and
+            <code>ProfileType</code>, which are properly typed — this is an
+            inconsistency within the same file.
           </p>
           <div class="callout callout-solution">
             <strong>Fix</strong>
-            <code>type InvestmentState string</code> with the two constants promoted to that type.
-            Add a <code>parseInvestmentState</code> helper that returns an error for unknown values.
+            <code>type InvestmentState string</code> with the two constants
+            promoted to that type. Add a
+            <code>parseInvestmentState</code> helper that returns an error for
+            unknown values.
           </div>
         </div>
 
@@ -722,17 +750,21 @@
             <code>transactions.go:33</code>.
           </p>
           <p>
-            The <code>Type</code> filter accepts Wise's <code>details.type</code> wire values
-            (<code>CARD_PAYMENT</code>, <code>TRANSFER</code>, etc.). These are the same values the
-            SDK already has as unexported constants (<code>wiseDetailCardPayment</code>, etc.) — but
-            the request field is <code>string</code>, so callers cannot discover the valid set
-            without reading the README. The constants exist but are kept private.
+            The <code>Type</code> filter accepts Wise's
+            <code>details.type</code> wire values (<code>CARD_PAYMENT</code>,
+            <code>TRANSFER</code>, etc.). These are the same values the SDK
+            already has as unexported constants
+            (<code>wiseDetailCardPayment</code>, etc.) — but the request field
+            is <code>string</code>, so callers cannot discover the valid set
+            without reading the README. The constants exist but are kept
+            private.
           </p>
           <div class="callout callout-solution">
             <strong>Fix</strong>
-            Export a typed <code>DetailType</code> enum and use it in the request. Existing string
-            callers can keep working via a <code>String()</code>-based setter or by leaving the
-            field as <code>string</code> but documenting the closed set.
+            Export a typed <code>DetailType</code> enum and use it in the
+            request. Existing string callers can keep working via a
+            <code>String()</code>-based setter or by leaving the field as
+            <code>string</code> but documenting the closed set.
           </div>
         </div>
 
@@ -744,20 +776,23 @@
             <code>transactions.go:66</code>.
           </p>
           <p>
-            The field is always <code>false</code>. <code>AGENTS.md</code> documents this. The
-            README documents this. And yet the field exists, promising pagination semantics that the
+            The field is always <code>false</code>.
+            <code>AGENTS.md</code> documents this. The README documents this.
+            And yet the field exists, promising pagination semantics that the
             type does not deliver. A caller writing
-            <code>for resp.HasMore { fetchMore() }</code> will loop zero times and silently produce
-            an incomplete dataset if Wise ever changes the contract. The field makes an impossible
-            state <em>representable</em> — the opposite of the type-system goal.
+            <code>for resp.HasMore { fetchMore() }</code> will loop zero times
+            and silently produce an incomplete dataset if Wise ever changes the
+            contract. The field makes an impossible state
+            <em>representable</em> — the opposite of the type-system goal.
           </p>
           <div class="callout callout-solution">
             <strong>Fix</strong>
             For v1.0: remove <code>HasMore</code> entirely and let
-            <code>ListTransactionsResponse</code> be a plain <code>[]Transaction</code>. For v0.x:
-            at minimum rename to <code>HasMoreOrEq</code>... no — better: document why it exists
-            (forward compatibility) in a comment, and never write <code>HasMore: true</code> in
-            tests.
+            <code>ListTransactionsResponse</code> be a plain
+            <code>[]Transaction</code>. For v0.x: at minimum rename to
+            <code>HasMoreOrEq</code>... no — better: document why it exists
+            (forward compatibility) in a comment, and never write
+            <code>HasMore: true</code> in tests.
           </div>
         </div>
 
@@ -766,21 +801,23 @@
           <h3>Enum value casing is inconsistent</h3>
           <p><strong>Where:</strong> <code>types.go:178-209</code>.</p>
           <p>
-            <code>ProfileType</code> values are lowercase (<code>personal</code>,
-            <code>business</code>) — normalized from the API's
-            <code>PERSONAL</code>/<code>BUSINESS</code>. <code>BalanceType</code> values are
-            uppercase (<code>STANDARD</code>, <code>SAVINGS</code>) — passed through from the API
-            verbatim. <code>TransactionType</code> values are lowercase (<code>card</code>,
-            <code>credit</code>) — normalized from <code>CARD_PAYMENT</code>, etc. Two normalization
-            strategies coexist in the same file. There is no single rule a contributor can follow.
+            <code>ProfileType</code> values are lowercase
+            (<code>personal</code>, <code>business</code>) — normalized from the
+            API's <code>PERSONAL</code>/<code>BUSINESS</code>.
+            <code>BalanceType</code> values are uppercase
+            (<code>STANDARD</code>, <code>SAVINGS</code>) — passed through from
+            the API verbatim. <code>TransactionType</code> values are lowercase
+            (<code>card</code>, <code>credit</code>) — normalized from
+            <code>CARD_PAYMENT</code>, etc. Two normalization strategies coexist
+            in the same file. There is no single rule a contributor can follow.
           </p>
           <div class="callout callout-solution">
             <strong>Fix</strong>
-            Pick one rule: "result enums are always lowercase Go-style; raw values stay wire-style."
-            Then <code>BalanceType</code> should normalize to <code>standard</code>/<code
-              >savings</code
-            >
-            for consistency — or all three stay wire-style. Either is defensible; the mix is not.
+            Pick one rule: "result enums are always lowercase Go-style; raw
+            values stay wire-style." Then <code>BalanceType</code> should
+            normalize to <code>standard</code>/<code>savings</code>
+            for consistency — or all three stay wire-style. Either is
+            defensible; the mix is not.
           </div>
         </div>
 
@@ -790,10 +827,11 @@
           <p><strong>Where:</strong> <code>types.go:209</code>.</p>
           <p>
             <code>TransactionTypeUnknown</code> is defined but never returned by
-            <code>classifyTransactionType</code> — the default branch falls back to
-            <code>Credit</code> or <code>Debit</code> based on amount sign. The constant is dead
-            weight that implies a classification path that does not exist. Either remove it, or use
-            it as the fallback when the detail type is unrecognized (preserving the information that
+            <code>classifyTransactionType</code> — the default branch falls back
+            to <code>Credit</code> or <code>Debit</code> based on amount sign.
+            The constant is dead weight that implies a classification path that
+            does not exist. Either remove it, or use it as the fallback when the
+            detail type is unrecognized (preserving the information that
             classification failed).
           </p>
         </div>
@@ -802,13 +840,16 @@
           <span class="severity severity-medium">Medium · P9 / P11</span>
           <h3>Duplicated enum-parsing functions</h3>
           <p>
-            <strong>Where:</strong> <code>profiles.go:57-66</code>, <code>balances.go:91-100</code>.
+            <strong>Where:</strong> <code>profiles.go:57-66</code>,
+            <code>balances.go:91-100</code>.
           </p>
           <p>
-            <code>parseProfileType</code> and <code>parseBalanceType</code> are the same function
-            shape: a <code>switch</code> over a string mapping to a typed enum, with a default
-            error. Adding <code>parseInvestmentState</code> and <code>parseDetailType</code> would
-            add two more copies. A single generic helper eliminates the pattern.
+            <code>parseProfileType</code> and <code>parseBalanceType</code> are
+            the same function shape: a <code>switch</code> over a string mapping
+            to a typed enum, with a default error. Adding
+            <code>parseInvestmentState</code> and
+            <code>parseDetailType</code> would add two more copies. A single
+            generic helper eliminates the pattern.
           </p>
           <div class="callout callout-solution">
             <strong>Fix</strong>
@@ -826,19 +867,23 @@
           <span class="severity severity-low">Low · P3</span>
           <h3>Transaction.Date timezone semantics are undocumented</h3>
           <p>
-            <strong>Where:</strong> <code>helpers.go:44-51</code>, <code>transactions.go:76</code>.
+            <strong>Where:</strong> <code>helpers.go:44-51</code>,
+            <code>transactions.go:76</code>.
           </p>
           <p>
-            Wise returns transaction dates as <code>"2006-01-02 15:04:05"</code> with no timezone.
-            <code>time.Parse</code> interprets this as UTC. Whether the original statement is in
-            UTC, the account's timezone, or the currency's home timezone is not documented. A caller
-            comparing <code>tx.Date</code> to a local time will silently off-by-a-day at boundaries.
+            Wise returns transaction dates as
+            <code>"2006-01-02 15:04:05"</code> with no timezone.
+            <code>time.Parse</code> interprets this as UTC. Whether the original
+            statement is in UTC, the account's timezone, or the currency's home
+            timezone is not documented. A caller comparing
+            <code>tx.Date</code> to a local time will silently off-by-a-day at
+            boundaries.
           </p>
           <div class="callout callout-solution">
             <strong>Fix</strong>
-            Document the assumption in the <code>parseWiseDate</code> doc comment and in the
-            <code>Transaction.Date</code> field doc: "Returned in UTC; Wise does not transmit a
-            timezone."
+            Document the assumption in the <code>parseWiseDate</code> doc
+            comment and in the <code>Transaction.Date</code> field doc:
+            "Returned in UTC; Wise does not transmit a timezone."
           </div>
         </div>
 
@@ -850,8 +895,9 @@
             <div class="text">
               <strong>Money is a value object, not a field pair</strong>
               <span
-                >One <code>Money</code> type carries cents + currency together. A transaction has
-                four <code>Money</code> fields, not twelve primitive fields.</span
+                >One <code>Money</code> type carries cents + currency together.
+                A transaction has four <code>Money</code> fields, not twelve
+                primitive fields.</span
               >
             </div>
           </div>
@@ -860,8 +906,8 @@
             <div class="text">
               <strong>Currency is branded and validated at construction</strong>
               <span
-                >An empty or malformed currency cannot reach the API layer because it cannot be
-                constructed.</span
+                >An empty or malformed currency cannot reach the API layer
+                because it cannot be constructed.</span
               >
             </div>
           </div>
@@ -871,8 +917,8 @@
               <strong>Every enum is a named type with a parser</strong>
               <span
                 >No bare string constants. <code>InvestmentState</code>,
-                <code>DetailType</code> join <code>ProfileType</code>, <code>BalanceType</code>,
-                <code>TransactionType</code>.</span
+                <code>DetailType</code> join <code>ProfileType</code>,
+                <code>BalanceType</code>, <code>TransactionType</code>.</span
               >
             </div>
           </div>
@@ -880,7 +926,10 @@
             <div class="check">+</div>
             <div class="text">
               <strong>Enum parsing is one generic helper, not N copies</strong>
-              <span><code>parseEnum[T]</code> eliminates the duplicated switch functions.</span>
+              <span
+                ><code>parseEnum[T]</code> eliminates the duplicated switch
+                functions.</span
+              >
             </div>
           </div>
           <div class="strength">
@@ -898,8 +947,8 @@
             <div class="text">
               <strong>One normalization rule for all result enums</strong>
               <span
-                >Lowercase Go-style for SDK-facing enums; wire values stay wire-side in the raw
-                layer only.</span
+                >Lowercase Go-style for SDK-facing enums; wire values stay
+                wire-side in the raw layer only.</span
               >
             </div>
           </div>
@@ -988,13 +1037,16 @@
 }</code></pre>
 
         <p>
-          The <code>Transaction</code> struct drops from <strong>20 fields to 14</strong>, and every
-          monetary amount now carries its currency by construction. The previous impossible state —
+          The <code>Transaction</code> struct drops from
+          <strong>20 fields to 14</strong>, and every monetary amount now
+          carries its currency by construction. The previous impossible state —
           <code>TotalCents</code> in one currency and <code>TotalCurrency</code>
           in another — is now unrepresentable.
         </p>
 
-        <h2 id="composition"><span class="num">04</span>Composition in Action</h2>
+        <h2 id="composition">
+          <span class="num">04</span>Composition in Action
+        </h2>
 
         <h3>Money: before vs. after</h3>
         <div class="compare-header">
@@ -1038,26 +1090,33 @@
 
         <h3>Error composition: already correct</h3>
         <p>
-          The error model is the part of the codebase that <em>already</em> uses composition well.
-          <code>RateLimitError</code>, <code>AuthError</code>, <code>NotFoundError</code>, and
-          <code>ServerError</code> embed <code>APIError</code> by value and override only the
-          methods that differ. The base type carries <code>StatusCode</code>, <code>Message</code>,
-          <code>Body</code>, <code>Error()</code>, <code>ErrorCode()</code>, and a default
-          <code>ErrorFamily()</code>. Subtypes override <code>ErrorFamily()</code> (transient vs.
-          rejection), <code>IsRetryable()</code>, and <code>ErrorContext()</code> as needed.
+          The error model is the part of the codebase that <em>already</em> uses
+          composition well. <code>RateLimitError</code>, <code>AuthError</code>,
+          <code>NotFoundError</code>, and <code>ServerError</code> embed
+          <code>APIError</code> by value and override only the methods that
+          differ. The base type carries <code>StatusCode</code>,
+          <code>Message</code>, <code>Body</code>, <code>Error()</code>,
+          <code>ErrorCode()</code>, and a default <code>ErrorFamily()</code>.
+          Subtypes override <code>ErrorFamily()</code> (transient vs.
+          rejection), <code>IsRetryable()</code>, and
+          <code>ErrorContext()</code> as needed.
         </p>
 
         <p>
-          This is the textbook Go composition pattern — no deep inheritance, no abstract base
-          classes, behavior overridden at the edge. It is called out here so reviewers do not "fix"
-          something that is not broken.
+          This is the textbook Go composition pattern — no deep inheritance, no
+          abstract base classes, behavior overridden at the edge. It is called
+          out here so reviewers do not "fix" something that is not broken.
         </p>
 
         <h2 id="validation"><span class="num">05</span>Validation Layer</h2>
 
         <p>
-          The principle: <strong>if a value can be invalid, it must not be constructible.</strong>
-          The redesigned model pushes validation into constructors so call sites never re-validate.
+          The principle:
+          <strong
+            >if a value can be invalid, it must not be constructible.</strong
+          >
+          The redesigned model pushes validation into constructors so call sites
+          never re-validate.
         </p>
 
         <div class="table-wrap">
@@ -1073,7 +1132,10 @@
             <tbody>
               <tr>
                 <td>Currency</td>
-                <td>raw <code>string</code>; <code>validate()</code> rejects <code>""</code></td>
+                <td>
+                  raw <code>string</code>; <code>validate()</code> rejects
+                  <code>""</code>
+                </td>
                 <td><code>NewCurrency(string) (Currency, error)</code></td>
                 <td>Unrepresentable — bad codes fail construction</td>
               </tr>
@@ -1092,7 +1154,9 @@
               <tr>
                 <td>DetailType (request filter)</td>
                 <td>raw <code>string</code></td>
-                <td><code>type DetailType string</code> with exported constants</td>
+                <td>
+                  <code>type DetailType string</code> with exported constants
+                </td>
                 <td>Discoverable set; typos caught at compile time</td>
               </tr>
               <tr>
@@ -1116,100 +1180,118 @@
         <div class="card card-solution">
           <h4>Decision: Money is a struct, not [2]int64 or a typed int64</h4>
           <p>
-            <strong>Chosen:</strong> <code>struct { Cents int64; Currency Currency }</code>.
-            <strong>Rejected:</strong> a typed int64 with the currency in a parallel slice (data
-            locality argued for it); a generic <code>Money[T Currency]</code> (overkill, currencies
-            are not a compile-time set). The struct wins because it composes by value, zero-copy,
-            and the pair is the natural unit — you never add cents across currencies.
+            <strong>Chosen:</strong>
+            <code>struct { Cents int64; Currency Currency }</code>.
+            <strong>Rejected:</strong> a typed int64 with the currency in a
+            parallel slice (data locality argued for it); a generic
+            <code>Money[T Currency]</code> (overkill, currencies are not a
+            compile-time set). The struct wins because it composes by value,
+            zero-copy, and the pair is the natural unit — you never add cents
+            across currencies.
           </p>
         </div>
 
         <div class="card card-solution">
           <h4>Decision: Currency is a named string, not an int enum</h4>
           <p>
-            <strong>Chosen:</strong> <code>type Currency string</code> with constructor validation.
-            <strong>Rejected:</strong> a closed int enum (would require a registry and prevent
-            callers from using currencies Wise has not added yet); an iota of "known" currencies
-            (same problem, worse). A validated named string keeps the wire format readable while
-            rejecting malformed values at construction.
+            <strong>Chosen:</strong> <code>type Currency string</code> with
+            constructor validation. <strong>Rejected:</strong> a closed int enum
+            (would require a registry and prevent callers from using currencies
+            Wise has not added yet); an iota of "known" currencies (same
+            problem, worse). A validated named string keeps the wire format
+            readable while rejecting malformed values at construction.
           </p>
         </div>
 
         <div class="card card-solution">
           <h4>Decision: InvestmentState joins the typed-enum pattern</h4>
           <p>
-            <strong>Chosen:</strong> promote to <code>type InvestmentState string</code>.
-            <strong>Rejected:</strong> leave as bare constants "because there are only two values."
-            Two-value enums grow. The cost of typing it is one line; the cost of leaving it is a
-            silent future bug when Wise adds <code>HELD</code> or <code>PENDING</code>.
+            <strong>Chosen:</strong> promote to
+            <code>type InvestmentState string</code>.
+            <strong>Rejected:</strong> leave as bare constants "because there
+            are only two values." Two-value enums grow. The cost of typing it is
+            one line; the cost of leaving it is a silent future bug when Wise
+            adds <code>HELD</code> or <code>PENDING</code>.
           </p>
         </div>
 
         <div class="card card-solution">
-          <h4>Decision: Do not introduce interface-based union for Transaction</h4>
+          <h4>
+            Decision: Do not introduce interface-based union for Transaction
+          </h4>
           <p>
-            <strong>Chosen:</strong> keep <code>Transaction</code> a flat struct with a
-            <code>Type</code> field and optional <code>Exchange</code>. <strong>Rejected:</strong> a
-            sealed interface union (<code>CreditTx</code>, <code>DebitTx</code>,
-            <code>ExchangeTx</code> ...). A union would force every caller ranging over
-            <code>[]Transaction</code> to type-switch, which is the wrong ergonomic for statement
-            iteration. The optional <code>Exchange</code> pointer is the right trade-off for
-            read-heavy SDKs.
+            <strong>Chosen:</strong> keep <code>Transaction</code> a flat struct
+            with a <code>Type</code> field and optional <code>Exchange</code>.
+            <strong>Rejected:</strong> a sealed interface union
+            (<code>CreditTx</code>, <code>DebitTx</code>,
+            <code>ExchangeTx</code> ...). A union would force every caller
+            ranging over <code>[]Transaction</code> to type-switch, which is the
+            wrong ergonomic for statement iteration. The optional
+            <code>Exchange</code> pointer is the right trade-off for read-heavy
+            SDKs.
           </p>
         </div>
 
         <div class="card card-warning">
           <h4>Decision: defer HasMore removal to v1.0</h4>
           <p>
-            <strong>Chosen:</strong> keep <code>HasMore</code> in v0.x, remove in v1.0.
-            <strong>Rationale:</strong> the field is part of the public API today; removing it is a
-            breaking change. The project is pre-1.0 and breaking changes are expected, but the
-            data-model review is not the right scope for an API break — that belongs in a deliberate
+            <strong>Chosen:</strong> keep <code>HasMore</code> in v0.x, remove
+            in v1.0. <strong>Rationale:</strong> the field is part of the public
+            API today; removing it is a breaking change. The project is pre-1.0
+            and breaking changes are expected, but the data-model review is not
+            the right scope for an API break — that belongs in a deliberate
             release. For now: add a comment explaining why it is always false.
           </p>
         </div>
 
-        <h2 id="antipatterns"><span class="num">07</span>Anti-Patterns to Avoid</h2>
+        <h2 id="antipatterns">
+          <span class="num">07</span>Anti-Patterns to Avoid
+        </h2>
 
         <div class="card card-problem">
           <h4>Do not brand the raw API structs</h4>
           <p>
-            <code>Profile</code>, <code>Balance</code>, <code>StatementTransaction</code> exist to
-            match Wise's JSON wire format exactly. Branding <code>Profile.ID int64</code> into a
-            branded type breaks <code>encoding/json</code> unmarshaling and creates false positives
-            for phantom-ID linters. The raw layer stays primitive; the result layer gets the types.
-            This is already correct — keep it.
+            <code>Profile</code>, <code>Balance</code>,
+            <code>StatementTransaction</code> exist to match Wise's JSON wire
+            format exactly. Branding <code>Profile.ID int64</code> into a
+            branded type breaks <code>encoding/json</code> unmarshaling and
+            creates false positives for phantom-ID linters. The raw layer stays
+            primitive; the result layer gets the types. This is already correct
+            — keep it.
           </p>
         </div>
 
         <div class="card card-problem">
           <h4>Do not introduce a <code>Money[T Currency]</code> generic</h4>
           <p>
-            Tempting for "type-safe cross-currency arithmetic," but currencies are a runtime value,
-            not a compile-time set. Generic Money would force code generation or a massive type-set
-            for no real safety gain over the validated-string <code>Currency</code>.
+            Tempting for "type-safe cross-currency arithmetic," but currencies
+            are a runtime value, not a compile-time set. Generic Money would
+            force code generation or a massive type-set for no real safety gain
+            over the validated-string <code>Currency</code>.
           </p>
         </div>
 
         <div class="card card-problem">
           <h4>Do not add a <code>Validate()</code> method to every type</h4>
           <p>
-            If you need <code>Validate()</code>, the type allows invalid states. The fix is to make
-            the constructor the only way in and have it reject invalid input. <code>Money</code>,
-            <code>Currency</code>, and the typed enums do not need <code>Validate()</code> because
-            they cannot be constructed invalid. The only <code>validate()</code> that should remain
-            is on <code>ListTransactionsRequest</code>, where the invariant (<code
-              >From &lt;= To</code
-            >) genuinely cannot be encoded in the field types.
+            If you need <code>Validate()</code>, the type allows invalid states.
+            The fix is to make the constructor the only way in and have it
+            reject invalid input. <code>Money</code>, <code>Currency</code>, and
+            the typed enums do not need <code>Validate()</code> because they
+            cannot be constructed invalid. The only <code>validate()</code> that
+            should remain is on <code>ListTransactionsRequest</code>, where the
+            invariant (<code>From &lt;= To</code>) genuinely cannot be encoded
+            in the field types.
           </p>
         </div>
 
         <h2 id="roadmap"><span class="num">08</span>Migration Roadmap</h2>
 
         <p>
-          The roadmap is ordered by <strong>value ÷ risk</strong>. Each step is independently
-          shippable. The project is at <code>v0.2.0</code>; pre-1.0 means breaking changes are
-          acceptable but should still be deliberate.
+          The roadmap is ordered by <strong>value ÷ risk</strong>. Each step is
+          independently shippable. The project is at <code>v0.2.0</code>;
+          pre-1.0 means breaking changes are acceptable but should still be
+          deliberate.
         </p>
 
         <div class="migration-step">
@@ -1217,10 +1299,12 @@
           <div class="migration-content">
             <h4>Type InvestmentState + generic parseEnum helper</h4>
             <p>
-              <strong>Internal-only, zero API break.</strong> Promote the two constants to
-              <code>type InvestmentState string</code>; introduce <code>parseEnum[T ~string]</code>;
-              refactor <code>parseProfileType</code> and <code>parseBalanceType</code> onto it. Ship
-              as <code>v0.2.1</code>.
+              <strong>Internal-only, zero API break.</strong> Promote the two
+              constants to <code>type InvestmentState string</code>; introduce
+              <code>parseEnum[T ~string]</code>; refactor
+              <code>parseProfileType</code> and
+              <code>parseBalanceType</code> onto it. Ship as
+              <code>v0.2.1</code>.
             </p>
           </div>
         </div>
@@ -1230,10 +1314,12 @@
           <div class="migration-content">
             <h4>Export DetailType for ListTransactionsRequest.Type</h4>
             <p>
-              <strong>Backward-compatible if done carefully.</strong> Promote the unexported
-              <code>wiseDetail*</code> constants to exported <code>DetailType</code> values; add a
-              <code>type DetailType string</code>. Keep the request field as <code>string</code> for
-              now but document the closed set. Ship as <code>v0.2.2</code>.
+              <strong>Backward-compatible if done carefully.</strong> Promote
+              the unexported <code>wiseDetail*</code> constants to exported
+              <code>DetailType</code> values; add a
+              <code>type DetailType string</code>. Keep the request field as
+              <code>string</code> for now but document the closed set. Ship as
+              <code>v0.2.2</code>.
             </p>
           </div>
         </div>
@@ -1243,12 +1329,14 @@
           <div class="migration-content">
             <h4>Introduce Money and Currency (breaking)</h4>
             <p>
-              <strong>v0.3.0 — the breaking release.</strong> Add <code>Money</code>,
-              <code>Currency</code>, <code>NewCurrency</code>, <code>NewMoney</code>. Migrate
+              <strong>v0.3.0 — the breaking release.</strong> Add
+              <code>Money</code>, <code>Currency</code>,
+              <code>NewCurrency</code>, <code>NewMoney</code>. Migrate
               <code>Transaction</code>, <code>TransactionExchange</code>,
-              <code>BalanceResult</code>, and <code>ListTransactionsRequest</code>. Update tests,
-              README, AGENTS.md. This is the centerpiece of the redesign and the change that pays
-              for all the rest.
+              <code>BalanceResult</code>, and
+              <code>ListTransactionsRequest</code>. Update tests, README,
+              AGENTS.md. This is the centerpiece of the redesign and the change
+              that pays for all the rest.
             </p>
           </div>
         </div>
@@ -1258,10 +1346,11 @@
           <div class="migration-content">
             <h4>Normalize enum casing + reconcile dead values</h4>
             <p>
-              <strong>v0.3.0 (same release as step 3).</strong> Pick one enum-casing rule (suggest
-              lowercase for SDK-facing enums). Either use or remove
-              <code>TransactionTypeUnknown</code>. Add a comment to <code>HasMore</code> explaining
-              it is always false until v1.0 removes it.
+              <strong>v0.3.0 (same release as step 3).</strong> Pick one
+              enum-casing rule (suggest lowercase for SDK-facing enums). Either
+              use or remove <code>TransactionTypeUnknown</code>. Add a comment
+              to <code>HasMore</code> explaining it is always false until v1.0
+              removes it.
             </p>
           </div>
         </div>
@@ -1271,9 +1360,11 @@
           <div class="migration-content">
             <h4>v1.0: remove HasMore, lock the contract</h4>
             <p>
-              <strong>v1.0.</strong> Drop <code>ListTransactionsResponse</code> entirely;
-              <code>ListTransactions</code> returns <code>[]Transaction</code> directly. Document
-              the UTC assumption on <code>Transaction.Date</code>. Freeze the public API.
+              <strong>v1.0.</strong> Drop
+              <code>ListTransactionsResponse</code> entirely;
+              <code>ListTransactions</code> returns
+              <code>[]Transaction</code> directly. Document the UTC assumption
+              on <code>Transaction.Date</code>. Freeze the public API.
             </p>
           </div>
         </div>
@@ -1281,17 +1372,20 @@
         <h2>Conclusion</h2>
 
         <blockquote class="callout callout-solution">
-          The wise-go data model is already disciplined — it gets the hard things right (branded
-          IDs, two-layer split, behavioral errors). What separates it from a model where invalid
-          states are <em>unrepresentable</em> is one missing value object (<code>Money</code>), one
-          missing branded primitive (<code>Currency</code>), and finishing the typed-enum pattern it
-          already started. None of these are speculative refactorings — every one of them removes a
-          class of bug the current model pushes onto the caller.
+          The wise-go data model is already disciplined — it gets the hard
+          things right (branded IDs, two-layer split, behavioral errors). What
+          separates it from a model where invalid states are
+          <em>unrepresentable</em> is one missing value object
+          (<code>Money</code>), one missing branded primitive
+          (<code>Currency</code>), and finishing the typed-enum pattern it
+          already started. None of these are speculative refactorings — every
+          one of them removes a class of bug the current model pushes onto the
+          caller.
         </blockquote>
 
         <footer class="footer">
-          Generated 2026-07-18 from commit 218c2d3 · Reviewer: Crush data-model-review skill · All
-          findings verified against source
+          Generated 2026-07-18 from commit 218c2d3 · Reviewer: Crush
+          data-model-review skill · All findings verified against source
         </footer>
       </main>
     </div>

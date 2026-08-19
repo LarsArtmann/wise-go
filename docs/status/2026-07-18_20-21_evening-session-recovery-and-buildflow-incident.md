@@ -93,14 +93,14 @@ All 13 skills from the prior session are committed and pushed: code-quality-scan
 
 ## e) WHAT WE SHOULD IMPROVE 🎯
 
-| #   | Improvement                                                                                                     | Urgency                                        |
-| --- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| 1   | **Fix CI: add `GOEXPERIMENT=jsonv2` to ci.yml**                                                                 | 🔴 CRITICAL — CI will break on next push       |
-| 2   | Pin `GOEXPERIMENT=jsonv2` globally for the project (`.envrc`, Makefile, or shell rc)                            | High                                           |
-| 3   | Consider whether the dep upgrade to v0.3.2/v0.7.0 is worth the jsonv2 requirement, or pin back to v0.3.1/v0.6.1 | Medium — depends on what v0.3.2/v0.7.0 give us |
-| 4   | Add `buildflow auto-configure` to the list of things to never run blindly                                       | Medium                                         |
-| 5   | Continue executing the Pareto plan Phase 3+ items (E1-E10)                                                      | Medium                                         |
-| 6   | Add nix CI job to ci.yml                                                                                        | Medium                                         |
+| # | Improvement                                                                                                     | Urgency                                        |
+| - | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| 1 | **Fix CI: add `GOEXPERIMENT=jsonv2` to ci.yml**                                                                 | 🔴 CRITICAL — CI will break on next push       |
+| 2 | Pin `GOEXPERIMENT=jsonv2` globally for the project (`.envrc`, Makefile, or shell rc)                            | High                                           |
+| 3 | Consider whether the dep upgrade to v0.3.2/v0.7.0 is worth the jsonv2 requirement, or pin back to v0.3.1/v0.6.1 | Medium — depends on what v0.3.2/v0.7.0 give us |
+| 4 | Add `buildflow auto-configure` to the list of things to never run blindly                                       | Medium                                         |
+| 5 | Continue executing the Pareto plan Phase 3+ items (E1-E10)                                                      | Medium                                         |
+| 6 | Add nix CI job to ci.yml                                                                                        | Medium                                         |
 
 ---
 
@@ -108,93 +108,93 @@ All 13 skills from the prior session are committed and pushed: code-quality-scan
 
 ### P0 — CRITICAL (CI is about to break)
 
-| #   | Task                                                                         | Effort |
-| --- | ---------------------------------------------------------------------------- | ------ |
-| 1   | Add `env: GOEXPERIMENT: jsonv2` to `.github/workflows/ci.yml` all three jobs | 5 min  |
-| 2   | Verify CI passes after the fix                                               | 10 min |
+| # | Task                                                                         | Effort |
+| - | ---------------------------------------------------------------------------- | ------ |
+| 1 | Add `env: GOEXPERIMENT: jsonv2` to `.github/workflows/ci.yml` all three jobs | 5 min  |
+| 2 | Verify CI passes after the fix                                               | 10 min |
 
 ### P1 — High urgency (this session's unfinished work)
 
-| #   | Task                                                                  | Effort |
-| --- | --------------------------------------------------------------------- | ------ |
-| 3   | Add `nix` job to ci.yml (cachix/install-nix-action + nix flake check) | 30 min |
-| 4   | Add README "Mocking the client" section                               | 10 min |
-| 5   | Add README "Request middleware via WithHTTPClient" section            | 10 min |
-| 6   | Review `CONTRIBUTING.md` for drift                                    | 15 min |
-| 7   | Expose `EndOfStatementBalance` on `ListTransactionsResponse`          | 30 min |
+| # | Task                                                                  | Effort |
+| - | --------------------------------------------------------------------- | ------ |
+| 3 | Add `nix` job to ci.yml (cachix/install-nix-action + nix flake check) | 30 min |
+| 4 | Add README "Mocking the client" section                               | 10 min |
+| 5 | Add README "Request middleware via WithHTTPClient" section            | 10 min |
+| 6 | Review `CONTRIBUTING.md` for drift                                    | 15 min |
+| 7 | Expose `EndOfStatementBalance` on `ListTransactionsResponse`          | 30 min |
 
 ### P2 — Medium (from the Pareto plan Phase 3)
 
-| #   | Task                                                           | Effort |
-| --- | -------------------------------------------------------------- | ------ |
-| 8   | Wire `Retry-After` into failsafe-go backoff policy             | 60 min |
-| 9   | Register error types with `errorfamily.RegisterClassification` | 30 min |
-| 10  | Extract `wiseDateFormat` constant                              | 5 min  |
-| 11  | Document `GetBalance` O(n) cost                                | 5 min  |
-| 12  | Investigate 5.2% coverage gap                                  | 30 min |
-| 13  | Add `WithUserAgent` option                                     | 20 min |
-| 14  | Add `WithLogger` option                                        | 45 min |
+| #  | Task                                                           | Effort |
+| -- | -------------------------------------------------------------- | ------ |
+| 8  | Wire `Retry-After` into failsafe-go backoff policy             | 60 min |
+| 9  | Register error types with `errorfamily.RegisterClassification` | 30 min |
+| 10 | Extract `wiseDateFormat` constant                              | 5 min  |
+| 11 | Document `GetBalance` O(n) cost                                | 5 min  |
+| 12 | Investigate 5.2% coverage gap                                  | 30 min |
+| 13 | Add `WithUserAgent` option                                     | 20 min |
+| 14 | Add `WithLogger` option                                        | 45 min |
 
 ### P3 — Low (quality polish)
 
-| #   | Task                                           | Effort |
-| --- | ---------------------------------------------- | ------ |
-| 15  | Add benchmarks for hot paths                   | 45 min |
-| 16  | Add `Example_*` test functions for godoc       | 30 min |
-| 17  | Add `fmt.Stringer` for enum types              | 30 min |
-| 18  | Consider `go:generate` for enum maps           | 60 min |
-| 19  | Run `brutal-self-review` skill                 | 45 min |
-| 20  | Run `status-report` skill (capstone dashboard) | 30 min |
-| 21  | Run `library-deep-dive` on failsafe-go         | 45 min |
-| 22  | Run `library-deep-dive` on go-branded-id       | 30 min |
-| 23  | Run `library-deep-dive` on go-error-family     | 30 min |
-| 24  | Run `bdd-testing` skill                        | 60 min |
-| 25  | Add integration test skeleton (live build tag) | 60 min |
+| #  | Task                                           | Effort |
+| -- | ---------------------------------------------- | ------ |
+| 15 | Add benchmarks for hot paths                   | 45 min |
+| 16 | Add `Example_*` test functions for godoc       | 30 min |
+| 17 | Add `fmt.Stringer` for enum types              | 30 min |
+| 18 | Consider `go:generate` for enum maps           | 60 min |
+| 19 | Run `brutal-self-review` skill                 | 45 min |
+| 20 | Run `status-report` skill (capstone dashboard) | 30 min |
+| 21 | Run `library-deep-dive` on failsafe-go         | 45 min |
+| 22 | Run `library-deep-dive` on go-branded-id       | 30 min |
+| 23 | Run `library-deep-dive` on go-error-family     | 30 min |
+| 24 | Run `bdd-testing` skill                        | 60 min |
+| 25 | Add integration test skeleton (live build tag) | 60 min |
 
 ### P4 — v0.3.0 (breaking changes)
 
-| #   | Task                                                           | Effort |
-| --- | -------------------------------------------------------------- | ------ |
-| 26  | Introduce `Money` value object                                 | 4 hr   |
-| 27  | Introduce `Currency` branded type                              | 2 hr   |
-| 28  | Migrate Transaction/TransactionExchange/BalanceResult to Money | 3 hr   |
-| 29  | Normalize enum casing                                          | 1 hr   |
-| 30  | Reconcile `TransactionTypeUnknown`                             | 15 min |
-| 31  | Drop `Result` suffix or move raw to internal/raw               | 2 hr   |
+| #  | Task                                                           | Effort |
+| -- | -------------------------------------------------------------- | ------ |
+| 26 | Introduce `Money` value object                                 | 4 hr   |
+| 27 | Introduce `Currency` branded type                              | 2 hr   |
+| 28 | Migrate Transaction/TransactionExchange/BalanceResult to Money | 3 hr   |
+| 29 | Normalize enum casing                                          | 1 hr   |
+| 30 | Reconcile `TransactionTypeUnknown`                             | 15 min |
+| 31 | Drop `Result` suffix or move raw to internal/raw               | 2 hr   |
 
 ### P5 — v1.0+
 
-| #   | Task                                         | Effort |
-| --- | -------------------------------------------- | ------ |
-| 32  | Remove `HasMore`; return `[]Transaction`     | 1 hr   |
-| 33  | Move raw types to `internal/raw`             | 2 hr   |
-| 34  | Lock public API                              | 2 hr   |
-| 35  | Write operations (POST/PATCH/DELETE helpers) | 2 hr   |
-| 36  | Transfers resource                           | 1 day  |
-| 37  | Recipients resource                          | 1 day  |
-| 38  | Quotes resource                              | 1 day  |
-| 39  | Webhook signature verification               | 1 day  |
+| #  | Task                                         | Effort |
+| -- | -------------------------------------------- | ------ |
+| 32 | Remove `HasMore`; return `[]Transaction`     | 1 hr   |
+| 33 | Move raw types to `internal/raw`             | 2 hr   |
+| 34 | Lock public API                              | 2 hr   |
+| 35 | Write operations (POST/PATCH/DELETE helpers) | 2 hr   |
+| 36 | Transfers resource                           | 1 day  |
+| 37 | Recipients resource                          | 1 day  |
+| 38 | Quotes resource                              | 1 day  |
+| 39 | Webhook signature verification               | 1 day  |
 
 ### P6 — Tooling
 
-| #   | Task                                                                  | Effort |
-| --- | --------------------------------------------------------------------- | ------ |
-| 40  | Investigate buildflow `govalid-generate` failure (needs GOEXPERIMENT) | 30 min |
-| 41  | Consider adding `GOEXPERIMENT=jsonv2` to buildflow config             | 15 min |
-| 42  | Run `govulncheck` locally (blocked by security policy)                | 5 min  |
-| 43  | Consider pinning go-branded-id back to v0.3.1 if jsonv2 is too costly | 15 min |
-| 44  | Add `.envrc` support documentation                                    | 10 min |
-| 45  | Add nix CI caching (cachix)                                           | 30 min |
+| #  | Task                                                                  | Effort |
+| -- | --------------------------------------------------------------------- | ------ |
+| 40 | Investigate buildflow `govalid-generate` failure (needs GOEXPERIMENT) | 30 min |
+| 41 | Consider adding `GOEXPERIMENT=jsonv2` to buildflow config             | 15 min |
+| 42 | Run `govulncheck` locally (blocked by security policy)                | 5 min  |
+| 43 | Consider pinning go-branded-id back to v0.3.1 if jsonv2 is too costly | 15 min |
+| 44 | Add `.envrc` support documentation                                    | 10 min |
+| 45 | Add nix CI caching (cachix)                                           | 30 min |
 
 ### P7 — Documentation
 
-| #   | Task                                                                  | Effort |
-| --- | --------------------------------------------------------------------- | ------ |
-| 46  | Update ROADMAP.md with jsonv2 dependency note                         | 10 min |
-| 47  | Update FEATURES.md with Doer interface + DetailType constants         | 10 min |
-| 48  | Document the buildflow auto-configure anti-pattern in CONTRIBUTING.md | 15 min |
-| 49  | Add "How to upgrade dependencies safely" to CONTRIBUTING.md           | 20 min |
-| 50  | Write ADR for GOEXPERIMENT=jsonv2 decision                            | 30 min |
+| #  | Task                                                                  | Effort |
+| -- | --------------------------------------------------------------------- | ------ |
+| 46 | Update ROADMAP.md with jsonv2 dependency note                         | 10 min |
+| 47 | Update FEATURES.md with Doer interface + DetailType constants         | 10 min |
+| 48 | Document the buildflow auto-configure anti-pattern in CONTRIBUTING.md | 15 min |
+| 49 | Add "How to upgrade dependencies safely" to CONTRIBUTING.md           | 20 min |
+| 50 | Write ADR for GOEXPERIMENT=jsonv2 decision                            | 30 min |
 
 ---
 

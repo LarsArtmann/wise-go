@@ -30,14 +30,14 @@
         --warning: var(--color-yellow);
         --radius: 0px;
         --font-heading:
-          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Helvetica, Arial, sans-serif;
+          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         --font-body:
-          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Helvetica, Arial, sans-serif;
+          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         --font-mono:
-          ui-monospace, "Cascadia Code", "Source Code Pro", "JetBrains Mono", Menlo, Consolas,
-          monospace;
+          ui-monospace, "Cascadia Code", "Source Code Pro", "JetBrains Mono",
+          Menlo, Consolas, monospace;
       }
       * {
         box-sizing: border-box;
@@ -231,15 +231,27 @@
       }
       .card-problem {
         border-left-color: var(--problem);
-        background: color-mix(in srgb, var(--problem) 8%, var(--surface-raised));
+        background: color-mix(
+          in srgb,
+          var(--problem) 8%,
+          var(--surface-raised)
+        );
       }
       .card-solution {
         border-left-color: var(--solution);
-        background: color-mix(in srgb, var(--solution) 8%, var(--surface-raised));
+        background: color-mix(
+          in srgb,
+          var(--solution) 8%,
+          var(--surface-raised)
+        );
       }
       .card-warning {
         border-left-color: var(--warning);
-        background: color-mix(in srgb, var(--warning) 8%, var(--surface-raised));
+        background: color-mix(
+          in srgb,
+          var(--warning) 8%,
+          var(--surface-raised)
+        );
       }
       .severity {
         display: inline-block;
@@ -530,11 +542,12 @@
           <div class="hero-badge">Senior Architect · Every File</div>
           <h1>wise-go Full Code Review</h1>
           <p class="hero-subtitle">
-            Every Go source and test file in <code>package wise</code> visited, read, and
-            criticised: 8 production files (~1.3k LOC) and 2 test files (~1.05k LOC). Two real
-            defects fixed on the spot; seven findings ticketed for follow-up releases. The codebase
-            is in genuinely excellent shape — this review documents why, and what would make it
-            better still.
+            Every Go source and test file in <code>package wise</code> visited,
+            read, and criticised: 8 production files (~1.3k LOC) and 2 test
+            files (~1.05k LOC). Two real defects fixed on the spot; seven
+            findings ticketed for follow-up releases. The codebase is in
+            genuinely excellent shape — this review documents why, and what
+            would make it better still.
           </p>
         </div>
 
@@ -563,12 +576,15 @@
         </div>
 
         <p>
-          The review confirms what the prior scans showed: the codebase is mechanically clean (zero
-          lint findings across 63 linters) and architecturally disciplined (two-layer types, branded
-          IDs, behavioral errors). Two real defects surfaced only under line-by-line reading: a
-          subtle transaction-classification bug and an inconsistent error-formatting pattern. Both
-          were fixed immediately and verified against the existing 94.8% coverage. The seven open
-          findings are larger design improvements that belong to the v0.3.0 / v1.0 roadmap (see
+          The review confirms what the prior scans showed: the codebase is
+          mechanically clean (zero lint findings across 63 linters) and
+          architecturally disciplined (two-layer types, branded IDs, behavioral
+          errors). Two real defects surfaced only under line-by-line reading: a
+          subtle transaction-classification bug and an inconsistent
+          error-formatting pattern. Both were fixed immediately and verified
+          against the existing 94.8% coverage. The seven open findings are
+          larger design improvements that belong to the v0.3.0 / v1.0 roadmap
+          (see
           <a href="#plan">Action Plan</a>).
         </p>
 
@@ -612,7 +628,9 @@
               <tr>
                 <td><code>balances.go</code></td>
                 <td>100</td>
-                <td><code>ListBalances</code> + <code>GetBalance</code> + mapper</td>
+                <td>
+                  <code>ListBalances</code> + <code>GetBalance</code> + mapper
+                </td>
                 <td><span class="badge badge-fixed">Clean</span></td>
               </tr>
               <tr>
@@ -631,13 +649,17 @@
                 <td><code>transactions.go</code></td>
                 <td>191</td>
                 <td><code>ListTransactions</code> + classifier + mapper</td>
-                <td><span class="badge badge-critical">2 fixes applied</span></td>
+                <td>
+                  <span class="badge badge-critical">2 fixes applied</span>
+                </td>
               </tr>
               <tr>
                 <td><code>types.go</code></td>
                 <td>228</td>
                 <td>All public types, raw wire + result split</td>
-                <td><span class="badge badge-medium">Design proposals</span></td>
+                <td>
+                  <span class="badge badge-medium">Design proposals</span>
+                </td>
               </tr>
               <tr>
                 <td><code>internal_test.go</code></td>
@@ -658,12 +680,18 @@
         <h2 id="fixed"><span class="num">02</span>Fixed on the Spot</h2>
 
         <div class="card card-problem">
-          <span class="severity severity-critical">Critical · Behavior bug · Fixed</span>
+          <span class="severity severity-critical"
+            >Critical · Behavior bug · Fixed</span
+          >
           <h3>CARD_PAYMENT with positive amount was misclassified as Refund</h3>
-          <p><strong>Where:</strong> <code>transactions.go:classifyTransactionType</code>.</p>
           <p>
-            The original code grouped <code>CARD_PAYMENT</code> and <code>CARD_REFUND</code> into a
-            single case branch with amount-based dispatch:
+            <strong>Where:</strong>
+            <code>transactions.go:classifyTransactionType</code>.
+          </p>
+          <p>
+            The original code grouped <code>CARD_PAYMENT</code> and
+            <code>CARD_REFUND</code> into a single case branch with amount-based
+            dispatch:
           </p>
           <pre><code><span class="tok-comment">// Before — README contract violated for positive CARD_PAYMENT</span>
 <span class="tok-keyword">case</span> wiseDetailCardPayment, wiseDetailCardRefund:
@@ -673,64 +701,77 @@
     <span class="tok-keyword">return</span> TransactionTypeCard</code></pre>
           <p>
             The README contract is explicit: <code>CARD_PAYMENT</code> is always
-            <code>TransactionTypeCard</code>; only <code>CARD_REFUND</code> is amount-dependent. The
-            grouped implementation silently misclassified a positive-amount card payment (e.g., a
-            reversed coffee charge) as a refund. The existing tests did not catch this because they
-            only exercised <code>CARD_PAYMENT</code> with negative amounts.
+            <code>TransactionTypeCard</code>; only <code>CARD_REFUND</code> is
+            amount-dependent. The grouped implementation silently misclassified
+            a positive-amount card payment (e.g., a reversed coffee charge) as a
+            refund. The existing tests did not catch this because they only
+            exercised <code>CARD_PAYMENT</code> with negative amounts.
           </p>
           <div class="callout callout-solution">
             <strong>Fix applied</strong>
             Split into two cases. <code>CARD_PAYMENT</code> always returns
-            <code>TransactionTypeCard</code>. <code>CARD_REFUND</code> retains the amount-based
-            dispatch. Added two new test cases in <code>internal_test.go</code>:
+            <code>TransactionTypeCard</code>. <code>CARD_REFUND</code> retains
+            the amount-based dispatch. Added two new test cases in
+            <code>internal_test.go</code>:
             <em>"card payment credit still card (not refund)"</em> and
-            <em>"card payment zero still card"</em>. Both would have failed against the old
-            implementation; both pass against the fix. All 94.8% coverage preserved.
+            <em>"card payment zero still card"</em>. Both would have failed
+            against the old implementation; both pass against the fix. All 94.8%
+            coverage preserved.
           </div>
         </div>
 
         <div class="card card-warning">
           <span class="severity severity-high">High · Consistency · Fixed</span>
-          <h3>Inconsistent branded-ID formatting in ListTransactions error paths</h3>
+          <h3>
+            Inconsistent branded-ID formatting in ListTransactions error paths
+          </h3>
           <p>
             <strong>Where:</strong> <code>transactions.go:43-44</code> and
             <code>transactions.go:52-56</code>.
           </p>
           <p>
-            The two <code>fmt.Errorf</code> sites in <code>ListTransactions</code> passed
-            <code>req.ProfileID</code> and <code>req.BalanceID</code> directly to <code>%d</code>,
-            while every other call site (including the sibling <code>mapTransaction</code> error
-            path at line 79-85 and all of <code>balances.go</code>) correctly unwraps with
-            <code>.Get()</code>. The branded ID is <code>id.ID[Brand, int64]</code> —
-            <code>%d</code> happens to print today, but the inconsistency masks any future change to
-            the branded-ID representation.
+            The two <code>fmt.Errorf</code> sites in
+            <code>ListTransactions</code> passed <code>req.ProfileID</code> and
+            <code>req.BalanceID</code> directly to <code>%d</code>, while every
+            other call site (including the sibling
+            <code>mapTransaction</code> error path at line 79-85 and all of
+            <code>balances.go</code>) correctly unwraps with
+            <code>.Get()</code>. The branded ID is
+            <code>id.ID[Brand, int64]</code> — <code>%d</code> happens to print
+            today, but the inconsistency masks any future change to the
+            branded-ID representation.
           </p>
           <div class="callout callout-solution">
             <strong>Fix applied</strong>
-            Both sites now read <code>req.ProfileID.Get()</code> / <code>req.BalanceID.Get()</code>,
-            matching the rest of the codebase. No behavior change; the error messages now match
-            their siblings.
+            Both sites now read <code>req.ProfileID.Get()</code> /
+            <code>req.BalanceID.Get()</code>, matching the rest of the codebase.
+            No behavior change; the error messages now match their siblings.
           </div>
         </div>
 
         <h2 id="open"><span class="num">03</span>Open Findings (Ticketed)</h2>
 
         <p>
-          These findings are documented for follow-up releases. They overlap with the
-          data-model-review and naming-review outputs and are listed here for completeness.
+          These findings are documented for follow-up releases. They overlap
+          with the data-model-review and naming-review outputs and are listed
+          here for completeness.
         </p>
 
         <div class="card card-warning">
           <span class="severity severity-high">High · Test gap</span>
           <h3>ListTransactionsRequest.Type filter is never tested</h3>
-          <p><strong>Where:</strong> <code>wise_test.go</code> (entire file).</p>
           <p>
-            The <code>Type</code> field on <code>ListTransactionsRequest</code> is set in the URL
-            query string (<code>transactions.go:32-34</code>) but no BDD test verifies the SDK
-            actually forwards it. A regression that dropped the filter would not be caught. Add a
-            test in the <code>"with a successful response"</code> context that sets
-            <code>req.Type = "CARD_PAYMENT"</code> and asserts the request URL includes
-            <code>type=CARD_PAYMENT</code>.
+            <strong>Where:</strong> <code>wise_test.go</code> (entire file).
+          </p>
+          <p>
+            The <code>Type</code> field on
+            <code>ListTransactionsRequest</code> is set in the URL query string
+            (<code>transactions.go:32-34</code>) but no BDD test verifies the
+            SDK actually forwards it. A regression that dropped the filter would
+            not be caught. Add a test in the
+            <code>"with a successful response"</code> context that sets
+            <code>req.Type = "CARD_PAYMENT"</code> and asserts the request URL
+            includes <code>type=CARD_PAYMENT</code>.
           </p>
         </div>
 
@@ -742,12 +783,14 @@
             <code>transactions.go:76</code>.
           </p>
           <p>
-            Wise returns dates as <code>"2006-01-02 15:04:05"</code> with no timezone.
-            <code>time.Parse</code> produces a UTC <code>time.Time</code>. Whether the original
-            statement was UTC, the account timezone, or the currency's home timezone is never
-            documented. A caller comparing <code>tx.Date</code> to a local-time value will silently
-            off-by-one-day at boundaries. Add a doc comment to <code>parseWiseDate</code> and a
-            field doc on <code>Transaction.Date</code>:
+            Wise returns dates as <code>"2006-01-02 15:04:05"</code> with no
+            timezone. <code>time.Parse</code> produces a UTC
+            <code>time.Time</code>. Whether the original statement was UTC, the
+            account timezone, or the currency's home timezone is never
+            documented. A caller comparing <code>tx.Date</code> to a local-time
+            value will silently off-by-one-day at boundaries. Add a doc comment
+            to <code>parseWiseDate</code> and a field doc on
+            <code>Transaction.Date</code>:
             <em>"Returned in UTC; Wise does not transmit a timezone."</em>
           </p>
         </div>
@@ -758,11 +801,13 @@
           <p><strong>Where:</strong> <code>types.go:209</code>.</p>
           <p>
             <code>classifyTransactionType</code>'s default branch falls back to
-            <code>Credit</code>/<code>Debit</code> by amount sign; it never returns
-            <code>TransactionTypeUnknown</code>. The constant implies a classification path that
-            does not exist. Either remove it (breaking change for any caller that references it) or
-            use it as the actual fallback for unrecognized detail types so callers can detect
-            "classification gave up." Owned by the data-model-review roadmap (Step 4).
+            <code>Credit</code>/<code>Debit</code> by amount sign; it never
+            returns <code>TransactionTypeUnknown</code>. The constant implies a
+            classification path that does not exist. Either remove it (breaking
+            change for any caller that references it) or use it as the actual
+            fallback for unrecognized detail types so callers can detect
+            "classification gave up." Owned by the data-model-review roadmap
+            (Step 4).
           </p>
         </div>
 
@@ -774,29 +819,34 @@
             <code>transactions.go:66</code>.
           </p>
           <p>
-            The field promises pagination semantics that Wise does not deliver (single response).
-            The README and AGENTS.md both document this. A caller writing
-            <code>for resp.HasMore { fetchMore() }</code> will silently produce an incomplete
-            dataset if Wise ever changes its contract. Defer removal to v1.0 (breaking change); for
-            now, the inline comment is sufficient.
+            The field promises pagination semantics that Wise does not deliver
+            (single response). The README and AGENTS.md both document this. A
+            caller writing
+            <code>for resp.HasMore { fetchMore() }</code> will silently produce
+            an incomplete dataset if Wise ever changes its contract. Defer
+            removal to v1.0 (breaking change); for now, the inline comment is
+            sufficient.
           </p>
         </div>
 
         <div class="card card-warning">
-          <span class="severity severity-medium">Medium · Information loss</span>
+          <span class="severity severity-medium"
+            >Medium · Information loss</span
+          >
           <h3>EndOfStatementBalance is parsed but never exposed</h3>
           <p>
-            <strong>Where:</strong> <code>types.go:69</code>, parsed from JSON at
-            <code>wise_test.go:501</code> but never surfaced on
+            <strong>Where:</strong> <code>types.go:69</code>, parsed from JSON
+            at <code>wise_test.go:501</code> but never surfaced on
             <code>ListTransactionsResponse</code>.
           </p>
           <p>
-            Wise returns a useful <code>endOfStatementBalance</code> in every statement response.
-            The SDK decodes it into the raw <code>StatementResponse</code> struct and then throws it
-            away. Callers who want the closing balance must make a separate
+            Wise returns a useful <code>endOfStatementBalance</code> in every
+            statement response. The SDK decodes it into the raw
+            <code>StatementResponse</code> struct and then throws it away.
+            Callers who want the closing balance must make a separate
             <code>ListBalances</code> call. Consider exposing as
-            <code>ListTransactionsResponse.EndOfStatementBalance Money</code> once the
-            <code>Money</code> type lands (see data-model review).
+            <code>ListTransactionsResponse.EndOfStatementBalance Money</code>
+            once the <code>Money</code> type lands (see data-model review).
           </p>
         </div>
 
@@ -805,22 +855,25 @@
           <h3>Personal-profile name can be a single space</h3>
           <p><strong>Where:</strong> <code>profiles.go:33</code>.</p>
           <p>
-            <code>name := p.FirstName + " " + p.LastName</code> returns <code>" "</code> when both
-            are empty. The Wise API guarantees at least one is set for valid profiles, but the SDK
-            does not defend against the edge case. Minor — likely never observed in practice. Worth
-            a <code>strings.TrimSpace</code> if you want belt-and-braces.
+            <code>name := p.FirstName + " " + p.LastName</code> returns
+            <code>" "</code> when both are empty. The Wise API guarantees at
+            least one is set for valid profiles, but the SDK does not defend
+            against the edge case. Minor — likely never observed in practice.
+            Worth a <code>strings.TrimSpace</code> if you want belt-and-braces.
           </p>
         </div>
 
         <div class="card card-warning">
           <span class="severity severity-low">Low · Type-system debt</span>
-          <h3>InvestmentState, Currency, Money, DetailType (data-model review)</h3>
+          <h3>
+            InvestmentState, Currency, Money, DetailType (data-model review)
+          </h3>
           <p><strong>Where:</strong> <code>types.go</code> throughout.</p>
           <p>
-            These four type-system improvements are the core of the data-model review and are not
-            repeated here in detail. See
-            <code>docs/brainstorming/2026-07-18_data-model-review.html</code> for the full proposal
-            and migration roadmap.
+            These four type-system improvements are the core of the data-model
+            review and are not repeated here in detail. See
+            <code>docs/brainstorming/2026-07-18_data-model-review.html</code>
+            for the full proposal and migration roadmap.
           </p>
         </div>
 
@@ -830,39 +883,52 @@
           <div class="strength">
             <div class="check">+</div>
             <div class="text">
-              <strong>Two-layer type system with explicit mapping boundary</strong>
+              <strong
+                >Two-layer type system with explicit mapping boundary</strong
+              >
               <span>
                 Raw wire types (<code>Profile</code>, <code>Balance</code>,
-                <code>StatementTransaction</code>) match Wise's JSON exactly. Parsed result types
-                (<code>ProfileResult</code>, <code>BalanceResult</code>, <code>Transaction</code>)
-                expose clean Go. Mapping functions <code>mapProfile</code>, <code>mapBalance</code>,
-                <code>mapTransaction</code> are the only bridge — every transformation happens in
-                one place. This is the single best architectural decision in the codebase.
+                <code>StatementTransaction</code>) match Wise's JSON exactly.
+                Parsed result types (<code>ProfileResult</code>,
+                <code>BalanceResult</code>, <code>Transaction</code>) expose
+                clean Go. Mapping functions <code>mapProfile</code>,
+                <code>mapBalance</code>, <code>mapTransaction</code> are the
+                only bridge — every transformation happens in one place. This is
+                the single best architectural decision in the codebase.
               </span>
             </div>
           </div>
           <div class="strength">
             <div class="check">+</div>
             <div class="text">
-              <strong>Phantom-branded IDs prevent cross-entity ID errors at compile time</strong>
+              <strong
+                >Phantom-branded IDs prevent cross-entity ID errors at compile
+                time</strong
+              >
               <span>
-                <code>ProfileID</code>, <code>BalanceID</code>, <code>TransactionID</code> are
-                <code>id.ID[Brand, T]</code> aliases. Passing a <code>BalanceID</code> where a
-                <code>ProfileID</code> is expected is a compile error, not a runtime bug. The
-                <code>.Get()</code> unwrap is the only way to recover the primitive.
+                <code>ProfileID</code>, <code>BalanceID</code>,
+                <code>TransactionID</code> are
+                <code>id.ID[Brand, T]</code> aliases. Passing a
+                <code>BalanceID</code> where a <code>ProfileID</code> is
+                expected is a compile error, not a runtime bug. The
+                <code>.Get()</code> unwrap is the only way to recover the
+                primitive.
               </span>
             </div>
           </div>
           <div class="strength">
             <div class="check">+</div>
             <div class="text">
-              <strong>Behavioral error classification via go-error-family</strong>
+              <strong
+                >Behavioral error classification via go-error-family</strong
+              >
               <span>
                 Every error implements <code>ErrorCode()</code>,
                 <code>ErrorFamily()</code> (Rejection vs Transient), and
-                <code>IsRetryable()</code> where relevant. Retry decisions are data-driven at the
-                executor (<code>isRetryable</code>), not hard-coded at call sites. Adding a new
-                error type means adding one constant and one factory case — no scattered switch
+                <code>IsRetryable()</code> where relevant. Retry decisions are
+                data-driven at the executor (<code>isRetryable</code>), not
+                hard-coded at call sites. Adding a new error type means adding
+                one constant and one factory case — no scattered switch
                 statements to update.
               </span>
             </div>
@@ -872,23 +938,27 @@
             <div class="text">
               <strong>Precision-safe money via int64 cents + math.Round</strong>
               <span>
-                <code>BalanceAmount.Cents()</code> uses <code>int64(math.Round(v*100))</code>. No
-                <code>float64</code> ever escapes the raw wire layer. IEEE-754 representation error
-                is contained to the <code>BalanceAmount</code> boundary.
+                <code>BalanceAmount.Cents()</code> uses
+                <code>int64(math.Round(v*100))</code>. No
+                <code>float64</code> ever escapes the raw wire layer. IEEE-754
+                representation error is contained to the
+                <code>BalanceAmount</code> boundary.
               </span>
             </div>
           </div>
           <div class="strength">
             <div class="check">+</div>
             <div class="text">
-              <strong>failsafe-go retry with backoff + selective retriability</strong>
+              <strong
+                >failsafe-go retry with backoff + selective retriability</strong
+              >
               <span>
                 <code>Client.executor</code> is a
-                <code>failsafe.Executor[*http.Response]</code> with max-retries, exponential
-                backoff, and a <code>HandleIf(isRetryable)</code>
-                predicate. Only 429, 5xx, and network errors are retried. Auth/not-found/client
-                errors fail immediately. This is exactly the right retry surface for an
-                auth-protected API.
+                <code>failsafe.Executor[*http.Response]</code> with max-retries,
+                exponential backoff, and a <code>HandleIf(isRetryable)</code>
+                predicate. Only 429, 5xx, and network errors are retried.
+                Auth/not-found/client errors fail immediately. This is exactly
+                the right retry surface for an auth-protected API.
               </span>
             </div>
           </div>
@@ -897,11 +967,12 @@
             <div class="text">
               <strong>Request validation before the network call</strong>
               <span>
-                <code>ListTransactionsRequest.validate()</code> rejects empty currency and
-                <code>From &gt; To</code> before any HTTP request is made. The error is an
+                <code>ListTransactionsRequest.validate()</code> rejects empty
+                currency and <code>From &gt; To</code> before any HTTP request
+                is made. The error is an
                 <code>errorfamily.NewRejection</code> with a typed code
-                (<code>wise.transactions.invalid_request</code>) — the caller can match on family or
-                code without parsing the message.
+                (<code>wise.transactions.invalid_request</code>) — the caller
+                can match on family or code without parsing the message.
               </span>
             </div>
           </div>
@@ -910,23 +981,30 @@
             <div class="text">
               <strong>BDD tests with realistic mock API servers</strong>
               <span>
-                <code>wise_test.go</code> uses Ginkgo + <code>net/http/httptest</code> to spin up
-                mock Wise endpoints. Each <code>Context</code> tests a coherent scenario (success,
-                auth failure, rate limit, not-found, server error, cross-currency, invalid request).
-                94.8% coverage with zero network dependencies and a 1.42s full-suite runtime.
+                <code>wise_test.go</code> uses Ginkgo +
+                <code>net/http/httptest</code> to spin up mock Wise endpoints.
+                Each <code>Context</code> tests a coherent scenario (success,
+                auth failure, rate limit, not-found, server error,
+                cross-currency, invalid request). 94.8% coverage with zero
+                network dependencies and a 1.42s full-suite runtime.
               </span>
             </div>
           </div>
           <div class="strength">
             <div class="check">+</div>
             <div class="text">
-              <strong>Response-body lifecycle handled correctly under failsafe-go</strong>
+              <strong
+                >Response-body lifecycle handled correctly under
+                failsafe-go</strong
+              >
               <span>
-                <code>responseCloser</code> exists because failsafe-go's executor wraps the response
-                — a plain <code>defer resp.Body.Close()</code> would not work inside the
-                <code>GetWithExecution</code> callback. The <code>//nolint:bodyclose</code> on the
-                request is correct: the close is deferred via the helper, not skipped. This is
-                subtle and the codebase gets it right.
+                <code>responseCloser</code> exists because failsafe-go's
+                executor wraps the response — a plain
+                <code>defer resp.Body.Close()</code> would not work inside the
+                <code>GetWithExecution</code> callback. The
+                <code>//nolint:bodyclose</code> on the request is correct: the
+                close is deferred via the helper, not skipped. This is subtle
+                and the codebase gets it right.
               </span>
             </div>
           </div>
@@ -935,8 +1013,9 @@
         <h2 id="plan"><span class="num">05</span>Action Plan</h2>
 
         <p>
-          Prioritized by impact divided by effort. Items 1–2 are already done. Items 3–5 are
-          shippable in the next release cycle. Items 6–8 belong to v0.3.0 / v1.0.
+          Prioritized by impact divided by effort. Items 1–2 are already done.
+          Items 3–5 are shippable in the next release cycle. Items 6–8 belong to
+          v0.3.0 / v1.0.
         </p>
 
         <div class="table-wrap">
@@ -961,7 +1040,10 @@
               <tr>
                 <td>2</td>
                 <td><span class="badge badge-high">P1</span></td>
-                <td>Normalize <code>%d</code> branded-ID formatting in error messages</td>
+                <td>
+                  Normalize <code>%d</code> branded-ID formatting in error
+                  messages
+                </td>
                 <td>5 min</td>
                 <td><span class="badge badge-fixed">Done</span></td>
               </tr>
@@ -969,7 +1051,8 @@
                 <td>3</td>
                 <td><span class="badge badge-high">P1</span></td>
                 <td>
-                  Add BDD test for <code>ListTransactionsRequest.Type</code> filter forwarding
+                  Add BDD test for
+                  <code>ListTransactionsRequest.Type</code> filter forwarding
                 </td>
                 <td>20 min</td>
                 <td><span class="badge badge-low">Next</span></td>
@@ -987,14 +1070,19 @@
               <tr>
                 <td>5</td>
                 <td><span class="badge badge-medium">P2</span></td>
-                <td>Type <code>InvestmentState</code>; export <code>DetailType</code> constants</td>
+                <td>
+                  Type <code>InvestmentState</code>; export
+                  <code>DetailType</code> constants
+                </td>
                 <td>1 hr</td>
                 <td><span class="badge badge-low">v0.2.1</span></td>
               </tr>
               <tr>
                 <td>6</td>
                 <td><span class="badge badge-medium">P2</span></td>
-                <td>Reconcile <code>TransactionTypeUnknown</code> (use or remove)</td>
+                <td>
+                  Reconcile <code>TransactionTypeUnknown</code> (use or remove)
+                </td>
                 <td>15 min</td>
                 <td><span class="badge badge-low">v0.3.0</span></td>
               </tr>
@@ -1012,7 +1100,8 @@
                 <td>8</td>
                 <td><span class="badge badge-low">P3</span></td>
                 <td>
-                  Remove <code>HasMore</code>; normalize enum casing; rename raw types to
+                  Remove <code>HasMore</code>; normalize enum casing; rename raw
+                  types to
                   <code>raw.*</code>
                 </td>
                 <td>2 hr</td>
@@ -1024,18 +1113,19 @@
 
         <div class="callout callout-solution">
           <strong>Architect's verdict</strong>
-          This is a well-engineered SDK. The two defects fixed in this review were latent
-          (test-coverage gaps hid the classification bug; consistency-only hid the formatting one).
-          Neither indicated a systemic problem. The codebase's structural decisions — branded IDs,
-          two-layer types, behavioral errors, failsafe-go retries — are all correct and should be
-          preserved verbatim. The remaining work is type-system polish
-          (<code>Money</code>/<code>Currency</code>) and dead-value cleanup, both of which are
-          roadmap items, not defects.
+          This is a well-engineered SDK. The two defects fixed in this review
+          were latent (test-coverage gaps hid the classification bug;
+          consistency-only hid the formatting one). Neither indicated a systemic
+          problem. The codebase's structural decisions — branded IDs, two-layer
+          types, behavioral errors, failsafe-go retries — are all correct and
+          should be preserved verbatim. The remaining work is type-system polish
+          (<code>Money</code>/<code>Currency</code>) and dead-value cleanup,
+          both of which are roadmap items, not defects.
         </div>
 
         <footer class="footer">
-          Generated 2026-07-18 from commit 218c2d3 + 2 on-the-spot fixes · 11 files visited · Build
-          + vet + test + lint all green post-fix
+          Generated 2026-07-18 from commit 218c2d3 + 2 on-the-spot fixes · 11
+          files visited · Build + vet + test + lint all green post-fix
         </footer>
       </main>
     </div>

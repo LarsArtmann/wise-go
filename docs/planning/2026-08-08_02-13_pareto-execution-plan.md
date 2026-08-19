@@ -162,37 +162,37 @@ execution order within each tier.
 
 ### Tier 1: Documentation sync (M3)
 
-| #   | Sub-task                                                                     | Parent | Est  | Deps |
-| --- | ---------------------------------------------------------------------------- | ------ | ---- | ---- |
-| D1  | Mark P1 items 1-3 as `[x]` in TODO_LIST.md                                   | M3     | 5min | —    |
-| D2  | Update AGENTS.md dep versions: go-branded-id v0.5.1, go-error-family v0.10.0 | M3     | 5min | —    |
-| D3  | Update .buildflow.yml comment to reference v0.5.1 + v0.10.0                  | M3     | 3min | —    |
-| D4  | Add new TODO_LIST entry: "Fix depguard config" under Done section            | M3     | 3min | F12  |
-| D5  | Add new TODO_LIST entry: "Fix remaining lint issues" under Done section      | M3     | 3min | F12  |
+| #  | Sub-task                                                                     | Parent | Est  | Deps |
+| -- | ---------------------------------------------------------------------------- | ------ | ---- | ---- |
+| D1 | Mark P1 items 1-3 as `[x]` in TODO_LIST.md                                   | M3     | 5min | —    |
+| D2 | Update AGENTS.md dep versions: go-branded-id v0.5.1, go-error-family v0.10.0 | M3     | 5min | —    |
+| D3 | Update .buildflow.yml comment to reference v0.5.1 + v0.10.0                  | M3     | 3min | —    |
+| D4 | Add new TODO_LIST entry: "Fix depguard config" under Done section            | M3     | 3min | F12  |
+| D5 | Add new TODO_LIST entry: "Fix remaining lint issues" under Done section      | M3     | 3min | F12  |
 
 ### Tier 2: Nix CI (M4 + M5)
 
-| #   | Sub-task                                                                           | Parent | Est   | Deps |
-| --- | ---------------------------------------------------------------------------------- | ------ | ----- | ---- |
-| N1  | Run `nix flake check` locally — observe pass/fail                                  | M4     | 10min | —    |
-| N2  | If fails: fix vendorHash in flake.nix (`nix build .#test` to get correct hash)     | M4     | 10min | N1   |
-| N3  | Verify `nix fmt` produces no diff (formatting check)                               | M4     | 5min  | N1   |
-| N4  | Add `nix:` job to `.github/workflows/ci.yml` using `cachix/install-nix-action@v27` | M5     | 10min | N1   |
-| N5  | Configure Nix job to run `nix flake check` (format + test derivations)             | M5     | 5min  | N4   |
-| N6  | Add Cachix cache step for Go module fetch performance                              | M5     | 10min | N4   |
-| N7  | Add `paths-ignore` consistency — ensure Nix job also ignores docs-only changes     | M5     | 5min  | N4   |
-| N8  | Verify CI YAML is valid (`nix fmt .` or `yamllint`)                                | M5     | 5min  | N5   |
+| #  | Sub-task                                                                           | Parent | Est   | Deps |
+| -- | ---------------------------------------------------------------------------------- | ------ | ----- | ---- |
+| N1 | Run `nix flake check` locally — observe pass/fail                                  | M4     | 10min | —    |
+| N2 | If fails: fix vendorHash in flake.nix (`nix build .#test` to get correct hash)     | M4     | 10min | N1   |
+| N3 | Verify `nix fmt` produces no diff (formatting check)                               | M4     | 5min  | N1   |
+| N4 | Add `nix:` job to `.github/workflows/ci.yml` using `cachix/install-nix-action@v27` | M5     | 10min | N1   |
+| N5 | Configure Nix job to run `nix flake check` (format + test derivations)             | M5     | 5min  | N4   |
+| N6 | Add Cachix cache step for Go module fetch performance                              | M5     | 10min | N4   |
+| N7 | Add `paths-ignore` consistency — ensure Nix job also ignores docs-only changes     | M5     | 5min  | N4   |
+| N8 | Verify CI YAML is valid (`nix fmt .` or `yamllint`)                                | M5     | 5min  | N5   |
 
 ### Tier 3: Quick wins (M6 + M7)
 
-| #   | Sub-task                                                                                             | Parent | Est   | Deps |
-| --- | ---------------------------------------------------------------------------------------------------- | ------ | ----- | ---- |
-| Q1  | Add `EndOfStatementBalance` field to `ListTransactionsResponse` in `types.go`                        | M6     | 5min  | —    |
-| Q2  | Populate `EndOfStatementBalance` from `statement.EndOfStatementBalance.Cents()` in `transactions.go` | M6     | 5min  | Q1   |
-| Q3  | Add test: verify EndOfStatementBalance is surfaced in ListTransactions BDD test                      | M6     | 10min | Q2   |
-| Q4  | Write "Mocking the client" README section — narrow consumer-side interfaces pattern                  | M7     | 12min | —    |
-| Q5  | Write "Request middleware via WithHTTPClient" README section — Transport wrapping                    | M7     | 12min | —    |
-| Q6  | Add UTC timezone note to README transactions section (mirror field comment)                          | M7     | 5min  | —    |
+| #  | Sub-task                                                                                             | Parent | Est   | Deps |
+| -- | ---------------------------------------------------------------------------------------------------- | ------ | ----- | ---- |
+| Q1 | Add `EndOfStatementBalance` field to `ListTransactionsResponse` in `types.go`                        | M6     | 5min  | —    |
+| Q2 | Populate `EndOfStatementBalance` from `statement.EndOfStatementBalance.Cents()` in `transactions.go` | M6     | 5min  | Q1   |
+| Q3 | Add test: verify EndOfStatementBalance is surfaced in ListTransactions BDD test                      | M6     | 10min | Q2   |
+| Q4 | Write "Mocking the client" README section — narrow consumer-side interfaces pattern                  | M7     | 12min | —    |
+| Q5 | Write "Request middleware via WithHTTPClient" README section — Transport wrapping                    | M7     | 12min | —    |
+| Q6 | Add UTC timezone note to README transactions section (mirror field comment)                          | M7     | 5min  | —    |
 
 ### Tier 4: Money type design + implementation (M8 + M9)
 
@@ -249,13 +249,13 @@ execution order within each tier.
 
 ### Tier 7: Release documentation (M13)
 
-| #   | Sub-task                                                                                    | Parent | Est   | Deps    |
-| --- | ------------------------------------------------------------------------------------------- | ------ | ----- | ------- |
-| R1  | Write CHANGELOG.md entry for v0.4.0 (Money type, enum normalization, EndOfStatementBalance) | M13    | 10min | M9-M12  |
-| R2  | Write migration guide: old field names → new field names mapping table                      | M13    | 10min | M9      |
-| R3  | Write CHANGELOG.md entry for v1.0.0 (HasMore removal, internal/raw, API lock)               | M13    | 5min  | M14-M15 |
-| R4  | Update FEATURES.md with all newly shipped features                                          | M13    | 10min | M9-M15  |
-| R5  | Update ROADMAP.md — mark completed axes, update timeline                                    | M13    | 10min | M9-M15  |
+| #  | Sub-task                                                                                    | Parent | Est   | Deps    |
+| -- | ------------------------------------------------------------------------------------------- | ------ | ----- | ------- |
+| R1 | Write CHANGELOG.md entry for v0.4.0 (Money type, enum normalization, EndOfStatementBalance) | M13    | 10min | M9-M12  |
+| R2 | Write migration guide: old field names → new field names mapping table                      | M13    | 10min | M9      |
+| R3 | Write CHANGELOG.md entry for v1.0.0 (HasMore removal, internal/raw, API lock)               | M13    | 5min  | M14-M15 |
+| R4 | Update FEATURES.md with all newly shipped features                                          | M13    | 10min | M9-M15  |
+| R5 | Update ROADMAP.md — mark completed axes, update timeline                                    | M13    | 10min | M9-M15  |
 
 ---
 
