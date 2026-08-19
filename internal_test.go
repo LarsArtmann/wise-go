@@ -713,14 +713,14 @@ func TestMapQuoteParseErrorsAreCorruption(t *testing.T) {
 		{
 			name: "unparseable payment option delivery",
 			call: func() error {
-				q := raw.Quote{
+				wireQuote := raw.Quote{
 					ID: "quote-1", SourceCurrency: "EUR", TargetCurrency: "USD",
 					CreatedTime: "2023-01-15T10:30:00Z", ExpirationTime: "2023-01-15T11:00:00Z",
 					PaymentOptions: []raw.QuotePaymentOption{
 						{EstimatedDelivery: "not-a-timestamp", SourceCurrency: "EUR", TargetCurrency: "USD"},
 					},
 				}
-				_, err := mapQuote(q, ProfileID{})
+				_, err := mapQuote(wireQuote, ProfileID{})
 
 				return err
 			},

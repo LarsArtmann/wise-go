@@ -202,23 +202,73 @@ func mapQuote(quote raw.Quote, profileID ProfileID) (*Quote, error) {
 	notices := mapQuoteNotices(quote.Notices)
 
 	return &Quote{
-		ID:             id.NewID[QuoteBrand](quote.ID),
-		Source:         Money{Cents: majorToCents(quote.SourceAmount), Currency: sourceCurrency},
-		Target:         Money{Cents: majorToCents(quote.TargetAmount), Currency: targetCurrency},
-		PayIn:          PayIn(quote.PayIn),
-		PayOut:         PayOut(quote.PayOut),
-		Rate:           quote.Rate,
-		Created:        created,
-		ExpirationTime: expiration,
-		Status:         QuoteStatus(quote.Status),
-		Profile:        profileID,
-		RateType:       QuoteRateType(quote.RateType),
-		ProvidedAmountType: QuoteProvidedAmountType(quote.ProvidedAmountType),
+		ID:                           id.NewID[QuoteBrand](quote.ID),
+		Source:                       source,
+		Target:                       target,
+		PayIn:                        PayIn(quote.PayIn),
+		PayOut:                       PayOut(quote.PayOut),
+		Rate:                         quote.Rate,
+		Created:                      created,
+		ExpirationTime:               expiration,
+		Status:                       QuoteStatus(quote.Status),
+		Profile:                      profileID,
+		RateType:                     QuoteRateType(quote.RateType),
+		ProvidedAmountType:           QuoteProvidedAmountType(quote.ProvidedAmountType),
 		GuaranteedTargetAmountAllowed: quote.GuaranteedTargetAmountAllowed,
-		GuaranteedTargetAmount: quote.GuaranteedTargetAmount,
-		PaymentOptions: options,
-		Notices:        notices,
+		GuaranteedTargetAmount:       quote.GuaranteedTargetAmount,
+		PaymentOptions:               options,
+		Notices:                      notices,
 	}, nil
+}
+
+// parseQuoteCreated parses a quote's createdTime and expirationTime. Both
+// must be present and parseable for the quote to be usable.
+func parseQuoteCreated(quote raw.Quote) (created, expiration time.Time, err error) {
+	created, err = parseWiseTimestamp(quote.CreatedTime)
+	if err != nil {
+		return time.Time{}, time.Time{}, errorfamily.WrapCorruption(
+			err,
+			"wise.quote.parse_created",
+			fmt.Sprintf("parse createdTime %q", quote.CreatedTime),
+		)
+	}
+
+	expiration, err = parseWiseTimestamp(quote.ExpirationTime)
+	if err != nil {
+		return time.Time{}, time.Time{}, errorfamily.WrapCorruption(
+			err,
+			"wise.quote.parse_expiration",
+			fmt.Sprintf("parse expirationTime %q", quote.ExpirationTime),
+		)
+	}
+
+	return created, expiration, nil
+}
+
+// mapQuoteMonetary converts a quote's source/target amounts and currencies
+// into Money value objects with validated currencies.
+func mapQuoteMonetary(quote raw.Quote) (source, target Money, err error) {
+	sourceCurrency, err := NewCurrency(quote.SourceCurrency)
+	if err != nil {
+		return Money{}, Money{}, errorfamily.WrapCorruption(
+			err,
+			"wise.quote.parse_source_currency",
+			fmt.Sprintf("source currency %q", quote.SourceCurrency),
+		)
+	}
+
+	targetCurrency, err := NewCurrency(quote.TargetCurrency)
+	if err != nil {
+		return Money{}, Money{}, errorfamily.WrapCorruption(
+			err,
+			"wise.quote.parse_target_currency",
+			fmt.Sprintf("target currency %q", quote.TargetCurrency),
+		)
+	}
+
+	return Money{Cents: majorToCents(quote.SourceAmount), Currency: sourceCurrency},
+		Money{Cents: majorToCents(quote.TargetAmount), Currency: targetCurrency},
+		nil
 }
 
 func mapQuotePaymentOptions(options []raw.QuotePaymentOption) ([]QuotePaymentOption, error) {
@@ -278,9 +328,9 @@ func mapQuotePaymentOptions(options []raw.QuotePaymentOption) ([]QuotePaymentOpt
 	return result, nil
 }
 
-func mapQuoteNotices(notices []raw.QuoteNotice) ([]QuoteNotice, error) {
+func mapQuoteNotices(notices []raw.QuoteNotice) []QuoteNotice {
 	if notices == nil {
-		return nil, nil
+		return nil
 	}
 
 	result := make([]QuoteNotice, 0, len(notices))
@@ -292,7 +342,7 @@ func mapQuoteNotices(notices []raw.QuoteNotice) ([]QuoteNotice, error) {
 		})
 	}
 
-	return result, nil
+	return result
 }
 
 func centsToMajor(cents int64) float64 {

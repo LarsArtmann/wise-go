@@ -2,8 +2,8 @@ package wise_test
 
 import (
 	"context"
+	stdjson "encoding/json"
 	"encoding/json/v2"
-	stdjson "encoding/json/v2"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -114,6 +114,7 @@ func getBalance(
 	return client.GetBalance(ctx, wise.NewProfileID(12345), wise.NewBalanceID(balanceID))
 }
 
+//nolint:unparam // helpers exist so call sites read as named constants
 func strPtr(s string) *string { return &s }
 
 func int32Ptr(v int32) *int32 { return &v }
