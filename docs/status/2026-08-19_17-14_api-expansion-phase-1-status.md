@@ -1,8 +1,8 @@
 # wise-go Status Report — API Expansion Phase 1
 
-**Date:** 2026-08-19 17:14  
-**Branch:** master  
-**Latest commit:** `341bf37` feat(api): expand SDK with quotes, recipients, transfers, and rates endpoints  
+**Date:** 2026-08-19 17:14\
+**Branch:** master\
+**Latest commit:** `341bf37` feat(api): expand SDK with quotes, recipients, transfers, and rates endpoints\
 **Ahead of origin:** 5 commits (pushed)
 
 ---
@@ -40,27 +40,33 @@
 ## c) NOT STARTED
 
 ### Core transfer flow completion
+
 - `CancelTransfer` (`PUT /v1/transfers/{id}/cancel`)
 - `GetDeliveryEstimate` (`GET /v1/delivery-estimates/{id}`)
 - `ValidateTransferRequirements` (`POST /v1/transfer-requirements`)
 - Fund transfer (`POST /v1/profiles/{id}/transfers/{id}/payments`)
 
 ### Statements
+
 - CSV / PDF / XLSX / CAMT.053 / MT940 / QIF statement formats
 
 ### Users
+
 - `GET /me`, `GET /users/{id}`
 
 ### Balances expanded
+
 - `CreateBalance`
 - `GetBalance` via direct endpoint (`GET /v4/profiles/{id}/balances/{id}`)
 - `GetTotalFunds`
 
 ### Bank account details & MCA
+
 - `GetBankAccountDetails`
 - `GetMultiCurrencyAccount`
 
 ### Webhooks
+
 - Signature verification helper
 - Subscription CRUD
 
@@ -99,6 +105,7 @@ Nothing is broken or shipped in a dangerous state. Honest missteps:
 ## f) Up to 50 Things to Get Done Next
 
 ### Immediate (core transfer flow — highest value)
+
 1. `CancelTransfer`
 2. `GetDeliveryEstimate`
 3. `ValidateTransferRequirements`
@@ -111,6 +118,7 @@ Nothing is broken or shipped in a dangerous state. Honest missteps:
 10. Add `CreateQuote` validation tests
 
 ### Near-term (high value, self-contained)
+
 11. `GetMe` / `GetUser`
 12. `GetStatement` with format parameter (CSV/PDF/XLSX)
 13. Webhook signature verification helper
@@ -123,6 +131,7 @@ Nothing is broken or shipped in a dangerous state. Honest missteps:
 20. Per-request correlation ID override
 
 ### Medium-term (completeness)
+
 21. `GetQuoteAccountRequirements`
 22. `GetAccountRequirements` (recipient-first flow)
 23. `CreateRecipient` with refund and email recipient support
@@ -135,6 +144,7 @@ Nothing is broken or shipped in a dangerous state. Honest missteps:
 30. Sandbox simulation helpers
 
 ### Observability & quality
+
 31. Sandbox integration tests workflow
 32. Request/response logging hook (`WithLogger`)
 33. Metrics hook (`WithMetrics`)
@@ -147,6 +157,7 @@ Nothing is broken or shipped in a dangerous state. Honest missteps:
 40. CI speed: add Cachix binary cache
 
 ### Long-term / specialized
+
 41. Cards API
 42. Card orders API
 43. Card transactions API

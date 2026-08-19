@@ -225,6 +225,33 @@ func (c *Client) CreateTransfer(
 	return &result, nil
 }
 
+// CancelTransfer cancels a transfer by ID. A transfer can only be cancelled
+// if it has not been processed (not in funds_converted or later state) and
+// has no processing problems. Cancellation is final.
+func (c *Client) CancelTransfer(ctx context.Context, transferID TransferID) (*Transfer, error) {
+	if transferID.Get() == 0 {
+		return nil, errorfamily.NewRejection(
+			"wise.transfer.invalid_request",
+			"transferID is required",
+		)
+	}
+
+	path := fmt.Sprintf("/v1/transfers/%d/cancel", transferID.Get())
+
+	var transfer raw.Transfer
+
+	if err := c.put(ctx, path, nil, &transfer); err != nil {
+		return nil, fmt.Errorf("cancel transfer %d: %w", transferID.Get(), err)
+	}
+
+	result, mapErr := mapTransfer(transfer)
+	if mapErr != nil {
+		return nil, fmt.Errorf("map cancelled transfer %d: %w", transfer.ID, mapErr)
+	}
+
+	return &result, nil
+}
+
 // mapTransfer converts a raw wire transfer into the parsed Transfer type.
 func mapTransfer(t raw.Transfer) (Transfer, error) {
 	created, err := parseWiseTimestamp(t.Created)

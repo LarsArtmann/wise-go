@@ -120,6 +120,14 @@ type Quote struct {
 	Status         string  `json:"status"`
 }
 
+// DeliveryEstimate from Wise API (/v1/delivery-estimates/{transferId}).
+// EstimatedDeliveryDate uses Wise's zone-suffixed ISO-8601 layout
+// ("2018-01-10T12:15:00.000+0000"), which differs from RFC3339.
+type DeliveryEstimate struct {
+	EstimatedDeliveryDate          string `json:"estimatedDeliveryDate"`
+	FormattedEstimatedDeliveryDate string `json:"formattedEstimatedDeliveryDate"`
+}
+
 // ErrorResponse from Wise API.
 type ErrorResponse struct {
 	Errors []ErrorDetail `json:"errors"`

@@ -148,6 +148,10 @@ func (c *Client) post(ctx context.Context, path string, body, target any) error 
 	return c.request(ctx, http.MethodPost, path, nil, body, target)
 }
 
+func (c *Client) put(ctx context.Context, path string, body, target any) error {
+	return c.request(ctx, http.MethodPut, path, nil, body, target)
+}
+
 func (c *Client) request(
 	ctx context.Context,
 	method string,

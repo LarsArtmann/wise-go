@@ -100,21 +100,21 @@ claim here can be verified against the implementation.
 
 ## API surface expansion (v0.8.0)
 
-| Feature                                | Status           | Evidence                                                   |
-| -------------------------------------- | ---------------- | ---------------------------------------------------------- |
-| `GetProfile`                           | FULLY_FUNCTIONAL | `profiles.go:33`                                           |
-| `GetExchangeRate`                      | FULLY_FUNCTIONAL | `rates.go:16`                                              |
-| `GetTransfer`                          | FULLY_FUNCTIONAL | `transfers.go:116`                                         |
-| Quotes API (create + get)              | FULLY_FUNCTIONAL | `quotes.go`                                                |
-| Recipients API (list + get + create)   | FULLY_FUNCTIONAL | `recipients.go`                                            |
-| `CreateTransfer`                       | FULLY_FUNCTIONAL | `transfers.go:15`                                          |
+| Feature                              | Status           | Evidence           |
+| ------------------------------------ | ---------------- | ------------------ |
+| `GetProfile`                         | FULLY_FUNCTIONAL | `profiles.go:33`   |
+| `GetExchangeRate`                    | FULLY_FUNCTIONAL | `rates.go:16`      |
+| `GetTransfer`                        | FULLY_FUNCTIONAL | `transfers.go:116` |
+| Quotes API (create + get)            | FULLY_FUNCTIONAL | `quotes.go`        |
+| Recipients API (list + get + create) | FULLY_FUNCTIONAL | `recipients.go`    |
+| `CreateTransfer`                     | FULLY_FUNCTIONAL | `transfers.go:15`  |
 
 ## Out of scope (not yet started)
 
-| Feature                          | Status  | Notes                                                                                       |
-| -------------------------------- | ------- | ------------------------------------------------------------------------------------------- |
-| Webhooks                         | PLANNED | No code                                                                                     |
-| Statements (CSV/PDF)             | PLANNED | SDK consumes `statement.json` only                                                          |
-| Service-client sub-structure     | PLANNED | Trigger: resource count > 6-8 (see ROADMAP.md)                                              |
-| `CancelTransfer`                 | PLANNED | `PUT /v1/transfers/{id}/cancel`                                                             |
-| `GetDeliveryEstimate`            | PLANNED | `GET /v1/delivery-estimates/{id}`                                                           |
+| Feature                      | Status  | Notes                                          |
+| ---------------------------- | ------- | ---------------------------------------------- |
+| Webhooks                     | PLANNED | No code                                        |
+| Statements (CSV/PDF)         | PLANNED | SDK consumes `statement.json` only             |
+| Service-client sub-structure | PLANNED | Trigger: resource count > 6-8 (see ROADMAP.md) |
+| `CancelTransfer`             | PLANNED | `PUT /v1/transfers/{id}/cancel`                |
+| `GetDeliveryEstimate`        | PLANNED | `GET /v1/delivery-estimates/{id}`              |

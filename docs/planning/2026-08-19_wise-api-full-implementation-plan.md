@@ -22,12 +22,12 @@ This plan maps the full API surface, applies Pareto prioritisation, and defines 
 
 ## Pareto Prioritisation
 
-| Tier | Share of endpoints | Approx. count | Value delivered | Target endpoints |
-|------|--------------------|---------------|-----------------|------------------|
-| **1% core** | ~1–2% | 3–4 | 51% | `GetProfile`, `GetTransfer`, `CreateQuote`, `GetQuote`, `CreateRecipient`, `GetRecipient`, `CreateTransfer` |
-| **4% high-value** | ~4% | 5–6 | 64% (cumulative) | `ListRecipients`, `GetExchangeRate`, `CancelTransfer`, `GetDeliveryEstimate`, `GetQuoteAccountRequirements` |
-| **20% SDK-complete** | ~20% | 27 | 80% (cumulative) | Quotes (full), Recipients (full), Transfers (full), Balances expanded, Statements CSV/PDF, Webhooks signature, Users read |
-| **80% long tail** | ~80% | 100+ | 20% | Cards, KYC, SCA factors, Disputes, Digital Wallets, Batch Groups, Simulations, Cases |
+| Tier                 | Share of endpoints | Approx. count | Value delivered  | Target endpoints                                                                                                          |
+| -------------------- | ------------------ | ------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **1% core**          | ~1–2%              | 3–4           | 51%              | `GetProfile`, `GetTransfer`, `CreateQuote`, `GetQuote`, `CreateRecipient`, `GetRecipient`, `CreateTransfer`               |
+| **4% high-value**    | ~4%                | 5–6           | 64% (cumulative) | `ListRecipients`, `GetExchangeRate`, `CancelTransfer`, `GetDeliveryEstimate`, `GetQuoteAccountRequirements`               |
+| **20% SDK-complete** | ~20%               | 27            | 80% (cumulative) | Quotes (full), Recipients (full), Transfers (full), Balances expanded, Statements CSV/PDF, Webhooks signature, Users read |
+| **80% long tail**    | ~80%               | 100+          | 20%              | Cards, KYC, SCA factors, Disputes, Digital Wallets, Batch Groups, Simulations, Cases                                      |
 
 **Principle:** ship the 1% first, because a consumer who can create a quote, add a recipient, and send a transfer gets the majority of the SDK's value. Everything else is incremental.
 
@@ -37,74 +37,74 @@ This plan maps the full API surface, applies Pareto prioritisation, and defines 
 
 ### Tier 1 — Core transfer flow (ship first)
 
-| # | Category | Method | Path | SDK method | Status |
-|---|----------|--------|------|------------|--------|
-| 1 | Profiles | GET | `/v2/profiles/{profileId}` | `GetProfile(ctx, ProfileID)` | PLANNED |
-| 2 | Quotes | POST | `/v3/quotes` | `CreateUnauthenticatedQuote(ctx, CreateQuoteRequest)` | PLANNED |
-| 3 | Quotes | POST | `/v3/profiles/{profileId}/quotes` | `CreateQuote(ctx, ProfileID, CreateQuoteRequest)` | PLANNED |
-| 4 | Quotes | GET | `/v3/profiles/{profileId}/quotes/{quoteId}` | `GetQuote(ctx, ProfileID, QuoteID)` | PLANNED |
-| 5 | Quotes | GET | `/v1/quotes/{quoteId}/account-requirements` | `GetQuoteAccountRequirements(ctx, QuoteID)` | PLANNED |
-| 6 | Recipients | GET | `/v2/accounts` | `ListRecipients(ctx, ListRecipientsRequest)` | PLANNED |
-| 7 | Recipients | GET | `/v1/accounts/{accountId}` | `GetRecipient(ctx, RecipientID)` | PLANNED |
-| 8 | Recipients | POST | `/v1/accounts` | `CreateRecipient(ctx, CreateRecipientRequest)` | PLANNED |
-| 9 | Transfers | GET | `/v1/transfers/{transferId}` | `GetTransfer(ctx, TransferID)` | PLANNED |
-| 10 | Transfers | POST | `/v1/transfers` | `CreateTransfer(ctx, CreateTransferRequest)` | PLANNED |
-| 11 | Transfers | PUT | `/v1/transfers/{transferId}/cancel` | `CancelTransfer(ctx, TransferID)` | PLANNED |
-| 12 | Transfers | GET | `/v1/delivery-estimates/{transferId}` | `GetDeliveryEstimate(ctx, TransferID)` | PLANNED |
-| 13 | Exchange rates | GET | `/v1/rates` | `GetExchangeRate(ctx, source, target, time)` | PLANNED |
+| #  | Category       | Method | Path                                        | SDK method                                            | Status  |
+| -- | -------------- | ------ | ------------------------------------------- | ----------------------------------------------------- | ------- |
+| 1  | Profiles       | GET    | `/v2/profiles/{profileId}`                  | `GetProfile(ctx, ProfileID)`                          | PLANNED |
+| 2  | Quotes         | POST   | `/v3/quotes`                                | `CreateUnauthenticatedQuote(ctx, CreateQuoteRequest)` | PLANNED |
+| 3  | Quotes         | POST   | `/v3/profiles/{profileId}/quotes`           | `CreateQuote(ctx, ProfileID, CreateQuoteRequest)`     | PLANNED |
+| 4  | Quotes         | GET    | `/v3/profiles/{profileId}/quotes/{quoteId}` | `GetQuote(ctx, ProfileID, QuoteID)`                   | PLANNED |
+| 5  | Quotes         | GET    | `/v1/quotes/{quoteId}/account-requirements` | `GetQuoteAccountRequirements(ctx, QuoteID)`           | PLANNED |
+| 6  | Recipients     | GET    | `/v2/accounts`                              | `ListRecipients(ctx, ListRecipientsRequest)`          | PLANNED |
+| 7  | Recipients     | GET    | `/v1/accounts/{accountId}`                  | `GetRecipient(ctx, RecipientID)`                      | PLANNED |
+| 8  | Recipients     | POST   | `/v1/accounts`                              | `CreateRecipient(ctx, CreateRecipientRequest)`        | PLANNED |
+| 9  | Transfers      | GET    | `/v1/transfers/{transferId}`                | `GetTransfer(ctx, TransferID)`                        | PLANNED |
+| 10 | Transfers      | POST   | `/v1/transfers`                             | `CreateTransfer(ctx, CreateTransferRequest)`          | PLANNED |
+| 11 | Transfers      | PUT    | `/v1/transfers/{transferId}/cancel`         | `CancelTransfer(ctx, TransferID)`                     | PLANNED |
+| 12 | Transfers      | GET    | `/v1/delivery-estimates/{transferId}`       | `GetDeliveryEstimate(ctx, TransferID)`                | PLANNED |
+| 13 | Exchange rates | GET    | `/v1/rates`                                 | `GetExchangeRate(ctx, source, target, time)`          | PLANNED |
 
 ### Tier 2 — High-value, self-contained
 
-| # | Category | Method | Path | Notes |
-|---|----------|--------|------|-------|
-| 14 | Users | GET | `/me` | Current user |
-| 15 | Users | GET | `/users/{userId}` | User by ID |
-| 16 | Balances | POST | `/v4/profiles/{profileId}/balances` | Create balance |
-| 17 | Balances | GET | `/v4/profiles/{profileId}/balances/{balanceId}` | Get balance by ID (new endpoint; may remove client-side scan) |
-| 18 | Balances | GET | `/v1/profiles/{profileId}/total-funds/{currency}` | Total funds |
-| 19 | Statements | GET | `/v1/profiles/{profileId}/balance-statements/{balanceId}/statement.{csv,pdf,xlsx,xml,mt940,qif}` | Format parameter |
-| 20 | Webhooks | — | Signature verification helper | High value, no REST calls |
-| 21 | Transfer requirements | POST | `/v1/transfer-requirements` | Validate before create |
-| 22 | Currencies | GET | `/v1/currencies` | Allowed currencies |
-| 23 | Comparisons | GET | `/v1/comparisons` | Provider comparison |
+| #  | Category              | Method | Path                                                                                             | Notes                                                         |
+| -- | --------------------- | ------ | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
+| 14 | Users                 | GET    | `/me`                                                                                            | Current user                                                  |
+| 15 | Users                 | GET    | `/users/{userId}`                                                                                | User by ID                                                    |
+| 16 | Balances              | POST   | `/v4/profiles/{profileId}/balances`                                                              | Create balance                                                |
+| 17 | Balances              | GET    | `/v4/profiles/{profileId}/balances/{balanceId}`                                                  | Get balance by ID (new endpoint; may remove client-side scan) |
+| 18 | Balances              | GET    | `/v1/profiles/{profileId}/total-funds/{currency}`                                                | Total funds                                                   |
+| 19 | Statements            | GET    | `/v1/profiles/{profileId}/balance-statements/{balanceId}/statement.{csv,pdf,xlsx,xml,mt940,qif}` | Format parameter                                              |
+| 20 | Webhooks              | —      | Signature verification helper                                                                    | High value, no REST calls                                     |
+| 21 | Transfer requirements | POST   | `/v1/transfer-requirements`                                                                      | Validate before create                                        |
+| 22 | Currencies            | GET    | `/v1/currencies`                                                                                 | Allowed currencies                                            |
+| 23 | Comparisons           | GET    | `/v1/comparisons`                                                                                | Provider comparison                                           |
 
 ### Tier 3 — Moderate value, broader surface
 
-| # | Category | Method | Path | Notes |
-|---|----------|--------|------|-------|
-| 24 | Profiles | GET | `/profiles/{profileId}` | v1 alias |
-| 25 | Profiles | POST | `/profiles/personal-profile` | Create personal profile |
-| 26 | Profiles | POST | `/profiles/business-profile` | Create business profile |
-| 27 | Profiles | PUT | `/profiles/{profileId}/personal-profile` | Update personal profile |
-| 28 | Profiles | PUT | `/profiles/{profileId}/business-profile` | Update business profile |
-| 29 | Addresses | GET/POST | `/addresses`, `/addresses/{id}`, `/address-requirements` | Address book |
-| 30 | Bank account details | GET/POST | `/profiles/{profileId}/account-details`, `/profiles/{profileId}/bank-details` | IBAN/routing |
-| 31 | Multi-currency account | GET | `/v4/profiles/{profileId}/multi-currency-account`, `/borderless-accounts-configuration/...` | MCA |
-| 32 | Batch groups | POST/PATCH/GET | `/profiles/{profileId}/batch-groups/...` | Bulk payments |
-| 33 | Payin deposit details | GET | `/profiles/{profileId}/transfers/{transferId}/deposit-details/bank-transfer` | Pay-in instructions |
-| 34 | Direct debit accounts | GET/POST | `/profiles/{profileId}/direct-debit-accounts` | Bulk funding |
-| 35 | Bulk settlement | POST | `/settlements` | Client-creds only |
+| #  | Category               | Method         | Path                                                                                        | Notes                   |
+| -- | ---------------------- | -------------- | ------------------------------------------------------------------------------------------- | ----------------------- |
+| 24 | Profiles               | GET            | `/profiles/{profileId}`                                                                     | v1 alias                |
+| 25 | Profiles               | POST           | `/profiles/personal-profile`                                                                | Create personal profile |
+| 26 | Profiles               | POST           | `/profiles/business-profile`                                                                | Create business profile |
+| 27 | Profiles               | PUT            | `/profiles/{profileId}/personal-profile`                                                    | Update personal profile |
+| 28 | Profiles               | PUT            | `/profiles/{profileId}/business-profile`                                                    | Update business profile |
+| 29 | Addresses              | GET/POST       | `/addresses`, `/addresses/{id}`, `/address-requirements`                                    | Address book            |
+| 30 | Bank account details   | GET/POST       | `/profiles/{profileId}/account-details`, `/profiles/{profileId}/bank-details`               | IBAN/routing            |
+| 31 | Multi-currency account | GET            | `/v4/profiles/{profileId}/multi-currency-account`, `/borderless-accounts-configuration/...` | MCA                     |
+| 32 | Batch groups           | POST/PATCH/GET | `/profiles/{profileId}/batch-groups/...`                                                    | Bulk payments           |
+| 33 | Payin deposit details  | GET            | `/profiles/{profileId}/transfers/{transferId}/deposit-details/bank-transfer`                | Pay-in instructions     |
+| 34 | Direct debit accounts  | GET/POST       | `/profiles/{profileId}/direct-debit-accounts`                                               | Bulk funding            |
+| 35 | Bulk settlement        | POST           | `/settlements`                                                                              | Client-creds only       |
 
 ### Tier 4 — Specialised / partner-only / long tail
 
-| # | Category | Count | Notes |
-|---|----------|-------|-------|
-| 36 | OAuth token | 1 | `POST /oauth/token` — only if SDK takes over token exchange |
-| 37 | JOSE playground | 6 | Signature/encryption testing |
-| 38 | Users write | 4 | Signup, exists, contact email |
-| 39 | Claim account | 1 | `POST /user/claim-account` |
-| 40 | Profile verification | 8 | KYC review, additional verification, FaceTec |
-| 41 | Link requests / embedded flows | 4 | iframe/webview helpers |
-| 42 | SCA / one-time tokens | 10 | OTT status, SCA sessions, OTP channels |
-| 43 | PIN / facemaps / device fingerprints | 8 | JWE-encrypted SCA factors |
-| 44 | Cards | ~25 | Orders, transactions, limits, spend controls, disputes, sensitive details, 3DS |
-| 45 | Digital wallets | 4 | Apple/Google Pay push provisioning |
-| 46 | Disputes | 7 | Card dispute management |
-| 47 | Incoming transfers | 1 | Partner-only |
-| 48 | Payins | 1 | PayNow QR |
-| 49 | Webhook subscriptions | 8 | Application + profile level |
-| 50 | Cases | 3 | Partner support |
-| 51 | Sandbox simulations | ~15 | Testing-only helpers |
+| #  | Category                             | Count | Notes                                                                          |
+| -- | ------------------------------------ | ----- | ------------------------------------------------------------------------------ |
+| 36 | OAuth token                          | 1     | `POST /oauth/token` — only if SDK takes over token exchange                    |
+| 37 | JOSE playground                      | 6     | Signature/encryption testing                                                   |
+| 38 | Users write                          | 4     | Signup, exists, contact email                                                  |
+| 39 | Claim account                        | 1     | `POST /user/claim-account`                                                     |
+| 40 | Profile verification                 | 8     | KYC review, additional verification, FaceTec                                   |
+| 41 | Link requests / embedded flows       | 4     | iframe/webview helpers                                                         |
+| 42 | SCA / one-time tokens                | 10    | OTT status, SCA sessions, OTP channels                                         |
+| 43 | PIN / facemaps / device fingerprints | 8     | JWE-encrypted SCA factors                                                      |
+| 44 | Cards                                | ~25   | Orders, transactions, limits, spend controls, disputes, sensitive details, 3DS |
+| 45 | Digital wallets                      | 4     | Apple/Google Pay push provisioning                                             |
+| 46 | Disputes                             | 7     | Card dispute management                                                        |
+| 47 | Incoming transfers                   | 1     | Partner-only                                                                   |
+| 48 | Payins                               | 1     | PayNow QR                                                                      |
+| 49 | Webhook subscriptions                | 8     | Application + profile level                                                    |
+| 50 | Cases                                | 3     | Partner support                                                                |
+| 51 | Sandbox simulations                  | ~15   | Testing-only helpers                                                           |
 
 ---
 
