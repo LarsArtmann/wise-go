@@ -3,7 +3,6 @@ package wise_test
 import (
 	"context"
 	"encoding/json/v2"
-	stdjson "encoding/json/v2"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -1090,7 +1089,7 @@ var _ = Describe("Wise Client", func() {
 					Expect(r.Header.Get("Content-Type")).To(Equal("application/json"))
 
 					var body map[string]any
-					Expect(stdjson.UnmarshalRead(r.Body, &body)).To(Succeed())
+					Expect(json.UnmarshalRead(r.Body, &body)).To(Succeed())
 					Expect(body["sourceCurrency"]).To(Equal("EUR"))
 					Expect(body["targetCurrency"]).To(Equal("USD"))
 					Expect(body["sourceAmount"]).To(Equal(10.0))
@@ -1232,7 +1231,7 @@ var _ = Describe("Wise Client", func() {
 					Expect(r.Header.Get("Content-Type")).To(Equal("application/json"))
 
 					var body map[string]any
-					Expect(stdjson.UnmarshalRead(r.Body, &body)).To(Succeed())
+					Expect(json.UnmarshalRead(r.Body, &body)).To(Succeed())
 					Expect(body["currency"]).To(Equal("GBP"))
 					Expect(body["type"]).To(Equal("sort_code"))
 
@@ -1274,7 +1273,7 @@ var _ = Describe("Wise Client", func() {
 					Expect(r.Header.Get("Content-Type")).To(Equal("application/json"))
 
 					var body map[string]any
-					Expect(stdjson.UnmarshalRead(r.Body, &body)).To(Succeed())
+					Expect(json.UnmarshalRead(r.Body, &body)).To(Succeed())
 					Expect(body["targetAccount"]).To(Equal(float64(98765432)))
 					Expect(body["quoteUuid"]).To(Equal("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"))
 					Expect(body["customerTransactionId"]).To(Equal("22244c35-9fe8-4c32-b7fd-d05c2a7734bf"))
@@ -1391,7 +1390,7 @@ var _ = Describe("Wise Client", func() {
 					Expect(r.Header.Get("Content-Type")).To(Equal("application/json"))
 
 					var reqBody map[string]any
-					Expect(stdjson.UnmarshalRead(r.Body, &reqBody)).To(Succeed())
+					Expect(json.UnmarshalRead(r.Body, &reqBody)).To(Succeed())
 					Expect(reqBody["targetAccount"]).To(Equal(float64(98765432)))
 					Expect(reqBody["quoteUuid"]).To(Equal("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"))
 					Expect(reqBody["originatorLegalEntityType"]).To(Equal("PRIVATE"))
