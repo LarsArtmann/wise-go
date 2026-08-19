@@ -106,6 +106,8 @@
                   ./rates.go
                   ./quotes.go
                   ./recipients.go
+                  ./delivery_estimates.go
+                  ./transfer_requirements.go
                   ./internal/raw/types.go
                   ./internal/raw/transfers.go
                   ./internal_test.go
