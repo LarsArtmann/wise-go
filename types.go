@@ -192,6 +192,16 @@ type ListTransactionsResponse struct {
 	EndOfStatementBalance Money
 }
 
+// ExchangeRate is the parsed representation of a Wise exchange rate.
+// Source and Target are ISO 4217 currency codes; Rate is the amount of
+// Target currency per one unit of Source currency.
+type ExchangeRate struct {
+	Source Currency
+	Target Currency
+	Rate   float64
+	Time   time.Time
+}
+
 // Transfer is the parsed representation of a Wise transfer — a payment order
 // to a recipient account based on a quote. Unlike statement transactions,
 // transfers are retrievable with a personal API token without SCA approval.

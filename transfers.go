@@ -112,6 +112,24 @@ func joinStatuses(statuses []TransferStatus) string {
 	return strings.Join(parts, ",")
 }
 
+// GetTransfer returns a single transfer by ID.
+func (c *Client) GetTransfer(ctx context.Context, transferID TransferID) (*Transfer, error) {
+	path := fmt.Sprintf("/v1/transfers/%d", transferID.Get())
+
+	var transfer raw.Transfer
+
+	if err := fetchByID(ctx, c, transferID.Get(), "transfer", path, &transfer); err != nil {
+		return nil, err
+	}
+
+	result, mapErr := mapTransfer(transfer)
+	if mapErr != nil {
+		return nil, fmt.Errorf("map transfer %d: %w", transfer.ID, mapErr)
+	}
+
+	return &result, nil
+}
+
 // mapTransfer converts a raw wire transfer into the parsed Transfer type.
 func mapTransfer(t raw.Transfer) (Transfer, error) {
 	created, err := parseWiseTimestamp(t.Created)

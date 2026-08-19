@@ -1,6 +1,7 @@
 package wise
 
 import (
+	"context"
 	"encoding/json/v2"
 	"errors"
 	"fmt"
@@ -14,6 +15,31 @@ import (
 )
 
 const defaultRetryAfter = time.Second
+
+// fetchByID validates a non-zero ID and performs a GET for a single resource.
+// It centralises the boilerplate shared by GetProfile, GetTransfer, and future
+// get-by-id endpoints so the public methods stay short and resource-specific.
+func fetchByID[T any](
+	ctx context.Context,
+	c *Client,
+	id int64,
+	resource string,
+	path string,
+	target *T,
+) error {
+	if id == 0 {
+		return errorfamily.NewRejection(
+			"wise."+resource+".invalid_request",
+			resource+"ID is required",
+		)
+	}
+
+	if err := c.get(ctx, path, target); err != nil {
+		return fmt.Errorf("get %s %d: %w", resource, id, err)
+	}
+
+	return nil
+}
 
 // toMoney converts a raw BalanceAmount to a validated Money value.
 // A malformed amount is permanent response corruption, never a retryable

@@ -85,6 +85,14 @@ type ExchangeDetails struct {
 	ToCurrency   string        `json:"toCurrency"`
 }
 
+// ExchangeRate from Wise API (/v1/rates).
+type ExchangeRate struct {
+	Source string  `json:"source"`
+	Target string  `json:"target"`
+	Rate   float64 `json:"rate"`
+	Time   string  `json:"time"`
+}
+
 // ErrorResponse from Wise API.
 type ErrorResponse struct {
 	Errors []ErrorDetail `json:"errors"`

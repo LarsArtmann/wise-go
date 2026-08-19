@@ -11,20 +11,12 @@ import (
 
 // GetProfile returns a single profile by ID.
 func (c *Client) GetProfile(ctx context.Context, profileID ProfileID) (*Profile, error) {
-	if profileID.Get() == 0 {
-		return nil, errorfamily.NewRejection(
-			"wise.profile.invalid_request",
-			"profileID is required",
-		)
-	}
-
 	path := fmt.Sprintf("/v2/profiles/%d", profileID.Get())
 
 	var profile raw.Profile
 
-	err := c.get(ctx, path, &profile)
-	if err != nil {
-		return nil, fmt.Errorf("get profile %d: %w", profileID.Get(), err)
+	if err := fetchByID(ctx, c, profileID.Get(), "profile", path, &profile); err != nil {
+		return nil, err
 	}
 
 	result, mapErr := mapProfile(profile)

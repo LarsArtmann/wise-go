@@ -148,27 +148,6 @@ func (c *Client) post(ctx context.Context, path string, body, target any) error 
 	return c.request(ctx, http.MethodPost, path, nil, body, target)
 }
 
-func (c *Client) postWithQuery(
-	ctx context.Context,
-	path string,
-	body, target any,
-	query func() string,
-) error {
-	return c.request(ctx, http.MethodPost, path, query, body, target)
-}
-
-func (c *Client) patch(ctx context.Context, path string, body, target any) error {
-	return c.request(ctx, http.MethodPatch, path, nil, body, target)
-}
-
-func (c *Client) put(ctx context.Context, path string, body, target any) error {
-	return c.request(ctx, http.MethodPut, path, nil, body, target)
-}
-
-func (c *Client) delete(ctx context.Context, path string, target any) error {
-	return c.request(ctx, http.MethodDelete, path, nil, nil, target)
-}
-
 func (c *Client) request(
 	ctx context.Context,
 	method string,
@@ -188,6 +167,7 @@ func (c *Client) request(
 		//nolint:contextcheck
 		GetWithExecution(func(exec failsafe.Execution[*http.Response]) (*http.Response, error) {
 			var bodyReader io.Reader
+
 			if body != nil {
 				b, marshalErr := json.Marshal(body)
 				if marshalErr != nil {
@@ -203,6 +183,7 @@ func (c *Client) request(
 			}
 
 			c.setHeaders(req)
+
 			if body != nil {
 				req.Header.Set("Content-Type", "application/json")
 			}
