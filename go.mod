@@ -1,5 +1,9 @@
 module github.com/larsartmann/wise-go
 
+// v0.6.0 was tagged on a pre-merge lineage that lacks the v0.5.2/v0.5.3
+// fixes (balance listing types param, Corruption classification). Use v0.6.1+.
+retract v0.6.0
+
 go 1.26.5
 
 require (

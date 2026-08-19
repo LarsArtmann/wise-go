@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-08-19
+
+### Fixed
+
+- **Retracted v0.6.0.** It was tagged on a pre-merge lineage missing the v0.5.2/v0.5.3 fixes (balances `types` parameter, Corruption classification); v0.6.1 is the same SCA feature on the integrated lineage.
+
 ## [0.6.0] - 2026-08-19
 
 ### Added
