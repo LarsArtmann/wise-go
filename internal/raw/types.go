@@ -107,17 +107,58 @@ type Recipient struct {
 // Quote from Wise API (/v3/quotes).
 // ID is a UUID string; it is omitted for unauthenticated quotes.
 type Quote struct {
-	ID             string  `json:"id,omitempty"`
-	SourceCurrency string  `json:"sourceCurrency"`
-	TargetCurrency string  `json:"targetCurrency"`
-	SourceAmount   float64 `json:"sourceAmount"`
-	TargetAmount   float64 `json:"targetAmount"`
-	PayIn          string  `json:"payIn"`
-	PayOut         string  `json:"payOut"`
-	Rate           float64 `json:"rate"`
-	CreatedTime    string  `json:"createdTime"`
-	ExpirationTime string  `json:"expirationTime"`
-	Status         string  `json:"status"`
+	ID                          string                `json:"id,omitempty"`
+	SourceCurrency              string                `json:"sourceCurrency"`
+	TargetCurrency              string                `json:"targetCurrency"`
+	SourceAmount                float64               `json:"sourceAmount"`
+	TargetAmount                float64               `json:"targetAmount"`
+	PayIn                       string                `json:"payIn"`
+	PayOut                      string                `json:"payOut"`
+	Rate                        float64               `json:"rate"`
+	CreatedTime                 string                `json:"createdTime"`
+	ExpirationTime              string                `json:"expirationTime"`
+	Status                      string                `json:"status"`
+	Profile                     int64                 `json:"profile"`
+	RateType                    string                `json:"rateType"`
+	ProvidedAmountType          string                `json:"providedAmountType"`
+	GuaranteedTargetAmountAllowed bool                `json:"guaranteedTargetAmountAllowed"`
+	GuaranteedTargetAmount      bool                  `json:"guaranteedTargetAmount"`
+	PaymentOptions              []QuotePaymentOption  `json:"paymentOptions"`
+	Notices                     []QuoteNotice         `json:"notices"`
+}
+
+// QuotePaymentOption is one payment method combination available for a quote.
+type QuotePaymentOption struct {
+	Disabled                   bool     `json:"disabled"`
+	EstimatedDelivery          string   `json:"estimatedDelivery"`
+	FormattedEstimatedDelivery string   `json:"formattedEstimatedDelivery"`
+	Fee                        QuoteFee `json:"fee"`
+	SourceAmount               float64  `json:"sourceAmount"`
+	TargetAmount               float64  `json:"targetAmount"`
+	SourceCurrency             string   `json:"sourceCurrency"`
+	TargetCurrency             string   `json:"targetCurrency"`
+	PayIn                      string   `json:"payIn"`
+	PayOut                     string   `json:"payOut"`
+	PayInProduct               string   `json:"payInProduct"`
+	FeePercentage              float64  `json:"feePercentage"`
+}
+
+// QuoteFee is the fee breakdown for a quote payment option. All values are
+// in major source-currency units, matching Wise's wire format; convert with
+// Money conversions at the consumer boundary.
+type QuoteFee struct {
+	TransferWise float64 `json:"transferwise"`
+	PayIn        float64 `json:"payIn"`
+	Discount     float64 `json:"discount"`
+	Partner      float64 `json:"partner"`
+	Total        float64 `json:"total"`
+}
+
+// QuoteNotice is a message Wise wants shown to the user about a quote.
+type QuoteNotice struct {
+	Text string  `json:"text"`
+	Link *string `json:"link"`
+	Type string  `json:"type"`
 }
 
 // DeliveryEstimate from Wise API (/v1/delivery-estimates/{transferId}).

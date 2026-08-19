@@ -151,6 +151,19 @@ func mapTransferRequirementField(field raw.TransferRequirementField) TransferReq
 		MinLength:                  field.MinLength,
 		MaxLength:                  field.MaxLength,
 		ValidationRegexp:           field.ValidationRegexp,
-		ValuesAllowed:              field.ValuesAllowed,
+		ValuesAllowed:              mapTransferRequirementValues(field.ValuesAllowed),
 	}
+}
+
+func mapTransferRequirementValues(values []raw.TransferRequirementValue) []TransferRequirementValue {
+	if values == nil {
+		return nil
+	}
+
+	result := make([]TransferRequirementValue, 0, len(values))
+	for _, value := range values {
+		result = append(result, TransferRequirementValue{Key: value.Key, Name: value.Name})
+	}
+
+	return result
 }

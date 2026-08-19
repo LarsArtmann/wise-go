@@ -245,7 +245,10 @@ const (
 // offer used to create a transfer. Authenticated quotes expire after 30 minutes.
 //
 // ID is empty for unauthenticated quotes, which cannot be used to create a
-// transfer.
+// transfer. PaymentOptions lists the available pay-in/pay-out combinations
+// with their fees and estimated delivery times; Notices carries messages Wise
+// requires to be shown to the user (a BLOCKED notice means the quote must not
+// be used to create a transfer).
 type Quote struct {
 	ID             QuoteID
 	Source         Money
@@ -257,7 +260,76 @@ type Quote struct {
 	ExpirationTime time.Time
 	Status         QuoteStatus
 	Profile        ProfileID // Zero for unauthenticated quotes.
+	RateType       QuoteRateType
+	ProvidedAmountType QuoteProvidedAmountType
+	GuaranteedTargetAmountAllowed bool
+	GuaranteedTargetAmount bool
+	PaymentOptions []QuotePaymentOption
+	Notices        []QuoteNotice
 }
+
+// QuotePaymentOption is one pay-in/pay-out combination available for a quote,
+// with its fee breakdown and estimated delivery time. Source and Target are
+// the amounts payable/receivable when using this option; EstimatedDelivery is
+// parsed via the tolerant timestamp parser.
+type QuotePaymentOption struct {
+	Disabled                   bool
+	EstimatedDelivery          time.Time
+	FormattedEstimatedDelivery string
+	Fee                        QuoteFee
+	Source                     Money
+	Target                     Money
+	PayIn                      PayIn
+	PayOut                     PayOut
+	PayInProduct               string
+	FeePercentage              float64
+}
+
+// QuoteFee is the fee breakdown Wise reports for a quote payment option, in
+// source-currency major units (Wise's wire format). Total is the value to
+// display when showing fees to the user.
+type QuoteFee struct {
+	TransferWise float64
+	PayIn        float64
+	Discount     float64
+	Partner      float64
+	Total        float64
+}
+
+// QuoteNotice is a message Wise requires to be shown to the user.
+// A notice of type BLOCKED means the quote must not be used to create a
+// transfer.
+type QuoteNotice struct {
+	Text string
+	Link *string
+	Type QuoteNoticeType
+}
+
+// QuoteRateType distinguishes a locked (guaranteed) rate from a floating one.
+type QuoteRateType string
+
+const (
+	QuoteRateTypeFixed    QuoteRateType = "FIXED"
+	QuoteRateTypeFloating QuoteRateType = "FLOATING"
+)
+
+// QuoteProvidedAmountType records whether the quote was created from a
+// source or a target amount.
+type QuoteProvidedAmountType string
+
+const (
+	QuoteProvidedAmountTypeSource QuoteProvidedAmountType = "SOURCE"
+	QuoteProvidedAmountTypeTarget QuoteProvidedAmountType = "TARGET"
+)
+
+// QuoteNoticeType is the severity class of a quote notice.
+type QuoteNoticeType string
+
+const (
+	QuoteNoticeTypeWarning QuoteNoticeType = "WARNING"
+	QuoteNoticeTypeInfo    QuoteNoticeType = "INFO"
+	QuoteNoticeTypeBlocked QuoteNoticeType = "BLOCKED"
+)
 
 // QuoteStatus is a Wise quote lifecycle status.
 type QuoteStatus string

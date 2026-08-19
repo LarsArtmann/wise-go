@@ -220,6 +220,16 @@ func mapQuote(quote raw.Quote, profileID ProfileID) (*Quote, error) {
 		)
 	}
 
+	options, err := mapQuotePaymentOptions(quote.PaymentOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	notices, err := mapQuoteNotices(quote.Notices)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Quote{
 		ID:             id.NewID[QuoteBrand](quote.ID),
 		Source:         Money{Cents: majorToCents(quote.SourceAmount), Currency: sourceCurrency},
@@ -231,7 +241,87 @@ func mapQuote(quote raw.Quote, profileID ProfileID) (*Quote, error) {
 		ExpirationTime: expiration,
 		Status:         QuoteStatus(quote.Status),
 		Profile:        profileID,
+		RateType:       QuoteRateType(quote.RateType),
+		ProvidedAmountType: QuoteProvidedAmountType(quote.ProvidedAmountType),
+		GuaranteedTargetAmountAllowed: quote.GuaranteedTargetAmountAllowed,
+		GuaranteedTargetAmount: quote.GuaranteedTargetAmount,
+		PaymentOptions: options,
+		Notices:        notices,
 	}, nil
+}
+
+func mapQuotePaymentOptions(options []raw.QuotePaymentOption) ([]QuotePaymentOption, error) {
+	if options == nil {
+		return nil, nil
+	}
+
+	result := make([]QuotePaymentOption, 0, len(options))
+	for _, option := range options {
+		delivery, err := parseWiseTimestamp(option.EstimatedDelivery)
+		if err != nil {
+			return nil, errorfamily.WrapCorruption(
+				err,
+				"wise.quote.parse_payment_option_delivery",
+				fmt.Sprintf("parse estimatedDelivery %q", option.EstimatedDelivery),
+			)
+		}
+
+		sourceCurrency, err := NewCurrency(option.SourceCurrency)
+		if err != nil {
+			return nil, errorfamily.WrapCorruption(
+				err,
+				"wise.quote.parse_payment_option_source",
+				fmt.Sprintf("payment option source currency %q", option.SourceCurrency),
+			)
+		}
+
+		targetCurrency, err := NewCurrency(option.TargetCurrency)
+		if err != nil {
+			return nil, errorfamily.WrapCorruption(
+				err,
+				"wise.quote.parse_payment_option_target",
+				fmt.Sprintf("payment option target currency %q", option.TargetCurrency),
+			)
+		}
+
+		result = append(result, QuotePaymentOption{
+			Disabled:                   option.Disabled,
+			EstimatedDelivery:          delivery,
+			FormattedEstimatedDelivery: option.FormattedEstimatedDelivery,
+			Fee: QuoteFee{
+				TransferWise: option.Fee.TransferWise,
+				PayIn:        option.Fee.PayIn,
+				Discount:     option.Fee.Discount,
+				Partner:      option.Fee.Partner,
+				Total:        option.Fee.Total,
+			},
+			Source:        Money{Cents: majorToCents(option.SourceAmount), Currency: sourceCurrency},
+			Target:        Money{Cents: majorToCents(option.TargetAmount), Currency: targetCurrency},
+			PayIn:         PayIn(option.PayIn),
+			PayOut:        PayOut(option.PayOut),
+			PayInProduct:  option.PayInProduct,
+			FeePercentage: option.FeePercentage,
+		})
+	}
+
+	return result, nil
+}
+
+func mapQuoteNotices(notices []raw.QuoteNotice) ([]QuoteNotice, error) {
+	if notices == nil {
+		return nil, nil
+	}
+
+	result := make([]QuoteNotice, 0, len(notices))
+	for _, notice := range notices {
+		result = append(result, QuoteNotice{
+			Text: notice.Text,
+			Link: notice.Link,
+			Type: QuoteNoticeType(notice.Type),
+		})
+	}
+
+	return result, nil
 }
 
 func centsToMajor(cents int64) float64 {
