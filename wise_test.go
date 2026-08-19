@@ -2,6 +2,7 @@ package wise_test
 
 import (
 	"context"
+	stdjson "encoding/json"
 	"encoding/json/v2"
 	"errors"
 	"net/http"
@@ -978,6 +979,331 @@ var _ = Describe("Wise Client", func() {
 				_, err := client.ListTransfers(context.Background(), wise.ListTransfersRequest{})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("map transfer 1"))
+			})
+		})
+	})
+
+	Describe("GetProfile", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v2/profiles/12345", func(w http.ResponseWriter, _ *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, personalProfile(
+						12345, "John", "Doe", "john@example.com", "2023-01-15T10:30:00Z",
+					))
+				})
+			})
+
+			It("should return the mapped profile", func() {
+				profile, err := client.GetProfile(context.Background(), wise.NewProfileID(12345))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(profile).ToNot(BeNil())
+				Expect(profile.ID.Get()).To(Equal(int64(12345)))
+				Expect(profile.Name).To(Equal("John Doe"))
+			})
+		})
+
+		Context("with zero profile ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetProfile(context.Background(), wise.NewProfileID(0))
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("GetExchangeRate", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/rates", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.URL.Query().Get("source")).To(Equal("EUR"))
+					Expect(r.URL.Query().Get("target")).To(Equal("USD"))
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, raw.ExchangeRate{
+						Source: "EUR", Target: "USD", Rate: 1.0857, Time: "2023-01-15T10:30:00Z",
+					})
+				})
+			})
+
+			It("should return the mapped rate", func() {
+				rate, err := client.GetExchangeRate(
+					context.Background(),
+					wise.Currency("EUR"),
+					wise.Currency("USD"),
+					time.Time{},
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(rate).ToNot(BeNil())
+				Expect(rate.Source).To(Equal(wise.Currency("EUR")))
+				Expect(rate.Target).To(Equal(wise.Currency("USD")))
+				Expect(rate.Rate).To(Equal(1.0857))
+			})
+		})
+
+		Context("with missing source currency", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetExchangeRate(
+					context.Background(),
+					wise.Currency(""),
+					wise.Currency("USD"),
+					time.Time{},
+				)
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("GetTransfer", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/16521632", func(w http.ResponseWriter, _ *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, raw.Transfer{
+						ID:             16521632,
+						Status:         "delivered",
+						TargetAccount:  98765432,
+						SourceCurrency: "EUR",
+						SourceValue:    1000,
+						TargetCurrency: "USD",
+						TargetValue:    1085.70,
+						Rate:           1.0857,
+						Created:        "2023-11-24 10:47:49",
+					})
+				})
+			})
+
+			It("should return the mapped transfer", func() {
+				transfer, err := client.GetTransfer(context.Background(), wise.NewTransferID(16521632))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(transfer).ToNot(BeNil())
+				Expect(transfer.ID.Get()).To(Equal(int64(16521632)))
+				Expect(transfer.Status).To(Equal(wise.TransferStatusDelivered))
+				Expect(transfer.RecipientID.Get()).To(Equal(int64(98765432)))
+			})
+		})
+	})
+
+	Describe("CreateQuote", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v3/profiles/12345/quotes", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Header.Get("Content-Type")).To(Equal("application/json"))
+
+					var body map[string]any
+					Expect(stdjson.NewDecoder(r.Body).Decode(&body)).To(Succeed())
+					Expect(body["sourceCurrency"]).To(Equal("EUR"))
+					Expect(body["targetCurrency"]).To(Equal("USD"))
+					Expect(body["sourceAmount"]).To(Equal(10.0))
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, raw.Quote{
+						ID:             "11144c35-9fe8-4c32-b7fd-d05c2a7734bf",
+						SourceCurrency: "EUR",
+						TargetCurrency: "USD",
+						SourceAmount:   10,
+						TargetAmount:   10.86,
+						PayOut:         "BANK_TRANSFER",
+						Rate:           1.0857,
+						CreatedTime:    "2023-01-15T10:30:00Z",
+						ExpirationTime: "2023-01-15T11:00:00Z",
+						Status:         "ACTIVE",
+					})
+				})
+			})
+
+			It("should create and map the quote", func() {
+				quote, err := client.CreateQuote(
+					context.Background(),
+					wise.NewProfileID(12345),
+					wise.CreateQuoteRequest{
+						SourceCurrency: wise.Currency("EUR"),
+						TargetCurrency: wise.Currency("USD"),
+						SourceAmount:   &wise.Money{Cents: 1000, Currency: wise.Currency("EUR")},
+						PayOut:         wise.PayOutBankTransfer,
+					},
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(quote).ToNot(BeNil())
+				Expect(quote.ID.Get()).To(Equal("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"))
+				Expect(quote.Source.Cents).To(Equal(int64(1000)))
+				Expect(quote.Profile.Get()).To(Equal(int64(12345)))
+			})
+		})
+	})
+
+	Describe("GetQuote", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v3/profiles/12345/quotes/11144c35-9fe8-4c32-b7fd-d05c2a7734bf",
+					func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.MarshalWrite(w, raw.Quote{
+							ID:             "11144c35-9fe8-4c32-b7fd-d05c2a7734bf",
+							SourceCurrency: "EUR",
+							TargetCurrency: "USD",
+							SourceAmount:   10,
+							TargetAmount:   10.86,
+							PayOut:         "BANK_TRANSFER",
+							Rate:           1.0857,
+							CreatedTime:    "2023-01-15T10:30:00Z",
+							ExpirationTime: "2023-01-15T11:00:00Z",
+							Status:         "ACTIVE",
+						})
+					})
+			})
+
+			It("should return the mapped quote", func() {
+				quote, err := client.GetQuote(
+					context.Background(),
+					wise.NewProfileID(12345),
+					wise.NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(quote).ToNot(BeNil())
+				Expect(quote.ID.Get()).To(Equal("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"))
+			})
+		})
+	})
+
+	Describe("ListRecipients", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v2/accounts", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.URL.Query().Get("profile")).To(Equal("12345"))
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, []raw.Recipient{
+						{
+							ID: 98765432, AccountHolderName: "Jane Doe",
+							Currency: "GBP", Country: "GB", Type: "sort_code",
+							Details: map[string]any{
+								"sortCode":      "040075",
+								"accountNumber": "37778842",
+							},
+							Active: true,
+						},
+					})
+				})
+			})
+
+			It("should return mapped recipients", func() {
+				recipients, err := client.ListRecipients(context.Background(), wise.ListRecipientsRequest{
+					ProfileID: wise.NewProfileID(12345),
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(recipients).To(HaveLen(1))
+				Expect(recipients[0].ID.Get()).To(Equal(int64(98765432)))
+				Expect(recipients[0].AccountHolderName).To(Equal("Jane Doe"))
+				Expect(recipients[0].Details["sortCode"]).To(Equal("040075"))
+			})
+		})
+	})
+
+	Describe("GetRecipient", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/accounts/98765432", func(w http.ResponseWriter, _ *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, raw.Recipient{
+						ID: 98765432, AccountHolderName: "Jane Doe",
+						Currency: "GBP", Country: "GB", Type: "sort_code",
+						Details: map[string]any{
+							"sortCode":      "040075",
+							"accountNumber": "37778842",
+						},
+						Active: true,
+					})
+				})
+			})
+
+			It("should return the mapped recipient", func() {
+				recipient, err := client.GetRecipient(context.Background(), wise.NewRecipientID(98765432))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(recipient).ToNot(BeNil())
+				Expect(recipient.ID.Get()).To(Equal(int64(98765432)))
+			})
+		})
+	})
+
+	Describe("CreateRecipient", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/accounts", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Header.Get("Content-Type")).To(Equal("application/json"))
+
+					var body map[string]any
+					Expect(stdjson.NewDecoder(r.Body).Decode(&body)).To(Succeed())
+					Expect(body["currency"]).To(Equal("GBP"))
+					Expect(body["type"]).To(Equal("sort_code"))
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, raw.Recipient{
+						ID: 98765432, AccountHolderName: "Jane Doe",
+						Currency: "GBP", Country: "GB", Type: "sort_code",
+						Details: map[string]any{
+							"sortCode":      "040075",
+							"accountNumber": "37778842",
+						},
+						Active: true,
+					})
+				})
+			})
+
+			It("should create and map the recipient", func() {
+				recipient, err := client.CreateRecipient(context.Background(), wise.CreateRecipientRequest{
+					ProfileID:         wise.NewProfileID(12345),
+					Currency:          wise.Currency("GBP"),
+					Type:              "sort_code",
+					AccountHolderName: "Jane Doe",
+					Details: map[string]string{
+						"sortCode":      "040075",
+						"accountNumber": "37778842",
+					},
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(recipient).ToNot(BeNil())
+				Expect(recipient.ID.Get()).To(Equal(int64(98765432)))
+			})
+		})
+	})
+
+	Describe("CreateTransfer", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Header.Get("Content-Type")).To(Equal("application/json"))
+
+					var body map[string]any
+					Expect(stdjson.NewDecoder(r.Body).Decode(&body)).To(Succeed())
+					Expect(body["targetAccount"]).To(Equal(float64(98765432)))
+					Expect(body["quoteUuid"]).To(Equal("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"))
+					Expect(body["customerTransactionId"]).To(Equal("22244c35-9fe8-4c32-b7fd-d05c2a7734bf"))
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, raw.Transfer{
+						ID:             16521633,
+						Status:         "incoming_payment_waiting",
+						TargetAccount:  98765432,
+						SourceCurrency: "EUR",
+						SourceValue:    1000,
+						TargetCurrency: "USD",
+						TargetValue:    1085.70,
+						Rate:           1.0857,
+						Created:        "2023-11-24 10:47:49",
+					})
+				})
+			})
+
+			It("should create and map the transfer", func() {
+				transfer, err := client.CreateTransfer(context.Background(), wise.CreateTransferRequest{
+					QuoteID:               wise.NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
+					TargetAccount:         wise.NewRecipientID(98765432),
+					CustomerTransactionID: "22244c35-9fe8-4c32-b7fd-d05c2a7734bf",
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(transfer).ToNot(BeNil())
+				Expect(transfer.ID.Get()).To(Equal(int64(16521633)))
+				Expect(transfer.Status).To(Equal(wise.TransferStatusIncomingPaymentWaiting))
 			})
 		})
 	})

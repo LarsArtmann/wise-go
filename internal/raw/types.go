@@ -93,9 +93,21 @@ type ExchangeRate struct {
 	Time   string  `json:"time"`
 }
 
+// Recipient from Wise API (/v1/accounts, /v2/accounts).
+type Recipient struct {
+	ID                int64          `json:"id"`
+	AccountHolderName string         `json:"accountHolderName"`
+	Currency          string         `json:"currency"`
+	Country           string         `json:"country"`
+	Type              string         `json:"type"`
+	Details           map[string]any `json:"details"`
+	Active            bool           `json:"active"`
+}
+
 // Quote from Wise API (/v3/quotes).
+// ID is a UUID string; it is omitted for unauthenticated quotes.
 type Quote struct {
-	ID             int64   `json:"id"`
+	ID             string  `json:"id,omitempty"`
 	SourceCurrency string  `json:"sourceCurrency"`
 	TargetCurrency string  `json:"targetCurrency"`
 	SourceAmount   float64 `json:"sourceAmount"`
@@ -104,6 +116,7 @@ type Quote struct {
 	PayOut         string  `json:"payOut"`
 	Rate           float64 `json:"rate"`
 	CreatedTime    string  `json:"createdTime"`
+	ExpirationTime string  `json:"expirationTime"`
 	Status         string  `json:"status"`
 }
 

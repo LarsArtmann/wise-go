@@ -19,17 +19,15 @@ func (c *Client) CreateUnauthenticatedQuote(
 		return nil, err
 	}
 
-	body := req.toWire()
-
 	var quote raw.Quote
 
-	err := c.post(ctx, "/v3/quotes", body, &quote)
+	err := c.post(ctx, "/v3/quotes", req.toWire(false), &quote)
 	if err != nil {
 		return nil, fmt.Errorf("create unauthenticated quote %s-%s: %w",
 			req.SourceCurrency, req.TargetCurrency, err)
 	}
 
-	return mapQuote(quote)
+	return mapQuote(quote, ProfileID{})
 }
 
 // CreateQuote creates an authenticated quote for a profile. The quote locks the
@@ -39,35 +37,20 @@ func (c *Client) CreateQuote(
 	profileID ProfileID,
 	req CreateQuoteRequest,
 ) (*Quote, error) {
-	if profileID.Get() == 0 {
-		return nil, errorfamily.NewRejection(
-			"wise.quote.invalid_request",
-			"profileID is required",
-		)
-	}
-
-	if err := req.validate(); err != nil {
+	if err := req.validateAuthenticated(profileID); err != nil {
 		return nil, err
 	}
 
 	path := fmt.Sprintf("/v3/profiles/%d/quotes", profileID.Get())
-	body := req.toWire()
 
 	var quote raw.Quote
 
-	err := c.post(ctx, path, body, &quote)
+	err := c.post(ctx, path, req.toWire(true), &quote)
 	if err != nil {
 		return nil, fmt.Errorf("create quote for profile %d: %w", profileID.Get(), err)
 	}
 
-	result, mapErr := mapQuote(quote)
-	if mapErr != nil {
-		return nil, mapErr
-	}
-
-	result.Profile = profileID
-
-	return result, nil
+	return mapQuote(quote, profileID)
 }
 
 // GetQuote returns an existing authenticated quote by ID.
@@ -83,25 +66,40 @@ func (c *Client) GetQuote(
 		)
 	}
 
-	path := fmt.Sprintf("/v3/profiles/%d/quotes/%d", profileID.Get(), quoteID.Get())
+	if quoteID.Get() == "" {
+		return nil, errorfamily.NewRejection(
+			"wise.quote.invalid_request",
+			"quoteID is required",
+		)
+	}
+
+	path := fmt.Sprintf("/v3/profiles/%d/quotes/%s", profileID.Get(), quoteID.Get())
 
 	var quote raw.Quote
 
-	if err := fetchByID(ctx, c, quoteID.Get(), "quote", path, &quote); err != nil {
-		return nil, err
+	if err := c.get(ctx, path, &quote); err != nil {
+		return nil, fmt.Errorf("get quote %s for profile %d: %w", quoteID.Get(), profileID.Get(), err)
 	}
 
-	result, mapErr := mapQuote(quote)
-	if mapErr != nil {
-		return nil, mapErr
-	}
-
-	result.Profile = profileID
-
-	return result, nil
+	return mapQuote(quote, profileID)
 }
 
 func (r CreateQuoteRequest) validate() error {
+	return r.validateCommon()
+}
+
+func (r CreateQuoteRequest) validateAuthenticated(profileID ProfileID) error {
+	if profileID.Get() == 0 {
+		return errorfamily.NewRejection(
+			"wise.quote.invalid_request",
+			"profileID is required",
+		)
+	}
+
+	return r.validateCommon()
+}
+
+func (r CreateQuoteRequest) validateCommon() error {
 	if r.SourceCurrency == "" {
 		return errorfamily.NewRejection(
 			"wise.quote.invalid_request",
@@ -123,21 +121,6 @@ func (r CreateQuoteRequest) validate() error {
 		)
 	}
 
-	if err := r.validateAmounts(); err != nil {
-		return err
-	}
-
-	if r.PayOut == "" {
-		return errorfamily.NewRejection(
-			"wise.quote.invalid_request",
-			"payOut is required",
-		)
-	}
-
-	return nil
-}
-
-func (r CreateQuoteRequest) validateAmounts() error {
 	if r.SourceAmount == nil && r.TargetAmount == nil {
 		return errorfamily.NewRejection(
 			"wise.quote.invalid_request",
@@ -169,12 +152,10 @@ func (r CreateQuoteRequest) validateAmounts() error {
 	return nil
 }
 
-func (r CreateQuoteRequest) toWire() map[string]any {
+func (r CreateQuoteRequest) toWire(authenticated bool) map[string]any {
 	body := map[string]any{
 		"sourceCurrency": string(r.SourceCurrency),
 		"targetCurrency": string(r.TargetCurrency),
-		"payIn":          string(r.PayIn),
-		"payOut":         string(r.PayOut),
 	}
 
 	if r.SourceAmount != nil {
@@ -185,46 +166,71 @@ func (r CreateQuoteRequest) toWire() map[string]any {
 		body["targetAmount"] = centsToMajor(r.TargetAmount.Cents)
 	}
 
+	if authenticated {
+		if r.PreferredPayIn != "" {
+			body["preferredPayIn"] = string(r.PreferredPayIn)
+		}
+
+		if r.PayOut != "" {
+			body["payOut"] = string(r.PayOut)
+		}
+
+		if r.TargetAccount.Get() != 0 {
+			body["targetAccount"] = r.TargetAccount.Get()
+		}
+	}
+
 	return body
 }
 
-func mapQuote(q raw.Quote) (*Quote, error) {
-	created, err := parseWiseTimestamp(q.CreatedTime)
+func mapQuote(quote raw.Quote, profileID ProfileID) (*Quote, error) {
+	created, err := parseWiseTimestamp(quote.CreatedTime)
 	if err != nil {
 		return nil, errorfamily.WrapCorruption(
 			err,
 			"wise.quote.parse_created",
-			fmt.Sprintf("parse createdTime %q", q.CreatedTime),
+			fmt.Sprintf("parse createdTime %q", quote.CreatedTime),
 		)
 	}
 
-	sourceCurrency, err := NewCurrency(q.SourceCurrency)
+	expiration, err := parseWiseTimestamp(quote.ExpirationTime)
+	if err != nil {
+		return nil, errorfamily.WrapCorruption(
+			err,
+			"wise.quote.parse_expiration",
+			fmt.Sprintf("parse expirationTime %q", quote.ExpirationTime),
+		)
+	}
+
+	sourceCurrency, err := NewCurrency(quote.SourceCurrency)
 	if err != nil {
 		return nil, errorfamily.WrapCorruption(
 			err,
 			"wise.quote.parse_source_currency",
-			fmt.Sprintf("source currency %q", q.SourceCurrency),
+			fmt.Sprintf("source currency %q", quote.SourceCurrency),
 		)
 	}
 
-	targetCurrency, err := NewCurrency(q.TargetCurrency)
+	targetCurrency, err := NewCurrency(quote.TargetCurrency)
 	if err != nil {
 		return nil, errorfamily.WrapCorruption(
 			err,
 			"wise.quote.parse_target_currency",
-			fmt.Sprintf("target currency %q", q.TargetCurrency),
+			fmt.Sprintf("target currency %q", quote.TargetCurrency),
 		)
 	}
 
 	return &Quote{
-		ID:     id.NewID[QuoteBrand](q.ID),
-		Source: Money{Cents: majorToCents(q.SourceAmount), Currency: sourceCurrency},
-		Target: Money{Cents: majorToCents(q.TargetAmount), Currency: targetCurrency},
-		PayIn:  PayIn(q.PayIn),
-		PayOut: PayOut(q.PayOut),
-		Rate:   q.Rate,
-		Created: created,
-		Status: QuoteStatus(q.Status),
+		ID:             id.NewID[QuoteBrand](quote.ID),
+		Source:         Money{Cents: majorToCents(quote.SourceAmount), Currency: sourceCurrency},
+		Target:         Money{Cents: majorToCents(quote.TargetAmount), Currency: targetCurrency},
+		PayIn:          PayIn(quote.PayIn),
+		PayOut:         PayOut(quote.PayOut),
+		Rate:           quote.Rate,
+		Created:        created,
+		ExpirationTime: expiration,
+		Status:         QuoteStatus(quote.Status),
+		Profile:        profileID,
 	}, nil
 }
 

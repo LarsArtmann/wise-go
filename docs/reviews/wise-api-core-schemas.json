@@ -1,0 +1,1355 @@
+{
+  "account": {
+    "description": "Account identifier for a payment participant.\n",
+    "properties": {
+      "number": {
+        "description": "Account identifier — IBAN, BBAN, or other scheme-specific\naccount number.\n",
+        "example": "DE89370400440532013000",
+        "maxLength": 36,
+        "type": "string"
+      }
+    },
+    "required": [
+      "number"
+    ],
+    "title": "Account",
+    "type": "object"
+  },
+  "balance": {
+    "description": "Represents a balance account within a profile.",
+    "properties": {
+      "amount": {
+        "description": "Available balance that can be used to fund transfers.",
+        "properties": {
+          "currency": {
+            "description": "Currency code (ISO 4217 Alphabetic Code).",
+            "example": "EUR",
+            "type": "string"
+          },
+          "value": {
+            "description": "Amount value.",
+            "example": 310.86,
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "cashAmount": {
+        "description": "Cash amount in the account.",
+        "properties": {
+          "currency": {
+            "description": "Currency code (ISO 4217 Alphabetic Code).",
+            "example": "EUR",
+            "type": "string"
+          },
+          "value": {
+            "description": "Amount value.",
+            "example": 310.86,
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "creationTime": {
+        "description": "Date when the balance was created.",
+        "example": "2020-05-20T14:43:16.658Z",
+        "format": "date-time",
+        "type": "string"
+      },
+      "currency": {
+        "description": "Currency code (ISO 4217 Alphabetic Code).",
+        "example": "EUR",
+        "type": "string"
+      },
+      "icon": {
+        "description": "Icon for the balance.",
+        "example": null,
+        "properties": {
+          "type": {
+            "description": "Icon type.",
+            "enum": [
+              "EMOJI"
+            ],
+            "type": "string"
+          },
+          "value": {
+            "description": "Icon value (e.g., emoji character).",
+            "type": "string"
+          }
+        },
+        "type": [
+          "object",
+          "null"
+        ]
+      },
+      "id": {
+        "description": "Balance ID.",
+        "example": 200001,
+        "format": "int64",
+        "type": "integer"
+      },
+      "investmentState": {
+        "description": "Investment state of the balance.\n- `NOT_INVESTED` - Balance is not invested.\n- `INVESTED` - Balance is invested in assets.\n- `INVESTING` - Balance is being invested into assets.\n- `DIVESTING` - Balance is being divested from assets.\n- `UNKNOWN` - Investment state is unknown.\n",
+        "enum": [
+          "NOT_INVESTED",
+          "INVESTED",
+          "INVESTING",
+          "DIVESTING",
+          "UNKNOWN"
+        ],
+        "example": "NOT_INVESTED",
+        "type": "string"
+      },
+      "modificationTime": {
+        "description": "Date when the balance was last modified.",
+        "example": "2020-05-20T14:43:16.658Z",
+        "format": "date-time",
+        "type": "string"
+      },
+      "name": {
+        "description": "Name of the balance. Required for SAVINGS balances.",
+        "example": null,
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "reservedAmount": {
+        "description": "Amount reserved for transactions.",
+        "properties": {
+          "currency": {
+            "description": "Currency code (ISO 4217 Alphabetic Code).",
+            "example": "EUR",
+            "type": "string"
+          },
+          "value": {
+            "description": "Amount value.",
+            "example": 0,
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "totalWorth": {
+        "description": "Current total worth.",
+        "properties": {
+          "currency": {
+            "description": "Currency code (ISO 4217 Alphabetic Code).",
+            "example": "EUR",
+            "type": "string"
+          },
+          "value": {
+            "description": "Amount value.",
+            "example": 310.86,
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "type": {
+        "$ref": "#/components/schemas/BalanceType"
+      },
+      "visible": {
+        "description": "Whether the balance is visible to the user.",
+        "example": true,
+        "type": "boolean"
+      }
+    },
+    "type": "object",
+    "x-tags": [
+      "balance"
+    ]
+  },
+  "profile": {
+    "description": "A profile represents an identity that can send and receive money through Wise. There are two types: **Personal** (an individual) and **Business** (a company). The fields returned vary depending on the profile type.\n",
+    "discriminator": {
+      "mapping": {
+        "BUSINESS": "#/components/schemas/business-profile",
+        "PERSONAL": "#/components/schemas/personal-profile"
+      },
+      "propertyName": "type"
+    },
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/personal-profile"
+      },
+      {
+        "$ref": "#/components/schemas/business-profile"
+      }
+    ],
+    "title": "Profile",
+    "x-tags": [
+      "profile"
+    ]
+  },
+  "quote": {
+    "properties": {
+      "createdTime": {
+        "description": "Quote created timestamp.",
+        "example": "2019-04-05T13:18:58Z",
+        "format": "date-time",
+        "type": "string"
+      },
+      "expirationTime": {
+        "description": "The date and time the quote expires.",
+        "example": "2019-04-05T13:48:58Z",
+        "format": "date-time",
+        "type": "string"
+      },
+      "guaranteedTargetAmount": {
+        "description": "Indicates whether the target amount is guaranteed.",
+        "example": false,
+        "type": "boolean"
+      },
+      "guaranteedTargetAmountAllowed": {
+        "description": "Indicates whether guaranteed target amount is allowed.",
+        "example": true,
+        "type": "boolean"
+      },
+      "id": {
+        "description": "ID of this quote (GUID format).",
+        "example": "11144c35-9fe8-4c32-b7fd-d05c2a7734bf",
+        "format": "uuid",
+        "type": "string"
+      },
+      "notices": {
+        "description": "Messages to display to the user. May be empty (`[]`) if there are no messages.",
+        "items": {
+          "properties": {
+            "link": {
+              "description": "URL that provides more details about the message. May be `null` if there's no URL.",
+              "example": null,
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "text": {
+              "description": "The message to display.",
+              "example": "You can have a maximum of 3 open transfers with a guaranteed rate. After that, they'll be transferred using the live rate. Complete or cancel your other transfers to regain the use of guaranteed rate.",
+              "type": "string"
+            },
+            "type": {
+              "description": "The type of message. If it is `BLOCKED`, don't allow the quote to be used to create the transfer.",
+              "enum": [
+                "WARNING",
+                "INFO",
+                "BLOCKED"
+              ],
+              "example": "WARNING",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "type": "array"
+      },
+      "payOut": {
+        "description": "Mechanism Wise uses to deliver the transfer. Provided for information purposes.",
+        "example": "BANK_TRANSFER",
+        "type": "string"
+      },
+      "paymentOptions": {
+        "description": "List of the methods available to pay for the transfer.",
+        "items": {
+          "properties": {
+            "allowedProfileTypes": {
+              "description": "Array of the profile types allowed to use this payment option.",
+              "example": [
+                "PERSONAL",
+                "BUSINESS"
+              ],
+              "items": {
+                "enum": [
+                  "PERSONAL",
+                  "BUSINESS"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "disabled": {
+              "description": "Indicates whether this option is enabled or not for this quote.",
+              "example": false,
+              "type": "boolean"
+            },
+            "disabledReason": {
+              "description": "Present only if a payment option is disabled.",
+              "properties": {
+                "code": {
+                  "description": "Denotes the reason a payment method is unavailable.",
+                  "type": "string"
+                },
+                "message": {
+                  "description": "User-friendly message to display when a method is unavailable.",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "estimatedDelivery": {
+              "description": "The estimated delivery time for this combination of `payIn` and `payOut` methods (assuming `payIn` is performed now).",
+              "example": "2019-04-08T12:30:00Z",
+              "format": "date-time",
+              "type": "string"
+            },
+            "estimatedDeliveryDelays": {
+              "description": "Array of objects for delivery delays you can display to your customers.",
+              "items": {
+                "properties": {
+                  "reason": {
+                    "description": "Reason for the delivery delay.",
+                    "example": "sample reason",
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "fee": {
+              "description": "Fee details for the quote.",
+              "properties": {
+                "discount": {
+                  "description": "Any discounts that have been applied to this quote.",
+                  "example": 2.27,
+                  "type": "number"
+                },
+                "partner": {
+                  "description": "Agreed-upon custom pricing, if applicable.",
+                  "example": 0,
+                  "type": "number"
+                },
+                "payIn": {
+                  "description": "The fee for this payment option, based on the product type of the payment option.",
+                  "example": 0,
+                  "type": "number"
+                },
+                "total": {
+                  "description": "The total fees to be paid. Use this value when displaying fees in your app.",
+                  "example": 0.77,
+                  "type": "number"
+                },
+                "transferwise": {
+                  "description": "The fee to be paid _by the sender_ based on the current state of the quote.",
+                  "example": 3.04,
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "feePercentage": {
+              "description": "Fee percentage for this payment option.",
+              "example": 0.0092,
+              "type": "number"
+            },
+            "formattedEstimatedDelivery": {
+              "description": "A customer-friendly string for the estimated delivery date, which you can pass through to your front-end.",
+              "example": "by Apr 8",
+              "type": "string"
+            },
+            "payIn": {
+              "description": "Type of pay in method for this payment option.",
+              "example": "BANK_TRANSFER",
+              "type": "string"
+            },
+            "payInProduct": {
+              "description": "Pay-in product type.",
+              "example": "CHEAP",
+              "type": "string"
+            },
+            "payOut": {
+              "description": "Type of pay out method for this payment option.",
+              "example": "BANK_TRANSFER",
+              "type": "string"
+            },
+            "price": {
+              "description": "Price details for the quote.",
+              "properties": {
+                "calculatedOn": {
+                  "properties": {
+                    "unroundedAmountToConvert": {
+                      "description": "The amount, unrounded, that fees were calculated on and built up from.",
+                      "properties": {
+                        "amount": {
+                          "example": 179.97342,
+                          "type": "number"
+                        },
+                        "currency": {
+                          "example": "BRL",
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                },
+                "deferredFee": {
+                  "description": "Deferred fee information from a `pricingConfiguration` override.",
+                  "properties": {
+                    "amount": {
+                      "description": "The amount of fees deferred by a `pricingConfiguration` override.",
+                      "example": 14.79,
+                      "type": "number"
+                    },
+                    "currency": {
+                      "description": "The currency of the deferred fee amount.",
+                      "example": "BRL",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "items": {
+                  "description": "Details the different elements contained in the total price.",
+                  "items": {
+                    "properties": {
+                      "explanation": {
+                        "description": "Additional deails for a price breakdown item.",
+                        "properties": {
+                          "markdown": {
+                            "description": "Formatted textual information about the item.",
+                            "type": "string"
+                          },
+                          "plainText": {
+                            "description": "Plain text details about the item.",
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "id": {
+                        "description": "ID of the item.",
+                        "type": "string"
+                      },
+                      "label": {
+                        "description": "Plain text describing the price element.",
+                        "example": "fee",
+                        "type": "string"
+                      },
+                      "type": {
+                        "description": "The type of the price item (for example, `FEE` or `DISCOUNT`).",
+                        "example": "FEE",
+                        "type": "string"
+                      },
+                      "value": {
+                        "description": "Value details for the `price.items` object.",
+                        "properties": {
+                          "amount": {
+                            "description": "Amount associated with this price. Can be negative for discounts.",
+                            "example": 0,
+                            "type": "number"
+                          },
+                          "currency": {
+                            "description": "Currency of the price.",
+                            "example": "GBP",
+                            "type": "string"
+                          },
+                          "label": {
+                            "description": "Plain text description of the price and currency.",
+                            "example": "0 GBP",
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "priceSetId": {
+                  "description": "ID of the price structure.",
+                  "example": 238,
+                  "format": "int64",
+                  "type": "integer"
+                },
+                "total": {
+                  "description": "The total fees to be paid. Use this value when displaying fees in your app.",
+                  "properties": {
+                    "explanation": {
+                      "description": "Provides more details about the price.",
+                      "type": "object"
+                    },
+                    "label": {
+                      "description": "Plain text describing the price structure.",
+                      "example": "Total fees",
+                      "type": "string"
+                    },
+                    "type": {
+                      "description": "The type of the pricing element.",
+                      "example": "TOTAL",
+                      "type": "string"
+                    },
+                    "value": {
+                      "description": "Value details for the `price.total` object.",
+                      "properties": {
+                        "amount": {
+                          "description": "Amount to be paid.",
+                          "example": 0.77,
+                          "type": "number"
+                        },
+                        "currency": {
+                          "description": "Currency of the amount to be paid.",
+                          "example": "GBP",
+                          "type": "string"
+                        },
+                        "label": {
+                          "description": "Plain text version of the price.",
+                          "example": "0.77 GBP",
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                }
+              },
+              "type": "object"
+            },
+            "sourceAmount": {
+              "description": "Source amount when using this payment option.",
+              "example": 100,
+              "type": "number"
+            },
+            "sourceCurrency": {
+              "description": "Source currency for this payment option.",
+              "example": "GBP",
+              "type": "string"
+            },
+            "targetAmount": {
+              "description": "Target amount when using this payment option.",
+              "example": 129.24,
+              "type": "number"
+            },
+            "targetCurrency": {
+              "description": "Target currency for this payment option.",
+              "example": "USD",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "type": "array"
+      },
+      "preferredPayIn": {
+        "description": "Preferred pay-in method.",
+        "example": "BANK_TRANSFER",
+        "type": "string"
+      },
+      "pricingConfiguration": {
+        "description": "Allows partners to override pricing configurations on a transfer level.",
+        "properties": {
+          "fee": {
+            "properties": {
+              "fixed": {
+                "description": "The selected fixed fee, in source currency, that should be used in the `pricingConfiguration`.",
+                "example": 15.42,
+                "type": "number"
+              },
+              "type": {
+                "description": "Identifies the type of fee to be configured. Options include only `OVERRIDE`.",
+                "example": "OVERRIDE",
+                "type": "string"
+              },
+              "variable": {
+                "description": "The selected variable percentage, in decimal format, that should be used in the `pricingConfiguration`.",
+                "example": 0.011,
+                "type": "number"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "profile": {
+        "description": "Personal or business profile ID.",
+        "example": 101,
+        "format": "int64",
+        "type": "integer"
+      },
+      "providedAmountType": {
+        "description": "Indicates whether the quote was created as source or target.",
+        "enum": [
+          "SOURCE",
+          "TARGET"
+        ],
+        "example": "SOURCE",
+        "type": "string"
+      },
+      "rate": {
+        "description": "Exchange rate value used for the conversion.",
+        "example": 1.30445,
+        "type": "number"
+      },
+      "rateExpirationTime": {
+        "description": "Date and time the locked rate expires.",
+        "example": "2019-04-08T13:18:57Z",
+        "format": "date-time",
+        "type": "string"
+      },
+      "rateType": {
+        "description": "Whether the rate is fixed or floating.",
+        "enum": [
+          "FIXED",
+          "FLOATING"
+        ],
+        "example": "FIXED",
+        "type": "string"
+      },
+      "sourceAmount": {
+        "description": "Amount in source currency to send.",
+        "example": 100,
+        "type": "number"
+      },
+      "sourceCurrency": {
+        "description": "Source (sending) currency code.",
+        "example": "GBP",
+        "type": "string"
+      },
+      "status": {
+        "description": "Current status of the quote.",
+        "enum": [
+          "PENDING",
+          "ACCEPTED",
+          "FUNDED",
+          "EXPIRED"
+        ],
+        "example": "PENDING",
+        "type": "string"
+      },
+      "targetAmount": {
+        "description": "Amount in target currency to be received by the recipient.",
+        "example": 129.24,
+        "type": "number"
+      },
+      "targetAmountAllowed": {
+        "description": "Indicates whether target amount is allowed.",
+        "example": true,
+        "type": "boolean"
+      },
+      "targetCurrency": {
+        "description": "Target (receive) currency code.",
+        "example": "USD",
+        "type": "string"
+      },
+      "user": {
+        "description": "User ID that created the quote.",
+        "example": 55,
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "title": "Quote",
+    "type": "object",
+    "x-tags": [
+      "quote"
+    ]
+  },
+  "recipient": {
+    "properties": {
+      "accountSummary": {
+        "description": "Summary of account details for ease of lookup. Can be used to display recipient details in your UI.",
+        "example": "(04-00-75) 37778842",
+        "type": "string"
+      },
+      "active": {
+        "description": "Status of the recipient account.",
+        "example": true,
+        "type": "boolean"
+      },
+      "commonFieldMap": {
+        "description": "Map of key lookup fields for the account.",
+        "example": {
+          "accountNumberField": "accountNumber",
+          "bankCodeField": "sortCode"
+        },
+        "type": "object"
+      },
+      "confirmations": {
+        "description": "Contains verification results for the recipient's details. Only populated for currencies with recipient verification enabled (CNY, KRW, INR, IDR, EUR). \n\nSee the [Recipient verification guides](/guides/product/send-money/recipient-verification) for details about how to handle this verification data by currency.\n",
+        "properties": {
+          "acceptedAt": {
+            "description": "Timestamp indicating date and time of outcome acceptance. Value is `null` until acceptance received.",
+            "example": null,
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "acceptedOutcomes": {
+            "description": "Indicates whether we've received an explicit customer acceptance.",
+            "example": false,
+            "type": "boolean"
+          },
+          "outcomes": {
+            "description": "Array of confirmation outcomes. Currently, it is safe to assume there is only one element in the outcomes array.",
+            "items": {
+              "properties": {
+                "fieldsChecked": {
+                  "description": "Fields used to confirm the account.",
+                  "example": [
+                    "name/fullName",
+                    "details/accountNumber"
+                  ],
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "message": {
+                  "description": "Customer-facing message about the outcome of the check.",
+                  "example": "The name entered is slightly different to the name on the account.",
+                  "type": "string"
+                },
+                "outcome": {
+                  "description": "The actual outcome of the confirmation check. Possible values: `SUCCESS`, `PARTIAL_FAILURE`, `FAILURE`, `COULD_NOT_CHECK`.\n",
+                  "example": "PARTIAL_FAILURE",
+                  "type": "string"
+                },
+                "providedName": {
+                  "description": "The name the customer provided when creating the recipient account. Only populated for `NAME_MATCHING` and `NAME_RESOLUTION` types for certain outcomes.",
+                  "example": "John Doe",
+                  "type": "string"
+                },
+                "recommendedUpdates": {
+                  "description": "Shows the correct values for some of the fields checked.",
+                  "items": {
+                    "properties": {
+                      "path": {
+                        "description": "The field path to update.",
+                        "example": "name/fullName",
+                        "type": "string"
+                      },
+                      "value": {
+                        "description": "The recommended value for the field.",
+                        "example": "Joe Doe",
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "requiresCustomerAcceptance": {
+                  "description": "Indicates whether we require customer acceptance. \n\nThe value for this field (`true` or `false`) depends on the currency and the nature of the confirmation.\n\nIf `true`, you must present your customer with the ability to accept or decline the confirmation result.\n",
+                  "example": true,
+                  "type": "boolean"
+                },
+                "resolvedName": {
+                  "description": "The name that we resolved during name matching or name resolution.",
+                  "example": "Joe Doe",
+                  "type": "string"
+                },
+                "timestamp": {
+                  "description": "Timestamp of when the confirmation check was performed.",
+                  "example": "2024-11-11T23:58:11.105916743Z",
+                  "format": "date-time",
+                  "type": "string"
+                },
+                "type": {
+                  "description": "The type of confirmation. Possible values: `ACCOUNT_EXISTENCE`, `NAME_MATCHING`, `NAME_RESOLUTION`.\n",
+                  "example": "NAME_MATCHING",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "quoteId": {
+            "description": "If the confirmation check was run as part of a quote compatibility check, then the `quoteId` is included in the result. If `quoteId` is present, the outcome acceptance needs the `quoteId` to be specified as well.",
+            "example": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "country": {
+        "description": "2-character country code.",
+        "example": "GB",
+        "type": "string"
+      },
+      "creatorId": {
+        "description": "Account entity that owns the recipient account.",
+        "example": 41000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "currency": {
+        "description": "3-character currency code.",
+        "example": "GBP",
+        "type": "string"
+      },
+      "details": {
+        "additionalProperties": true,
+        "description": "Contains the details of the recipient account specific to its currency and type. The fields required (in the request) or present (in the response) vary depending on currency route and recipient type (e.g., sort code, IBAN, SWIFT, email).",
+        "properties": {
+          "accountNumber": {
+            "description": "Recipient bank account number (GBP example).",
+            "example": "37778842",
+            "type": "string"
+          },
+          "hashedByLooseHashAlgorithm": {
+            "description": "Recipient account hash.",
+            "example": "ad245621b974efa3ef870895c3wer419a3f01af18a8a5790b47645dba6304194",
+            "type": "string"
+          },
+          "reference": {
+            "description": "Recipient reference (applies for some routes).",
+            "example": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sortCode": {
+            "description": "Recipient bank sort code (GBP example).",
+            "example": "040075",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "displayFields": {
+        "description": "Lookup fields (key/label/value) for rendering in your front-end. Allows you to build a UI containing all the dynamic fields for a recipient individually.",
+        "example": [
+          {
+            "key": "details/sortCode",
+            "label": "UK sort code",
+            "value": "04-00-75"
+          },
+          {
+            "key": "details/accountNumber",
+            "label": "Account number",
+            "value": "37778842"
+          }
+        ],
+        "items": {
+          "properties": {
+            "key": {
+              "description": "Account identifier key name.",
+              "type": "string"
+            },
+            "label": {
+              "description": "Account identifier display label.",
+              "type": "string"
+            },
+            "value": {
+              "description": "Account identifier value.",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "type": "array"
+      },
+      "hash": {
+        "description": "Account hash for tracking changes to recipient details. This is useful for re-running any validation checks on the recipient, for example against fraud engines. The hash remains constant unless the recipient's name or information in the details object changes.",
+        "example": "666ef880f8aa6113fa112ba6531d3ed2c26dd9fgbd7de5136bfb827a6e800479",
+        "type": "string"
+      },
+      "id": {
+        "description": "ID of the recipient. Use the returned id as `sourceAccount` to specify the refund recipient when creating transfers.",
+        "example": 40000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "isInternal": {
+        "description": "Indicates whether recipient is internal.",
+        "example": false,
+        "type": "boolean"
+      },
+      "legalEntityType": {
+        "description": "Entity type of recipient account.",
+        "example": "PERSON",
+        "type": "string"
+      },
+      "longAccountSummary": {
+        "description": "Longer account details summary. Can be used to display recipient details in your UI.",
+        "example": "GBP account ending in 8842",
+        "type": "string"
+      },
+      "name": {
+        "description": "Recipient name details.",
+        "properties": {
+          "cannotHavePatronymicName": {
+            "description": "Indicates if the recipient cannot have a patronymic name (when applicable).",
+            "example": null,
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "familyName": {
+            "description": "Recipient surname.",
+            "example": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fullName": {
+            "description": "Recipient full name.",
+            "example": "John Doe",
+            "type": "string"
+          },
+          "givenName": {
+            "description": "Recipient first name.",
+            "example": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "middleName": {
+            "description": "Recipient middle name.",
+            "example": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "patronymicName": {
+            "description": "Recipient patronymic name (when applicable).",
+            "example": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "ownedByCustomer": {
+        "description": "Inidicates if recipient account belongs to profile owner.",
+        "example": false,
+        "type": "boolean"
+      },
+      "profileId": {
+        "description": "Specific profile that owns the recipient account.",
+        "example": 30000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "type": {
+        "description": "Recipient account type.",
+        "example": "SortCode",
+        "type": "string"
+      },
+      "ultimateBeneficiary": {
+        "description": "The details for the ultimate beneficiary of this recipient.",
+        "properties": {
+          "accountNumber": {
+            "description": "Ultimate beneficiary account number.",
+            "example": "37778842",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "address": {
+            "description": "Ultimate beneficiary address.",
+            "properties": {
+              "city": {
+                "type": "string"
+              },
+              "country": {
+                "example": "US",
+                "type": "string"
+              },
+              "firstLine": {
+                "type": "string"
+              },
+              "postCode": {
+                "type": "string"
+              },
+              "state": {
+                "type": "string"
+              }
+            },
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "bankAddress": {
+            "description": "Ultimate beneficiary bank address.",
+            "properties": {
+              "city": {
+                "type": "string"
+              },
+              "country": {
+                "example": "US",
+                "type": "string"
+              },
+              "firstLine": {
+                "type": "string"
+              },
+              "postCode": {
+                "type": "string"
+              },
+              "state": {
+                "type": "string"
+              }
+            },
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "bankCode": {
+            "description": "Ultimate beneficiary bank code.",
+            "example": "026073150",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "bankName": {
+            "description": "Ultimate beneficiary bank name.",
+            "example": "Wise Payments Limited",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "description": "Ultimate beneficiary name.",
+            "properties": {
+              "fullName": {
+                "description": "Ultimate beneficiary's full name.",
+                "example": "John Doe",
+                "type": "string"
+              }
+            },
+            "required": [
+              "fullName"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": [
+          "object",
+          "null"
+        ]
+      }
+    },
+    "title": "Recipient Account",
+    "type": "object",
+    "x-tags": [
+      "recipient"
+    ]
+  },
+  "recipient-create-request": {
+    "description": "Create a recipient (beneficiary) account request. The required fields inside the `details` object depend on currency and route. Use the account-requirements endpoints to discover the exact required fields.\n",
+    "properties": {
+      "accountHolderName": {
+        "description": "Recipient full name.",
+        "example": "John Doe",
+        "type": "string"
+      },
+      "currency": {
+        "description": "3-character currency code.",
+        "example": "GBP",
+        "type": "string"
+      },
+      "details": {
+        "additionalProperties": true,
+        "description": "Contains the details of the recipient account specific to its currency and type. \n\nCommon examples include `legalType`, `sortCode`, `accountNumber`, `email`, `dateOfBirth`, etc. Use the **retrieve recipient account requirements** endpoint to determine what is required for a specific recipient.\n",
+        "properties": {
+          "accountNumber": {
+            "description": "Account number (GBP example).",
+            "example": "37778842",
+            "type": "string"
+          },
+          "dateOfBirth": {
+            "description": "Date of birth in ISO 8601 date format. Only required for certain currency routes. Call the **retrieve recipient account requirements** endpoint to confirm.",
+            "example": "1961-01-01",
+            "type": "string"
+          },
+          "legalType": {
+            "description": "Recipient legal type.",
+            "enum": [
+              "PRIVATE",
+              "BUSINESS"
+            ],
+            "example": "PRIVATE",
+            "type": "string"
+          },
+          "sortCode": {
+            "description": "Sort code (GBP example).",
+            "example": "040075",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ownedByCustomer": {
+        "description": "Indicates whether the recipient account is owned by the profile owner.\n\nWhile optional, we recommend setting to `true` for self-transfers (such as a user sending money to their own account in another country or currency).\nDistinguishing self-transfers from third-party transfers improves routing and processing efficiency.\n",
+        "example": true,
+        "type": "boolean"
+      },
+      "profile": {
+        "description": "Personal or business profile ID of the sender. We recommend passing the business profile ID if multiple users manage your business account so all users authorized on the business account can access the recipient.",
+        "example": 30000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "type": {
+        "description": "Recipient account type. These are currency/route-specific, for example, `sort_code`, `iban`, `email`.",
+        "example": "sort_code",
+        "type": "string"
+      },
+      "ultimateBeneficiary": {
+        "description": "The details about the ultimate beneficiary for this recipient, if present. If absent, the ultimate beneficiary _is_ the recipient.",
+        "properties": {
+          "accountNumber": {
+            "description": "Ultimate beneficiary account number.",
+            "example": "37778842",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "address": {
+            "description": "Ultimate beneficiary address.",
+            "properties": {
+              "city": {
+                "type": "string"
+              },
+              "country": {
+                "example": "US",
+                "type": "string"
+              },
+              "firstLine": {
+                "type": "string"
+              },
+              "postCode": {
+                "type": "string"
+              },
+              "state": {
+                "type": "string"
+              }
+            },
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "bankAddress": {
+            "description": "Ultimate beneficiary bank address.",
+            "properties": {
+              "city": {
+                "type": "string"
+              },
+              "country": {
+                "example": "US",
+                "type": "string"
+              },
+              "firstLine": {
+                "type": "string"
+              },
+              "postCode": {
+                "type": "string"
+              },
+              "state": {
+                "type": "string"
+              }
+            },
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "bankCode": {
+            "description": "Ultimate beneficiary bank code.",
+            "example": "026073150",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "bankName": {
+            "description": "Ultimate beneficiary bank name.",
+            "example": "Wise Payments Limited",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "description": "Ultimate beneficiary name details.",
+            "properties": {
+              "fullName": {
+                "description": "Ultimate beneficiary full name.",
+                "example": "John Doe",
+                "type": "string"
+              }
+            },
+            "required": [
+              "fullName"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": [
+          "object",
+          "null"
+        ]
+      }
+    },
+    "type": "object"
+  },
+  "transfer": {
+    "properties": {
+      "business": {
+        "description": "Your business profile ID",
+        "example": null,
+        "format": "int64",
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "created": {
+        "description": "Timestamp when transfer was created",
+        "example": "2017-11-24 10:47:49",
+        "format": "date-time",
+        "type": "string"
+      },
+      "customerTransactionId": {
+        "description": "Unique identifier randomly generated per transfer request by the calling client",
+        "example": "54a6bc09-cef9-49a8-9041-f1f0c654cd88",
+        "format": "uuid",
+        "type": "string"
+      },
+      "details": {
+        "properties": {
+          "reference": {
+            "description": "Payment reference text",
+            "example": "Testing",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "hasActiveIssues": {
+        "description": "Are there any pending issues which stop executing the transfer?",
+        "example": false,
+        "type": "boolean"
+      },
+      "id": {
+        "description": "Transfer ID",
+        "example": 16521632,
+        "format": "int64",
+        "type": "integer"
+      },
+      "payinSessionId": {
+        "description": "ID of the Payin Session generated for the transfer, which can be used for certain payin methods when funding the transfer",
+        "example": "23330542-8e9e-419f-95eb-312b880f92ad",
+        "format": "uuid",
+        "type": "string"
+      },
+      "quote": {
+        "description": "V1 quote ID",
+        "example": null,
+        "format": "int64",
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "quoteUuid": {
+        "description": "V2 quote ID",
+        "example": "8fa9be20-ba43-4b15-abbb-9424e1481050",
+        "format": "uuid",
+        "type": "string"
+      },
+      "rate": {
+        "description": "Exchange rate value",
+        "example": 0.89,
+        "type": "number"
+      },
+      "reference": {
+        "deprecated": true,
+        "description": "Deprecated, use `details.reference` instead",
+        "example": "reference text",
+        "type": "string"
+      },
+      "sourceAccount": {
+        "description": "Refund recipient account ID",
+        "example": null,
+        "format": "int64",
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "sourceCurrency": {
+        "description": "Source currency code",
+        "example": "EUR",
+        "type": "string"
+      },
+      "sourceValue": {
+        "description": "Transfer amount in source currency",
+        "example": 0,
+        "type": "number"
+      },
+      "status": {
+        "description": "Transfer current status. See [Tracking Transfers](/guides/product/send-money/tracking-transfers) for all possible statuses.",
+        "example": "incoming_payment_waiting",
+        "type": "string"
+      },
+      "targetAccount": {
+        "description": "Recipient account ID",
+        "example": 8692237,
+        "format": "int64",
+        "type": "integer"
+      },
+      "targetCurrency": {
+        "description": "Target currency code",
+        "example": "GBP",
+        "type": "string"
+      },
+      "targetValue": {
+        "description": "Transfer amount in target currency",
+        "example": 150,
+        "type": "number"
+      },
+      "transferRequest": {
+        "deprecated": true,
+        "description": "Deprecated",
+        "example": null,
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "user": {
+        "description": "Your user ID",
+        "example": 4342275,
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "title": "Standard Transfer",
+    "type": "object",
+    "x-tags": [
+      "transfer"
+    ]
+  }
+}

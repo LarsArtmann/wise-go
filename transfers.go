@@ -130,6 +130,101 @@ func (c *Client) GetTransfer(ctx context.Context, transferID TransferID) (*Trans
 	return &result, nil
 }
 
+func (r CreateTransferRequest) validate() error {
+	if r.QuoteID.Get() == "" {
+		return errorfamily.NewRejection(
+			"wise.transfer.invalid_request",
+			"quoteID is required",
+		)
+	}
+
+	if r.TargetAccount.Get() == 0 {
+		return errorfamily.NewRejection(
+			"wise.transfer.invalid_request",
+			"targetAccount is required",
+		)
+	}
+
+	if r.CustomerTransactionID == "" {
+		return errorfamily.NewRejection(
+			"wise.transfer.invalid_request",
+			"customerTransactionId is required",
+		)
+	}
+
+	return nil
+}
+
+func (r CreateTransferRequest) detailsWire() map[string]string {
+	details := make(map[string]string)
+
+	if r.Reference != "" {
+		details["reference"] = r.Reference
+	}
+
+	if r.SourceOfFunds != "" {
+		details["sourceOfFunds"] = r.SourceOfFunds
+	}
+
+	if r.TransferPurpose != "" {
+		details["transferPurpose"] = r.TransferPurpose
+	}
+
+	if r.TransferPurposeInvoiceNumber != "" {
+		details["transferPurposeInvoiceNumber"] = r.TransferPurposeInvoiceNumber
+	}
+
+	if r.TransferPurposeSubTransferPurpose != "" {
+		details["transferPurposeSubTransferPurpose"] = r.TransferPurposeSubTransferPurpose
+	}
+
+	return details
+}
+
+// CreateTransfer creates a new transfer from a quote to a recipient account.
+//
+// customerTransactionId is required for idempotency and must be a UUID unique
+// to this transfer attempt. Reusing the same value with the same targetAccount
+// and quoteUuid will return the existing transfer instead of creating a
+// duplicate.
+func (c *Client) CreateTransfer(
+	ctx context.Context,
+	req CreateTransferRequest,
+) (*Transfer, error) {
+	if err := req.validate(); err != nil {
+		return nil, err
+	}
+
+	body := map[string]any{
+		"targetAccount":         req.TargetAccount.Get(),
+		"quoteUuid":             req.QuoteID.Get(),
+		"customerTransactionId": req.CustomerTransactionID,
+	}
+
+	if req.SourceAccount.Get() != 0 {
+		body["sourceAccount"] = req.SourceAccount.Get()
+	}
+
+	details := req.detailsWire()
+	if len(details) > 0 {
+		body["details"] = details
+	}
+
+	var transfer raw.Transfer
+
+	err := c.post(ctx, "/v1/transfers", body, &transfer)
+	if err != nil {
+		return nil, fmt.Errorf("create transfer for quote %s: %w", req.QuoteID.Get(), err)
+	}
+
+	result, mapErr := mapTransfer(transfer)
+	if mapErr != nil {
+		return nil, fmt.Errorf("map created transfer %d: %w", transfer.ID, mapErr)
+	}
+
+	return &result, nil
+}
+
 // mapTransfer converts a raw wire transfer into the parsed Transfer type.
 func mapTransfer(t raw.Transfer) (Transfer, error) {
 	created, err := parseWiseTimestamp(t.Created)

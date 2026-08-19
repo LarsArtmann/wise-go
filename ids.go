@@ -38,7 +38,9 @@ type TransferID = id.ID[TransferBrand, int64]
 type RecipientID = id.ID[RecipientBrand, int64]
 
 // QuoteID is a strongly-typed identifier for Wise quotes.
-type QuoteID = id.ID[QuoteBrand, int64]
+// Note: Wise quote IDs are UUIDs (strings), unlike the integer IDs used for
+// profiles, balances, transfers, and recipients.
+type QuoteID = id.ID[QuoteBrand, string]
 
 // NewProfileID creates a new ProfileID from an int64 value.
 func NewProfileID(v int64) ProfileID {
@@ -65,7 +67,7 @@ func NewRecipientID(v int64) RecipientID {
 	return id.NewID[RecipientBrand](v)
 }
 
-// NewQuoteID creates a new QuoteID from an int64 value.
-func NewQuoteID(v int64) QuoteID {
+// NewQuoteID creates a new QuoteID from a string UUID value.
+func NewQuoteID(v string) QuoteID {
 	return id.NewID[QuoteBrand](v)
 }

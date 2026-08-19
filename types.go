@@ -243,16 +243,20 @@ const (
 
 // Quote is the parsed representation of a Wise quote — a locked exchange rate
 // offer used to create a transfer. Authenticated quotes expire after 30 minutes.
+//
+// ID is empty for unauthenticated quotes, which cannot be used to create a
+// transfer.
 type Quote struct {
-	ID       QuoteID
-	Source   Money
-	Target   Money
-	PayIn    PayIn
-	PayOut   PayOut
-	Rate     float64
-	Created  time.Time
-	Status   QuoteStatus
-	Profile  ProfileID // Zero for unauthenticated quotes.
+	ID             QuoteID
+	Source         Money
+	Target         Money
+	PayIn          PayIn
+	PayOut         PayOut
+	Rate           float64
+	Created        time.Time
+	ExpirationTime time.Time
+	Status         QuoteStatus
+	Profile        ProfileID // Zero for unauthenticated quotes.
 }
 
 // QuoteStatus is a Wise quote lifecycle status.
@@ -260,9 +264,9 @@ type QuoteStatus string
 
 // Documented quote statuses.
 const (
-	QuoteStatusPending  QuoteStatus = "pending"
-	QuoteStatusActive   QuoteStatus = "active"
-	QuoteStatusExpired  QuoteStatus = "expired"
+	QuoteStatusPending QuoteStatus = "pending"
+	QuoteStatusActive  QuoteStatus = "active"
+	QuoteStatusExpired QuoteStatus = "expired"
 )
 
 // PayIn identifies how a quote is funded.
@@ -294,6 +298,51 @@ type CreateQuoteRequest struct {
 	TargetCurrency Currency
 	SourceAmount   *Money // Optional; sets sourceAmount on the wire.
 	TargetAmount   *Money // Optional; sets targetAmount on the wire.
-	PayIn          PayIn
-	PayOut         PayOut
+	PreferredPayIn PayIn  // Optional; defaults to BANK_TRANSFER.
+	PayOut         PayOut // Optional; defaults to BANK_TRANSFER for authenticated quotes.
+	TargetAccount  RecipientID
+}
+
+// Recipient is the parsed representation of a Wise recipient account.
+//
+// Details contains the currency-specific account fields (e.g. sortCode,
+// accountNumber, iban) as string values. Because the required fields differ by
+// currency and route, consumers should use the account-requirements endpoints
+// to discover the exact fields for their corridor.
+type Recipient struct {
+	ID                RecipientID
+	AccountHolderName string
+	Currency          Currency
+	Country           string
+	Type              string
+	Details           map[string]string
+	Active            bool
+}
+
+// CreateRecipientRequest parameters for creating a recipient account.
+type CreateRecipientRequest struct {
+	ProfileID         ProfileID
+	Currency          Currency
+	Type              string
+	AccountHolderName string
+	Details           map[string]string
+	OwnedByCustomer   bool
+}
+
+// CreateTransferRequest parameters for creating a standard transfer.
+//
+// customerTransactionId is required for idempotency. QuoteID comes from an
+// authenticated quote; TargetAccount is the recipient account ID returned by
+// CreateRecipient or ListRecipients. SourceAccount is the optional refund
+// recipient account ID.
+type CreateTransferRequest struct {
+	QuoteID                           QuoteID
+	TargetAccount                     RecipientID
+	SourceAccount                     RecipientID // Optional refund recipient account.
+	CustomerTransactionID             string
+	Reference                         string
+	SourceOfFunds                     string
+	TransferPurpose                   string
+	TransferPurposeInvoiceNumber      string
+	TransferPurposeSubTransferPurpose string
 }
