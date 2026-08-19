@@ -20,13 +20,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
-- **Send the required `types` parameter when listing balances.** The live v4 balances endpoint requires `types=STANDARD,SAVINGS`; without it every listing failed with 400 `query.types: NotNull`.
+- **`ListBalances` sends the required `types` query parameter.** The live v4 endpoint rejects a bare `/v4/profiles/{id}/balances` with `400 query.types: NotNull`, which made every balance listing fail after authentication succeeded. The SDK now always requests all mappable balance types (`types=STANDARD,SAVINGS`, kept in sync with the `parseBalanceType` table); visibility and investment-state filtering remain client-side, so returned data is unchanged.
 
 ## [0.5.2] - 2026-08-18
 
 ### Fixed
 
-- **Response parse failures classify as Corruption, not retryable.** A body that decodes but maps to invalid domain values no longer triggers hopeless retries.
+- **Response-shape parse failures are now classified as `Corruption`.** Mapper errors (unparseable timestamps, unknown enum types, invalid currency codes) were plain errors, so consumers that blanket-wrap SDK failures as `Transient` retried permanent failures with exponential backoff — a bad `createdAt` once silenced a sync for hours. All mapper and money-parse errors now carry `errorfamily` Corruption classification with dot-notation codes (`wise.profile.parse_created_at`, `wise.balance.parse_creation_time`, `wise.transaction.parse_date`, `wise.money.parse`) so consumers can fail fast.
 
 ## [0.5.1] - 2026-08-18
 
