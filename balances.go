@@ -9,13 +9,19 @@ import (
 	"github.com/larsartmann/wise-go/internal/raw"
 )
 
+// balanceTypesQuery lists every balance type the SDK can map (keep in sync
+// with the parseBalanceType table). The v4 balances endpoint rejects requests
+// without a types filter with "query.types: NotNull", so ListBalances always
+// sends the full set and keeps visibility/investment filtering client-side.
+const balanceTypesQuery = "STANDARD,SAVINGS"
+
 // ListBalances returns all balances for a profile.
 //
 // Only visible, non-investment balances are returned. Wise exposes no
 // per-balance endpoint, so there is no way to fetch a hidden or invested
 // balance individually through this SDK.
 func (c *Client) ListBalances(ctx context.Context, profileID ProfileID) ([]Balance, error) {
-	path := fmt.Sprintf("/v4/profiles/%d/balances", profileID.Get())
+	path := fmt.Sprintf("/v4/profiles/%d/balances?types=%s", profileID.Get(), balanceTypesQuery)
 
 	var balances []raw.Balance
 
@@ -67,17 +73,29 @@ func (c *Client) GetBalance(
 func mapBalance(b raw.Balance) (Balance, error) {
 	createdAt, err := parseWiseTimestamp(b.CreationTime)
 	if err != nil {
-		return Balance{}, fmt.Errorf("parse creation_time %q: %w", b.CreationTime, err)
+		return Balance{}, errorfamily.WrapCorruption(
+			err,
+			"wise.balance.parse_creation_time",
+			fmt.Sprintf("parse creation_time %q", b.CreationTime),
+		)
 	}
 
 	balanceType, err := parseBalanceType(b.Type)
 	if err != nil {
-		return Balance{}, fmt.Errorf("parse type %q: %w", b.Type, err)
+		return Balance{}, errorfamily.WrapCorruption(
+			err,
+			"wise.balance.parse_type",
+			fmt.Sprintf("parse type %q", b.Type),
+		)
 	}
 
 	currency, err := NewCurrency(b.Currency)
 	if err != nil {
-		return Balance{}, fmt.Errorf("currency %q: %w", b.Currency, err)
+		return Balance{}, errorfamily.WrapCorruption(
+			err,
+			"wise.balance.parse_currency",
+			fmt.Sprintf("currency %q", b.Currency),
+		)
 	}
 
 	amount, err := toMoney(b.Amount)
