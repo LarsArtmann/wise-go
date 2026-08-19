@@ -224,8 +224,8 @@ func mapQuote(quote raw.Quote, profileID ProfileID) (*Quote, error) {
 
 // parseQuoteCreated parses a quote's createdTime and expirationTime. Both
 // must be present and parseable for the quote to be usable.
-func parseQuoteCreated(quote raw.Quote) (created, expiration time.Time, err error) {
-	created, err = parseWiseTimestamp(quote.CreatedTime)
+func parseQuoteCreated(quote raw.Quote) (time.Time, time.Time, error) {
+	created, err := parseWiseTimestamp(quote.CreatedTime)
 	if err != nil {
 		return time.Time{}, time.Time{}, errorfamily.WrapCorruption(
 			err,
@@ -234,7 +234,7 @@ func parseQuoteCreated(quote raw.Quote) (created, expiration time.Time, err erro
 		)
 	}
 
-	expiration, err = parseWiseTimestamp(quote.ExpirationTime)
+	expiration, err := parseWiseTimestamp(quote.ExpirationTime)
 	if err != nil {
 		return time.Time{}, time.Time{}, errorfamily.WrapCorruption(
 			err,
@@ -248,7 +248,7 @@ func parseQuoteCreated(quote raw.Quote) (created, expiration time.Time, err erro
 
 // mapQuoteMonetary converts a quote's source/target amounts and currencies
 // into Money value objects with validated currencies.
-func mapQuoteMonetary(quote raw.Quote) (source, target Money, err error) {
+func mapQuoteMonetary(quote raw.Quote) (Money, Money, error) {
 	sourceCurrency, err := NewCurrency(quote.SourceCurrency)
 	if err != nil {
 		return Money{}, Money{}, errorfamily.WrapCorruption(

@@ -114,11 +114,12 @@ func getBalance(
 	return client.GetBalance(ctx, wise.NewProfileID(12345), wise.NewBalanceID(balanceID))
 }
 
-//nolint:unparam // helpers exist so call sites read as named constants
+// strPtr and int32Ptr exist so call sites read as named constants instead of
+// inline new(...) allocations; the linter's newexpr suggestion is acceptable.
+//nolint:modernize // readability helpers, not deviating wrappers
 func strPtr(s string) *string { return &s }
 
 func int32Ptr(v int32) *int32 { return &v }
-
 var _ = Describe("Wise Client", func() {
 	var (
 		server           *httptest.Server
@@ -1095,7 +1096,7 @@ var _ = Describe("Wise Client", func() {
 					Expect(r.Header.Get("Content-Type")).To(Equal("application/json"))
 
 					var body map[string]any
-					Expect(stdjson.NewDecoder(r.Body).Decode(&body))
+					Expect(stdjson.NewDecoder(r.Body).Decode(&body)).To(Succeed())
 					Expect(body["sourceCurrency"]).To(Equal("EUR"))
 					Expect(body["targetCurrency"]).To(Equal("USD"))
 					Expect(body["sourceAmount"]).To(Equal(10.0))
@@ -1237,7 +1238,7 @@ var _ = Describe("Wise Client", func() {
 					Expect(r.Header.Get("Content-Type")).To(Equal("application/json"))
 
 					var body map[string]any
-					Expect(stdjson.NewDecoder(r.Body).Decode(&body))
+					Expect(stdjson.NewDecoder(r.Body).Decode(&body)).To(Succeed())
 					Expect(body["currency"]).To(Equal("GBP"))
 					Expect(body["type"]).To(Equal("sort_code"))
 
@@ -1279,7 +1280,7 @@ var _ = Describe("Wise Client", func() {
 					Expect(r.Header.Get("Content-Type")).To(Equal("application/json"))
 
 					var body map[string]any
-					Expect(stdjson.NewDecoder(r.Body).Decode(&body))
+					Expect(stdjson.NewDecoder(r.Body).Decode(&body)).To(Succeed())
 					Expect(body["targetAccount"]).To(Equal(float64(98765432)))
 					Expect(body["quoteUuid"]).To(Equal("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"))
 					Expect(body["customerTransactionId"]).To(Equal("22244c35-9fe8-4c32-b7fd-d05c2a7734bf"))
@@ -1396,7 +1397,7 @@ var _ = Describe("Wise Client", func() {
 					Expect(r.Header.Get("Content-Type")).To(Equal("application/json"))
 
 					var reqBody map[string]any
-					Expect(stdjson.NewDecoder(r.Body).Decode(&reqBody))
+					Expect(stdjson.NewDecoder(r.Body).Decode(&reqBody)).To(Succeed())
 					Expect(reqBody["targetAccount"]).To(Equal(float64(98765432)))
 					Expect(reqBody["quoteUuid"]).To(Equal("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"))
 					Expect(reqBody["originatorLegalEntityType"]).To(Equal("PRIVATE"))
@@ -1416,8 +1417,8 @@ var _ = Describe("Wise Client", func() {
 										{
 											Key: "reference", Name: "Transfer reference", Type: "text",
 											RefreshRequirementsOnChange: false, Required: false,
-											MaxLength:        int32Ptr(10),
-											ValidationRegexp: strPtr("[a-zA-Z0-9- ]*"),
+											MaxLength:       new(int32(10)),
+											ValidationRegexp: new("[a-zA-Z0-9- ]*"),
 										},
 									},
 								},

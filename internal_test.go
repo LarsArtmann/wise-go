@@ -349,10 +349,41 @@ func TestParseWiseTimestamp(t *testing.T) {
 			input: "2018-01-10T12:15:00.000+0000",
 			want:  time.Date(2018, time.January, 10, 12, 15, 0, 0, time.UTC),
 		},
-		{name: "empty rejected", input: "", wantErr: true},
-		{name: "date only rejected", input: "2023-01-15", wantErr: true},
-		{name: "garbage rejected", input: "not-a-date", wantErr: true},
 	}
+
+	assertTimestampCases(t, tests)
+}
+
+func TestParseWiseTimestampRejectsMalformed(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		input string
+	}{
+		{name: "empty", input: ""},
+		{name: "date only", input: "2023-01-15"},
+		{name: "garbage", input: "not-a-date"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			if _, err := parseWiseTimestamp(tt.input); err == nil {
+				t.Fatalf("parseWiseTimestamp(%q) succeeded, want error", tt.input)
+			}
+		})
+	}
+}
+
+func assertTimestampCases(t *testing.T, tests []struct {
+	name    string
+	input   string
+	want    time.Time
+	wantErr bool
+}) {
+	t.Helper()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -692,7 +723,9 @@ func TestMapQuoteParseErrorsAreCorruption(t *testing.T) {
 		{
 			name: "unparseable created_time",
 			call: func() error {
-				wireQuote := raw.Quote{ID: "quote-1", SourceCurrency: "EUR", TargetCurrency: "USD", CreatedTime: "garbage"}
+				wireQuote := raw.Quote{
+					ID: "quote-1", SourceCurrency: "EUR", TargetCurrency: "USD", CreatedTime: "garbage",
+				}
 				_, err := mapQuote(wireQuote, ProfileID{})
 
 				return err
