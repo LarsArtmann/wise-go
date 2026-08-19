@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Nothing yet.
+
+## [0.7.0] - 2026-08-19
+
+### Added
+
+- `ListTransfers` (`GET /v1/transfers`): transfer history with automatic pagination (100/page until a short page), `createdDateStart`/`createdDateEnd` and status filters. Not SCA-protected and available to personal API tokens in all regions — the reliable source for outgoing transfer history, unlike balance statements.
+- `Transfer` result type with branded `TransferID`/`RecipientID` identifiers, `TransferStatus` open string enum with documented lifecycle constants, source/target `Money` amounts, exchange `Rate`, `Reference`, `CustomerTransactionID`, and `HasActiveIssues`.
+- Tolerant `Created` timestamp parsing (RFC3339 and Wise's space-separated format; zoneless values interpreted as UTC).
+
 ## [0.6.1] - 2026-08-19
 
 ### Fixed
