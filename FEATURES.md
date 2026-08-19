@@ -33,6 +33,7 @@ claim here can be verified against the implementation.
 | Feature                | Status           | Evidence                             |
 | ---------------------- | ---------------- | ------------------------------------ |
 | `ListProfiles(ctx)`    | FULLY_FUNCTIONAL | `profiles.go:12`; BDD-tested         |
+| `GetProfile(ctx, id)`  | FULLY_FUNCTIONAL | `profiles.go:33`; BDD-tested         |
 | Personal-profile parse | FULLY_FUNCTIONAL | `profiles.go:33` name construction   |
 | Business-profile parse | FULLY_FUNCTIONAL | `profiles.go:33` BusinessName branch |
 
@@ -97,14 +98,23 @@ claim here can be verified against the implementation.
 | `nix fmt` (gofumpt + goimports + nixfmt)               | FULLY_FUNCTIONAL | `flake.nix` treefmt config                   |
 | BDD tests via Ginkgo + httptest                        | FULLY_FUNCTIONAL | `wise_test.go`                               |
 
+## API surface expansion (v0.8.0)
+
+| Feature                                | Status           | Evidence                                                   |
+| -------------------------------------- | ---------------- | ---------------------------------------------------------- |
+| `GetProfile`                           | FULLY_FUNCTIONAL | `profiles.go:33`                                           |
+| `GetExchangeRate`                      | FULLY_FUNCTIONAL | `rates.go:16`                                              |
+| `GetTransfer`                          | FULLY_FUNCTIONAL | `transfers.go:116`                                         |
+| Quotes API (create + get)              | FULLY_FUNCTIONAL | `quotes.go`                                                |
+| Recipients API (list + get + create)   | FULLY_FUNCTIONAL | `recipients.go`                                            |
+| `CreateTransfer`                       | FULLY_FUNCTIONAL | `transfers.go:15`                                          |
+
 ## Out of scope (not yet started)
 
 | Feature                          | Status  | Notes                                                                                       |
 | -------------------------------- | ------- | ------------------------------------------------------------------------------------------- |
-| Write operations (transfers)     | PLANNED | No POST/PATCH/DELETE helpers yet                                                            |
-| Recipients API                   | PLANNED | No code                                                                                     |
-| Quotes API                       | PLANNED | No code                                                                                     |
-| Exchange rates (`GET /v1/rates`) | PLANNED | Self-contained, high-value; see [API docs study](docs/reviews/2026-08-08_api-docs-study.md) |
 | Webhooks                         | PLANNED | No code                                                                                     |
 | Statements (CSV/PDF)             | PLANNED | SDK consumes `statement.json` only                                                          |
 | Service-client sub-structure     | PLANNED | Trigger: resource count > 6-8 (see ROADMAP.md)                                              |
+| `CancelTransfer`                 | PLANNED | `PUT /v1/transfers/{id}/cancel`                                                             |
+| `GetDeliveryEstimate`            | PLANNED | `GET /v1/delivery-estimates/{id}`                                                           |

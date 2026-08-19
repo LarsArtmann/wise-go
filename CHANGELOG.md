@@ -8,7 +8,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- Nothing yet.
+- `GetProfile` (`GET /v2/profiles/{id}`): retrieve a single profile by ID.
+- `GetExchangeRate` (`GET /v1/rates`): current and historical exchange rates between two currencies.
+- `GetTransfer` (`GET /v1/transfers/{id}`): retrieve a single transfer by ID.
+- Quotes API: `CreateUnauthenticatedQuote`, `CreateQuote`, and `GetQuote` (`/v3/quotes`).
+  Introduces `QuoteID` (UUID string), `Quote`, `CreateQuoteRequest`, `PayIn`/`PayOut` enums,
+  and `QuoteStatus`.
+- Recipients API: `ListRecipients`, `GetRecipient`, and `CreateRecipient`
+  (`/v1/accounts`, `/v2/accounts`). Introduces `Recipient`, `CreateRecipientRequest`,
+  and `ListRecipientsRequest`.
+- Transfers API: `CreateTransfer` (`POST /v1/transfers`). Introduces
+  `CreateTransferRequest` with idempotency key and optional transfer details.
+- Generic HTTP request helper (`Client.request`/`Client.doRequest`) supporting POST bodies,
+  enabling all write operations while preserving retry, header, and error handling behaviour.
+- `fetchByID` helper to eliminate duplicated get-by-ID boilerplate.
+- Comprehensive API implementation plan at `docs/planning/2026-08-19_wise-api-full-implementation-plan.md`
+  with Pareto prioritisation and dependency graph derived from the full Wise Platform API reference.
 
 ## [0.7.0] - 2026-08-19
 

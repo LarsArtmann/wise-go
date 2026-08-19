@@ -25,21 +25,22 @@ binary cache, building `go_1_26` from nixpkgs source takes 15+ minutes. Add
 
 ## P3 — API surface expansion (from changelog & API reference study)
 
-[ ] Add `GetProfile(ctx, ProfileID)` — `GET /v2/profiles/{profileId}` is a simple
-single-endpoint addition with no new patterns. Natural complement to `ListProfiles`.
+[x] Add `GetProfile(ctx, ProfileID)` — `GET /v2/profiles/{profileId}`.
 
-[ ] Add exchange rates endpoint — `GET /v1/rates` is self-contained (no auth
-required for current/historical rates), high-value, and unblocks comparison tooling.
+[x] Add exchange rates endpoint — `GET /v1/rates`.
 
-[ ] Add Quotes API — `POST /v3/quotes`, `POST /v3/profiles/{id}/quotes`,
-`GET /v3/profiles/{id}/quotes/{id}`. Prerequisite for transfers. First write
-operations in the SDK.
+[x] Add Quotes API — `POST /v3/quotes`, `POST /v3/profiles/{id}/quotes`,
+`GET /v3/profiles/{id}/quotes/{id}`.
 
-[ ] Add Recipients API — `GET /v2/accounts`, `GET /v1/accounts/{id}`.
-Prerequisite for transfers.
+[x] Add Recipients API — `GET /v2/accounts`, `GET /v1/accounts/{id}`,
+`POST /v1/accounts`.
 
-[ ] Add Transfers API — `GET /v1/transfers/{id}`, `GET /v1/delivery-estimates/{id}`.
-The core write-operation value proposition. Depends on Quotes + Recipients.
+[x] Add `GetTransfer` and `CreateTransfer` — `GET /v1/transfers/{id}`,
+`POST /v1/transfers`.
+
+[ ] Add `CancelTransfer` — `PUT /v1/transfers/{id}/cancel`.
+
+[ ] Add `GetDeliveryEstimate` — `GET /v1/delivery-estimates/{id}`.
 
 [ ] Add per-request correlation ID override — currently `WithCorrelationID` sets
 a client-wide header. Allow per-call override via context or request struct for

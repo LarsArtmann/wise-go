@@ -101,14 +101,19 @@
                   ./errors.go
                   ./client.go
                   ./transactions.go
+                  ./transfers.go
                   ./types.go
+                  ./rates.go
+                  ./quotes.go
+                  ./recipients.go
                   ./internal/raw/types.go
+                  ./internal/raw/transfers.go
                   ./internal_test.go
                   ./example_test.go
                   ./wise_test.go
                 ];
               };
-              vendorHash = "sha256-KW6gSK0c5MK/5bn9aO8q0cMtp9IE+MapLgylkVoHmco=";
+              vendorHash = "sha256-IeIRBgChUgX5pqLNFOTfWHVOpzsN5TsXBmDwUoYSCFE=";
               doCheck = true;
               checkPhase = ''
                 runHook preCheck
