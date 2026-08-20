@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- `Transfer.SourceAccount` (`*BalanceID`): the balance a transfer debits, when
+  Wise reports `sourceAccount`. `mapTransfer` previously parsed the wire field
+  and discarded it, leaving consumers to attribute transfers by source
+  currency — ambiguous whenever a profile holds multiple same-currency
+  balances. Nil preserves an omitted wire value.
 - `CancelTransfer` (`PUT /v1/transfers/{id}/cancel`): cancel a transfer before it
   is processed. Cancellation is final; the API rejects cancellations of
   transfers in `funds_converted` or later states with 409.

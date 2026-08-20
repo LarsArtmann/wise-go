@@ -206,11 +206,17 @@ type ExchangeRate struct {
 // to a recipient account based on a quote. Unlike statement transactions,
 // transfers are retrievable with a personal API token without SCA approval.
 //
+// SourceAccount is the balance the transfer debits, when Wise reports one;
+// nil means the response omitted sourceAccount. Callers attributing
+// transfers to balances MUST match on it (currency alone is ambiguous when a
+// profile holds several same-currency balances).
+//
 // Created is parsed via the SDK's tolerant timestamp handling; zoneless
 // values are interpreted as UTC.
 type Transfer struct {
 	ID                    TransferID
 	RecipientID           RecipientID
+	SourceAccount         *BalanceID
 	Status                TransferStatus
 	Rate                  float64
 	Source                Money

@@ -274,9 +274,16 @@ func mapTransfer(t raw.Transfer) (Transfer, error) {
 		reference = t.Reference // Wise deprecated the top-level field; use as fallback.
 	}
 
+	var sourceAccount *BalanceID
+	if t.SourceAccount != nil {
+		account := NewBalanceID(*t.SourceAccount)
+		sourceAccount = &account
+	}
+
 	return Transfer{
 		ID:                    NewTransferID(t.ID),
 		RecipientID:           NewRecipientID(t.TargetAccount),
+		SourceAccount:         sourceAccount,
 		Status:                TransferStatus(t.Status),
 		Rate:                  t.Rate,
 		Source:                source,

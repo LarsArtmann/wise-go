@@ -860,8 +860,10 @@ var _ = Describe("Wise Client", func() {
 
 	Describe("ListTransfers", func() {
 		transferFixture := func(id int64, status string, created string) raw.Transfer {
+			sourceAccount := int64(5678901)
 			return raw.Transfer{
 				ID: id, User: 4342275, TargetAccount: 8692237,
+				SourceAccount:   &sourceAccount,
 				Status: status, Rate: 0.89, Created: created,
 				Details:         raw.TransferDetails{Reference: "Rent November"},
 				HasActiveIssues: false,
@@ -882,7 +884,11 @@ var _ = Describe("Wise Client", func() {
 
 					response := []raw.Transfer{
 						transferFixture(16521632, "delivered", "2023-11-24 10:47:49"),
-						transferFixture(16521633, "cancelled", "2023-12-02T08:15:00Z"),
+						func() raw.Transfer { // Wise omits sourceAccount on some transfers.
+							withoutSource := transferFixture(16521633, "cancelled", "2023-12-02T08:15:00Z")
+							withoutSource.SourceAccount = nil
+							return withoutSource
+						}(),
 					}
 
 					w.Header().Set("Content-Type", "application/json")
@@ -915,6 +921,20 @@ var _ = Describe("Wise Client", func() {
 				Expect(first.Reference).To(Equal("Rent November"))
 				Expect(first.CustomerTransactionID).To(Equal("54a6bc09-cef9-49a8-9041-f1f0c654cd88"))
 				Expect(first.HasActiveIssues).To(BeFalse())
+			})
+
+			It("maps the debited balance and preserves an omitted sourceAccount as nil", func() {
+				transfers, err := client.ListTransfers(context.Background(), wise.ListTransfersRequest{
+					ProfileID: wise.NewProfileID(12345),
+					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					To:        time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
+					Status:    []wise.TransferStatus{wise.TransferStatusDelivered, wise.TransferStatusCancelled},
+				})
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(transfers[0].SourceAccount).ToNot(BeNil())
+				Expect(transfers[0].SourceAccount.Get()).To(Equal(int64(5678901)))
+				Expect(transfers[1].SourceAccount).To(BeNil())
 			})
 
 			It("parses both space-separated and RFC3339 created timestamps", func() {
