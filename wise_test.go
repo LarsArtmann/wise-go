@@ -861,10 +861,11 @@ var _ = Describe("Wise Client", func() {
 	Describe("ListTransfers", func() {
 		transferFixture := func(id int64, status string, created string) raw.Transfer {
 			sourceAccount := int64(5678901)
+
 			return raw.Transfer{
 				ID: id, User: 4342275, TargetAccount: 8692237,
-				SourceAccount:   &sourceAccount,
-				Status: status, Rate: 0.89, Created: created,
+				SourceAccount: &sourceAccount,
+				Status:        status, Rate: 0.89, Created: created,
 				Details:         raw.TransferDetails{Reference: "Rent November"},
 				HasActiveIssues: false,
 				SourceCurrency:  "EUR", SourceValue: 168.54,
@@ -887,6 +888,7 @@ var _ = Describe("Wise Client", func() {
 						func() raw.Transfer { // Wise omits sourceAccount on some transfers.
 							withoutSource := transferFixture(16521633, "cancelled", "2023-12-02T08:15:00Z")
 							withoutSource.SourceAccount = nil
+
 							return withoutSource
 						}(),
 					}
