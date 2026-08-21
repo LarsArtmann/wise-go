@@ -11,8 +11,9 @@ import (
 	"github.com/larsartmann/wise-go/internal/raw"
 )
 
-// CreateUnauthenticatedQuote creates an illustrative quote without a user token.
-// The returned quote has no ID and cannot be used to create a transfer.
+// CreateUnauthenticatedQuote creates a quote without an API token — a public
+// rate preview. The returned quote has no ID and cannot be used to create a
+// transfer; use CreateQuote for that.
 func (c *Client) CreateUnauthenticatedQuote(
 	ctx context.Context,
 	req CreateQuoteRequest,

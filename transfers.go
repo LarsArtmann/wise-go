@@ -30,8 +30,9 @@ type ListTransfersRequest struct {
 }
 
 // ListTransfers returns the transfers for a profile, automatically
-// paginating through the complete result set in transferPageSize chunks.
-// Results are ordered by creation date, newest first (Wise API order).
+// paginating through the complete result set in pages of 100 (Wise's
+// per-request maximum). Results are ordered by creation date, newest first
+// (Wise API order).
 //
 // Unlike balance statements, the transfers endpoint is not SCA-protected and
 // is available to personal API tokens in all regions.
