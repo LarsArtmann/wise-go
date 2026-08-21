@@ -22,10 +22,6 @@ split are finalized. Requires explicit approval (tagging is irreversible).
 
 ## P3 — Tier-2 API surface (plan doc tier 2 + near-term reports)
 
-[ ] Add `GetQuoteAccountRequirements` — `GET /v1/quotes/{quoteId}/account-requirements`.
-The only remaining tier-1 row in
-`docs/planning/2026-08-19_wise-api-full-implementation-plan.md` (row 5).
-
 [ ] Add `GetMe` / `GetUser` — `GET /me`, `GET /users/{userId}`. Self-contained reads.
 
 [ ] Add `GetStatement` with format parameter — CSV/PDF/XLSX (SDK consumes

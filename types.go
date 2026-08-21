@@ -553,3 +553,24 @@ type TransferRequirementValue struct {
 	Key  string
 	Name string
 }
+
+// AccountRequirement is the parsed form of one payout route's recipient
+// requirements from GetQuoteAccountRequirements. Type identifies the route
+// (e.g. "swift_code", "sort_code") and becomes CreateRecipientRequest.Type;
+// Title and UsageInfo are Wise's display strings for the route; Fields
+// reuses the dynamic-form shape shared with transfer requirements.
+type AccountRequirement struct {
+	Type      string
+	Title     string
+	UsageInfo string
+	Fields    []TransferRequirementForm
+}
+
+// QuoteAccountRequirementsRequest asks Wise which recipient-account fields
+// the quote's currency corridor requires. The corridor is fully determined
+// by the authenticated quote; OriginatorLegalEntityType is only needed for
+// Correspondent Send integrations (PRIVATE or BUSINESS).
+type QuoteAccountRequirementsRequest struct {
+	QuoteID                   QuoteID
+	OriginatorLegalEntityType string
+}

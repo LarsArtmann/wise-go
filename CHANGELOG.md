@@ -25,6 +25,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   learn which required fields are still unsatisfied before spending a
   `customerTransactionId`. Select fields are checked against their allowed
   values; keys outside the typed request surface are reported explicitly.
+- `GetQuoteAccountRequirements` (`GET /v1/quotes/{quoteId}/account-requirements`):
+  the recipient fields required for an authenticated quote's currency corridor,
+  one dynamic form per payout route (`AccountRequirement`). Bridges quotes to
+  `CreateRecipientRequest` (route Type + Details keys). Sends
+  `Accept-Minor-Version: 1` per Wise's recommendation for new integrations.
 - Table-driven unit tests for all three `validate()` functions
   (transfer, quote, transfer-requirements) covering the missing-field and
   amount/currency-mismatch matrices, asserting Rejection classification.

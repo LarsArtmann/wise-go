@@ -205,6 +205,16 @@ type TransferRequirementValue struct {
 	Name string `json:"name"`
 }
 
+// AccountRequirement from the account-requirements endpoint
+// (GET /v1/quotes/{quoteId}/account-requirements). One dynamic form per
+// available payout route; Fields reuses the transfer-requirements form shape.
+type AccountRequirement struct {
+	Type      string                    `json:"type"`
+	Title     string                    `json:"title"`
+	UsageInfo string                    `json:"usageInfo"`
+	Fields    []TransferRequirementForm `json:"fields"`
+}
+
 // ErrorResponse from Wise API.
 type ErrorResponse struct {
 	Errors []ErrorDetail `json:"errors"`

@@ -3,6 +3,7 @@ package wise
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"time"
 
 	id "github.com/larsartmann/go-branded-id"
@@ -83,6 +84,69 @@ func (c *Client) GetQuote(
 	}
 
 	return mapQuote(quote, profileID)
+}
+
+// GetQuoteAccountRequirements returns the recipient-account fields required
+// for the currency corridor of an authenticated quote, one dynamic form per
+// available payout route. It bridges quotes to recipients: Type identifies
+// the route (CreateRecipientRequest.Type), and the Fields forms describe
+// which Details keys that route needs, with allowed select values and
+// validation metadata.
+//
+// The SDK sends Accept-Minor-Version: 1, as Wise recommends for all new
+// integrations, so recipient name and email fields are included.
+func (c *Client) GetQuoteAccountRequirements(
+	ctx context.Context,
+	req QuoteAccountRequirementsRequest,
+) ([]AccountRequirement, error) {
+	if req.QuoteID.Get() == "" {
+		return nil, errorfamily.NewRejection(
+			"wise.quote.invalid_request",
+			"quoteID is required",
+		)
+	}
+
+	query := func() string {
+		if req.OriginatorLegalEntityType == "" {
+			return ""
+		}
+
+		return url.Values{"originatorLegalEntityType": []string{req.OriginatorLegalEntityType}}.Encode()
+	}
+
+	path := fmt.Sprintf("/v1/quotes/%s/account-requirements", req.QuoteID.Get())
+
+	var requirements []raw.AccountRequirement
+
+	err := c.getWithQueryHeaders(ctx, path, query,
+		map[string]string{"Accept-Minor-Version": "1"}, &requirements)
+	if err != nil {
+		return nil, fmt.Errorf("get account requirements for quote %s: %w", req.QuoteID.Get(), err)
+	}
+
+	result := make([]AccountRequirement, 0, len(requirements))
+	for _, requirement := range requirements {
+		result = append(result, mapAccountRequirement(requirement))
+	}
+
+	return result, nil
+}
+
+// mapAccountRequirement converts a raw account requirement into the parsed
+// AccountRequirement type, reusing the shared dynamic-form mappers. The wire
+// form contains only strings, so no parse failures are possible.
+func mapAccountRequirement(requirement raw.AccountRequirement) AccountRequirement {
+	fields := make([]TransferRequirementForm, 0, len(requirement.Fields))
+	for _, form := range requirement.Fields {
+		fields = append(fields, mapTransferRequirementForm(form))
+	}
+
+	return AccountRequirement{
+		Type:      requirement.Type,
+		Title:     requirement.Title,
+		UsageInfo: requirement.UsageInfo,
+		Fields:    fields,
+	}
 }
 
 func (r CreateQuoteRequest) validate() error {

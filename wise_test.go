@@ -1431,6 +1431,74 @@ var _ = Describe("Wise Client", func() {
 		})
 	})
 
+	Describe("GetQuoteAccountRequirements", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/quotes/11144c35-9fe8-4c32-b7fd-d05c2a7734bf/account-requirements",
+					func(w http.ResponseWriter, r *http.Request) {
+						Expect(r.Header.Get("Accept-Minor-Version")).To(Equal("1"))
+						Expect(r.URL.Query().Get("originatorLegalEntityType")).To(Equal("PRIVATE"))
+
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.MarshalWrite(w, []raw.AccountRequirement{
+							{
+								Type:  "sort_code",
+								Title: "Local transfer in GBP",
+								Fields: []raw.TransferRequirementForm{
+									{
+										Name: "Recipient",
+										Group: []raw.TransferRequirementField{
+											{
+												Key: "sortCode", Name: "UK Sort Code", Type: "text",
+												Required: true, MinLength: new(int32(6)), MaxLength: new(int32(6)),
+											},
+											{
+												Key: "accountNumber", Name: "Account number", Type: "text",
+												Required: true, MaxLength: new(int32(8)),
+											},
+										},
+									},
+								},
+							},
+						})
+					})
+			})
+
+			It("should map the route requirement forms", func() {
+				requirements, err := client.GetQuoteAccountRequirements(
+					context.Background(),
+					wise.QuoteAccountRequirementsRequest{
+						QuoteID:                   wise.NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
+						OriginatorLegalEntityType: "PRIVATE",
+					},
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(requirements).To(HaveLen(1))
+
+				route := requirements[0]
+				Expect(route.Type).To(Equal("sort_code"))
+				Expect(route.Title).To(Equal("Local transfer in GBP"))
+
+				sortCode := route.Fields[0].Group[0]
+				Expect(sortCode.Key).To(Equal("sortCode"))
+				Expect(sortCode.Required).To(BeTrue())
+				Expect(*sortCode.MinLength).To(Equal(int32(6)))
+				Expect(route.Fields[0].Group[1].Key).To(Equal("accountNumber"))
+			})
+		})
+
+		Context("with empty quote ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetQuoteAccountRequirements(
+					context.Background(),
+					wise.QuoteAccountRequirementsRequest{},
+				)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("quoteID is required"))
+			})
+		})
+	})
+
 	Describe("ListRecipients", func() {
 		Context("with valid API response", func() {
 			BeforeEach(func() {

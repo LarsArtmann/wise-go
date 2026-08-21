@@ -116,6 +116,7 @@ claim here can be verified against the implementation.
 | `FundTransfer` (balance funding)        | FULLY_FUNCTIONAL | `transfers.go`; typed `FundTransferResult`, corruption mapper |
 | `GetDeliveryEstimate`                   | FULLY_FUNCTIONAL | `delivery_estimates.go`                                       |
 | `ValidateTransferRequirements`          | FULLY_FUNCTIONAL | `transfer_requirements.go`                                    |
+| `GetQuoteAccountRequirements`           | FULLY_FUNCTIONAL | `quotes.go`; route forms, `Accept-Minor-Version: 1`           |
 
 ## Wire format hardening
 

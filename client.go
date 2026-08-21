@@ -141,15 +141,28 @@ func (c *Client) getWithQuery(
 	query func() string,
 	target any,
 ) error {
-	return c.request(ctx, http.MethodGet, path, query, nil, target)
+	return c.request(ctx, http.MethodGet, path, query, nil, target, nil)
+}
+
+// getWithQueryHeaders is getWithQuery plus extra request headers, for
+// endpoints whose contract depends on negotiation headers
+// (e.g. Accept-Minor-Version on account-requirements).
+func (c *Client) getWithQueryHeaders(
+	ctx context.Context,
+	path string,
+	query func() string,
+	extraHeaders map[string]string,
+	target any,
+) error {
+	return c.request(ctx, http.MethodGet, path, query, nil, target, extraHeaders)
 }
 
 func (c *Client) post(ctx context.Context, path string, body, target any) error {
-	return c.request(ctx, http.MethodPost, path, nil, body, target)
+	return c.request(ctx, http.MethodPost, path, nil, body, target, nil)
 }
 
 func (c *Client) put(ctx context.Context, path string, body, target any) error {
-	return c.request(ctx, http.MethodPut, path, nil, body, target)
+	return c.request(ctx, http.MethodPut, path, nil, body, target, nil)
 }
 
 func (c *Client) request(
@@ -158,6 +171,7 @@ func (c *Client) request(
 	path string,
 	query func() string,
 	body, target any,
+	extraHeaders map[string]string,
 ) error {
 	fullURL := c.baseURL + path
 
@@ -167,7 +181,7 @@ func (c *Client) request(
 		}
 	}
 
-	resp, err := c.doRequest(ctx, method, fullURL, body)
+	resp, err := c.doRequest(ctx, method, fullURL, body, extraHeaders)
 	if err != nil {
 		return err
 	}
@@ -197,6 +211,7 @@ func (c *Client) doRequest(
 	method string,
 	fullURL string,
 	body any,
+	extraHeaders map[string]string,
 ) (*http.Response, error) {
 	resp, err := c.executor.WithContext(ctx).
 		//nolint:contextcheck
@@ -218,6 +233,10 @@ func (c *Client) doRequest(
 			}
 
 			c.setHeaders(req)
+
+			for name, value := range extraHeaders {
+				req.Header.Set(name, value)
+			}
 
 			if body != nil {
 				req.Header.Set("Content-Type", "application/json")
