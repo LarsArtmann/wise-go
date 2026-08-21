@@ -17,7 +17,7 @@ rather than only matching mocked responses.
 [ ] Lock the public API at v1.0 — the formal audit is DONE
 (`docs/reviews/2026-08-21_v1.0-api-audit.md`: 31 client methods, 74 types,
 godoc reviewed, breaking-change risk register — nothing blocks the tag).
-Remaining: tag `v1.0.0`.
+v0.9.0 shipped 2026-08-21; remaining: tag `v1.0.0`.
 **BLOCKED: needs the user's explicit approval (tagging is irreversible).**
 
 ## P3 — Tier-2 API surface (plan doc tier 2 + near-term reports)

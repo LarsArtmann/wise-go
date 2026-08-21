@@ -52,9 +52,9 @@ validation.
   MT940, QIF) via the raw-response path; 469-day interval enforced client-side,
   `Locale` localizes the export.
 
-**Release state:** everything in this section sits in the changelog's
-`[Unreleased]` block, cut-ready as either 0.9.0 or v1.0.0 — the version call is
-the maintainer's (question g3 in the hardening plan). The v1.0 audit is green.
+**Release state:** shipped as **v0.9.0** (2026-08-21). The v1.0 audit is green
+(`docs/reviews/2026-08-21_v1.0-api-audit.md`); the v1.0.0 tag remains gated on
+the maintainer's explicit approval (question g3 in the hardening plan).
 
 ### Medium-term
 
@@ -109,8 +109,8 @@ full analysis lives at `docs/brainstorming/2026-07-18_data-model-review.html`.
 
 - **Lock the public API surface** — freeze exported symbols; future breaking changes
   require v2. The formal API audit and godoc review pass are complete
-  (`docs/reviews/2026-08-21_v1.0-api-audit.md`, green); awaiting the maintainer's
-  version call (0.9.0 first or straight to v1.0.0).
+  (`docs/reviews/2026-08-21_v1.0-api-audit.md`, green). v0.9.0 shipped
+  2026-08-21; the v1.0.0 tag awaits the maintainer's explicit approval.
 
 ### Beyond
 

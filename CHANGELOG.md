@@ -6,11 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-> **Version call pending:** this batch is cut-ready as either **0.9.0** or
-> **v1.0.0**. The v1.0 audit (`docs/reviews/2026-08-21_v1.0-api-audit.md`)
-> found nothing blocking the tag; 0.9.0 is the conservative option because of
-> the two behavior changes below. When the maintainer decides, replace this
-> heading with the chosen version + date — no other edits are required.
+### Added
+
+- Nothing yet.
+
+### Fixed
+
+- Nothing yet.
+
+## [0.9.0] - 2026-08-21
 
 > **Behavior changes** — review before upgrading:
 >
