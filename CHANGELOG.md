@@ -25,7 +25,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   learn which required fields are still unsatisfied before spending a
   `customerTransactionId`. Select fields are checked against their allowed
   values; keys outside the typed request surface are reported explicitly.
-- `GetStatement` (statement files): download a balance statement as raw bytes
+- Webhook signature verification: `ParseWebhookPublicKey` (parse the
+  per-subscription PEM key once at startup) + `VerifyWebhookSignature`
+  (accept/reject per delivery) for Wise's `X-Signature-SHA256` RSA-SHA256
+  scheme, with README security guidance.
+- `GetStatement` file download (statement files): download a balance statement as raw bytes
   in CSV, PDF, XLSX, CAMT.053 XML, MT940, or QIF via a new binary-response
   path (`getRaw`). Unknown formats are rejected client-side; the interval
   and currency rules mirror `ListTransactions`.

@@ -38,6 +38,7 @@ Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise'
 - [Request Middleware](#request-middleware)
 - [Error Handling](#error-handling)
 - [Strong Customer Authentication (SCA)](#strong-customer-authentication-sca)
+- [Webhooks](#webhooks)
 - [Design Decisions](#design-decisions)
 - [Testing](#testing)
 - [Project Status](#project-status)
@@ -559,6 +560,42 @@ if err != nil {
 `GET /v1/transfers` (and the other transfer endpoints) are **not** SCA-protected,
 which is why `ListTransfers` is the reliable source for outgoing transfer
 history with personal API tokens.
+
+## Webhooks
+
+Wise signs every webhook delivery with `X-Signature-SHA256`: a Base64-encoded
+RSA-SHA256 signature of the raw request body, verifiable with the per-subscription
+public key Wise shows in the dashboard. Verify every delivery before trusting it:
+
+```go
+// Parse the key once at startup; a bad key should fail loudly there.
+webhookKey, err := wise.ParseWebhookPublicKey([]byte(subscriptionPublicKeyPEM))
+if err != nil {
+    log.Fatal(err)
+}
+
+func handleWebhook(w http.ResponseWriter, r *http.Request) {
+    body, err := io.ReadAll(r.Body)
+    if err != nil {
+        http.Error(w, "read body", http.StatusBadRequest)
+
+        return
+    }
+
+    // Verify the raw bytes exactly as received — before any re-marshalling,
+    // which would change the signed input.
+    if !wise.VerifyWebhookSignature(body, r.Header.Get(wise.HeaderWebhookSignature), webhookKey) {
+        http.Error(w, "invalid signature", http.StatusUnauthorized)
+
+        return
+    }
+
+    // Trustworthy delivery: decode the event JSON and process it.
+}
+```
+
+Reject deliveries with HTTP 401/403 when verification fails. `X-Delivery-Id`
+(unique per delivery attempt) is the idempotency key for retry-safe processing.
 
 ## Design Decisions
 

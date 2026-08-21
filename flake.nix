@@ -109,6 +109,8 @@
                   ./recipients.go
                   ./delivery_estimates.go
                   ./transfer_requirements.go
+                  ./users.go
+                  ./webhooks.go
                   ./internal/raw/types.go
                   ./internal/raw/transfers.go
                   ./internal_test.go

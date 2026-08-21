@@ -22,9 +22,6 @@ split are finalized. Requires explicit approval (tagging is irreversible).
 
 ## P3 — Tier-2 API surface (plan doc tier 2 + near-term reports)
 
-[ ] Add webhook signature verification helper — no REST calls; high value,
-self-contained.
-
 [ ] Add balances expansion — `CreateBalance`
 (`POST /v4/profiles/{profileId}/balances`), direct `GetBalance`
 (`GET /v4/profiles/{profileId}/balances/{balanceId}`, would replace the

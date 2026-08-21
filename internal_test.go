@@ -2,7 +2,15 @@ package wise
 
 import (
 	"context"
+	"crypto"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"crypto/x509"
+	"encoding/base64"
+	"encoding/pem"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -1274,6 +1282,154 @@ func TestMissingTransferDetailsTwoPassFlow(t *testing.T) {
 	if missing := MissingTransferDetails(secondPass, req); len(missing) != 0 {
 		t.Errorf("after invoice set: MissingTransferDetails() = %v, want none", missing)
 	}
+}
+
+// webhook verification tests use a locally generated RSA keypair to prove
+// publicKeyPEM renders an RSA public key as a PKIX PEM block.
+func publicKeyPEM(key *rsa.PublicKey) ([]byte, error) {
+	der, err := x509.MarshalPKIXPublicKey(key)
+	if err != nil {
+		return nil, fmt.Errorf("marshal PKIX public key: %w", err)
+	}
+
+	return pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: der}), nil
+}
+
+// webhook verification tests use a locally generated RSA keypair to prove
+// webhookFixture is a payload signed with a locally generated RSA keypair, so
+// accept/reject behavior is proven without Wise's real key.
+type webhookFixture struct {
+	payload   []byte
+	validSig  string
+	key       *rsa.PublicKey
+	sourceKey *rsa.PrivateKey
+	wrongKey  *rsa.PublicKey
+}
+
+func newWebhookFixture(t *testing.T) webhookFixture {
+	t.Helper()
+
+	payload := []byte(`{"event":{"type":"transfers#state-change","data":{"resource":{"id":16521632}}}}`)
+
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatalf("generate key: %v", err)
+	}
+
+	digest := sha256.Sum256(payload)
+
+	sig, err := rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA256, digest[:])
+	if err != nil {
+		t.Fatalf("sign payload: %v", err)
+	}
+
+	pemKey, err := publicKeyPEM(&key.PublicKey)
+	if err != nil {
+		t.Fatalf("marshal public key: %v", err)
+	}
+
+	parsed, err := ParseWebhookPublicKey(pemKey)
+	if err != nil {
+		t.Fatalf("ParseWebhookPublicKey: %v", err)
+	}
+
+	wrongKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatalf("generate wrong key: %v", err)
+	}
+
+	return webhookFixture{
+		payload:   payload,
+		validSig:  base64.StdEncoding.EncodeToString(sig),
+		key:       parsed,
+		sourceKey: key,
+		wrongKey:  &wrongKey.PublicKey,
+	}
+}
+
+func TestVerifyWebhookSignature(t *testing.T) {
+	t.Parallel()
+
+	fixture := newWebhookFixture(t)
+
+	t.Run("valid signature verifies", func(t *testing.T) {
+		t.Parallel()
+
+		if !VerifyWebhookSignature(fixture.payload, fixture.validSig, fixture.key) {
+			t.Error("VerifyWebhookSignature(valid) = false, want true")
+		}
+	})
+
+	t.Run("tampered payload is rejected", func(t *testing.T) {
+		t.Parallel()
+
+		tampered := append([]byte{}, fixture.payload...)
+		tampered[len(tampered)-3] = '9'
+
+		if VerifyWebhookSignature(tampered, fixture.validSig, fixture.key) {
+			t.Error("VerifyWebhookSignature(tampered) = true, want false")
+		}
+	})
+
+	t.Run("wrong public key is rejected", func(t *testing.T) {
+		t.Parallel()
+
+		if VerifyWebhookSignature(fixture.payload, fixture.validSig, fixture.wrongKey) {
+			t.Error("VerifyWebhookSignature(wrong key) = true, want false")
+		}
+	})
+
+	t.Run("malformed signature is rejected", func(t *testing.T) {
+		t.Parallel()
+
+		if VerifyWebhookSignature(fixture.payload, "not-base64!!!", fixture.key) {
+			t.Error("VerifyWebhookSignature(malformed) = true, want false")
+		}
+	})
+
+	t.Run("empty signature and nil key are rejected", func(t *testing.T) {
+		t.Parallel()
+
+		if VerifyWebhookSignature(fixture.payload, "", fixture.key) {
+			t.Error("VerifyWebhookSignature(empty sig) = true, want false")
+		}
+
+		if VerifyWebhookSignature(fixture.payload, fixture.validSig, nil) {
+			t.Error("VerifyWebhookSignature(nil key) = true, want false")
+		}
+	})
+}
+
+func TestParseWebhookPublicKey(t *testing.T) {
+	t.Parallel()
+
+	fixture := newWebhookFixture(t)
+
+	t.Run("PKCS#1 PEM keys are also accepted", func(t *testing.T) {
+		t.Parallel()
+
+		pkcs1 := pem.EncodeToMemory(&pem.Block{
+			Type:  "RSA PUBLIC KEY",
+			Bytes: x509.MarshalPKCS1PublicKey(&fixture.sourceKey.PublicKey),
+		})
+
+		parsed1, err := ParseWebhookPublicKey(pkcs1)
+		if err != nil {
+			t.Fatalf("ParseWebhookPublicKey(PKCS1): %v", err)
+		}
+
+		if !VerifyWebhookSignature(fixture.payload, fixture.validSig, parsed1) {
+			t.Error("VerifyWebhookSignature(PKCS1 key) = false, want true")
+		}
+	})
+
+	t.Run("non-PEM input is a config error", func(t *testing.T) {
+		t.Parallel()
+
+		if _, err := ParseWebhookPublicKey([]byte("garbage")); err == nil {
+			t.Error("ParseWebhookPublicKey(garbage) = nil error, want error")
+		}
+	})
 }
 
 func TestMapFundTransferResultParseErrorsAreCorruption(t *testing.T) {
