@@ -58,15 +58,15 @@
 
 ## b) Gates per group (all green)
 
-| Group | Tests | Lint | flake check |
-| ----- | ----- | ---- | ----------- |
-| 9.x | race green (138 specs) | 0 | passed |
-| 10.x | race green (143 specs) | 0 | passed |
-| 11.x | race green | 0 | (format only; no fileset change) |
-| 12.x | race green | 0 | (no fileset change) |
-| 13.x | docs only | — | — |
-| 14.x | race green | 0 | passed (after fileset change) |
-| **Final** | **race green, 143 specs** | **0** | **passed** |
+| Group     | Tests                     | Lint  | flake check                      |
+| --------- | ------------------------- | ----- | -------------------------------- |
+| 9.x       | race green (138 specs)    | 0     | passed                           |
+| 10.x      | race green (143 specs)    | 0     | passed                           |
+| 11.x      | race green                | 0     | (format only; no fileset change) |
+| 12.x      | race green                | 0     | (no fileset change)              |
+| 13.x      | docs only                 | —     | —                                |
+| 14.x      | race green                | 0     | passed (after fileset change)    |
+| **Final** | **race green, 143 specs** | **0** | **passed**                       |
 
 Coverage: 90.4% → **90.8%** (refresh endpoint + guard test add covered statements).
 
