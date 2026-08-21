@@ -561,6 +561,47 @@ breakdown (`Fee.Total` is the value to display) and estimated delivery; a
 `QuoteNotice` of type `BLOCKED` means the quote must not be used to create a
 transfer.
 
+### Multi-Currency Account & bank details
+
+```go
+// The profile's account container: holder of the currency balances
+account, err := client.GetMultiCurrencyAccount(ctx, profileID)
+// account.RecipientID → the account's own recipient entry
+
+// Every set of receiving bank details (EUR IBAN, USD routing pair, ...)
+details, err := client.GetBankAccountDetails(ctx, profileID)
+// []BankAccountDetails{
+//   {Currency: "EUR", Status: AccountDetailsStatusActive, Deprecated: false, ...},
+// }
+```
+
+Two patterns worth knowing:
+
+- **Top up via transfer** — `MultiCurrencyAccount.RecipientID` is a real
+  recipient. Create a transfer to it (from an external-funded quote) and the
+  matching currency balance gets credited: the standard way to move money
+  _into_ the Multi-Currency Account.
+- **Read display text from `ReceiveOptions`** — each `BankAccountDetails` set
+  carries `LOCAL`/`INTERNATIONAL` receive options whose
+  `Description.CTA` pairs hold the labeled key values (e.g. Label `"IBAN"` →
+  the IBAN to print on an invoice). Prefer non-deprecated sets; a deprecated
+  set is Wise's replacement notice for earlier details.
+  `AccountDetailsStatusAvailable` means the details do not exist yet but can
+  be ordered via Wise's account-details-orders endpoint (not in the SDK yet).
+
+### Currencies
+
+```go
+// Public reference data — no authentication required
+currencies, err := client.ListCurrencies(ctx)
+// []CurrencyInfo{
+//   {Code: "EUR", Symbol: "€", Name: "Euro", CountryKeywords: [...], SupportsDecimals: true},
+// }
+```
+
+Populate currency pickers and validate corridor choices against Wise's list
+(code, symbol, name, country keywords, decimal support).
+
 ## Mocking the Client
 
 The SDK returns concrete types (`*wise.Client`, `[]wise.Profile`, etc.), not interfaces.
@@ -663,13 +704,18 @@ response headers. The SDK detects this and returns `*SCAChallengeError` instead
 of a bare `AuthError`:
 
 ```go
+// One correlation ID for the whole logical operation — the challenge and the
+// replay both carry it in X-External-Correlation-Id.
+ctx = wise.WithRequestCorrelationID(ctx, "bank-sync-2026-08-21-001")
+
 resp, err := client.ListTransactions(ctx, req)
 if err != nil {
     if sca, ok := errors.AsType[*wise.SCAChallengeError](err); ok {
         // 1. Send the one-time token to the user (push notification, email, ...).
         token := sca.TwoFAApprovalToken()
 
-        // 2. After the user approves the challenge in the Wise app, replay it:
+        // 2. After the user approves the challenge in the Wise app, replay it
+        //    with the same ctx — Wise support can correlate both attempts:
         scaClient := wise.New("api-key", wise.WithSCAApprovalToken(token))
         resp, err = scaClient.ListTransactions(ctx, req)
     }
@@ -713,8 +759,11 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
-Reject deliveries with HTTP 401/403 when verification fails. `X-Delivery-Id`
-(unique per delivery attempt) is the idempotency key for retry-safe processing.
+Reject deliveries with HTTP 401/403 when verification fails. Wise redelivers
+until you acknowledge, so process **idempotently**: `X-Delivery-Id` (unique
+per delivery attempt) is the deduplication key — record it and skip already-
+seen deliveries. Signature verification alone is not enough: a verified
+delivery can still be a redelivery of an event you already processed.
 
 ## Design Decisions
 
