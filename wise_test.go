@@ -2762,6 +2762,39 @@ var _ = Describe("Wise Client", func() {
 		})
 	})
 
+	Describe("Retry cancellation", func() {
+		Context("when the context is cancelled mid-retry", func() {
+			It("aborts the retry loop promptly", func() {
+				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {
+					time.Sleep(20 * time.Millisecond)
+					w.WriteHeader(http.StatusInternalServerError)
+				})
+
+				retryClient := wise.New("test-api-key",
+					wise.WithBaseURL(server.URL),
+					wise.WithRetry(10, 100*time.Millisecond, 100*time.Millisecond),
+				)
+
+				ctx, cancel := context.WithCancel(context.Background())
+
+				go func() {
+					time.Sleep(150 * time.Millisecond)
+					cancel()
+				}()
+
+				start := time.Now()
+				_, err := retryClient.ListProfiles(ctx)
+				elapsed := time.Since(start)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("context canceled"))
+				// Without cancellation the 10 retries take >= 1s; with it the
+				// call must return shortly after the cancel fires.
+				Expect(elapsed).To(BeNumerically("<", 600*time.Millisecond))
+			})
+		})
+	})
+
 	Describe("Retry", func() {
 		Context("on 429 with Retry-After header", func() {
 			var callCount int
