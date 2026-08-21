@@ -154,6 +154,15 @@ jobs:
       - name: Run nix flake check
         run: nix flake check
 
+      # Binary cache: pushes build outputs so later runs (and contributors)
+      # skip the ~5min sandboxed test build. Public cache, no auth to read.
+      - name: Push to Cachix
+        if: github.ref == 'refs/heads/master'
+        uses: cachix/cachix-action@ad2ddac53f961de1989924296a1f236fcfbaa4fc # v15
+        with:
+          name: larsartmann
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+
     timeout-minutes: 30
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

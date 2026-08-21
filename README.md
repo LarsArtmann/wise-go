@@ -5,6 +5,11 @@
 [![Lint](https://img.shields.io/badge/lint-0%20issues-success)](https://github.com/larsartmann/wise-go)
 [![Go](https://img.shields.io/badge/Go-1.26+-00ADD8?logo=go&logoColor=white)](https://go.dev/)
 
+<!-- Coverage badge reads .github/badges/coverage.json, committed by the
+     coverage-badge CI job. Measurement basis: total statement coverage over
+     the whole module (GOEXPERIMENT=jsonv2 go test -coverprofile
+     -covermode=atomic ./... | go tool cover -func). Never edit by hand. -->
+
 The unofficial Go SDK for the [Wise](https://wise.com) (TransferWise) API.
 
 Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise's wire types directly — `float64` for money, untyped string IDs, inconsistent date formats. **wise-go fills that gap** with hand-written types that make invalid states hard to reach: monetary amounts as `int64` cents (never `float64`), branded IDs that prevent mixing `ProfileID` with `BalanceID` at compile time, and behavioral error classification so you can retry on intent rather than string-matching status codes.

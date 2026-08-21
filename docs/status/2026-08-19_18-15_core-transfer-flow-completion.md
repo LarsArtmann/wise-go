@@ -49,7 +49,7 @@
 
 8. **Documentation** — CHANGELOG (Unreleased Added), FEATURES (5 rows moved FULLY_FUNCTIONAL, 2 PLANNED rows removed), TODO_LIST (3 items checked), AGENTS.md (timestamp gotcha), plan doc (tier-1 rows 1–4, 6–13 → DONE; only `GetQuoteAccountRequirements` remains), README (v0.8.0 status banner, TOC, Features bullets, Quotes/Recipients/Exchange-rates API-reference sections, full quote→recipient→transfer example with validation/delivery-estimate/cancel steps).
 
-9. **Quality gates** — `go test ./...` 77 specs pass; `go test -race -count=1 ./...` pass; `GOEXPERIMENT=jsonv2 golangci-lint run` 0 issues; `nix flake check` all checks passed; BuildFlow pre-commit hook passed (warnings only).
+9. **Quality gates** — `go test ./...` 77 specs pass; `go test -race -count=1 ./...` pass; `GOEXPERIMENT=jsonv2 golangci-lint run` 0 issues; `nix flake check` all checks passed; BuildFlow pre-commit hook passed (warnings only). _(Counting basis clarified 2026-08-21: "77" counted go-test entries — `It(` specs plus unit-test functions; the canonical ginkgo `It(` count then was 68. After the 2026-08-21 execution session it is 121, matching the suite's "Ran 121 of 121". Derive with `rg -c '^\s*It\(' wise_test.go`.)_
 
 10. **Commits** — 11 commits this session (5 daemon + 1 manual doc commit on top of 5 earlier session commits), all pushed to origin/master. Tree clean.
 
