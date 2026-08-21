@@ -28,15 +28,19 @@ the codebase maintainable.
 
 Today: tiers 1 and 2 of
 `docs/planning/2026-08-19_wise-api-full-implementation-plan.md` are complete —
-31 endpoint methods across 14 resources. The core transfer flow is live end to end:
-quotes (including account requirements), recipients, transfers, funding, delivery
-estimates, exchange rates, transfer-requirements validation.
+32 endpoint methods across 14 resources. The core transfer flow is live end to end:
+quotes (including account requirements and the two-pass refresh), recipients,
+transfers, funding, delivery estimates, exchange rates, transfer-requirements
+validation.
 
 ### Shipped 2026-08-21 (previously near-term)
 
 - **`FundTransfer`** (`POST /v1/profiles/{id}/transfers/{id}/payments`) — the
   money-movement loop is closed.
 - **`GetQuoteAccountRequirements`** — bridges quotes → recipients.
+- **`RefreshQuoteAccountRequirements`** — completes the recipient-side two-pass
+  flow: submit the in-progress form after a `RefreshRequirementsOnChange`
+  field changes, receive the revised field set (2026-08-21 hardening batch).
 - **Users read** — `GetMe` / `GetUser`.
 - **Balances expanded** — `CreateBalance`, direct `GetBalance` endpoint,
   `GetTotalFunds`.
@@ -45,15 +49,18 @@ estimates, exchange rates, transfer-requirements validation.
 - **Webhooks** — `VerifyWebhookSignature` (RSA-SHA256 over the raw body,
   PKIX/PKCS#1 PEM keys).
 - **Statements** — `GetStatement` in all six formats (CSV, PDF, XLSX, CAMT.053,
-  MT940, QIF) via the raw-response path.
+  MT940, QIF) via the raw-response path; 469-day interval enforced client-side,
+  `Locale` localizes the export.
+
+**Release state:** everything in this section sits in the changelog's
+`[Unreleased]` block, cut-ready as either 0.9.0 or v1.0.0 — the version call is
+the maintainer's (question g3 in the hardening plan). The v1.0 audit is green.
 
 ### Medium-term
 
 - **Sandbox verification** — credentialed integration tests against
   `api.wise-sandbox.com`. The workflow and test skeleton are in place
   (manual dispatch, key-gated); blocked on a sandbox API key.
-- **POST account-requirements refresh** — completes the recipient-side two-pass
-  flow (in flight, 2026-08-21 hardening plan).
 
 ### Long-term
 

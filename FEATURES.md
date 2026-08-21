@@ -108,23 +108,30 @@ claim here can be verified against the implementation.
 | `nix fmt` (gofumpt + goimports + nixfmt)               | FULLY_FUNCTIONAL | `flake.nix` treefmt config                   |
 | BDD tests via Ginkgo + httptest                        | FULLY_FUNCTIONAL | `wise_test.go`                               |
 
+## Documentation
+
+| Feature                           | Status           | Evidence                                                                                                        |
+| --------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------- |
+| Godoc examples for the public API | FULLY_FUNCTIONAL | `example_test.go`; 18 `Example*` funcs (15 compile-only doc examples, 3 runnable) covering every resource group |
+| README API reference              | FULLY_FUNCTIONAL | All 14 resources documented with runnable snippets + TOC                                                        |
+
 ## API surface expansion (v0.8.0)
 
-| Feature                                 | Status           | Evidence                                                      |
-| --------------------------------------- | ---------------- | ------------------------------------------------------------- |
-| `GetProfile`                            | FULLY_FUNCTIONAL | `profiles.go:13`                                              |
-| `GetExchangeRate`                       | FULLY_FUNCTIONAL | `rates.go:16`                                                 |
-| `GetTransfer`                           | FULLY_FUNCTIONAL | `transfers.go:116`                                            |
-| Quotes API (create + get)               | FULLY_FUNCTIONAL | `quotes.go`                                                   |
-| `Quote.paymentOptions` + `notices`      | FULLY_FUNCTIONAL | `quotes.go` mapper; BDD-tested with fees/delivery/notices     |
-| Recipients API (list + get + create)    | FULLY_FUNCTIONAL | `recipients.go`                                               |
-| `CreateTransfer`                        | FULLY_FUNCTIONAL | `transfers.go:190`                                            |
-| `Transfer.SourceAccount` (`*BalanceID`) | FULLY_FUNCTIONAL | `types.go:219`; debited balance, nil = omitted on wire        |
-| `CancelTransfer`                        | FULLY_FUNCTIONAL | `transfers.go`                                                |
-| `FundTransfer` (balance funding)        | FULLY_FUNCTIONAL | `transfers.go`; typed `FundTransferResult`, corruption mapper |
-| `GetDeliveryEstimate`                   | FULLY_FUNCTIONAL | `delivery_estimates.go`                                       |
-| `ValidateTransferRequirements`          | FULLY_FUNCTIONAL | `transfer_requirements.go`                                    |
-| `GetQuoteAccountRequirements`           | FULLY_FUNCTIONAL | `quotes.go`; route forms, `Accept-Minor-Version: 1`           |
+| Feature                                 | Status           | Evidence                                                        |
+| --------------------------------------- | ---------------- | --------------------------------------------------------------- |
+| `GetProfile`                            | FULLY_FUNCTIONAL | `profiles.go:13`                                                |
+| `GetExchangeRate`                       | FULLY_FUNCTIONAL | `rates.go:16`                                                   |
+| `GetTransfer`                           | FULLY_FUNCTIONAL | `transfers.go:116`                                              |
+| Quotes API (create + get)               | FULLY_FUNCTIONAL | `quotes.go`                                                     |
+| `Quote.paymentOptions` + `notices`      | FULLY_FUNCTIONAL | `quotes.go` mapper; BDD-tested with fees/delivery/notices       |
+| Recipients API (list + get + create)    | FULLY_FUNCTIONAL | `recipients.go`                                                 |
+| `CreateTransfer`                        | FULLY_FUNCTIONAL | `transfers.go:190`                                              |
+| `Transfer.SourceAccount` (`*BalanceID`) | FULLY_FUNCTIONAL | `types.go:219`; debited balance, nil = omitted on wire          |
+| `CancelTransfer`                        | FULLY_FUNCTIONAL | `transfers.go`                                                  |
+| `FundTransfer` (balance funding)        | FULLY_FUNCTIONAL | `transfers.go`; typed `FundTransferResult`, corruption mapper   |
+| `GetDeliveryEstimate`                   | FULLY_FUNCTIONAL | `delivery_estimates.go`                                         |
+| `ValidateTransferRequirements`          | FULLY_FUNCTIONAL | `transfer_requirements.go`                                      |
+| `GetQuoteAccountRequirements`           | FULLY_FUNCTIONAL | `quotes.go`; route forms, `Accept-Minor-Version: 1`             |
 | `RefreshQuoteAccountRequirements`       | FULLY_FUNCTIONAL | `quotes.go`; two-pass flow, omit-empties partial form, BDD+unit |
 
 ## Wire format hardening
