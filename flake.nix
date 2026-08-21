@@ -85,6 +85,38 @@
           checks = {
             format = config.treefmt.build.check self;
 
+            # Offline link check over the living docs: catches ghost
+            # file references (relative links) without network access —
+            # the sandbox forbids it, and external URLs are CI's job.
+            links =
+              pkgs.runCommand "markdown-links"
+                {
+                  nativeBuildInputs = [ pkgs.lychee ];
+                  # lychee builds its HTTP client eagerly; even offline it
+                  # needs a CA bundle to initialize.
+                  SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+                  src = lib.fileset.toSource {
+                    root = ./.;
+                    fileset = lib.fileset.unions [
+                      ./README.md
+                      ./FEATURES.md
+                      ./ROADMAP.md
+                      ./TODO_LIST.md
+                      ./CHANGELOG.md
+                      ./CONTRIBUTING.md
+                      ./AGENTS.md
+                      ./LICENSE
+                      ./docs
+                    ];
+                  };
+                }
+                ''
+                  cd $src
+                  lychee --offline --no-progress \
+                    README.md FEATURES.md ROADMAP.md TODO_LIST.md CHANGELOG.md CONTRIBUTING.md AGENTS.md
+                  touch $out
+                '';
+
             test = buildGoModule {
               pname = "wise-go-test";
               inherit version;
@@ -98,7 +130,6 @@
                   ./options.go
                   ./profiles.go
                   ./balances.go
-                  ./users.go
                   ./errors.go
                   ./client.go
                   ./transactions.go
