@@ -73,4 +73,4 @@
 
 ---
 
-*Point-in-time snapshot. Status reports go stale; re-verify before acting on them.*
+_Point-in-time snapshot. Status reports go stale; re-verify before acting on them._

@@ -1,7 +1,7 @@
 # Status Report: nix-private-go-repos Migration
 
-**Date:** 2026-08-21 23:10 CEST  
-**Session:** Application of `nix-private-go-repos` skill to `wise-go`  
+**Date:** 2026-08-21 23:10 CEST\
+**Session:** Application of `nix-private-go-repos` skill to `wise-go`\
 **Reporter:** Crush
 
 ---
