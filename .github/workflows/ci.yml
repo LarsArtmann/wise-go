@@ -10,6 +10,7 @@ on:
       - .gitignore
       - "**/*.svg"
       - "**/*.png"
+      - .github/badges/**
   pull_request:
     branches: [main, master]
     paths-ignore:
@@ -19,6 +20,7 @@ on:
       - .gitignore
       - "**/*.svg"
       - "**/*.png"
+      - .github/badges/**
 
 env:
   GO_VERSION: "1.26"
@@ -96,6 +98,47 @@ jobs:
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck ./...
+    timeout-minutes: 15
+  coverage-badge:
+    # Generates coverage/badge.json so the README badge renders live data —
+    # kills badge drift (the 94.8%→84.2% hand-edit incident).
+    name: Coverage Badge
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.ref }}
+
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Test with coverage
+        run: go test -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: Write badge JSON
+        run: |
+          PERCENT=$(go tool cover -func=coverage.out | awk '/^total:/ {sub("%", "", $3); print $3}')
+          COLOR=$(awk -v p="$PERCENT" 'BEGIN {
+            if (p >= 90) print "brightgreen"; else if (p >= 75) print "yellowgreen";
+            else if (p >= 50) print "yellow"; else print "red"
+          }')
+          mkdir -p .github/badges
+          printf '{"schemaVersion": 1, "label": "coverage", "message": "%s%%", "color": "%s"}\n' \
+            "$PERCENT" "$COLOR" > .github/badges/coverage.json
+          cat .github/badges/coverage.json
+
+      - name: Commit badge if changed
+        run: |
+          git config user.name "coverage-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add .github/badges/coverage.json
+          git diff --cached --quiet || git commit -m "chore(coverage): update badge [skip ci]"
+          git push
     timeout-minutes: 15
   nix:
     name: Nix Flake Check
