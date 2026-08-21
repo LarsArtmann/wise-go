@@ -45,7 +45,7 @@ func (c *Client) GetExchangeRate(
 		v.Set("target", string(target))
 
 		if !atTime.IsZero() {
-			v.Set("time", atTime.Format(time.RFC3339))
+			v.Set("time", formatWiseTimestamp(atTime))
 		}
 
 		return v.Encode()

@@ -139,3 +139,12 @@ func parseWiseTimestamp(s string) (time.Time, error) {
 
 	return time.Time{}, errors.Join(errs...)
 }
+
+// formatWiseTimestamp renders a time.Time as a Wise query-parameter value.
+// Wise rejects zone offsets other than "Z" with HTTP 422
+// ("wrong.date.format"), so outgoing timestamps MUST be normalized to UTC
+// regardless of the caller's zone — mirror of parseWiseTimestamp, which
+// tolerates Wise's loose input formats.
+func formatWiseTimestamp(t time.Time) string {
+	return t.UTC().Format("2006-01-02T15:04:05Z")
+}

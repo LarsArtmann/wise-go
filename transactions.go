@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"time"
 
 	id "github.com/larsartmann/go-branded-id"
 	errorfamily "github.com/larsartmann/go-error-family"
@@ -27,8 +26,8 @@ func (c *Client) ListTransactions(
 	query := func() string {
 		v := url.Values{}
 		v.Set("currency", string(req.Currency))
-		v.Set("intervalStart", req.From.Format(time.RFC3339))
-		v.Set("intervalEnd", req.To.Format(time.RFC3339))
+		v.Set("intervalStart", formatWiseTimestamp(req.From))
+		v.Set("intervalEnd", formatWiseTimestamp(req.To))
 
 		if req.Type != "" {
 			v.Set("type", string(req.Type))

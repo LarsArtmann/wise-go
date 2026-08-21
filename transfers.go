@@ -67,11 +67,11 @@ func (c *Client) listTransfersPage(
 		}
 
 		if !req.From.IsZero() {
-			v.Set("createdDateStart", req.From.Format(time.RFC3339))
+			v.Set("createdDateStart", formatWiseTimestamp(req.From))
 		}
 
 		if !req.To.IsZero() {
-			v.Set("createdDateEnd", req.To.Format(time.RFC3339))
+			v.Set("createdDateEnd", formatWiseTimestamp(req.To))
 		}
 
 		if len(req.Status) > 0 {

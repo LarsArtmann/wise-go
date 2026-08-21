@@ -838,6 +838,39 @@ var _ = Describe("Wise Client", func() {
 			})
 		})
 
+		Context("with local-zone timestamps", func() {
+			// Regression: Wise rejects zone offsets other than "Z" with
+			// HTTP 422 wrong.date.format. Callers pass local time.Time
+			// values; the client must normalize intervalStart/End to UTC.
+			var cest *time.Location
+
+			BeforeEach(func() {
+				cest = time.FixedZone("CEST", 2*60*60)
+
+				mux.HandleFunc(
+					"/v1/profiles/12345/balance-statements/100/statement.json",
+					func(w http.ResponseWriter, r *http.Request) {
+						expectTransactionQueryParams(
+							r, "EUR", "2023-01-01T00:00:00Z", "2023-01-31T23:59:59Z",
+						)
+
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.MarshalWrite(w, raw.StatementResponse{
+							EndOfStatementBalance: raw.BalanceAmount{Value: 0, Currency: "EUR"},
+						})
+					})
+			})
+
+			It("normalizes intervalStart/End to UTC Z format", func() {
+				req := defaultListTxReq
+				req.From = time.Date(2023, 1, 1, 2, 0, 0, 0, cest) // 2023-01-01T00:00:00Z
+				req.To = time.Date(2023, 2, 1, 1, 59, 59, 0, cest) // 2023-01-31T23:59:59Z
+				resp, err := client.ListTransactions(context.Background(), req)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(resp.Transactions).To(BeEmpty())
+			})
+		})
+
 		Context("with invalid request", func() {
 			It("should reject missing currency", func() {
 				req := defaultListTxReq
@@ -949,6 +982,36 @@ var _ = Describe("Wise Client", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(transfers[0].Created.Format(time.RFC3339)).To(Equal("2023-11-24T10:47:49Z"))
 				Expect(transfers[1].Created.Format(time.RFC3339)).To(Equal("2023-12-02T08:15:00Z"))
+			})
+		})
+
+		Context("with local-zone timestamps", func() {
+			// Regression: Wise rejects zone offsets other than "Z" with
+			// HTTP 422 wrong.date.format (seen live 2026-08-19..21 with
+			// createdDateEnd=…+02:00). Callers pass local time.Time values
+			// (e.g. time.Now()); the client must normalize to UTC on the wire.
+			var cest *time.Location
+
+			BeforeEach(func() {
+				cest = time.FixedZone("CEST", 2*60*60)
+
+				mux.HandleFunc("/v1/transfers", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.URL.Query().Get("createdDateStart")).To(Equal("2023-01-01T00:00:00Z"))
+					Expect(r.URL.Query().Get("createdDateEnd")).To(Equal("2023-12-31T23:59:59Z"))
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, []raw.Transfer{})
+				})
+			})
+
+			It("normalizes createdDateStart/End to UTC Z format", func() {
+				transfers, err := client.ListTransfers(context.Background(), wise.ListTransfersRequest{
+					ProfileID: wise.NewProfileID(12345),
+					From:      time.Date(2023, 1, 1, 2, 0, 0, 0, cest),   // 2023-01-01T00:00:00Z
+					To:        time.Date(2024, 1, 1, 1, 59, 59, 0, cest), // 2023-12-31T23:59:59Z
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(transfers).To(BeEmpty())
 			})
 		})
 

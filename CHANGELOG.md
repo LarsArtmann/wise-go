@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-08-21
+
+### Fixed
+
+- Outgoing query timestamps are normalized to UTC `Z` format. `ListTransfers`
+  (`createdDateStart`/`createdDateEnd`), `ListTransactions`
+  (`intervalStart`/`intervalEnd`), and exchange-rate lookups (`time`) previously
+  formatted caller-local `time.Time` values with their zone offset (e.g.
+  `+02:00`), which Wise rejects with HTTP 422 `wrong.date.format`. Live
+  regression 2026-08-19..21: every bank-sync Wise transfers call failed for
+  ~2.5 days because `To: time.Now()` carried CEST. New `formatWiseTimestamp`
+  mirrors `parseWiseTimestamp` for the wire-out side.
+
 ## [0.8.0] - 2026-08-20
 
 ### Added

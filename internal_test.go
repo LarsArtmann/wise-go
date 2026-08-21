@@ -354,6 +354,44 @@ func TestParseWiseTimestamp(t *testing.T) {
 	assertTimestampCases(t, tests)
 }
 
+func TestFormatWiseTimestampNormalizesToUTC(t *testing.T) {
+	t.Parallel()
+
+	cest := time.FixedZone("CEST", 2*60*60)
+
+	tests := []struct {
+		name  string
+		input time.Time
+		want  string
+	}{
+		{
+			name:  "UTC input",
+			input: time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
+			want:  "2023-12-31T23:59:59Z",
+		},
+		{
+			name:  "local zone input (live regression: time.Now in +02:00)",
+			input: time.Date(2024, 1, 1, 1, 59, 59, 0, cest),
+			want:  "2023-12-31T23:59:59Z",
+		},
+		{
+			name:  "fractional seconds dropped",
+			input: time.Date(2023, 12, 31, 23, 59, 59, 500000000, time.UTC),
+			want:  "2023-12-31T23:59:59Z",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			if got := formatWiseTimestamp(tt.input); got != tt.want {
+				t.Errorf("formatWiseTimestamp(%v) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestParseWiseTimestampRejectsMalformed(t *testing.T) {
 	t.Parallel()
 
