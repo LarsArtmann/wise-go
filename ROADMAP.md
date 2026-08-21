@@ -26,32 +26,34 @@ the codebase maintainable.
 
 ## Axis 1: Completeness (API surface)
 
-Today: the core transfer flow (tier 1 of
-`docs/planning/2026-08-19_wise-api-full-implementation-plan.md`) is complete
-except `GetQuoteAccountRequirements`; write operations, quotes, recipients,
-transfers, delivery estimates, and exchange rates all shipped in v0.7.0–v0.8.0.
+Today: tiers 1 and 2 of
+`docs/planning/2026-08-19_wise-api-full-implementation-plan.md` are complete —
+31 endpoint methods across 14 resources. The core transfer flow is live end to end:
+quotes (including account requirements), recipients, transfers, funding, delivery
+estimates, exchange rates, transfer-requirements validation.
 
-### Near-term (tier 2 of the plan)
+### Shipped 2026-08-21 (previously near-term)
 
-- **Fund the flow** — `FundTransfer` (`POST /v1/profiles/{id}/transfers/{id}/payments`)
-  completes the end-to-end loop (see TODO_LIST P1).
-- **`GetQuoteAccountRequirements`** — last tier-1 row; bridges quotes → recipients.
+- **`FundTransfer`** (`POST /v1/profiles/{id}/transfers/{id}/payments`) — the
+  money-movement loop is closed.
+- **`GetQuoteAccountRequirements`** — bridges quotes → recipients.
 - **Users read** — `GetMe` / `GetUser`.
 - **Balances expanded** — `CreateBalance`, direct `GetBalance` endpoint,
   `GetTotalFunds`.
 - **MCA & bank details** — `GetBankAccountDetails`, `GetMultiCurrencyAccount`.
 - **Currencies** — `ListCurrencies`.
+- **Webhooks** — `VerifyWebhookSignature` (RSA-SHA256 over the raw body,
+  PKIX/PKCS#1 PEM keys).
+- **Statements** — `GetStatement` in all six formats (CSV, PDF, XLSX, CAMT.053,
+  MT940, QIF) via the raw-response path.
 
 ### Medium-term
 
-- **Webhooks** — `VerifyWebhookSignature` helper + typed webhook event structs.
-  Wise's webhook signature scheme is well-documented; the helper is high-value and
-  self-contained.
-- **Statements (CSV/PDF)** — `GetStatement` with format parameter. Today the SDK
-  consumes `statement.json`; the API also offers `statement.csv`, `statement.pdf`,
-  XLSX, CAMT.053, MT940, and QIF.
 - **Sandbox verification** — credentialed integration tests against
-  `api.wise-sandbox.com` (blocked on a sandbox API key).
+  `api.wise-sandbox.com`. The workflow and test skeleton are in place
+  (manual dispatch, key-gated); blocked on a sandbox API key.
+- **POST account-requirements refresh** — completes the recipient-side two-pass
+  flow (in flight, 2026-08-21 hardening plan).
 
 ### Long-term
 
@@ -99,7 +101,9 @@ full analysis lives at `docs/brainstorming/2026-07-18_data-model-review.html`.
 ### v1.0 — the API lock
 
 - **Lock the public API surface** — freeze exported symbols; future breaking changes
-  require v2. Needs a formal API audit and godoc review pass before tagging.
+  require v2. The formal API audit and godoc review pass are complete
+  (`docs/reviews/2026-08-21_v1.0-api-audit.md`, green); awaiting the maintainer's
+  version call (0.9.0 first or straight to v1.0.0).
 
 ### Beyond
 
@@ -112,29 +116,26 @@ full analysis lives at `docs/brainstorming/2026-07-18_data-model-review.html`.
 
 ## Axis 3: Observability (operational hooks)
 
-Today the SDK is a black box: callers cannot inspect requests, responses, or retry
-decisions without wrapping the HTTP transport themselves (documented in README).
-
-### Near-term
-
-- **Request/response logging hook** — `WithLogger` option for structured request
-  logging (method, URL, status, duration, retry count).
-- **Per-request correlation ID** — `WithCorrelationID` sets a client-wide
-  `X-External-Correlation-Id` header (shipped v0.4.0-era). The next step is
-  per-call override via context for request-level tracing (TODO_LIST P3).
-- **Context-aware retry** — thread `context.Context` cancellation through the retry
-  policy so callers can abort in-flight retries.
+Today the SDK is observable: `WithLogger` provides structured request logging
+(method, URL, status, duration, retry count), per-request correlation IDs flow
+through the context (`WithRequestCorrelationID`), and context cancellation aborts
+in-flight retries. Callers who need raw transport access can still wrap the HTTP
+transport themselves (documented in README).
 
 ### Medium-term
 
 - **Metrics hook** — `WithMetrics` option exposing counters/histograms for
   Prometheus or OpenTelemetry (request count, latency, retry count, error rate).
-- **mTLS documentation** — Wise documents mTLS endpoints
-  (`api-mtls.wise.com`, `api-mtls.wise-sandbox.com`). Transport wrapping is
-  documented but mTLS configuration is not. Add a dedicated section.
 
 ### Shipped
 
+- **Request/response logging** — `WithLogger` + `RequestLog`/`RequestLogFunc`
+  (2026-08-21).
+- **Per-request correlation ID** — client-wide `WithCorrelationID` plus the
+  per-call context override `WithRequestCorrelationID` (2026-08-21).
+- **Context-aware retry** — cancellation propagates through the retry policy.
+- **mTLS documentation** — dedicated README section (`api-mtls.wise.com`,
+  `api-mtls.wise-sandbox.com`).
 - **Exchange rates** — `GetExchangeRate` (`GET /v1/rates`) shipped in v0.8.0 with
   current and historical lookup.
 

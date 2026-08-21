@@ -14,19 +14,19 @@ claim here can be verified against the implementation.
 
 ## Client core
 
-| Feature                                 | Status           | Evidence                                                                 |
-| --------------------------------------- | ---------------- | ------------------------------------------------------------------------ |
-| `wise.New(apiKey, opts...)` constructor | FULLY_FUNCTIONAL | `client.go:42`; functional-options pattern                               |
-| Bearer-token authentication             | FULLY_FUNCTIONAL | `client.go:235` `setHeaders`                                             |
-| Sandbox environment (`WithSandbox`)     | FULLY_FUNCTIONAL | `options.go:28`; `SandboxURL` const in `types.go:24`                     |
-| Custom base URL (`WithBaseURL`)         | FULLY_FUNCTIONAL | `options.go:35`                                                          |
-| Custom HTTP timeout (`WithTimeout`)     | FULLY_FUNCTIONAL | `options.go:42`                                                          |
-| Custom retry policy (`WithRetry`)       | FULLY_FUNCTIONAL | `options.go:50`; exponential backoff via failsafe-go                     |
-| Custom HTTP client (`WithHTTPClient`)   | FULLY_FUNCTIONAL | `options.go:61`; accepts `Doer` interface (`client.go:27`)               |
-| Correlation ID (`WithCorrelationID`)    | FULLY_FUNCTIONAL | `options.go:73`; sets `X-External-Correlation-Id` header on all requests |
-| Retry with backoff (429, 5xx, network)  | FULLY_FUNCTIONAL | `client.go:97` `isRetryable`; verified by wise_test.go retry suite       |
-| `Authenticate(ctx)`                     | FULLY_FUNCTIONAL | `client.go:108`; delegates to `ListProfiles`                             |
-| `Health(ctx)`                           | FULLY_FUNCTIONAL | `client.go:118`; delegates to `Authenticate`                             |
+| Feature                                 | Status           | Evidence                                                                  |
+| --------------------------------------- | ---------------- | ------------------------------------------------------------------------- |
+| `wise.New(apiKey, opts...)` constructor | FULLY_FUNCTIONAL | `client.go:43`; functional-options pattern                                |
+| Bearer-token authentication             | FULLY_FUNCTIONAL | `client.go:355` `setHeaders`                                              |
+| Sandbox environment (`WithSandbox`)     | FULLY_FUNCTIONAL | `options.go:64`; `SandboxURL` const in `types.go:24`                      |
+| Custom base URL (`WithBaseURL`)         | FULLY_FUNCTIONAL | `options.go:71`                                                           |
+| Custom HTTP timeout (`WithTimeout`)     | FULLY_FUNCTIONAL | `options.go:78`                                                           |
+| Custom retry policy (`WithRetry`)       | FULLY_FUNCTIONAL | `options.go:86`; exponential backoff via failsafe-go                      |
+| Custom HTTP client (`WithHTTPClient`)   | FULLY_FUNCTIONAL | `options.go:97`; accepts `Doer` interface (`client.go:27`)                |
+| Correlation ID (`WithCorrelationID`)    | FULLY_FUNCTIONAL | `options.go:110`; sets `X-External-Correlation-Id` header on all requests |
+| Retry with backoff (429, 5xx, network)  | FULLY_FUNCTIONAL | `client.go:100` `isRetryable`; verified by wise_test.go retry suite       |
+| `Authenticate(ctx)`                     | FULLY_FUNCTIONAL | `client.go:110`; delegates to `ListProfiles`                              |
+| `Health(ctx)`                           | FULLY_FUNCTIONAL | `client.go:120`; delegates to `Authenticate`                              |
 
 ## Profiles
 
@@ -50,7 +50,7 @@ claim here can be verified against the implementation.
 | `GetBalance(ctx, ProfileID, BalanceID)`    | FULLY_FUNCTIONAL | `balances.go`; direct per-balance endpoint, no filtering       |
 | `CreateBalance(ctx, CreateBalanceRequest)` | FULLY_FUNCTIONAL | `balances.go`; savings name enforced client-side               |
 | `GetTotalFunds(ctx, ProfileID, Currency)`  | FULLY_FUNCTIONAL | `balances.go`; Worth + Available as `Money`                    |
-| Filter visible + non-investment balances   | FULLY_FUNCTIONAL | `balances.go:35`; drops `Visible: false` and invested balances |
+| Filter visible + non-investment balances   | FULLY_FUNCTIONAL | `balances.go:43`; drops `Visible: false` and invested balances |
 | Fetch hidden or invested balances          | FULLY_FUNCTIONAL | `GetBalance` direct endpoint retrieves them individually       |
 
 ## Transactions
@@ -77,7 +77,7 @@ claim here can be verified against the implementation.
 | `RateLimitError.RateLimitedBy` (429 header)       | FULLY_FUNCTIONAL | `errors.go:75`; captures `X-Rate-Limited-By` header                 |
 | `AuthError` (HTTP 401, 403)                       | FULLY_FUNCTIONAL | `errors.go:103`                                                     |
 | `SCAChallengeError` (403 + 2FA headers, v0.6.0)   | FULLY_FUNCTIONAL | `errors.go:116`; `TwoFAApprovalToken()` returns the OTT             |
-| `WithSCAApprovalToken` option (v0.6.0)            | FULLY_FUNCTIONAL | `options.go:85`; sends cleared OTT as `x-2fa-approval`              |
+| `WithSCAApprovalToken` option (v0.6.0)            | FULLY_FUNCTIONAL | `options.go:142`; sends cleared OTT as `x-2fa-approval`             |
 | `NotFoundError` (HTTP 404)                        | FULLY_FUNCTIONAL | `errors.go:142`                                                     |
 | `ServerError` (HTTP 5xx)                          | FULLY_FUNCTIONAL | `errors.go:151`                                                     |
 | `ErrorCode()` / `ErrorFamily()` / `IsRetryable()` | FULLY_FUNCTIONAL | All implement go-error-family interfaces                            |
@@ -87,13 +87,13 @@ claim here can be verified against the implementation.
 
 | Feature                                               | Status           | Evidence                                                                                  |
 | ----------------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------- |
-| Branded `ProfileID` / `BalanceID`                     | FULLY_FUNCTIONAL | `ids.go:26,29`; phantom types prevent entity-ID mixing at compile time                    |
-| Branded `TransactionID`                               | FULLY_FUNCTIONAL | `ids.go:32`                                                                               |
+| Branded `ProfileID` / `BalanceID`                     | FULLY_FUNCTIONAL | `ids.go:32,38`; phantom types prevent entity-ID mixing at compile time                    |
+| Branded `TransactionID`                               | FULLY_FUNCTIONAL | `ids.go:41`                                                                               |
 | `Money` value object (`Cents` + `Currency`)           | FULLY_FUNCTIONAL | `types.go:59`; paired cents/currency makes mismatch unrepresentable                       |
-| `Currency` branded type with ISO 4217 validation      | FULLY_FUNCTIONAL | `types.go:43` `NewCurrency`; validates 3-letter uppercase ASCII                           |
+| `Currency` branded type with ISO 4217 validation      | FULLY_FUNCTIONAL | `types.go:39` `NewCurrency`; validates 3-letter uppercase ASCII                           |
 | Two-layer raw/result split (`internal/raw` boundary)  | FULLY_FUNCTIONAL | Wire types in `internal/raw/types.go`; parsed types in `types.go`; `helpers.go:47` bridge |
 | `ProfileType`, `BalanceType`, `TransactionType` enums | FULLY_FUNCTIONAL | `types.go:139,147,164`                                                                    |
-| `InvestmentState` typed enum                          | FULLY_FUNCTIONAL | `types.go:155`; used for balance filtering (`balances.go:35`)                             |
+| `InvestmentState` typed enum                          | FULLY_FUNCTIONAL | `types.go:155`; used for balance filtering (`balances.go:43`)                             |
 | `DetailType` typed enum + constants                   | FULLY_FUNCTIONAL | `transactions.go:159`; typed filter for `ListTransactionsRequest.Type`                    |
 | Enum casing normalization (lowercase SDK values)      | FULLY_FUNCTIONAL | `BalanceType` normalized; `ProfileType`/`TransactionType` already lowercase               |
 
@@ -132,7 +132,7 @@ claim here can be verified against the implementation.
 | ---------------------------------------------- | ---------------- | --------------------------------------------------------- |
 | Tolerant timestamp parsing (4 layouts)         | FULLY_FUNCTIONAL | `helpers.go` `parseWiseTimestamp`; zoneless = UTC         |
 | Outgoing query timestamps as UTC `Z` (v0.8.1)  | FULLY_FUNCTIONAL | `helpers.go:148` `formatWiseTimestamp`; Wise 422s offsets |
-| `ListBalances` `types` query param (v0.5.3)    | FULLY_FUNCTIONAL | `balances.go:16,24`; live API 400s without it             |
+| `ListBalances` `types` query param (v0.5.3)    | FULLY_FUNCTIONAL | `balances.go:18,23`; live API 400s without it             |
 | Mapper errors classified `Corruption` (v0.5.2) | FULLY_FUNCTIONAL | `internal_test.go`; fail-fast instead of retry loops      |
 
 ## Out of scope (not yet started)
