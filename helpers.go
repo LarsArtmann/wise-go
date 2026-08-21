@@ -3,11 +3,11 @@ package wise
 import (
 	"context"
 	"encoding/json/v2"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	errorfamily "github.com/larsartmann/go-error-family"
@@ -135,18 +135,17 @@ func parseWiseTimestamp(s string) (time.Time, error) {
 		"2006-01-02 15:04:05",
 	}
 
-	var errs []error
-
 	for _, layout := range layouts {
-		t, err := time.Parse(layout, s)
-		if err == nil {
+		if t, err := time.Parse(layout, s); err == nil {
 			return t, nil
 		}
-
-		errs = append(errs, err)
 	}
 
-	return time.Time{}, errors.Join(errs...)
+	// One line naming the accepted layouts beats a dump of five near-identical
+	// time.Parse errors; the raw value is the part callers actually need.
+	//nolint:err113 // dynamic value in message; no sentinel to wrap
+	return time.Time{}, fmt.Errorf(
+		"parse Wise timestamp %q: matches none of the accepted layouts %s", s, strings.Join(layouts, ", "))
 }
 
 // formatWiseTimestamp renders a time.Time as a Wise query-parameter value.

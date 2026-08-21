@@ -15,6 +15,12 @@ import (
 // with: a Base64-encoded RSA-SHA256 signature of the raw request body.
 const HeaderWebhookSignature = "X-Signature-SHA256"
 
+// HeaderDeliveryID is the header Wise stamps every webhook delivery with:
+// an identifier that is unique per delivery attempt. Use it as the
+// deduplication key when processing idempotently — Wise redelivers until
+// acknowledged, and a verified signature does not make a delivery new.
+const HeaderDeliveryID = "X-Delivery-Id"
+
 // ParseWebhookPublicKey parses the PEM-encoded RSA public key Wise shows per
 // webhook subscription. Parse it once at startup so a misconfigured key
 // fails loudly there, not silently per delivery.

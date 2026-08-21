@@ -15,7 +15,7 @@ import (
 // RecipientID is the account's own recipient: create a transfer to it to
 // top up the matching balance.
 type MultiCurrencyAccount struct {
-	ID          int64
+	ID          AccountID
 	ProfileID   ProfileID
 	RecipientID RecipientID
 	Created     time.Time
@@ -72,7 +72,7 @@ func mapMultiCurrencyAccount(account raw.MultiCurrencyAccount) (MultiCurrencyAcc
 	}
 
 	return MultiCurrencyAccount{
-		ID:          account.ID,
+		ID:          NewAccountID(account.ID),
 		ProfileID:   NewProfileID(account.ProfileID),
 		RecipientID: NewRecipientID(account.RecipientID),
 		Created:     created,

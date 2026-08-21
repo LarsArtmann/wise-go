@@ -250,6 +250,15 @@ const (
 // FundTransferResult is the parsed result of funding a transfer with
 // FundTransfer.
 //
+// Wise models the response as a oneOf discriminated by "type": the BALANCE
+// variant carries balanceTransactionId, the trusted-pre-fund variants carry
+// partnerReference. The SDK deliberately flattens the variants into this one
+// struct: the discriminated union has only three members, every member shares
+// Type and Status, and the member-specific fields are marked by which one is
+// set (nil / empty). A Go sum type here would force a type switch for a
+// two-field difference and give nothing back; revisit only if Wise grows the
+// union with structurally divergent variants.
+//
 // Status FundingStatusRejected reports a funding attempt the API refused (for
 // example an underfunded balance); the machine-readable reason is in ErrorCode
 // and a developer-facing explanation in ErrorMessage. This is a successful API

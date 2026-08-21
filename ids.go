@@ -22,6 +22,9 @@ type TransferBrand struct{}
 // RecipientBrand is a phantom type for RecipientID.
 type RecipientBrand struct{}
 
+// AccountBrand is a phantom type for AccountID.
+type AccountBrand struct{}
+
 // BalanceTransactionBrand is a phantom type for BalanceTransactionID.
 type BalanceTransactionBrand struct{}
 
@@ -45,6 +48,11 @@ type TransferID = id.ID[TransferBrand, int64]
 
 // RecipientID is a strongly-typed identifier for Wise recipient accounts.
 type RecipientID = id.ID[RecipientBrand, int64]
+
+// AccountID is a strongly-typed identifier for Wise multi-currency
+// accounts — a distinct ID space from RecipientID even though both are
+// int64 on the wire.
+type AccountID = id.ID[AccountBrand, int64]
 
 // BalanceTransactionID is a strongly-typed identifier for Wise balance
 // transactions (the numeric ID of a debit or credit applied to a balance,
@@ -85,6 +93,11 @@ func NewTransferID(v int64) TransferID {
 // NewRecipientID creates a new RecipientID from an int64 value.
 func NewRecipientID(v int64) RecipientID {
 	return id.NewID[RecipientBrand](v)
+}
+
+// NewAccountID creates a new AccountID from an int64 value.
+func NewAccountID(v int64) AccountID {
+	return id.NewID[AccountBrand](v)
 }
 
 // NewBalanceTransactionID creates a new BalanceTransactionID from an int64

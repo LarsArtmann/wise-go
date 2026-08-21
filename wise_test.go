@@ -2990,7 +2990,7 @@ var _ = Describe("Wise Client", func() {
 				)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(account).ToNot(BeNil())
-				Expect(account.ID).To(Equal(int64(1)))
+				Expect(account.ID.Get()).To(Equal(int64(1)))
 				Expect(account.RecipientID.Get()).To(Equal(int64(12345678)))
 				Expect(account.Created.Year()).To(Equal(2020))
 				Expect(account.Active).To(BeTrue())

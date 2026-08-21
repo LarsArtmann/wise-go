@@ -786,9 +786,10 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 
 Reject deliveries with HTTP 401/403 when verification fails. Wise redelivers
 until you acknowledge, so process **idempotently**: `X-Delivery-Id` (unique
-per delivery attempt) is the deduplication key — record it and skip already-
-seen deliveries. Signature verification alone is not enough: a verified
-delivery can still be a redelivery of an event you already processed.
+per delivery attempt — exposed as `wise.HeaderDeliveryID`) is the
+deduplication key — record it and skip already-seen deliveries. Signature
+verification alone is not enough: a verified delivery can still be a
+redelivery of an event you already processed.
 
 ## Design Decisions
 

@@ -67,6 +67,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   RecipientID for top-ups via transfer) and `GetBankAccountDetails` (every
   receiving details set with LOCAL/INTERNATIONAL receive options and their
   display text).
+- `AccountID` branded type: `MultiCurrencyAccount.ID` is now strongly typed
+  (construct with `NewAccountID`, unwrap with `.Get()`), keeping the
+  multi-currency-account ID space distinct from `RecipientID` and other
+  int64 IDs at compile time.
+- `wise.HeaderDeliveryID`: the `X-Delivery-Id` webhook header name as a
+  constant, for idempotent webhook processing alongside
+  `wise.HeaderWebhookSignature`.
 - `ListCurrencies` (`GET /v1/currencies`): public reference data for
   currency pickers (code, symbol, name, country keywords, decimal support).
 - Webhook signature verification: `ParseWebhookPublicKey` (parse the
