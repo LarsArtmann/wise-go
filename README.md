@@ -9,11 +9,12 @@ The unofficial Go SDK for the [Wise](https://wise.com) (TransferWise) API.
 
 Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise's wire types directly — `float64` for money, untyped string IDs, inconsistent date formats. **wise-go fills that gap** with hand-written types that make invalid states hard to reach: monetary amounts as `int64` cents (never `float64`), branded IDs that prevent mixing `ProfileID` with `BalanceID` at compile time, and behavioral error classification so you can retry on intent rather than string-matching status codes.
 
-> **Status: active development (v0.8.0).** The core transfer flow is implemented
+> **Status: active development (v0.8.1).** The core transfer flow is implemented
 > end-to-end: profiles, balances, transactions, exchange rates, quotes (with
 > `paymentOptions` + fees), recipients, transfers (create / get / list /
 > cancel), delivery estimates, and transfer-requirements validation. See
-> [ROADMAP.md](ROADMAP.md) for what's next.
+> [FEATURES.md](FEATURES.md) for the honest inventory and [ROADMAP.md](ROADMAP.md)
+> for what's next.
 
 > **Design story:** [I needed a Go SDK for Wise. Nobody built one.](https://larsartmann.com/blog/when-the-api-has-no-spec-your-types-are-the-spec)
 
@@ -28,11 +29,15 @@ Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise'
   - [Profiles](#profiles)
   - [Balances](#balances)
   - [Transactions](#transactions)
+  - [Quotes](#quotes)
+  - [Recipients](#recipients)
+  - [Exchange rates](#exchange-rates)
   - [Transfers](#transfers)
   - [Core transfer flow](#core-transfer-flow-quote--recipient--transfer)
 - [Mocking the Client](#mocking-the-client)
 - [Request Middleware](#request-middleware)
 - [Error Handling](#error-handling)
+- [Strong Customer Authentication (SCA)](#strong-customer-authentication-sca)
 - [Design Decisions](#design-decisions)
 - [Testing](#testing)
 - [Project Status](#project-status)
@@ -47,6 +52,8 @@ Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise'
 - **Typed, classifiable errors** — `AuthError`, `RateLimitError` (with parsed `Retry-After`), `NotFoundError`, `ServerError`. Each carries its Wise API detail and implements `ErrorCode()` / `ErrorFamily()` / `IsRetryable()` from [go-error-family](https://github.com/larsartmann/go-error-family).
 - **Two-layer type system** — Raw wire types live in `internal/raw`; result types expose clean Go with `Money` value objects and branded `Currency`. The mapping is the only bridge.
 - **Write operations** — create quotes (authenticated and unauthenticated), recipients, and transfers; cancel transfers; validate transfer requirements; fetch delivery estimates.
+- **SCA challenge support** — SCA-protected endpoints (e.g. balance statements for UK/EEA profiles) surface as `*SCAChallengeError` with the one-time approval token; complete the challenge with `WithSCAApprovalToken` and retry. See [SCA](#strong-customer-authentication-sca).
+- **Tolerant timestamp handling** — Wise emits four different timestamp formats. One parser accepts them all (zoneless = UTC), and outgoing query timestamps are normalized to UTC `Z` (Wise rejects zone offsets with 422).
 - **Sandbox support** — One-line switch to the Wise sandbox environment.
 - **Minimal dependencies** — Three focused production deps: `failsafe-go`, `go-branded-id`, `go-error-family`.
 
@@ -331,15 +338,11 @@ if err != nil {
     log.Fatal(err)
 }
 
-// 1b. Optional: discover required details before creating the transfer.
-//     Fields flagged RefreshRequirementsOnChange mean re-calling this once the
-//     field is populated reveals lower-level required fields.
-requirements, err := client.ValidateTransferRequirements(ctx, wise.ValidateTransferRequirementsRequest{
-    TargetAccount: wise.NewRecipientID(recipient.ID.Get()),
-    QuoteID:       quote.ID,
-})
-if err != nil {
-    log.Fatal(err)
+// A BLOCKED notice means this quote must not back a transfer.
+for _, n := range quote.Notices {
+    if n.Type == wise.QuoteNoticeTypeBlocked {
+        log.Fatalf("quote blocked: %s", n.Text)
+    }
 }
 
 // 2. Recipient — a bank account to send to. Required details vary by currency
@@ -357,6 +360,18 @@ recipient, err := client.CreateRecipient(ctx, wise.CreateRecipientRequest{
 if err != nil {
     log.Fatal(err)
 }
+
+// 2b. Optional: discover required details before creating the transfer.
+//     Fields flagged RefreshRequirementsOnChange mean re-calling this once the
+//     field is populated reveals lower-level required fields.
+requirements, err := client.ValidateTransferRequirements(ctx, wise.ValidateTransferRequirementsRequest{
+    TargetAccount: recipient.ID,
+    QuoteID:       quote.ID,
+})
+if err != nil {
+    log.Fatal(err)
+}
+_ = requirements // inspect .Fields: required, allowed values, validation regexps
 
 // 3. Transfer — customerTransactionId is your idempotency key (a UUID).
 //    Reusing it with the same quote + targetAccount returns the existing
@@ -456,7 +471,9 @@ import "errors"
 balances, err := client.ListBalances(ctx, profileID)
 if err != nil {
     if rl, ok := errors.AsType[*wise.RateLimitError](err); ok {
-        fmt.Printf("rate limited, retry after %s\n", rl.RetryAfter)
+        fmt.Printf("rate limited (scope: %s), retry after %s\n", rl.RateLimitedBy, rl.RetryAfter)
+    } else if sca, ok := errors.AsType[*wise.SCAChallengeError](err); ok {
+        fmt.Printf("SCA approval required, token: %s\n", sca.TwoFAApprovalToken())
     } else if auth, ok := errors.AsType[*wise.AuthError](err); ok {
         fmt.Printf("auth failed: %s\n", auth.Message)
     } else if nf, ok := errors.AsType[*wise.NotFoundError](err); ok {
@@ -469,13 +486,44 @@ if err != nil {
 }
 ```
 
-| HTTP Status   | Error Type       | Retried? |
-| ------------- | ---------------- | -------- |
-| 401, 403      | `AuthError`      | No       |
-| 404           | `NotFoundError`  | No       |
-| 429           | `RateLimitError` | Yes      |
-| 5xx           | `ServerError`    | Yes      |
-| Network error | Wrapped `error`  | Yes      |
+| HTTP Status            | Error Type          | Retried? |
+| ---------------------- | ------------------- | -------- |
+| 401, 403               | `AuthError`         | No       |
+| 403 + Wise 2FA headers | `SCAChallengeError` | No       |
+| 404                    | `NotFoundError`     | No       |
+| 429                    | `RateLimitError`    | Yes      |
+| 5xx                    | `ServerError`       | Yes      |
+| Network error          | Wrapped `error`     | Yes      |
+
+Mapper failures (unparseable timestamps, invalid currency codes in a response)
+carry `Corruption` classification — permanent, not retryable — so a blanket
+"retry on transient" wrapper fails fast instead of looping.
+
+## Strong Customer Authentication (SCA)
+
+Some Wise endpoints (balance statements for UK/EEA profiles among them) are
+SCA-protected: the API answers **HTTP 403 with an empty body**. The verdict and
+the one-time token live in the `x-2fa-approval-result` / `x-2fa-approval`
+response headers. The SDK detects this and returns `*SCAChallengeError` instead
+of a bare `AuthError`:
+
+```go
+resp, err := client.ListTransactions(ctx, req)
+if err != nil {
+    if sca, ok := errors.AsType[*wise.SCAChallengeError](err); ok {
+        // 1. Send the one-time token to the user (push notification, email, ...).
+        token := sca.TwoFAApprovalToken()
+
+        // 2. After the user approves the challenge in the Wise app, replay it:
+        scaClient := wise.New("api-key", wise.WithSCAApprovalToken(token))
+        resp, err = scaClient.ListTransactions(ctx, req)
+    }
+}
+```
+
+`GET /v1/transfers` (and the other transfer endpoints) are **not** SCA-protected,
+which is why `ListTransfers` is the reliable source for outgoing transfer
+history with personal API tokens.
 
 ## Design Decisions
 
@@ -484,7 +532,7 @@ if err != nil {
 | Monetary amounts as `int64` cents | `float64` causes precision loss (e.g., `0.1 + 0.2 ≠ 0.3`). Cents are safe for arithmetic and storage.                                                  |
 | Two-layer type system             | Raw wire types in `internal/raw` mirror JSON exactly. Result types expose clean Go with `Money` value objects. Mapping functions convert between them. |
 | `failsafe-go` for retries         | Purpose-built HTTP retry with backoff, not a generic CQRS middleware.                                                                                  |
-| Flat package structure            | Single `package wise` — no sub-packages for 8 files. Import path is the API.                                                                           |
+| Flat package structure            | Single `package wise`; wire types hidden in `internal/raw`. The import path is the API.                                                                |
 | BDD tests with Ginkgo             | `httptest.Server` mock API responses. Tests verify both happy paths and error classification.                                                          |
 
 ## Testing
