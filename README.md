@@ -1,7 +1,7 @@
 # wise-go
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/larsartmann/wise-go.svg)](https://pkg.go.dev/github.com/larsartmann/wise-go)
-[![Coverage](https://img.shields.io/badge/coverage-94.8%25-success)](https://github.com/larsartmann/wise-go)
+[![Coverage](https://img.shields.io/badge/coverage-84.2%25-yellowgreen)](https://github.com/larsartmann/wise-go)
 [![Lint](https://img.shields.io/badge/lint-0%20issues-success)](https://github.com/larsartmann/wise-go)
 [![Go](https://img.shields.io/badge/Go-1.26+-00ADD8?logo=go&logoColor=white)](https://go.dev/)
 

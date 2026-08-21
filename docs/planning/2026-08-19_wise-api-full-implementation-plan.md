@@ -4,6 +4,11 @@
 **Source:** [docs.wise.com/api-reference](https://docs.wise.com/api-reference)
 **Current SDK version:** v0.7.0
 
+> **Update (2026-08-21 docs-health pass):** the SDK is now v0.8.1 and the
+> tier-1 core transfer flow below is fully shipped except row 5
+> (`GetQuoteAccountRequirements`, still PLANNED). Open tier-2/3/4 work is
+> tracked in `TODO_LIST.md` (bounded tasks) and `ROADMAP.md` (strategy).
+
 ---
 
 ## Executive Summary

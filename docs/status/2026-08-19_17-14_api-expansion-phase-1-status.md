@@ -5,6 +5,11 @@
 **Latest commit:** `341bf37` feat(api): expand SDK with quotes, recipients, transfers, and rates endpoints\
 **Ahead of origin:** 5 commits (pushed)
 
+> **Follow-up (2026-08-21 docs-health pass):** Phase 1.5 continued this work —
+> see `2026-08-19_18-15_core-transfer-flow-completion.md`. Every still-open item
+> from sections b/c/e/f below was re-enumerated there and is now tracked in
+> `TODO_LIST.md`. Nothing here is lost; the annotations mark what shipped since.
+
 ---
 
 ## a) FULLY DONE
@@ -29,7 +34,7 @@
 ## b) PARTIALLY DONE
 
 1. **Full API coverage** — only the 1% Pareto core (transfer flow) is implemented. The plan documents the remaining ~130 endpoints.
-2. **`Quote` type** — simplified to essential fields (ID, Source/Target Money, PayIn/PayOut, Rate, Created, ExpirationTime, Status, Profile). Does not yet expose `paymentOptions`, fees, notices, `guaranteedTargetAmount`, etc.
+2. ~~**`Quote` type** — simplified to essential fields (ID, Source/Target Money, PayIn/PayOut, Rate, Created, ExpirationTime, Status, Profile). Does not yet expose `paymentOptions`, fees, notices, `guaranteedTargetAmount`, etc.~~ done at `607f17d`
 3. **`Recipient.Details`** — exposed as `map[string]string`. This is pragmatic but loses the typed, currency-specific shape Wise returns. Callers must know the required fields for their corridor.
 4. **`CreateTransferRequest`** — covers the common case plus reference/source-of-funds/transfer-purpose fields. Does not yet model the full transfer-requirements validation flow.
 5. **OpenAPI spec** — discovered mid-implementation, downloaded to `docs/reviews/wise-api-openapi.json` and used to correct the quote-ID type. Not yet used to generate or validate all types.
@@ -41,10 +46,10 @@
 
 ### Core transfer flow completion
 
-- `CancelTransfer` (`PUT /v1/transfers/{id}/cancel`)
-- `GetDeliveryEstimate` (`GET /v1/delivery-estimates/{id}`)
-- `ValidateTransferRequirements` (`POST /v1/transfer-requirements`)
-- Fund transfer (`POST /v1/profiles/{id}/transfers/{id}/payments`)
+- ~~`CancelTransfer` (`PUT /v1/transfers/{id}/cancel`)~~ done at `05ee22a`
+- ~~`GetDeliveryEstimate` (`GET /v1/delivery-estimates/{id}`)~~ done at `5ef7302`
+- ~~`ValidateTransferRequirements` (`POST /v1/transfer-requirements`)~~ done at `97c6379`
+- Fund transfer (`POST /v1/profiles/{id}/transfers/{id}/payments`) ← still open (TODO_LIST P1)
 
 ### Statements
 
@@ -90,11 +95,11 @@ Nothing is broken or shipped in a dangerous state. Honest missteps:
 ## e) WHAT WE SHOULD IMPROVE
 
 1. **Start future endpoints from the OpenAPI spec** rather than the prose API reference. The spec is authoritative for field types, optionality, and ID formats.
-2. **Expand `Quote` to include `paymentOptions`** and fee breakdowns — these are essential for consumers to present pay-in/pay-out choices.
+2. ~~**Expand `Quote` to include `paymentOptions`** and fee breakdowns — these are essential for consumers to present pay-in/pay-out choices.~~ done at `607f17d`
 3. **Add typed recipient-detail helpers** or at least currency-specific constants/docs so consumers are not guessing field names.
 4. **Add unit tests for validation edge cases** (e.g. mismatched quote currencies, missing customerTransactionId, empty recipient details).
 5. **Add error-response tests** for the new POST endpoints (400 validation, 409 duplicate transfer).
-6. **Add README examples** showing the full flow: create quote → create recipient → create transfer.
+6. ~~**Add README examples** showing the full flow: create quote → create recipient → create transfer.~~ done at `dcd1194`
 7. **Add sandbox integration tests** with real credentials to verify wire formats against Wise's sandbox.
 8. **Consider a service-client substructure** once the resource count clearly exceeds the ~8 threshold documented in `ROADMAP.md`.
 9. **Add per-request correlation ID support** (`WithRequestCorrelationID` via context or request option).
@@ -106,12 +111,12 @@ Nothing is broken or shipped in a dangerous state. Honest missteps:
 
 ### Immediate (core transfer flow — highest value)
 
-1. ~~`CancelTransfer`~~ **DONE (2026-08-19)**
-2. ~~`GetDeliveryEstimate`~~ **DONE (2026-08-19)**
-3. ~~`ValidateTransferRequirements`~~ **DONE (2026-08-19)**
+1. ~~`CancelTransfer`~~ **done at `05ee22a` (2026-08-19)**
+2. ~~`GetDeliveryEstimate`~~ **done at `5ef7302` (2026-08-19)**
+3. ~~`ValidateTransferRequirements`~~ **done at `97c6379` (2026-08-19)**
 4. `FundTransfer` (balance funding)
-5. ~~Expand `Quote` with `paymentOptions`, fees, and notices~~ **DONE (2026-08-19)**
-6. ~~Add README example for quote → recipient → transfer~~ **DONE (2026-08-19)**
+5. ~~Expand `Quote` with `paymentOptions`, fees, and notices~~ **done at `607f17d` (2026-08-19)**
+6. ~~Add README example for quote → recipient → transfer~~ **done at `dcd1194` (2026-08-19)**
 7. Add error-response BDD tests for POST endpoints
 8. Add validation edge-case unit tests
 9. Add `GetTransfer` error tests (404, auth, SCA)

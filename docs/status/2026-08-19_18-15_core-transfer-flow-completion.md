@@ -6,6 +6,12 @@
 **Ahead of origin:** 0 (all pushed)
 **Working tree:** clean
 
+> **Follow-up (2026-08-21 docs-health pass):** Nothing from section f shipped
+> since this report except f.8 (coverage badge, re-measured at 84.2%). All open
+> items are now tracked in `TODO_LIST.md`; strategic framing updated in
+> `ROADMAP.md`. The section g questions still need user decisions (FundTransfer
+> vs sandbox tests first; typed recipient structs vs map; sandbox API key).
+
 ---
 
 ## a) FULLY DONE
@@ -124,7 +130,7 @@ Nothing is broken or shipped dangerously. Honest missteps this session:
 5. Wire requirements→transfer-details feedback (helper or documented pattern).
 6. Extract `vendorHash.nix` from flake.nix.
 7. Godoc examples for the four new APIs.
-8. Update README coverage badge (94.8% is stale; measure after new tests).
+8. ~~Update README coverage badge (94.8% is stale; measure after new tests).~~ done (badge re-measured at 84.2%, 2026-08-21 docs-health pass)
 
 ### Near-term (high value, self-contained)
 

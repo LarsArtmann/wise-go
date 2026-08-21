@@ -11,26 +11,32 @@ library that is obviously correct, obviously typed, and obviously safe to depend
 Every monetary amount is `Money` (cents paired with `Currency`). Every entity ID is
 branded. Every error is typed and classifiable. Every API call retries intelligently.
 
-As of v0.5.0, the type-safety redesign is complete: paired `XxxCents`/`XxxCurrency`
-fields are collapsed into `Money`, raw wire types are hidden behind `internal/raw`,
-enum values are normalized, and `ListTransactionsRequest.Type` is now a typed
-`DetailType` enum. The SDK covers the read side of three resources (profiles,
-balances, transactions). The roadmap expands the surface along four axes —
-completeness, type-safety, observability, and scale — while preserving the
-architectural decisions that make the codebase maintainable.
+As of v0.8.1, the type-safety redesign is complete AND the core transfer flow is
+live: quotes (create/get with payment options, fees, notices), recipients
+(list/get/create), transfers (list/get/create/cancel), delivery estimates,
+transfer-requirements validation, and exchange rates — 18 endpoint methods across
+9 resources, plus write helpers under the existing retry/error architecture.
+The roadmap expands the surface along four axes — completeness, type-safety,
+observability, and scale — while preserving the architectural decisions that make
+the codebase maintainable.
 
 ## Axis 1: Completeness (API surface)
 
-Today: read-only, 3 resources. The Wise API is much larger.
+Today: the core transfer flow (tier 1 of
+`docs/planning/2026-08-19_wise-api-full-implementation-plan.md`) is complete
+except `GetQuoteAccountRequirements`; write operations, quotes, recipients,
+transfers, delivery estimates, and exchange rates all shipped in v0.7.0–v0.8.0.
 
-### Near-term (post-v0.5.0)
+### Near-term (tier 2 of the plan)
 
-- **Write operations** — POST/PATCH/DELETE helpers in `client.go` mirroring
-  `get`/`getWithQuery`. First candidates: transfers, recipients.
-- **Quotes API** — `ListQuotes` / `CreateQuote`. Quotes are required before creating
-  transfers, so they unblock the transfers workstream.
-- **Recipients API** — `ListRecipients` / `CreateRecipient`. Required for transfers
-  to non-Wise accounts.
+- **Fund the flow** — `FundTransfer` (`POST /v1/profiles/{id}/transfers/{id}/payments`)
+  completes the end-to-end loop (see TODO_LIST P1).
+- **`GetQuoteAccountRequirements`** — last tier-1 row; bridges quotes → recipients.
+- **Users read** — `GetMe` / `GetUser`.
+- **Balances expanded** — `CreateBalance`, direct `GetBalance` endpoint,
+  `GetTotalFunds`.
+- **MCA & bank details** — `GetBankAccountDetails`, `GetMultiCurrencyAccount`.
+- **Currencies** — `ListCurrencies`.
 
 ### Medium-term
 
@@ -38,13 +44,18 @@ Today: read-only, 3 resources. The Wise API is much larger.
   Wise's webhook signature scheme is well-documented; the helper is high-value and
   self-contained.
 - **Statements (CSV/PDF)** — `GetStatement` with format parameter. Today the SDK
-  consumes `statement.json`; the API also offers `statement.csv` and `statement.pdf`.
+  consumes `statement.json`; the API also offers `statement.csv`, `statement.pdf`,
+  XLSX, CAMT.053, MT940, and QIF.
+- **Sandbox verification** — credentialed integration tests against
+  `api.wise-sandbox.com` (blocked on a sandbox API key).
 
 ### Long-term
 
-- **Pagination support** — if Wise ever moves to cursor-based pagination for
-  transactions. The SDK can grow a `Page[Cursor]` type and `FetchMore` method
-  without breaking the existing API. Today there is no pagination.
+- **Tier 3/4 of the plan** — batch groups, direct debit, bulk settlement, cards,
+  KYC, SCA factors, disputes. Only as consumer demand justifies.
+- **Pagination generalization** — `ListRecipients` and `ListTransfers` hand-roll
+  page loops; a shared `Page[T]` abstraction becomes worthwhile once a third
+  paginated endpoint lands.
 
 ### Out of vision
 
@@ -104,9 +115,9 @@ decisions without wrapping the HTTP transport themselves (documented in README).
 
 - **Request/response logging hook** — `WithLogger` option for structured request
   logging (method, URL, status, duration, retry count).
-- **Per-request correlation ID** — `WithCorrelationID` now sets a client-wide
-  `X-External-Correlation-Id` header (shipped this session). The next step is
-  per-call override via context for request-level tracing.
+- **Per-request correlation ID** — `WithCorrelationID` sets a client-wide
+  `X-External-Correlation-Id` header (shipped v0.4.0-era). The next step is
+  per-call override via context for request-level tracing (TODO_LIST P3).
 - **Context-aware retry** — thread `context.Context` cancellation through the retry
   policy so callers can abort in-flight retries.
 
@@ -117,20 +128,25 @@ decisions without wrapping the HTTP transport themselves (documented in README).
 - **mTLS documentation** — Wise documents mTLS endpoints
   (`api-mtls.wise.com`, `api-mtls.wise-sandbox.com`). Transport wrapping is
   documented but mTLS configuration is not. Add a dedicated section.
-- **Exchange rates** — `GET /v1/rates` is self-contained and high-value. Natural
-  first step beyond profiles/balances/transactions.
+
+### Shipped
+
+- **Exchange rates** — `GetExchangeRate` (`GET /v1/rates`) shipped in v0.8.0 with
+  current and historical lookup.
 
 ## Axis 4: Scale (architecture)
 
 The flat-package design is correct for the present scope. The trigger for evolution
 is clear.
 
-### Trigger: resource count crosses ~6–8
+### Trigger: resource count crosses ~6–8 — REACHED
 
-When the SDK grows past profiles + balances + transactions + transfers + recipients
-
-- quotes + webhooks + one more, the flat `client.ListX` surface becomes noisy.
-  Move to a **service-client sub-structure**:
+The SDK now has 9 resources (profiles, balances, transactions, transfers, quotes,
+recipients, exchange rates, delivery estimates, transfer requirements) and 18
+endpoint methods on the flat `client.X` surface. The threshold documented here
+has been crossed; the open question is WHEN to pay the refactor cost. The
+recommended sequencing: finish the core flow (`FundTransfer`, tier-2 reads),
+then move to a **service-client sub-structure** in one release cycle:
 
 ```go
 client.Profiles().List(ctx)
@@ -161,8 +177,9 @@ structs"); documented in README.
 
 - **v0.x** — breaking changes accepted but coordinated. Each breaking release gets
   a migration table in CHANGELOG.md. v0.4.0 shipped the Money/Currency redesign;
-  v0.5.0 added the `DetailType` typed enum and test/CI hardening; v0.6.0+ will add
-  API surface (write operations, quotes, recipients).
+  v0.5.0 added the `DetailType` typed enum; v0.6.x SCA support; v0.7.0 transfers
+  read; v0.8.0 the full core transfer flow (quotes, recipients, transfers write,
+  rates); v0.8.1 the outgoing-timestamp wire fix.
 - **v1.0** — public API freeze. After v1.0, breaking changes require v2 and a
   deliberate migration path.
 
@@ -171,8 +188,11 @@ structs"); documented in README.
 - **Supporting non-Go languages** — out of scope; this is a Go SDK.
 - **Re-implementing retries / circuit breakers** — `failsafe-go` does this well.
   Do not replace it without cause.
-- **Auto-generation from OpenAPI** — Wise does not publish a complete OpenAPI spec.
-  Hand-written types are correct; auto-gen would lose the two-layer boundary.
+- **Auto-generation from OpenAPI** — Wise publishes an OpenAPI spec (downloaded to
+  `docs/reviews/wise-api-openapi.json`); use it as the authoritative reference when
+  hand-authoring types (it caught the UUID `QuoteID` mismatch). Auto-generating the
+  SDK from it remains a non-goal: generated types would lose the two-layer
+  raw/result boundary and branded-ID ergonomics.
 - **Caching / local state** — the SDK is stateless. Caching is the caller's job.
 - **`Money` arithmetic** — `Money` pairs cents+currency to prevent mismatched amounts
   at the serialization boundary. It is deliberately not a financial math library
