@@ -248,6 +248,10 @@ func isKnownStatementFormat(format StatementFormat) bool {
 	}
 }
 
+// maxStatementInterval is Wise's documented limit for statement downloads:
+// the From..To interval cannot exceed 469 days.
+const maxStatementInterval = 469 * 24 * time.Hour
+
 // GetStatementRequest parameters for downloading a balance statement as a
 // file. The interval From..To cannot exceed 469 days (Wise limit).
 type GetStatementRequest struct {
@@ -258,6 +262,10 @@ type GetStatementRequest struct {
 	To        time.Time
 	Type      DetailType // Optional transaction-type filter.
 	Format    StatementFormat
+
+	// Locale optionally localizes the statement (2-character language code,
+	// e.g. "en" or "de"); Wise defaults to the profile's language.
+	Locale string
 }
 
 // GetStatement downloads a balance statement as a file in the requested
@@ -281,6 +289,10 @@ func (c *Client) GetStatement(ctx context.Context, req GetStatementRequest) ([]b
 
 		if req.Type != "" {
 			v.Set("type", string(req.Type))
+		}
+
+		if req.Locale != "" {
+			v.Set("statementLocale", req.Locale)
 		}
 
 		return v.Encode()
@@ -312,6 +324,13 @@ func (r GetStatementRequest) validate() error {
 		return errorfamily.NewRejection(
 			invalidRequestCode,
 			"intervalStart must not be after intervalEnd",
+		)
+	}
+
+	if r.To.Sub(r.From) > maxStatementInterval {
+		return errorfamily.NewRejection(
+			invalidRequestCode,
+			"statement interval must not exceed 469 days; split longer periods into multiple requests",
 		)
 	}
 

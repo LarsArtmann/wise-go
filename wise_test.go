@@ -1292,6 +1292,31 @@ var _ = Describe("Wise Client", func() {
 			})
 		})
 
+		Context("with a historical time in a non-UTC zone", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/rates", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.URL.Query().Get("time")).To(Equal("2023-06-15T10:30:00Z"),
+						"rate time parameter must serialize as UTC with a Z suffix")
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, raw.ExchangeRate{
+						Source: "EUR", Target: "USD", Rate: 1.0857, Time: "2023-06-15T10:30:00Z",
+					})
+				})
+			})
+
+			It("should serialize the time parameter as UTC Z", func() {
+				cest := time.FixedZone("CEST", 2*60*60)
+				_, err := client.GetExchangeRate(
+					context.Background(),
+					wise.Currency("EUR"),
+					wise.Currency("USD"),
+					time.Date(2023, 6, 15, 12, 30, 0, 0, cest),
+				)
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+
 		Context("with missing source currency", func() {
 			It("should return a rejection without calling the API", func() {
 				_, err := client.GetExchangeRate(
@@ -2478,6 +2503,120 @@ var _ = Describe("Wise Client", func() {
 				})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(data).To(HavePrefix("%PDF"))
+			})
+		})
+
+		Context("with a locale", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/balance-statements/100/statement.csv",
+					func(w http.ResponseWriter, r *http.Request) {
+						Expect(r.URL.Query().Get("statementLocale")).To(Equal("de"))
+
+						w.Header().Set("Content-Type", "text/csv")
+						_, _ = w.Write([]byte("Datum,Beschreibung,Betrag\n"))
+					})
+			})
+
+			It("should forward statementLocale and return the bytes", func() {
+				data, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					BalanceID: wise.NewBalanceID(100),
+					Currency:  wise.Currency("EUR"),
+					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
+					Format:    wise.StatementFormatCSV,
+					Locale:    "de",
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(data).To(ContainSubstring("Datum"))
+			})
+		})
+
+		Context("with an interval longer than 469 days", func() {
+			It("should return a rejection without calling the API", func() {
+				from := time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
+				_, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					BalanceID: wise.NewBalanceID(100),
+					Currency:  wise.Currency("EUR"),
+					From:      from,
+					To:        from.Add(470 * 24 * time.Hour),
+					Format:    wise.StatementFormatCSV,
+				})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("must not exceed 469 days"))
+			})
+		})
+
+		Context("with an interval of exactly 469 days", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/balance-statements/100/statement.csv",
+					func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "text/csv")
+						_, _ = w.Write([]byte("Date,Description,Amount\n"))
+					})
+			})
+
+			It("should accept the boundary interval and call the API", func() {
+				from := time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
+				_, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					BalanceID: wise.NewBalanceID(100),
+					Currency:  wise.Currency("EUR"),
+					From:      from,
+					To:        from.Add(469 * 24 * time.Hour),
+					Format:    wise.StatementFormatCSV,
+				})
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+
+		Context("with MT940 format", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/balance-statements/100/statement.mt940",
+					func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "text/plain")
+						_, _ = w.Write([]byte(":20:STATEMENT100\n:25:EUR1234567890\n:60F:C230101EUR1000,00\n" +
+							":61:2301150115CR4,50NTRFCOFFEE\n:62F:C230131EUR995,50\n-\n"))
+					})
+			})
+
+			It("should return the raw SWIFT bytes", func() {
+				data, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					BalanceID: wise.NewBalanceID(100),
+					Currency:  wise.Currency("EUR"),
+					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
+					Format:    wise.StatementFormatMT940,
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(data).To(ContainSubstring(":20:STATEMENT100"))
+				Expect(data).To(ContainSubstring(":62F:"))
+			})
+		})
+
+		Context("with QIF format", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/balance-statements/100/statement.qif",
+					func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "text/plain")
+						_, _ = w.Write([]byte("!Type:Bank\nD01/15/2023\nT-4.50\nPCoffee\n^\n"))
+					})
+			})
+
+			It("should return the raw QIF bytes", func() {
+				data, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					BalanceID: wise.NewBalanceID(100),
+					Currency:  wise.Currency("EUR"),
+					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
+					Format:    wise.StatementFormatQIF,
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(data).To(ContainSubstring("!Type:Bank"))
+				Expect(data).To(ContainSubstring("T-4.50"))
 			})
 		})
 

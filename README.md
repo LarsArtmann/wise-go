@@ -353,6 +353,7 @@ pdf, err := client.GetStatement(ctx, wise.GetStatementRequest{
     From:      intervalStart, // UTC
     To:        intervalEnd,   // UTC
     Type:      wise.DetailTypeCardPayment, // optional transaction-type filter
+    Locale:    "de",                      // optional 2-char statement language
     Format:    wise.StatementFormatPDF,
 })
 ```
@@ -360,9 +361,12 @@ pdf, err := client.GetStatement(ctx, wise.GetStatementRequest{
 Six formats: `StatementFormatCSV`, `StatementFormatPDF` (includes Wise
 branding), `StatementFormatXLSX` (Excel), `StatementFormatCAMT` (CAMT.053
 XML), `StatementFormatMT940`, and `StatementFormatQIF`. Unknown formats are
-rejected client-side. The interval rules mirror `ListTransactions` and the
-interval must not exceed **469 days** (Wise limit). Like the JSON statement,
-the endpoint is **SCA-protected** for UK/EEA profiles — see
+rejected client-side. The interval rules mirror `ListTransactions`; the
+interval must not exceed **469 days** (Wise limit) — longer periods are
+rejected client-side with an actionable error, so split them into multiple
+requests. `Locale` (2-character language code) localizes column headers and
+descriptions. Like the JSON statement, the endpoint is **SCA-protected** for
+UK/EEA profiles — see
 [SCA](#strong-customer-authentication-sca).
 
 ### Quotes
