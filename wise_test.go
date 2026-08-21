@@ -1522,6 +1522,54 @@ var _ = Describe("Wise Client", func() {
 		})
 	})
 
+	Describe("CreateUnauthenticatedQuote", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v3/quotes", func(w http.ResponseWriter, r *http.Request) {
+					var body map[string]any
+					Expect(json.UnmarshalRead(r.Body, &body)).To(Succeed())
+					Expect(body["sourceCurrency"]).To(Equal("EUR"))
+					Expect(body["targetCurrency"]).To(Equal("USD"))
+					// Unauthenticated quotes carry no profile-scoped fields.
+					Expect(body).ToNot(HaveKey("preferredPayIn"))
+					Expect(body).ToNot(HaveKey("payOut"))
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, raw.Quote{
+						ID:             "11144c35-9fe8-4c32-b7fd-d05c2a7734bf",
+						SourceCurrency: "EUR",
+						TargetCurrency: "USD",
+						SourceAmount:   10,
+						TargetAmount:   10.86,
+						Rate:           1.086,
+					})
+				})
+			})
+
+			It("should create an illustrative quote without a profile", func() {
+				quote, err := client.CreateUnauthenticatedQuote(context.Background(), wise.CreateQuoteRequest{
+					SourceCurrency: wise.Currency("EUR"),
+					TargetCurrency: wise.Currency("USD"),
+					SourceAmount:   &wise.Money{Cents: 1000, Currency: wise.Currency("EUR")},
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(quote).ToNot(BeNil())
+				Expect(quote.Rate).To(Equal(1.086))
+				Expect(quote.Profile.Get()).To(Equal(int64(0)), "unauthenticated quotes carry no profile")
+			})
+		})
+
+		Context("with an invalid request", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.CreateUnauthenticatedQuote(context.Background(), wise.CreateQuoteRequest{
+					SourceCurrency: wise.Currency("EUR"),
+				})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("targetCurrency is required"))
+			})
+		})
+	})
+
 	Describe("GetQuote", func() {
 		Context("with valid API response", func() {
 			BeforeEach(func() {

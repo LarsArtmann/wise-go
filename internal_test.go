@@ -13,11 +13,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
 	errorfamily "github.com/larsartmann/go-error-family"
+	"github.com/failsafe-go/failsafe-go/retrypolicy"
 	"github.com/larsartmann/wise-go/internal/raw"
 )
 
@@ -1479,4 +1481,288 @@ func TestMapFundTransferResultParseErrorsAreCorruption(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestParseWiseDate exercises the date-only parser directly: Wise emits
+// date-only strings with no timezone; empty means unset (zero time, not an
+// error) and everything else must parse as a UTC-midnight time.
+func TestParseWiseDate(t *testing.T) {
+	t.Parallel()
+
+	t.Run("empty string maps to the zero time", func(t *testing.T) {
+		t.Parallel()
+
+		got, err := parseWiseDate("")
+		if err != nil {
+			t.Fatalf("parseWiseDate(\"\") error: %v", err)
+		}
+		if !got.IsZero() {
+			t.Errorf("parseWiseDate(\"\") = %v, want zero time", got)
+		}
+	})
+
+	t.Run("valid date parses as UTC midnight", func(t *testing.T) {
+		t.Parallel()
+
+		got, err := parseWiseDate("1977-01-31")
+		if err != nil {
+			t.Fatalf("parseWiseDate error: %v", err)
+		}
+		want := time.Date(1977, time.January, 31, 0, 0, 0, 0, time.UTC)
+		if !got.Equal(want) {
+			t.Errorf("parseWiseDate = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("garbage input errors", func(t *testing.T) {
+		t.Parallel()
+
+		_, err := parseWiseDate("not-a-date")
+		if err == nil {
+			t.Fatal("parseWiseDate(garbage) = nil error, want error")
+		}
+		if !strings.Contains(err.Error(), "not-a-date") {
+			t.Errorf("error %q does not quote the input", err.Error())
+		}
+	})
+}
+
+// TestClassifyExhaustedRetries covers the unwrap arms directly: the guard
+// clauses (non-exceeded error, nil / non-response LastResult) must return nil
+// so doRequest keeps its original error, and a carried 429 response must
+// classify as RateLimitError.
+func TestClassifyExhaustedRetries(t *testing.T) {
+	t.Parallel()
+
+	client := New("test-api-key")
+
+	t.Run("non-exceeded error returns nil", func(t *testing.T) {
+		t.Parallel()
+
+		if got := client.classifyExhaustedRetries("GET", "http://x", errors.New("plain")); got != nil {
+			t.Errorf("classifyExhaustedRetries(plain error) = %v, want nil", got)
+		}
+	})
+
+	t.Run("exceeded with nil LastResult returns nil", func(t *testing.T) {
+		t.Parallel()
+
+		exceeded := retrypolicy.ExceededError{LastResult: nil, LastError: errors.New("boom")}
+		if got := client.classifyExhaustedRetries("GET", "http://x", exceeded); got != nil {
+			t.Errorf("classifyExhaustedRetries(nil LastResult) = %v, want nil", got)
+		}
+	})
+
+	t.Run("exceeded with non-response LastResult returns nil", func(t *testing.T) {
+		t.Parallel()
+
+		exceeded := retrypolicy.ExceededError{LastResult: "a string, not a response"}
+		if got := client.classifyExhaustedRetries("GET", "http://x", exceeded); got != nil {
+			t.Errorf("classifyExhaustedRetries(string LastResult) = %v, want nil", got)
+		}
+	})
+
+	t.Run("exceeded with a 429 response classifies as RateLimitError", func(t *testing.T) {
+		t.Parallel()
+
+		resp := httptest.NewRecorder()
+		resp.Header().Set("Retry-After", "7")
+		resp.Header().Set("X-Rate-Limited-By", "profile")
+		resp.WriteHeader(http.StatusTooManyRequests)
+
+		exceeded := retrypolicy.ExceededError{
+			LastResult: resp.Result(),
+			LastError:  errors.New("rate limited"),
+		}
+
+		got := client.classifyExhaustedRetries("GET", "http://x", exceeded)
+		if got == nil {
+			t.Fatal("classifyExhaustedRetries(429) = nil, want wrapped RateLimitError")
+		}
+
+		rateLimitErr, ok := errors.AsType[*RateLimitError](got)
+		if !ok {
+			t.Fatalf("got %T, want *RateLimitError: %v", got, got)
+		}
+		if rateLimitErr.RetryAfter != 7*time.Second {
+			t.Errorf("RetryAfter = %v, want 7s", rateLimitErr.RetryAfter)
+		}
+		if rateLimitErr.RateLimitedBy != "profile" {
+			t.Errorf("RateLimitedBy = %q, want %q", rateLimitErr.RateLimitedBy, "profile")
+		}
+	})
+}
+
+// TestGetRawEdges covers the raw-response path's non-JSON arms: a transport
+// failure and an empty body (a legitimately empty statement file).
+func TestGetRawEdges(t *testing.T) {
+	t.Parallel()
+
+	t.Run("transport error surfaces", func(t *testing.T) {
+		t.Parallel()
+
+		closed := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+		closed.Close()
+
+		client := New("test-api-key", WithBaseURL(closed.URL))
+		_, err := client.getRaw(context.Background(), "/x", nil)
+		if err == nil {
+			t.Fatal("getRaw against closed server = nil error, want transport error")
+		}
+	})
+
+	t.Run("empty body is a valid result", func(t *testing.T) {
+		t.Parallel()
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer server.Close()
+
+		client := New("test-api-key", WithBaseURL(server.URL))
+		data, err := client.getRaw(context.Background(), "/statement.csv", func() string {
+			return "currency=EUR"
+		})
+		if err != nil {
+			t.Fatalf("getRaw empty body error: %v", err)
+		}
+		if len(data) != 0 {
+			t.Errorf("getRaw empty body = %q, want empty", data)
+		}
+	})
+}
+
+// TestExecuteWithLoggingTransportError asserts the transport-error arm: the
+// logger sees Status 0 and a non-nil Error, and the error is wrapped with the
+// method and URL.
+func TestExecuteWithLoggingTransportError(t *testing.T) {
+	t.Parallel()
+
+	closed := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	closed.Close()
+
+	var entries []RequestLog
+
+	client := New("test-api-key",
+		WithBaseURL(closed.URL),
+		WithLogger(RequestLogFunc(func(entry RequestLog) {
+			entries = append(entries, entry)
+		})),
+	)
+
+	_, err := client.ListCurrencies(context.Background())
+	if err == nil {
+		t.Fatal("ListCurrencies against closed server = nil error, want transport error")
+	}
+
+	if !strings.Contains(err.Error(), "/v1/currencies") {
+		t.Errorf("error %q does not mention the URL", err.Error())
+	}
+
+	if len(entries) == 0 {
+		t.Fatal("logger recorded no entries")
+	}
+
+	last := entries[len(entries)-1]
+	if last.Status != 0 {
+		t.Errorf("logged Status = %d, want 0 on transport failure", last.Status)
+	}
+	if last.Error == nil {
+		t.Error("logged Error = nil, want the transport error")
+	}
+	if last.URL == "" || last.Method == "" {
+		t.Errorf("logged entry missing method/URL: %+v", last)
+	}
+}
+
+// TestVerifyWebhookSignatureEdges covers payload extremes: an empty body and
+// a multi-megabyte body both verify exactly like normal ones (the signature
+// is over the raw bytes, whatever they are).
+func TestVerifyWebhookSignatureEdges(t *testing.T) {
+	t.Parallel()
+
+	sign := func(t *testing.T, key *rsa.PrivateKey, payload []byte) string {
+		t.Helper()
+
+		digest := sha256.Sum256(payload)
+		sig, err := rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA256, digest[:])
+		if err != nil {
+			t.Fatalf("sign: %v", err)
+		}
+		return base64.StdEncoding.EncodeToString(sig)
+	}
+
+	fixture := newWebhookFixture(t)
+
+	t.Run("empty payload verifies against its own signature", func(t *testing.T) {
+		t.Parallel()
+
+		emptySig := sign(t, fixture.sourceKey, []byte{})
+		if !VerifyWebhookSignature([]byte{}, emptySig, fixture.key) {
+			t.Error("VerifyWebhookSignature(empty) = false, want true")
+		}
+		if VerifyWebhookSignature([]byte("x"), emptySig, fixture.key) {
+			t.Error("empty signature must not verify different bytes")
+		}
+	})
+
+	t.Run("multi-megabyte payload verifies", func(t *testing.T) {
+		t.Parallel()
+
+		huge := make([]byte, 5<<20) // 5 MiB
+		if _, err := rand.Read(huge); err != nil {
+			t.Fatalf("rand: %v", err)
+		}
+
+		hugeSig := sign(t, fixture.sourceKey, huge)
+		if !VerifyWebhookSignature(huge, hugeSig, fixture.key) {
+			t.Error("VerifyWebhookSignature(5MiB) = false, want true")
+		}
+
+		huge[len(huge)-1] ^= 0xFF // flip the final byte
+		if VerifyWebhookSignature(huge, hugeSig, fixture.key) {
+			t.Error("tampered 5MiB payload verified, want reject")
+		}
+	})
+}
+
+// TestErrorContexts pins the structured-context contract of the error types:
+// consumers route on these maps in logs and metrics.
+func TestErrorContexts(t *testing.T) {
+	t.Parallel()
+
+	t.Run("APIError context carries the status code", func(t *testing.T) {
+		t.Parallel()
+
+		apiErr := &APIError{StatusCode: http.StatusBadRequest}
+		if ctx := apiErr.ErrorContext(); ctx["status_code"] != "400" {
+			t.Errorf("ErrorContext = %v, want status_code 400", ctx)
+		}
+	})
+
+	t.Run("RateLimitError context carries retry-after and scope", func(t *testing.T) {
+		t.Parallel()
+
+		rateLimitErr := &RateLimitError{
+			APIError:      APIError{StatusCode: http.StatusTooManyRequests},
+			RetryAfter:    3 * time.Second,
+			RateLimitedBy: "ip",
+		}
+		ctx := rateLimitErr.ErrorContext()
+		if ctx["retry_after"] != (3 * time.Second).String() {
+			t.Errorf("ErrorContext = %v, want retry_after 3s", ctx)
+		}
+		if ctx["rate_limited_by"] != "ip" {
+			t.Errorf("ErrorContext = %v, want rate_limited_by ip", ctx)
+		}
+	})
+
+	t.Run("SCAChallengeError code identifies the challenge", func(t *testing.T) {
+		t.Parallel()
+
+		scaErr := &SCAChallengeError{APIError: APIError{StatusCode: http.StatusForbidden}}
+		if got := scaErr.ErrorCode(); got != errorCodeSCA {
+			t.Errorf("ErrorCode = %q, want %q", got, errorCodeSCA)
+		}
+	})
 }
