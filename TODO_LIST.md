@@ -22,25 +22,11 @@ split are finalized. Requires explicit approval (tagging is irreversible).
 
 ## P3 — Tier-2 API surface (plan doc tier 2 + near-term reports)
 
-[ ] Add per-request correlation ID override — currently `WithCorrelationID` sets
-a client-wide header (`options.go:73`). Allow per-call override via context or
-request struct for request-level tracing. Note: `options.go:72` doc comment
-already references the unimplemented `WithRequestCorrelationID`.
-
 [ ] Add mTLS endpoint support — Wise documents `api-mtls.wise.com` and
 `api-mtls.wise-sandbox.com`. Add `WithMTLS(tls.Config)` option or document the
 `WithHTTPClient` + custom Transport pattern more explicitly.
 
 ## P4 — Tooling & quality
-
-[ ] Extract `vendorHash` from `flake.nix` into `vendorHash.nix` — BuildFlow
-nix-checker flags it; cleaner diffs when dependencies change
-(`flake.nix:118`). Source: status report 18-15 (f.6, e.5).
-
-[ ] Add godoc examples for `CancelTransfer`, `GetDeliveryEstimate`,
-`ValidateTransferRequirements`, and the expanded `Quote` fields
-(`example_test.go` currently only covers `Currency`/`Money`). Source: status
-report 18-15 (f.7, e.8).
 
 [ ] Triage `govulncheck` findings — BuildFlow reports stdlib vulns
 (GO-2026-6218 `resolvePath` in `net/url`, +31 more); likely toolchain-fixable,

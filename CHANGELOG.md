@@ -25,6 +25,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   learn which required fields are still unsatisfied before spending a
   `customerTransactionId`. Select fields are checked against their allowed
   values; keys outside the typed request surface are reported explicitly.
+- Observability: `WithLogger` (per-attempt RequestLog with method, URL,
+  status, duration, 1-based attempt number — retries visible) and per-request
+  correlation IDs via `WithRequestCorrelationID(ctx, id)` (overrides the
+  client-wide value). README documents the observability patterns.
+- Per-request correlation IDs: `WithRequestCorrelationID(ctx, id)` derives a
+  context whose requests carry their own `X-External-Correlation-Id`,
+  overriding the client-wide `WithCorrelationID` value — one traceable ID per
+  logical operation on a shared client. (The previously dangling doc
+  reference now resolves to a real function.)
 - MCA and bank details: `GetMultiCurrencyAccount` (with the account's own
   RecipientID for top-ups via transfer) and `GetBankAccountDetails` (every
   receiving details set with LOCAL/INTERNATIONAL receive options and their

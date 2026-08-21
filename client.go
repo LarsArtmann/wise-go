@@ -35,6 +35,7 @@ type Client struct {
 	correlationID    string
 	scaApprovalToken string
 	httpClient       Doer
+	logger           Logger
 	executor         failsafe.Executor[*http.Response]
 }
 
@@ -91,6 +92,7 @@ func New(apiKey string, opts ...Option) *Client {
 		scaApprovalToken: cfg.scaApprovalToken,
 		executor:         failsafe.With(retry),
 		httpClient:       httpClient,
+		logger:           cfg.logger,
 	}
 }
 
@@ -263,7 +265,7 @@ func (c *Client) doRequest(
 				return nil, fmt.Errorf("create request for %s %s: %w", method, fullURL, reqErr)
 			}
 
-			c.setHeaders(req)
+			c.setHeaders(exec.Context(), req)
 
 			for name, value := range extraHeaders {
 				req.Header.Set(name, value)
@@ -273,7 +275,7 @@ func (c *Client) doRequest(
 				req.Header.Set("Content-Type", "application/json")
 			}
 
-			return c.httpClient.Do(req)
+			return c.executeWithLogging(exec, method, fullURL, req)
 		})
 	if err != nil {
 		if classified := c.classifyExhaustedRetries(method, fullURL, err); classified != nil {
@@ -286,8 +288,42 @@ func (c *Client) doRequest(
 	return resp, nil
 }
 
-// classifyExhaustedRetries unwraps failsafe's retries-exceeded error and
-// classifies its final response, so exhausted retries still surface the typed
+// executeWithLogging performs one HTTP attempt and reports it to the
+// configured Logger (if any) with method, URL, status, duration, and the
+// 1-based attempt number.
+func (c *Client) executeWithLogging(
+	exec failsafe.Execution[*http.Response],
+	method string,
+	fullURL string,
+	req *http.Request,
+) (*http.Response, error) {
+	start := time.Now()
+
+	resp, err := c.httpClient.Do(req)
+
+	if c.logger != nil {
+		entry := RequestLog{
+			Method:   method,
+			URL:      fullURL,
+			Duration: time.Since(start),
+			Attempt:  exec.Attempts(),
+			Error:    err,
+		}
+		if resp != nil {
+			entry.Status = resp.StatusCode
+		}
+
+		c.logger.LogRequest(entry)
+	}
+
+	if err != nil {
+		return resp, fmt.Errorf("do %s %s: %w", method, fullURL, err)
+	}
+
+	return resp, nil
+}
+
+// classifyExhaustedRetries unwraps failsafe's retries-exceeded error and// classifies its final response, so exhausted retries still surface the typed
 // error the last attempt produced (RateLimitError with Retry-After,
 // ServerError) instead of an opaque wrapper that carries no classification.
 // Returns nil when err is not a retries-exceeded error or holds no response.
@@ -316,13 +352,21 @@ func (c *Client) classifyExhaustedRetries(method, fullURL string, err error) err
 	return fmt.Errorf("execute %s %s after retries: %w", method, fullURL, apiErr)
 }
 
-func (c *Client) setHeaders(req *http.Request) {
+func (c *Client) setHeaders(ctx context.Context, req *http.Request) {
 	if c.apiKey != "" {
 		req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	}
 
-	if c.correlationID != "" {
-		req.Header.Set("X-External-Correlation-Id", c.correlationID)
+	// A per-request correlation ID from the context overrides the
+	// client-wide value, so a logical operation keeps its own trace even
+	// when the client is shared.
+	correlationID := correlationIDFromContext(ctx)
+	if correlationID == "" {
+		correlationID = c.correlationID
+	}
+
+	if correlationID != "" {
+		req.Header.Set("X-External-Correlation-Id", correlationID)
 	}
 
 	if c.scaApprovalToken != "" {

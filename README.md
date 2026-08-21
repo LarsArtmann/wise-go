@@ -165,6 +165,25 @@ client := wise.New("key",
 )
 ```
 
+### Observability
+
+```go
+// WithLogger observes every HTTP attempt, retries included — latency
+// tracking and retry visibility without wrapping the transport.
+client := wise.New("key", wise.WithLogger(wise.RequestLogFunc(func(e wise.RequestLog) {
+    slog.Info("wise request",
+        "method", e.Method, "url", e.URL, "status", e.Status,
+        "duration", e.Duration, "attempt", e.Attempt, "err", e.Error)
+})))
+
+// Per-request correlation ID: one traceable X-External-Correlation-Id per
+// logical operation, overriding the client-wide WithCorrelationID value.
+ctx := wise.WithRequestCorrelationID(ctx, "bank-sync-2026-08-21-run-42")
+_, err := client.ListTransfers(ctx, req)
+```
+
+`RequestLog.Attempt` is 1-based; a value above 1 means the request was retried.
+
 ## API Reference
 
 ### Authentication

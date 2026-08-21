@@ -2645,6 +2645,123 @@ var _ = Describe("Wise Client", func() {
 		})
 	})
 
+	Describe("CorrelationID", func() {
+		var correlationClient *wise.Client
+
+		BeforeEach(func() {
+			correlationClient = wise.New("test-api-key",
+				wise.WithBaseURL(server.URL),
+				wise.WithCorrelationID("client-wide-id"),
+			)
+		})
+
+		Context("without a per-request override", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Header.Get("X-External-Correlation-Id")).To(Equal("client-wide-id"))
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, []raw.Profile{})
+				})
+			})
+
+			It("sends the client-wide correlation ID", func() {
+				_, err := correlationClient.ListProfiles(context.Background())
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+
+		Context("with a per-request override", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Header.Get("X-External-Correlation-Id")).To(Equal("request-specific-id"))
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, []raw.Profile{})
+				})
+			})
+
+			It("overrides the client-wide value", func() {
+				ctx := wise.WithRequestCorrelationID(context.Background(), "request-specific-id")
+				_, err := correlationClient.ListProfiles(ctx)
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("WithLogger", func() {
+		var entries []wise.RequestLog
+
+		Context("on a successful request", func() {
+			BeforeEach(func() {
+				entries = nil
+				client = wise.New("test-api-key",
+					wise.WithBaseURL(server.URL),
+					wise.WithLogger(wise.RequestLogFunc(func(entry wise.RequestLog) {
+						entries = append(entries, entry)
+					})),
+				)
+
+				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, []raw.Profile{})
+				})
+			})
+
+			It("logs method, URL, status, duration, and attempt", func() {
+				_, err := client.ListProfiles(context.Background())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(entries).To(HaveLen(1))
+				Expect(entries[0].Method).To(Equal(http.MethodGet))
+				Expect(entries[0].URL).To(ContainSubstring("/v2/profiles"))
+				Expect(entries[0].Status).To(Equal(http.StatusOK))
+				Expect(entries[0].Duration).To(BeNumerically(">=", 0))
+				Expect(entries[0].Attempt).To(Equal(1))
+				Expect(entries[0].Error).ToNot(HaveOccurred())
+			})
+		})
+
+		Context("on retries", func() {
+			var callCount int
+
+			BeforeEach(func() {
+				entries = nil
+				callCount = 0
+				client = wise.New("test-api-key",
+					wise.WithBaseURL(server.URL),
+					wise.WithRetry(2, time.Millisecond, time.Millisecond),
+					wise.WithLogger(wise.RequestLogFunc(func(entry wise.RequestLog) {
+						entries = append(entries, entry)
+					})),
+				)
+
+				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {
+					callCount++
+
+					if callCount == 1 {
+						w.Header().Set("Retry-After", "0")
+						w.WriteHeader(http.StatusTooManyRequests)
+
+						return
+					}
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, []raw.Profile{})
+				})
+			})
+
+			It("logs every attempt with increasing attempt numbers", func() {
+				_, err := client.ListProfiles(context.Background())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(entries).To(HaveLen(2))
+				Expect(entries[0].Status).To(Equal(http.StatusTooManyRequests))
+				Expect(entries[0].Attempt).To(Equal(1))
+				Expect(entries[1].Status).To(Equal(http.StatusOK))
+				Expect(entries[1].Attempt).To(Equal(2))
+			})
+		})
+	})
+
 	Describe("Retry", func() {
 		Context("on 429 with Retry-After header", func() {
 			var callCount int
