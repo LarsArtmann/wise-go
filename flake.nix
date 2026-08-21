@@ -106,6 +106,9 @@
                       ./CONTRIBUTING.md
                       ./AGENTS.md
                       ./LICENSE
+                      # README links into workflow files (sandbox verification);
+                      # included so lychee can resolve them offline.
+                      ./.github/workflows
                       ./docs
                     ];
                   };
