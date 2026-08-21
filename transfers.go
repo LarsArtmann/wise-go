@@ -208,7 +208,7 @@ func (c *Client) CreateTransfer(
 
 	details := req.detailsWire()
 	if len(details) > 0 {
-		body["details"] = details
+		body[wireKeyDetails] = details
 	}
 
 	var transfer raw.Transfer

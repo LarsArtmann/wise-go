@@ -2014,12 +2014,15 @@ func TestRefreshQuoteAccountRequirementsToWire(t *testing.T) {
 		if got["currency"] != "USD" || got["type"] != "swift_code" {
 			t.Errorf("toWire() = %v, want currency and type", got)
 		}
+
 		if _, ok := got["profile"]; ok {
 			t.Errorf("toWire() sent profile for a zero ProfileID: %v", got)
 		}
+
 		if _, ok := got["accountHolderName"]; ok {
 			t.Errorf("toWire() sent accountHolderName for an empty name: %v", got)
 		}
+
 		if _, ok := got["ownedByCustomer"]; ok {
 			t.Errorf("toWire() sent ownedByCustomer when false: %v", got)
 		}
@@ -2037,9 +2040,11 @@ func TestRefreshQuoteAccountRequirementsToWire(t *testing.T) {
 		if got["profile"] != int64(12345) {
 			t.Errorf("toWire()[profile] = %v (%T), want int64 12345", got["profile"], got["profile"])
 		}
+
 		if got["accountHolderName"] != "Jane Doe" {
 			t.Errorf("toWire()[accountHolderName] = %v, want Jane Doe", got["accountHolderName"])
 		}
+
 		if got["ownedByCustomer"] != true {
 			t.Errorf("toWire()[ownedByCustomer] = %v, want true", got["ownedByCustomer"])
 		}

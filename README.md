@@ -412,7 +412,27 @@ recipients, err := client.ListRecipients(ctx, wise.ListRecipientsRequest{
 ```
 
 `Recipient.Details` is a `map[string]string`; required keys vary by currency and
-route — use the account-requirements endpoint to discover them per corridor.
+route — use the account-requirements endpoint to discover them per corridor
+(the map is flat: corridors that require nested values such as an `address`
+object are outside what the map can express today):
+
+```go
+requirements, err := client.GetQuoteAccountRequirements(ctx, wise.QuoteAccountRequirementsRequest{
+    QuoteID: quote.ID,
+})
+
+// Second pass: when a returned field is flagged RefreshRequirementsOnChange,
+// submit the partial form with that field set and Wise returns the revised
+// field set for the route (e.g. legalEntityType reveals further fields).
+requirements, err = client.RefreshQuoteAccountRequirements(ctx, wise.RefreshQuoteAccountRequirementsRequest{
+    QuoteID: quote.ID,
+    Recipient: wise.CreateRecipientRequest{
+        Currency: quote.TargetCurrency,
+        Type:     requirements[0].Type,
+        Details:  map[string]string{"legalEntityType": "PRIVATE"},
+    },
+})
+```
 
 ### Exchange rates
 

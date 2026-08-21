@@ -125,6 +125,7 @@ claim here can be verified against the implementation.
 | `GetDeliveryEstimate`                   | FULLY_FUNCTIONAL | `delivery_estimates.go`                                       |
 | `ValidateTransferRequirements`          | FULLY_FUNCTIONAL | `transfer_requirements.go`                                    |
 | `GetQuoteAccountRequirements`           | FULLY_FUNCTIONAL | `quotes.go`; route forms, `Accept-Minor-Version: 1`           |
+| `RefreshQuoteAccountRequirements`       | FULLY_FUNCTIONAL | `quotes.go`; two-pass flow, omit-empties partial form, BDD+unit |
 
 ## Wire format hardening
 

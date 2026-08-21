@@ -1725,14 +1725,18 @@ var _ = Describe("Wise Client", func() {
 									{
 										Name: "Recipient",
 										Group: []raw.TransferRequirementField{
-											{Key: "legalEntityType", Name: "Legal entity type", Type: "select",
-												Required: true, RefreshRequirementsOnChange: true},
-											{Key: "address.state", Name: "State", Type: "select",
+											{
+												Key: "legalEntityType", Name: "Legal entity type", Type: "select",
+												Required: true, RefreshRequirementsOnChange: true,
+											},
+											{
+												Key: "address.state", Name: "State", Type: "select",
 												Required: true,
 												ValuesAllowed: []raw.TransferRequirementValue{
 													{Key: "US-CA", Name: "California"},
 													{Key: "US-NY", Name: "New York"},
-												}},
+												},
+											},
 										},
 									},
 								},

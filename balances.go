@@ -110,8 +110,8 @@ func (c *Client) CreateBalance(ctx context.Context, req CreateBalanceRequest) (*
 	}
 
 	body := map[string]any{
-		"currency": string(req.Currency),
-		"type":     balanceTypeWire(req.Type),
+		wireKeyCurrency: string(req.Currency),
+		wireKeyType:     balanceTypeWire(req.Type),
 	}
 
 	if req.Name != "" {

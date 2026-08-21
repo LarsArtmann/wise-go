@@ -26,7 +26,7 @@ func (c *Client) ListTransactions(
 
 	query := func() string {
 		v := url.Values{}
-		v.Set("currency", string(req.Currency))
+		v.Set(wireKeyCurrency, string(req.Currency))
 		v.Set("intervalStart", formatWiseTimestamp(req.From))
 		v.Set("intervalEnd", formatWiseTimestamp(req.To))
 
@@ -283,7 +283,7 @@ func (c *Client) GetStatement(ctx context.Context, req GetStatementRequest) ([]b
 
 	query := func() string {
 		v := url.Values{}
-		v.Set("currency", string(req.Currency))
+		v.Set(wireKeyCurrency, string(req.Currency))
 		v.Set("intervalStart", formatWiseTimestamp(req.From))
 		v.Set("intervalEnd", formatWiseTimestamp(req.To))
 

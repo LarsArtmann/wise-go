@@ -233,9 +233,9 @@ func (r RefreshQuoteAccountRequirementsRequest) validate() error {
 // would misrepresent the form's state to Wise's dependent-field resolution.
 func (r RefreshQuoteAccountRequirementsRequest) toWire() map[string]any {
 	body := map[string]any{
-		"currency": string(r.Recipient.Currency),
-		"type":     r.Recipient.Type,
-		"details":  r.Recipient.Details,
+		wireKeyCurrency: string(r.Recipient.Currency),
+		wireKeyType:     r.Recipient.Type,
+		wireKeyDetails:  r.Recipient.Details,
 	}
 
 	if r.Recipient.ProfileID.Get() != 0 {

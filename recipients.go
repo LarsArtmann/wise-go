@@ -60,7 +60,7 @@ func (c *Client) listRecipientsPage(
 		v.Set("offset", strconv.Itoa(offset))
 
 		if req.Currency != "" {
-			v.Set("currency", string(req.Currency))
+			v.Set(wireKeyCurrency, string(req.Currency))
 		}
 
 		return v.Encode()
@@ -173,10 +173,10 @@ func (r CreateRecipientRequest) validate() error {
 func (r CreateRecipientRequest) toWire() map[string]any {
 	body := map[string]any{
 		"profile":           r.ProfileID.Get(),
-		"currency":          string(r.Currency),
-		"type":              r.Type,
+		wireKeyCurrency:     string(r.Currency),
+		wireKeyType:         r.Type,
 		"accountHolderName": r.AccountHolderName,
-		"details":           r.Details,
+		wireKeyDetails:      r.Details,
 	}
 
 	if r.OwnedByCustomer {

@@ -42,6 +42,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   one dynamic form per payout route (`AccountRequirement`). Bridges quotes to
   `CreateRecipientRequest` (route Type + Details keys). Sends
   `Accept-Minor-Version: 1` per Wise's recommendation for new integrations.
+- `RefreshQuoteAccountRequirements` (`POST /v1/quotes/{quoteId}/account-requirements`):
+  the second pass of the recipient requirements flow. When a returned field is
+  flagged `RefreshRequirementsOnChange`, submit the in-progress recipient form
+  with that field updated and Wise returns the revised field set for the route
+  (e.g. selecting `legalEntityType` reveals entity-type-specific fields). The
+  partial form is validated client-side (quote ID, currency, route type, at
+  least one Details key) and unset fields are omitted from the wire body.
 - `GetMe` / `GetUser` (`GET /v1/me`, `GET /v1/users/{userId}`): identity
   reads for the token owner, with typed `UserID` and full personal-details
   mapping (DOB parsed as UTC date; nullable details/address preserved).

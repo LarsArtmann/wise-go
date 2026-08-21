@@ -156,7 +156,7 @@ func (r ValidateTransferRequirementsRequest) toWire() map[string]any {
 	}
 
 	if details := r.Details.toWire(); len(details) > 0 {
-		body["details"] = details
+		body[wireKeyDetails] = details
 	}
 
 	return body

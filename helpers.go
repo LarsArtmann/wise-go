@@ -16,6 +16,15 @@ import (
 
 const defaultRetryAfter = time.Second
 
+// Wire keys shared by request bodies and query parameters that carry the
+// same Wise identifiers (recipient-form bodies, balance creation, statement
+// queries). Named once so the wire format has one spelling.
+const (
+	wireKeyCurrency = "currency"
+	wireKeyType     = "type"
+	wireKeyDetails  = "details"
+)
+
 // fetchByID validates a non-zero ID and performs a GET for a single resource.
 // It centralises the boilerplate shared by GetProfile, GetTransfer, and future
 // get-by-id endpoints so the public methods stay short and resource-specific.
