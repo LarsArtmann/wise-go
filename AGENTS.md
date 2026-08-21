@@ -67,3 +67,5 @@
 - **Format**: `nix fmt` (gofumpt + goimports + nixfmt via treefmt)
 - **Full check**: `nix flake check` (format + sandboxed test via `buildGoModule`)
 - **Dev shell**: `nix develop` (provides go, gopls, golangci-lint, go-tools)
+- **CI workflow is disabled** — `.github/workflows/ci.yml` has been `disabled_manually` since 2026-07-05 (pre-nix-era breakage; only the Dependency Graph workflow runs). Every release since v0.5.0 shipped on local gates: `go test -race ./...`, `golangci-lint run`, `nix flake check`. Re-enabling CI requires fixing it for the nix/GOEXPERIMENT setup first; until then don't wait on CI before tagging.
+- **pkg.go.dev lags the proxy after a release** — proxy.golang.org indexes a new tag within minutes (verify via `https://proxy.golang.org/<module>/@v/list`), and a clean-directory `go get module@version` is the definitive consumer test. The pkg.go.dev version page can trail by up to ~1 hour, and its `/fetch` trigger endpoint returns 404 even for existing versions — neither is a failure signal.
