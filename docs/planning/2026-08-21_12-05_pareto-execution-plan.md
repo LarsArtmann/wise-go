@@ -280,7 +280,7 @@ _Plan complete. Awaiting approval for Full Execution Mode._
 
 ## Execution Result — 2026-08-21 (same day)
 
-**Status: all 77 executable tasks of Table B complete; tasks 24–27 remain gated as planned.**
+**Status: all 80 executable tasks of Table B complete (count matches the totals line above); tasks 24–27 remain gated as planned.**
 
 - Tier 1% (1.x): `FundTransfer` shipped with the full gate set — the money-movement loop is closed end to end.
 - Tier 4% (2.x–8.x): error-path BDD for every write endpoint (which exposed and fixed a real defect: exhausted retries discarded the typed error), validate() matrices, `MissingTransferDetails`, `GetQuoteAccountRequirements`, godoc examples, vendorHash.nix.
