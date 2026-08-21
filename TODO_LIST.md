@@ -22,12 +22,6 @@ split are finalized. Requires explicit approval (tagging is irreversible).
 
 ## P3 — Tier-2 API surface (plan doc tier 2 + near-term reports)
 
-[ ] Add balances expansion — `CreateBalance`
-(`POST /v4/profiles/{profileId}/balances`), direct `GetBalance`
-(`GET /v4/profiles/{profileId}/balances/{balanceId}`, would replace the
-client-side scan in `balances.go:51`), `GetTotalFunds`
-(`GET /v1/profiles/{profileId}/total-funds/{currency}`).
-
 [ ] Add MCA / account details — `GetBankAccountDetails`, `GetMultiCurrencyAccount`.
 
 [ ] Add `ListCurrencies` — `GET /v1/currencies`.

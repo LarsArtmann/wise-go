@@ -491,23 +491,21 @@ var _ = Describe("Wise Client", func() {
 	Describe("GetBalance", func() {
 		BeforeEach(func() {
 			mux.HandleFunc(
-				"/v4/profiles/12345/balances",
-				func(w http.ResponseWriter, _ *http.Request) {
-					balances := []raw.Balance{
-						stdBalance(
-							100,
-							"EUR",
-							"EUR Account",
-							true,
-							"NOT_INVESTED",
-							1000.00,
-							0,
-							"2023-01-01T00:00:00Z",
-						),
-					}
+				"/v4/profiles/12345/balances/100",
+				func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Method).To(Equal(http.MethodGet))
 
 					w.Header().Set("Content-Type", "application/json")
-					_ = json.MarshalWrite(w, balances)
+					_ = json.MarshalWrite(w, stdBalance(
+						100,
+						"EUR",
+						"EUR Account",
+						true,
+						"NOT_INVESTED",
+						1000.00,
+						0,
+						"2023-01-01T00:00:00Z",
+					))
 				},
 			)
 		})
@@ -520,9 +518,102 @@ var _ = Describe("Wise Client", func() {
 		})
 
 		It("should return error for non-existent balance", func() {
+			mux.HandleFunc("/v4/profiles/12345/balances/999", errorHandler(
+				http.StatusNotFound, nil, "NOT_FOUND", "Balance not found",
+			))
+
 			_, err := getBalance(context.Background(), client, 999)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("not found"))
+			Expect(err.Error()).To(ContainSubstring("404"))
+		})
+
+		It("should reject a zero balance ID without calling the API", func() {
+			_, err := getBalance(context.Background(), client, 0)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("balanceID is required"))
+		})
+	})
+
+	Describe("CreateBalance", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v4/profiles/12345/balances", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Method).To(Equal(http.MethodPost))
+
+					var body map[string]any
+					Expect(json.UnmarshalRead(r.Body, &body)).To(Succeed())
+					Expect(body["currency"]).To(Equal("EUR"))
+					Expect(body["type"]).To(Equal("SAVINGS"))
+					Expect(body["name"]).To(Equal("Vacation fund"))
+
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusCreated)
+					_ = json.MarshalWrite(w, raw.Balance{
+						ID: 200, Currency: "EUR", Type: "SAVINGS", Name: "Vacation fund",
+						InvestmentState: "NOT_INVESTED", Visible: true,
+						Amount:         raw.BalanceAmount{Value: 0, Currency: "EUR"},
+						ReservedAmount: raw.BalanceAmount{Value: 0, Currency: "EUR"},
+						CreationTime:   "2023-06-01T00:00:00Z",
+					})
+				})
+			})
+
+			It("should create and map the balance", func() {
+				balance, err := client.CreateBalance(context.Background(), wise.CreateBalanceRequest{
+					ProfileID: wise.NewProfileID(12345),
+					Currency:  wise.Currency("EUR"),
+					Type:      wise.BalanceTypeSavings,
+					Name:      "Vacation fund",
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(balance).ToNot(BeNil())
+				Expect(balance.ID.Get()).To(Equal(int64(200)))
+				Expect(balance.Type).To(Equal(wise.BalanceTypeSavings))
+			})
+		})
+
+		Context("with a savings balance missing a name", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.CreateBalance(context.Background(), wise.CreateBalanceRequest{
+					ProfileID: wise.NewProfileID(12345),
+					Currency:  wise.Currency("EUR"),
+					Type:      wise.BalanceTypeSavings,
+				})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("name is required for savings"))
+			})
+		})
+	})
+
+	Describe("GetTotalFunds", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v4/profiles/12345/total-funds/EUR", func(w http.ResponseWriter, _ *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, raw.TotalFunds{
+						TotalWorth:     raw.BalanceAmount{Value: 2000.55, Currency: "EUR"},
+						TotalAvailable: raw.BalanceAmount{Value: 1990.05, Currency: "EUR"},
+					})
+				})
+			})
+
+			It("should map worth and available as Money", func() {
+				funds, err := client.GetTotalFunds(
+					context.Background(), wise.NewProfileID(12345), wise.Currency("EUR"),
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(funds.Worth.Cents).To(Equal(int64(200055)))
+				Expect(funds.Worth.Currency).To(Equal(wise.Currency("EUR")))
+				Expect(funds.Available.Cents).To(Equal(int64(199005)))
+			})
+		})
+
+		Context("with a zero profile ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetTotalFunds(context.Background(), wise.ProfileID{}, wise.Currency("EUR"))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("profileID is required"))
+			})
 		})
 	})
 

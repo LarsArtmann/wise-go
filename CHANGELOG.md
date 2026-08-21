@@ -25,6 +25,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   learn which required fields are still unsatisfied before spending a
   `customerTransactionId`. Select fields are checked against their allowed
   values; keys outside the typed request surface are reported explicitly.
+- Balances expansion: `CreateBalance` (POST /v4/profiles/{id}/balances,
+  savings name enforced client-side), a direct `GetBalance`
+  (GET /v4/profiles/{id}/balances/{id} — replaces the list+scan fallback and
+  retrieves hidden/invested balances), and `GetTotalFunds`
+  (GET /v4/profiles/{id}/total-funds/{currency}) with Worth/Available Money
+  values.
 - Webhook signature verification: `ParseWebhookPublicKey` (parse the
   per-subscription PEM key once at startup) + `VerifyWebhookSignature`
   (accept/reject per delivery) for Wise's `X-Signature-SHA256` RSA-SHA256

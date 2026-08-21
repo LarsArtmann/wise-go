@@ -73,6 +73,12 @@ type BalanceAmount struct {
 	Currency string  `json:"currency"`
 }
 
+// TotalFunds from Wise API (GET /v4/profiles/{id}/total-funds/{currency}).
+type TotalFunds struct {
+	TotalWorth     BalanceAmount `json:"totalWorth"`
+	TotalAvailable BalanceAmount `json:"totalAvailable"`
+}
+
 // Cents converts a BalanceAmount to int64 minor units (cents).
 // Uses math.Round to handle IEEE 754 floating-point representation errors.
 func (a BalanceAmount) Cents() int64 {

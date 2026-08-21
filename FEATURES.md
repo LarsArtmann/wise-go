@@ -41,12 +41,14 @@ claim here can be verified against the implementation.
 
 ## Balances
 
-| Feature                                  | Status           | Evidence                                                                 |
-| ---------------------------------------- | ---------------- | ------------------------------------------------------------------------ |
-| `ListBalances(ctx, ProfileID)`           | FULLY_FUNCTIONAL | `balances.go:23`; sends required `types=STANDARD,SAVINGS` query (`:16`)  |
-| `GetBalance(ctx, ProfileID, BalanceID)`  | FULLY_FUNCTIONAL | `balances.go:51`; linear-scan over `ListBalances`                        |
-| Filter visible + non-investment balances | FULLY_FUNCTIONAL | `balances.go:35`; drops `Visible: false` and invested balances           |
-| Fetch hidden or invested balances        | PLANNED          | No code; Wise v4 exposes a direct per-balance endpoint (plan doc row 17) |
+| Feature                                    | Status           | Evidence                                                       |
+| ------------------------------------------ | ---------------- | -------------------------------------------------------------- |
+| `ListBalances(ctx, ProfileID)`             | FULLY_FUNCTIONAL | `balances.go`; sends required `types=STANDARD,SAVINGS` query   |
+| `GetBalance(ctx, ProfileID, BalanceID)`    | FULLY_FUNCTIONAL | `balances.go`; direct per-balance endpoint, no filtering       |
+| `CreateBalance(ctx, CreateBalanceRequest)` | FULLY_FUNCTIONAL | `balances.go`; savings name enforced client-side               |
+| `GetTotalFunds(ctx, ProfileID, Currency)`  | FULLY_FUNCTIONAL | `balances.go`; Worth + Available as `Money`                    |
+| Filter visible + non-investment balances   | FULLY_FUNCTIONAL | `balances.go:35`; drops `Visible: false` and invested balances |
+| Fetch hidden or invested balances          | FULLY_FUNCTIONAL | `GetBalance` direct endpoint retrieves them individually       |
 
 ## Transactions
 
