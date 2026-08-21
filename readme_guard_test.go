@@ -1,11 +1,12 @@
-package wise
+package wise_test
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"io/fs"
 	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -64,51 +65,79 @@ func TestREADMECodeFencesReferenceRealSymbols(t *testing.T) {
 func exportedAPINames(t *testing.T) map[string]bool {
 	t.Helper()
 
-	fset := token.NewFileSet()
-
-	packages, err := parser.ParseDir(fset, ".", func(fileInfo fs.FileInfo) bool {
-		return !strings.HasSuffix(fileInfo.Name(), "_test.go")
-	}, parser.SkipObjectResolution)
+	sources, err := nonTestGoFiles(".")
 	if err != nil {
-		t.Fatalf("parse package sources: %v", err)
+		t.Fatalf("list package sources: %v", err)
 	}
+
+	fset := token.NewFileSet()
 
 	exported := make(map[string]bool)
 
-	for _, pkg := range packages {
-		for _, file := range pkg.Files {
-			for _, decl := range file.Decls {
-				switch node := decl.(type) {
-				case *ast.FuncDecl:
-					if !node.Name.IsExported() {
-						continue
-					}
-
-					if node.Recv == nil {
-						exported[node.Name.Name] = true
-						continue
-					}
-
-					if receiverIsClient(node.Recv) {
-						exported[node.Name.Name] = true
-					}
-				case *ast.GenDecl:
-					for _, spec := range node.Specs {
-						switch spec := spec.(type) {
-						case *ast.TypeSpec:
-							exported[spec.Name.Name] = spec.Name.IsExported()
-						case *ast.ValueSpec:
-							for _, name := range spec.Names {
-								exported[name.Name] = name.IsExported()
-							}
-						}
-					}
-				}
-			}
+	for _, source := range sources {
+		file, parseErr := parser.ParseFile(fset, source, nil, parser.SkipObjectResolution)
+		if parseErr != nil {
+			t.Fatalf("parse %s: %v", source, parseErr)
 		}
+
+		collectExportedNames(file, exported)
 	}
 
 	return exported
+}
+
+func nonTestGoFiles(dir string) ([]string, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, fmt.Errorf("read directory %s: %w", dir, err)
+	}
+
+	var names []string
+
+	for _, entry := range entries {
+		name := entry.Name()
+		if entry.IsDir() || !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
+			continue
+		}
+
+		names = append(names, filepath.Join(dir, name))
+	}
+
+	return names, nil
+}
+
+func collectExportedNames(file *ast.File, exported map[string]bool) {
+	for _, decl := range file.Decls {
+		switch node := decl.(type) {
+		case *ast.FuncDecl:
+			collectExportedFunc(node, exported)
+		case *ast.GenDecl:
+			for _, spec := range node.Specs {
+				collectExportedSpec(spec, exported)
+			}
+		}
+	}
+}
+
+func collectExportedFunc(node *ast.FuncDecl, exported map[string]bool) {
+	if !node.Name.IsExported() {
+		return
+	}
+
+	if node.Recv == nil || receiverIsClient(node.Recv) {
+		exported[node.Name.Name] = true
+	}
+}
+
+func collectExportedSpec(spec ast.Spec, exported map[string]bool) {
+	switch spec := spec.(type) {
+	case *ast.TypeSpec:
+		exported[spec.Name.Name] = spec.Name.IsExported()
+	case *ast.ValueSpec:
+		for _, name := range spec.Names {
+			exported[name.Name] = name.IsExported()
+		}
+	}
 }
 
 func receiverIsClient(receiver *ast.FieldList) bool {

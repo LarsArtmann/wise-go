@@ -170,6 +170,30 @@ Before pushing, all of these must pass:
 - [ ] `golangci-lint run` — 0 issues
 - [ ] `nix flake check` — all checks pass
 
+### Documentation & link checks
+
+`nix flake check` runs an **offline link check** over the living docs: every
+relative link in README.md must point at a file that exists **and** is listed
+in the `links` fileset union in `flake.nix` (around the `markdown-links`
+check). When you add a relative link to README, add its target to that union
+or the check fails with "File not found".
+
+Two README guardrails run with the test suite:
+
+- `readme_guard_test.go` parses every Go code fence in README.md and fails if
+  it references a `client.Method` or `wise.Symbol` that no longer exists —
+  stale examples become test failures, not reader surprises.
+- The coverage-badge CI job rewrites the README coverage percentage after
+  every push to master; expect the in-repo number to lag your local
+  measurement until the branch is pushed.
+
+For a local link check (including external URLs), run the same tool the flake
+check uses — `lychee` is in the devShell:
+
+```bash
+lychee --offline --no-progress README.md CONTRIBUTING.md
+```
+
 ---
 
 ## Pre-commit Hooks
