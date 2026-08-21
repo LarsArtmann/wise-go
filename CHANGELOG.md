@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+> **Version call pending:** this batch is cut-ready as either **0.9.0** or
+> **v1.0.0**. The v1.0 audit (`docs/reviews/2026-08-21_v1.0-api-audit.md`)
+> found nothing blocking the tag; 0.9.0 is the conservative option because of
+> the two behavior changes below. When the maintainer decides, replace this
+> heading with the chosen version + date — no other edits are required.
+
+> **Behavior changes** — review before upgrading:
+>
+> - **Retry exhaustion returns the final attempt's typed error** instead of an
+>   opaque "retries exceeded" wrapper. Code that string-matched the wrapper
+>   must switch to `errors.As`/`errors.Is` on `*RateLimitError` /
+>   `*ServerError` (details under Fixed).
+> - **`GetBalance` reads the direct per-balance endpoint** instead of scanning
+>   `ListBalances`. Hidden and invested balances — filtered out by the old
+>   list-based path — are now retrievable individually (details under Changed).
+
 ### Added
 
 - `FundTransfer` (`POST /v1/profiles/{profileId}/transfers/{transferId}/payments`):
@@ -16,59 +32,63 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   balance) is a rejected *result*, not an error; `BalanceTransactionID`
   identifies the debit applied to the balance. SCA-protected for UK/EEA
   profiles.
-- Error-path BDD coverage for every write endpoint plus `GetTransfer` and
-  `ListRecipients`: 400 validation, 401, 404, 409 conflict,
-  SCA-403 (`*SCAChallengeError` with one-time token), and
-  429-with-`Retry-After`/`X-Rate-Limited-By` exhaustion.
 - `MissingTransferDetails(requirements, req)`: cross-reference a
   transfer-requirements response against a prepared `CreateTransferRequest` to
   learn which required fields are still unsatisfied before spending a
   `customerTransactionId`. Select fields are checked against their allowed
   values; keys outside the typed request surface are reported explicitly.
-- mTLS documentation: README section showing the `WithBaseURL` +
-  `WithHTTPClient` transport pattern for Wise's client-certificate endpoints
-  (`api-mtls.wise.com`) — no new API surface needed, the existing options
-  compose cleanly.
-- Observability: `WithLogger` (per-attempt RequestLog with method, URL,
-  status, duration, 1-based attempt number — retries visible) and per-request
-  correlation IDs via `WithRequestCorrelationID(ctx, id)` (overrides the
-  client-wide value). README documents the observability patterns.
-- Per-request correlation IDs: `WithRequestCorrelationID(ctx, id)` derives a
-  context whose requests carry their own `X-External-Correlation-Id`,
-  overriding the client-wide `WithCorrelationID` value — one traceable ID per
-  logical operation on a shared client. (The previously dangling doc
-  reference now resolves to a real function.)
+- `GetQuoteAccountRequirements` (`GET /v1/quotes/{quoteId}/account-requirements`):
+  the recipient fields required for an authenticated quote's currency corridor,
+  one dynamic form per payout route (`AccountRequirement`). Bridges quotes to
+  `CreateRecipientRequest` (route Type + Details keys). Sends
+  `Accept-Minor-Version: 1` per Wise's recommendation for new integrations.
+- `GetMe` / `GetUser` (`GET /v1/me`, `GET /v1/users/{userId}`): identity
+  reads for the token owner, with typed `UserID` and full personal-details
+  mapping (DOB parsed as UTC date; nullable details/address preserved).
+- `GetStatement` file download (statement files): download a balance statement as raw bytes
+  in CSV, PDF, XLSX, CAMT.053 XML, MT940, or QIF via a new binary-response
+  path (`getRaw`). Unknown formats are rejected client-side; the interval
+  and currency rules mirror `ListTransactions`.
+- `CreateBalance` (`POST /v4/profiles/{id}/balances`): open a new STANDARD or
+  SAVINGS balance (savings name enforced client-side).
+- `GetTotalFunds` (`GET /v4/profiles/{id}/total-funds/{currency}`): the
+  profile's Worth and Available Money per currency.
 - MCA and bank details: `GetMultiCurrencyAccount` (with the account's own
   RecipientID for top-ups via transfer) and `GetBankAccountDetails` (every
   receiving details set with LOCAL/INTERNATIONAL receive options and their
   display text).
 - `ListCurrencies` (`GET /v1/currencies`): public reference data for
   currency pickers (code, symbol, name, country keywords, decimal support).
-- Balances expansion: `CreateBalance` (POST /v4/profiles/{id}/balances,
-  savings name enforced client-side), a direct `GetBalance`
-  (GET /v4/profiles/{id}/balances/{id} — replaces the list+scan fallback and
-  retrieves hidden/invested balances), and `GetTotalFunds`
-  (GET /v4/profiles/{id}/total-funds/{currency}) with Worth/Available Money
-  values.
 - Webhook signature verification: `ParseWebhookPublicKey` (parse the
   per-subscription PEM key once at startup) + `VerifyWebhookSignature`
   (accept/reject per delivery) for Wise's `X-Signature-SHA256` RSA-SHA256
   scheme, with README security guidance.
-- `GetStatement` file download (statement files): download a balance statement as raw bytes
-  in CSV, PDF, XLSX, CAMT.053 XML, MT940, or QIF via a new binary-response
-  path (`getRaw`). Unknown formats are rejected client-side; the interval
-  and currency rules mirror `ListTransactions`.
-- `GetMe` / `GetUser` (`GET /v1/me`, `GET /v1/users/{userId}`): identity
-  reads for the token owner, with typed `UserID` and full personal-details
-  mapping (DOB parsed as UTC date; nullable details/address preserved).
-- `GetQuoteAccountRequirements` (`GET /v1/quotes/{quoteId}/account-requirements`):
-  the recipient fields required for an authenticated quote's currency corridor,
-  one dynamic form per payout route (`AccountRequirement`). Bridges quotes to
-  `CreateRecipientRequest` (route Type + Details keys). Sends
-  `Accept-Minor-Version: 1` per Wise's recommendation for new integrations.
-- Table-driven unit tests for all three `validate()` functions
-  (transfer, quote, transfer-requirements) covering the missing-field and
-  amount/currency-mismatch matrices, asserting Rejection classification.
+- Observability: `WithLogger` (per-attempt RequestLog with method, URL,
+  status, duration, 1-based attempt number — retries visible) and per-request
+  correlation IDs via `WithRequestCorrelationID(ctx, id)` (derives a context
+  whose requests carry their own `X-External-Correlation-Id`, overriding the
+  client-wide `WithCorrelationID` value — one traceable ID per logical
+  operation on a shared client). README documents the observability patterns.
+- mTLS documentation: README section showing the `WithBaseURL` +
+  `WithHTTPClient` transport pattern for Wise's client-certificate endpoints
+  (`api-mtls.wise.com`) — no new API surface needed, the existing options
+  compose cleanly.
+- Error-path BDD coverage for every write endpoint plus `GetTransfer` and
+  `ListRecipients`: 400 validation, 401, 404, 409 conflict,
+  SCA-403 (`*SCAChallengeError` with one-time token), and
+  429-with-`Retry-After`/`X-Rate-Limited-By` exhaustion. Plus table-driven
+  unit tests for all three `validate()` functions (transfer, quote,
+  transfer-requirements) covering the missing-field and amount/currency
+  mismatch matrices, asserting Rejection classification.
+
+### Changed
+
+- `GetBalance` (`GET /v4/profiles/{id}/balances/{id}`) now queries the direct
+  per-balance endpoint instead of scanning `ListBalances`. Consequence:
+  balances with `Visible: false` or a non-`NOT_INVESTED` investment state —
+  which the list endpoint filters out and the old scan therefore never
+  returned — are retrievable individually. `ListBalances` keeps its
+  visible/non-invested filtering; only the single-balance read changed.
 
 ### Fixed
 

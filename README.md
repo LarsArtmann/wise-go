@@ -32,13 +32,17 @@ Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise'
 - [API Reference](#api-reference)
   - [Authentication](#authentication)
   - [Profiles](#profiles)
+  - [Users](#users)
   - [Balances](#balances)
   - [Transactions](#transactions)
+  - [Statements](#statements)
   - [Quotes](#quotes)
   - [Recipients](#recipients)
   - [Exchange rates](#exchange-rates)
   - [Transfers](#transfers)
   - [Core transfer flow](#core-transfer-flow-quote--recipient--transfer)
+  - [Multi-Currency Account & bank details](#multi-currency-account--bank-details)
+  - [Currencies](#currencies)
 - [Mocking the Client](#mocking-the-client)
 - [Request Middleware](#request-middleware)
 - [Error Handling](#error-handling)
@@ -241,6 +245,24 @@ profiles, err := client.ListProfiles(ctx)
 // }
 ```
 
+### Users
+
+```go
+// The account behind the API token — the identity of ListProfiles' userId values
+me, err := client.GetMe(ctx)
+// me.ID, me.Name, me.Email, me.Active
+// me.Details → *UserDetails (nil when Wise has none on file):
+//   FirstName, LastName, PhoneNumber, DateOfBirth (UTC date; zero when unset),
+//   Occupation, Avatar, PrimaryAddress, Address (*UserAddress)
+
+// A user by ID — personal tokens may only read their own user
+user, err := client.GetUser(ctx, userID)
+```
+
+`Details` and `Details.Address` are pointers: nil means Wise has nothing on
+file, not an error. `DateOfBirth` is parsed from Wise's date-only wire format
+as a UTC midnight `time.Time`.
+
 ### Balances
 
 ```go
@@ -250,11 +272,28 @@ balances, err := client.ListBalances(ctx, profileID)
 //   {ID: 100, Currency: "EUR", Type: BalanceTypeStandard, Name: "Main Account", Amount.Cents: 123456, ...},
 // }
 
-// Get a specific balance by ID
+// Get a specific balance by ID (direct per-balance endpoint)
 balance, err := client.GetBalance(ctx, profileID, balanceID)
+
+// Open a new balance (savings balances require a name)
+created, err := client.CreateBalance(ctx, wise.CreateBalanceRequest{
+    ProfileID: profileID,
+    Currency:  wise.Currency("USD"),
+    Type:      wise.BalanceTypeSavings,
+    Name:      "Vacation",
+})
+
+// Profile-wide funds overview converted to one currency
+total, err := client.GetTotalFunds(ctx, profileID, wise.Currency("EUR"))
+// total.Worth     → cash + invested portfolio valuation (Money)
+// total.Available → cash + approved overdraft limit (Money)
 ```
 
-`ListBalances` filters to `Visible: true` and `InvestmentState == "NOT_INVESTED"` only. `GetBalance` delegates to `ListBalances` + linear scan (Wise has no single-balance endpoint).
+`ListBalances` filters to `Visible: true` and `InvestmentState == "NOT_INVESTED"`
+only. `GetBalance` reads the direct per-balance endpoint
+(`GET /v4/profiles/{id}/balances/{id}`) and does **not** filter — hidden and
+invested balances are retrievable individually even though `ListBalances`
+drops them.
 
 ### Transactions
 
@@ -298,6 +337,32 @@ resp, err := client.ListTransactions(ctx, wise.ListTransactionsRequest{
 
 - Empty `Currency` → `"wise.transactions.invalid_request: currency is required"`
 - `From` after `To` → `"wise.transactions.invalid_request: intervalStart must not be after intervalEnd"`
+
+### Statements
+
+`GetStatement` downloads a balance statement as a **file** and returns its raw
+bytes — for imports, archival, or PDF rendering. Use `ListTransactions` for
+the typed JSON statement.
+
+```go
+pdf, err := client.GetStatement(ctx, wise.GetStatementRequest{
+    ProfileID: profileID,
+    BalanceID: balanceID,
+    Currency:  wise.Currency("EUR"),
+    From:      intervalStart, // UTC
+    To:        intervalEnd,   // UTC
+    Type:      wise.DetailTypeCardPayment, // optional transaction-type filter
+    Format:    wise.StatementFormatPDF,
+})
+```
+
+Six formats: `StatementFormatCSV`, `StatementFormatPDF` (includes Wise
+branding), `StatementFormatXLSX` (Excel), `StatementFormatCAMT` (CAMT.053
+XML), `StatementFormatMT940`, and `StatementFormatQIF`. Unknown formats are
+rejected client-side. The interval rules mirror `ListTransactions` and the
+interval must not exceed **469 days** (Wise limit). Like the JSON statement,
+the endpoint is **SCA-protected** for UK/EEA profiles — see
+[SCA](#strong-customer-authentication-sca).
 
 ### Quotes
 
