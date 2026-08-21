@@ -63,22 +63,12 @@ func (c *Client) GetMe(ctx context.Context) (*User, error) {
 
 // GetUser returns a user account by ID. Personal API tokens can only read
 // their own user; platform tokens may read their customers'.
-//
-//nolint:dupl // per-endpoint method template; intentionally mirrors GetMultiCurrencyAccount's shape
 func (c *Client) GetUser(ctx context.Context, userID UserID) (*User, error) {
-	if userID.Get() == 0 {
-		return nil, errorfamily.NewRejection(
-			"wise.user.invalid_request",
-			"userID is required",
-		)
-	}
-
-	path := fmt.Sprintf("/v1/users/%d", userID.Get())
-
 	var user raw.User
 
-	if err := c.get(ctx, path, &user); err != nil {
-		return nil, fmt.Errorf("get user %d: %w", userID.Get(), err)
+	if err := fetchByID(ctx, c, userID.Get(), "user",
+		fmt.Sprintf("/v1/users/%d", userID.Get()), &user); err != nil {
+		return nil, err
 	}
 
 	result, err := mapUser(user)

@@ -26,8 +26,6 @@ type MultiCurrencyAccount struct {
 
 // GetMultiCurrencyAccount returns the profile's Multi-Currency Account
 // (GET /v1/profiles/{profileId}/multi-currency-account).
-//
-//nolint:dupl // per-endpoint method template; intentionally mirrors GetUser's shape
 func (c *Client) GetMultiCurrencyAccount(
 	ctx context.Context,
 	profileID ProfileID,
