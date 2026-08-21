@@ -19,6 +19,38 @@ type Profile struct {
 	CreatedAt    string `json:"createdAt"`
 }
 
+// User from Wise API (/v1/me, /v1/users/{userId}).
+type User struct {
+	ID     int64       `json:"id"`
+	Name   string      `json:"name"`
+	Email  string      `json:"email"`
+	Active bool        `json:"active"`
+	Detail *UserDetail `json:"details"`
+}
+
+// UserDetail is the personal-details block of a User; null on the wire when
+// Wise has none on file.
+type UserDetail struct {
+	FirstName      string       `json:"firstName"`
+	LastName       string       `json:"lastName"`
+	PhoneNumber    string       `json:"phoneNumber"`
+	DateOfBirth    string       `json:"dateOfBirth"` // "1977-01-01" or empty
+	Occupation     string       `json:"occupation"`
+	Avatar         string       `json:"avatar"`
+	PrimaryAddress int64        `json:"primaryAddress"`
+	Address        *UserAddress `json:"address"`
+}
+
+// UserAddress is the address on file for a user.
+type UserAddress struct {
+	CountryCode string `json:"countryCode"`
+	FirstLine   string `json:"firstLine"`
+	PostCode    string `json:"postCode"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	Occupation  string `json:"occupation"`
+}
+
 // Balance from Wise API (/v4/profiles/{id}/balances).
 type Balance struct {
 	ID               int64         `json:"id"`

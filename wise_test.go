@@ -2255,6 +2255,99 @@ var _ = Describe("Wise Client", func() {
 		})
 	})
 
+	Describe("GetMe", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/me", func(w http.ResponseWriter, _ *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, raw.User{
+						ID: 101, Name: "Example Person", Email: "person@example.com", Active: true,
+						Detail: &raw.UserDetail{
+							FirstName: "Example", LastName: "Person",
+							PhoneNumber: "+37111111111", DateOfBirth: "1977-01-01",
+							PrimaryAddress: 111,
+							Address: &raw.UserAddress{
+								CountryCode: "EE", FirstLine: "Road 123",
+								PostCode: "11111", City: "Tallinn",
+							},
+						},
+					})
+				})
+			})
+
+			It("should return the mapped user", func() {
+				user, err := client.GetMe(context.Background())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(user).ToNot(BeNil())
+				Expect(user.ID.Get()).To(Equal(int64(101)))
+				Expect(user.Email).To(Equal("person@example.com"))
+				Expect(user.Active).To(BeTrue())
+				Expect(user.Details).ToNot(BeNil())
+				Expect(user.Details.FirstName).To(Equal("Example"))
+				Expect(user.Details.DateOfBirth).
+					To(Equal(time.Date(1977, time.January, 1, 0, 0, 0, 0, time.UTC)))
+				Expect(user.Details.Address).ToNot(BeNil())
+				Expect(user.Details.Address.CountryCode).To(Equal("EE"))
+			})
+		})
+
+		Context("with null details", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/me", func(w http.ResponseWriter, _ *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, raw.User{ID: 101, Email: "person@example.com", Active: true})
+				})
+			})
+
+			It("should map details as nil", func() {
+				user, err := client.GetMe(context.Background())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(user.Details).To(BeNil())
+			})
+		})
+	})
+
+	Describe("GetUser", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/users/101", func(w http.ResponseWriter, _ *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, raw.User{ID: 101, Email: "person@example.com", Active: true})
+				})
+			})
+
+			It("should return the mapped user", func() {
+				user, err := client.GetUser(context.Background(), wise.NewUserID(101))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(user).ToNot(BeNil())
+				Expect(user.ID.Get()).To(Equal(int64(101)))
+			})
+		})
+
+		Context("with zero user ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetUser(context.Background(), wise.UserID{})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("userID is required"))
+			})
+		})
+
+		Context("with 404 unknown user", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/users/404", errorHandler(
+					http.StatusNotFound, nil, "NOT_FOUND", "User not found",
+				))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.GetUser(context.Background(), wise.NewUserID(404))
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+	})
+
 	Describe("Retry", func() {
 		Context("on 429 with Retry-After header", func() {
 			var callCount int

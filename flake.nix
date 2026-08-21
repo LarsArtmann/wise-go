@@ -98,6 +98,7 @@
                   ./options.go
                   ./profiles.go
                   ./balances.go
+                  ./users.go
                   ./errors.go
                   ./client.go
                   ./transactions.go

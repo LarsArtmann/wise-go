@@ -7,6 +7,9 @@ import (
 // ProfileBrand is a phantom type for ProfileID.
 type ProfileBrand struct{}
 
+// UserBrand is a phantom type for UserID.
+type UserBrand struct{}
+
 // BalanceBrand is a phantom type for BalanceID.
 type BalanceBrand struct{}
 
@@ -27,6 +30,9 @@ type QuoteBrand struct{}
 
 // ProfileID is a strongly-typed identifier for Wise profiles.
 type ProfileID = id.ID[ProfileBrand, int64]
+
+// UserID is a strongly-typed identifier for Wise user accounts.
+type UserID = id.ID[UserBrand, int64]
 
 // BalanceID is a strongly-typed identifier for Wise balances.
 type BalanceID = id.ID[BalanceBrand, int64]
@@ -54,6 +60,11 @@ type QuoteID = id.ID[QuoteBrand, string]
 // NewProfileID creates a new ProfileID from an int64 value.
 func NewProfileID(v int64) ProfileID {
 	return id.NewID[ProfileBrand](v)
+}
+
+// NewUserID creates a new UserID from an int64 value.
+func NewUserID(v int64) UserID {
+	return id.NewID[UserBrand](v)
 }
 
 // NewBalanceID creates a new BalanceID from an int64 value.

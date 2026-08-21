@@ -22,8 +22,6 @@ split are finalized. Requires explicit approval (tagging is irreversible).
 
 ## P3 — Tier-2 API surface (plan doc tier 2 + near-term reports)
 
-[ ] Add `GetMe` / `GetUser` — `GET /me`, `GET /users/{userId}`. Self-contained reads.
-
 [ ] Add `GetStatement` with format parameter — CSV/PDF/XLSX (SDK consumes
 `statement.json` only today).
 
