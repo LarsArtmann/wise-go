@@ -30,3 +30,16 @@ type Transfer struct {
 type TransferDetails struct {
 	Reference string `json:"reference"`
 }
+
+// FundingResponse from the fund-transfer endpoint
+// (POST /v1/profiles/{profileId}/transfers/{transferId}/payments).
+// The payload is discriminated by "type": the BALANCE variant carries
+// balanceTransactionId, the trusted-pre-fund variants carry partnerReference.
+type FundingResponse struct {
+	Type                 string `json:"type"`
+	Status               string `json:"status"`
+	ErrorCode            string `json:"errorCode,omitempty"`
+	ErrorMessage         string `json:"errorMessage,omitempty"`
+	BalanceTransactionID *int64 `json:"balanceTransactionId,omitempty"`
+	PartnerReference     string `json:"partnerReference,omitempty"`
+}

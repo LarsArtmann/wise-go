@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json/v2"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -1425,6 +1426,97 @@ var _ = Describe("Wise Client", func() {
 		Context("with zero transfer ID", func() {
 			It("should return a rejection without calling the API", func() {
 				_, err := client.CancelTransfer(context.Background(), wise.TransferID{})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("transferID is required"))
+			})
+		})
+	})
+
+	Describe("FundTransfer", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/transfers/16521634/payments",
+					func(w http.ResponseWriter, r *http.Request) {
+						Expect(r.Method).To(Equal(http.MethodPost))
+
+						body, readErr := io.ReadAll(r.Body)
+						Expect(readErr).To(Succeed())
+						Expect(body).To(BeEmpty())
+
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.MarshalWrite(w, raw.FundingResponse{
+							Type:                 "BALANCE",
+							Status:               "COMPLETED",
+							BalanceTransactionID: new(int64(987654321)),
+						})
+					})
+			})
+
+			It("should fund and map the result", func() {
+				result, err := client.FundTransfer(
+					context.Background(),
+					wise.NewProfileID(12345),
+					wise.NewTransferID(16521634),
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+				Expect(result.Type).To(Equal(wise.FundingTypeBalance))
+				Expect(result.Status).To(Equal(wise.FundingStatusCompleted))
+				Expect(result.BalanceTransactionID).ToNot(BeNil())
+				Expect(result.BalanceTransactionID.Get()).To(Equal(int64(987654321)))
+			})
+		})
+
+		Context("when the API rejects the funding", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/transfers/16521635/payments",
+					func(w http.ResponseWriter, r *http.Request) {
+						Expect(r.Method).To(Equal(http.MethodPost))
+
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusCreated)
+						_ = json.MarshalWrite(w, raw.FundingResponse{
+							Type:         "BALANCE",
+							Status:       "REJECTED",
+							ErrorCode:    "balance.insufficient-funds",
+							ErrorMessage: "Not enough funds",
+						})
+					})
+			})
+
+			It("should map the rejection into the result", func() {
+				result, err := client.FundTransfer(
+					context.Background(),
+					wise.NewProfileID(12345),
+					wise.NewTransferID(16521635),
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+				Expect(result.Status).To(Equal(wise.FundingStatusRejected))
+				Expect(result.ErrorCode).To(Equal(wise.FundingErrorCodeBalanceInsufficientFunds))
+				Expect(result.ErrorMessage).To(Equal("Not enough funds"))
+			})
+		})
+
+		Context("with zero profile ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.FundTransfer(
+					context.Background(),
+					wise.ProfileID{},
+					wise.NewTransferID(16521634),
+				)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("profileID is required"))
+			})
+		})
+
+		Context("with zero transfer ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.FundTransfer(
+					context.Background(),
+					wise.NewProfileID(12345),
+					wise.TransferID{},
+				)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("transferID is required"))
 			})

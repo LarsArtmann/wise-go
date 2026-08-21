@@ -102,19 +102,20 @@ claim here can be verified against the implementation.
 
 ## API surface expansion (v0.8.0)
 
-| Feature                                 | Status           | Evidence                                                  |
-| --------------------------------------- | ---------------- | --------------------------------------------------------- |
-| `GetProfile`                            | FULLY_FUNCTIONAL | `profiles.go:13`                                          |
-| `GetExchangeRate`                       | FULLY_FUNCTIONAL | `rates.go:16`                                             |
-| `GetTransfer`                           | FULLY_FUNCTIONAL | `transfers.go:116`                                        |
-| Quotes API (create + get)               | FULLY_FUNCTIONAL | `quotes.go`                                               |
-| `Quote.paymentOptions` + `notices`      | FULLY_FUNCTIONAL | `quotes.go` mapper; BDD-tested with fees/delivery/notices |
-| Recipients API (list + get + create)    | FULLY_FUNCTIONAL | `recipients.go`                                           |
-| `CreateTransfer`                        | FULLY_FUNCTIONAL | `transfers.go:190`                                        |
-| `Transfer.SourceAccount` (`*BalanceID`) | FULLY_FUNCTIONAL | `types.go:219`; debited balance, nil = omitted on wire    |
-| `CancelTransfer`                        | FULLY_FUNCTIONAL | `transfers.go:231`                                        |
-| `GetDeliveryEstimate`                   | FULLY_FUNCTIONAL | `delivery_estimates.go`                                   |
-| `ValidateTransferRequirements`          | FULLY_FUNCTIONAL | `transfer_requirements.go`                                |
+| Feature                                 | Status           | Evidence                                                      |
+| --------------------------------------- | ---------------- | ------------------------------------------------------------- |
+| `GetProfile`                            | FULLY_FUNCTIONAL | `profiles.go:13`                                              |
+| `GetExchangeRate`                       | FULLY_FUNCTIONAL | `rates.go:16`                                                 |
+| `GetTransfer`                           | FULLY_FUNCTIONAL | `transfers.go:116`                                            |
+| Quotes API (create + get)               | FULLY_FUNCTIONAL | `quotes.go`                                                   |
+| `Quote.paymentOptions` + `notices`      | FULLY_FUNCTIONAL | `quotes.go` mapper; BDD-tested with fees/delivery/notices     |
+| Recipients API (list + get + create)    | FULLY_FUNCTIONAL | `recipients.go`                                               |
+| `CreateTransfer`                        | FULLY_FUNCTIONAL | `transfers.go:190`                                            |
+| `Transfer.SourceAccount` (`*BalanceID`) | FULLY_FUNCTIONAL | `types.go:219`; debited balance, nil = omitted on wire        |
+| `CancelTransfer`                        | FULLY_FUNCTIONAL | `transfers.go`                                                |
+| `FundTransfer` (balance funding)        | FULLY_FUNCTIONAL | `transfers.go`; typed `FundTransferResult`, corruption mapper |
+| `GetDeliveryEstimate`                   | FULLY_FUNCTIONAL | `delivery_estimates.go`                                       |
+| `ValidateTransferRequirements`          | FULLY_FUNCTIONAL | `transfer_requirements.go`                                    |
 
 ## Wire format hardening
 

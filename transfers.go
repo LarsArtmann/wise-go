@@ -252,6 +252,98 @@ func (c *Client) CancelTransfer(ctx context.Context, transferID TransferID) (*Tr
 	return &result, nil
 }
 
+// FundTransfer funds a created transfer from the profile's Wise balance
+// (POST /v1/profiles/{profileId}/transfers/{transferId}/payments), triggering
+// processing of the payout. This is the final step of the transfer flow:
+// quote, create recipient, create transfer, fund.
+//
+// Wise debits the transfer's source balance; the funding succeeds only if it
+// holds the full amount. An underfunded balance is not an error return but a
+// result with Status FundingStatusRejected and ErrorCode
+// FundingErrorCodeBalanceInsufficientFunds — top up and call FundTransfer
+// again.
+//
+// The endpoint is SCA-protected for profiles registered in the UK/EEA: without
+// approval it fails with *SCAChallengeError (see WithSCAApprovalToken).
+func (c *Client) FundTransfer(
+	ctx context.Context,
+	profileID ProfileID,
+	transferID TransferID,
+) (*FundTransferResult, error) {
+	if profileID.Get() == 0 {
+		return nil, errorfamily.NewRejection(
+			"wise.transfer.invalid_request",
+			"profileID is required",
+		)
+	}
+
+	if transferID.Get() == 0 {
+		return nil, errTransferIDRequired()
+	}
+
+	path := fmt.Sprintf("/v1/profiles/%d/transfers/%d/payments", profileID.Get(), transferID.Get())
+
+	var funding raw.FundingResponse
+
+	// The request body is optional; an empty body selects default balance funding.
+	if err := c.post(ctx, path, nil, &funding); err != nil {
+		return nil, fmt.Errorf("fund transfer %d: %w", transferID.Get(), err)
+	}
+
+	result, mapErr := mapFundTransferResult(funding)
+	if mapErr != nil {
+		return nil, fmt.Errorf("map funding result for transfer %d: %w", transferID.Get(), mapErr)
+	}
+
+	return &result, nil
+}
+
+// mapFundTransferResult converts a raw funding response into the parsed
+// FundTransferResult type.
+func mapFundTransferResult(funding raw.FundingResponse) (FundTransferResult, error) {
+	fundingType, err := parseEnum(map[string]FundingType{
+		string(FundingTypeBalance):            FundingTypeBalance,
+		string(FundingTypeTrustedPreFundBulk): FundingTypeTrustedPreFundBulk,
+		string(FundingTypeTrustedPreFundTx):   FundingTypeTrustedPreFundTx,
+	}, funding.Type, "funding type")
+	if err != nil {
+		return FundTransferResult{}, errorfamily.WrapCorruption(
+			err,
+			"wise.funding.parse_type",
+			fmt.Sprintf("parse funding type %q", funding.Type),
+		)
+	}
+
+	status, err := parseEnum(map[string]FundingStatus{
+		string(FundingStatusCreated):   FundingStatusCreated,
+		string(FundingStatusCompleted): FundingStatusCompleted,
+		string(FundingStatusRejected):  FundingStatusRejected,
+	}, funding.Status, "funding status")
+	if err != nil {
+		return FundTransferResult{}, errorfamily.WrapCorruption(
+			err,
+			"wise.funding.parse_status",
+			fmt.Sprintf("parse funding status %q (type %q)", funding.Status, funding.Type),
+		)
+	}
+
+	var balanceTransactionID *BalanceTransactionID
+
+	if funding.BalanceTransactionID != nil {
+		id := NewBalanceTransactionID(*funding.BalanceTransactionID)
+		balanceTransactionID = &id
+	}
+
+	return FundTransferResult{
+		Type:                 fundingType,
+		Status:               status,
+		ErrorCode:            FundingErrorCode(funding.ErrorCode),
+		ErrorMessage:         funding.ErrorMessage,
+		BalanceTransactionID: balanceTransactionID,
+		PartnerReference:     funding.PartnerReference,
+	}, nil
+}
+
 // mapTransfer converts a raw wire transfer into the parsed Transfer type.
 func mapTransfer(t raw.Transfer) (Transfer, error) {
 	created, err := parseWiseTimestamp(t.Created)

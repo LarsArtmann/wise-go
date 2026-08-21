@@ -888,3 +888,52 @@ func TestMapBalanceParseErrorsAreCorruption(t *testing.T) {
 		})
 	}
 }
+
+func TestMapFundTransferResultParseErrorsAreCorruption(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		call func() error
+	}{
+		{
+			name: "unknown funding type",
+			call: func() error {
+				_, err := mapFundTransferResult(raw.FundingResponse{Type: "CRYPTO", Status: "COMPLETED"})
+
+				return err
+			},
+		},
+		{
+			name: "unknown funding status",
+			call: func() error {
+				_, err := mapFundTransferResult(raw.FundingResponse{Type: "BALANCE", Status: "MAYBE"})
+
+				return err
+			},
+		},
+		{
+			name: "empty funding type from a shape change",
+			call: func() error {
+				_, err := mapFundTransferResult(raw.FundingResponse{Status: "COMPLETED"})
+
+				return err
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := tt.call()
+			if err == nil {
+				t.Fatal("expected error, got nil")
+			}
+
+			if family := errorfamily.Classify(err); family != errorfamily.Corruption {
+				t.Errorf("Classify() = %v, want Corruption (error: %v)", family, err)
+			}
+		})
+	}
+}

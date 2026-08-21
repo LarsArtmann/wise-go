@@ -247,6 +247,71 @@ const (
 	TransferStatusChargedBack            TransferStatus = "charged_back"
 )
 
+// FundTransferResult is the parsed result of funding a transfer with
+// FundTransfer.
+//
+// Status FundingStatusRejected reports a funding attempt the API refused (for
+// example an underfunded balance); the machine-readable reason is in ErrorCode
+// and a developer-facing explanation in ErrorMessage. This is a successful API
+// call that declined the funding — retry FundTransfer once the underlying
+// problem (e.g. balance top-up) is resolved, unless ErrorCode is
+// payment.exists, which means the transfer was already funded.
+type FundTransferResult struct {
+	Type                 FundingType
+	Status               FundingStatus
+	ErrorCode            FundingErrorCode      // Set only when Status is FundingStatusRejected.
+	ErrorMessage         string                // Developer-facing rejection explanation; not for end users.
+	BalanceTransactionID *BalanceTransactionID // Set for FundingTypeBalance: the debit applied to the balance.
+	PartnerReference     string                // Set for trusted pre-fund types: the echoed partner reference.
+}
+
+// FundingType identifies the funding model Wise used to pay for a transfer.
+type FundingType string
+
+// Funding types reported by the fund-transfer endpoint.
+const (
+	FundingTypeBalance            FundingType = "BALANCE"
+	FundingTypeTrustedPreFundBulk FundingType = "TRUSTED_PRE_FUND_BULK"
+	FundingTypeTrustedPreFundTx   FundingType = "TRUSTED_PRE_FUND_TX"
+)
+
+// FundingStatus is the outcome of a funding attempt.
+type FundingStatus string
+
+// Funding outcomes reported by the fund-transfer endpoint.
+const (
+	FundingStatusCreated   FundingStatus = "CREATED"
+	FundingStatusCompleted FundingStatus = "COMPLETED"
+	FundingStatusRejected  FundingStatus = "REJECTED"
+)
+
+// FundingErrorCode is the machine-readable reason for a rejected funding
+// attempt. Wise may add codes; unknown values flow through unmodified, so
+// switch on the constants for known cases and handle the default explicitly.
+type FundingErrorCode string
+
+// Documented funding error codes ("type" prefixes indicate which funding
+// models can produce them).
+const (
+	FundingErrorCodeTransferNotFound                FundingErrorCode = "transfer.not-found"
+	FundingErrorCodeTransferInvalidState            FundingErrorCode = "transfer.invalid-state"
+	FundingErrorCodePaymentExists                   FundingErrorCode = "payment.exists"
+	FundingErrorCodeTransferNotAccessibleForUser    FundingErrorCode = "transfer.not-accessible-for-user"
+	FundingErrorCodeBalanceMissingSecurityRole      FundingErrorCode = "balance.unauthorised.missing-security-role"
+	FundingErrorCodePaymentNotFound                 FundingErrorCode = "payment.not-found"
+	FundingErrorCodeInvalidRequest                  FundingErrorCode = "invalid.request"
+	FundingErrorCodeUnexpectedError                 FundingErrorCode = "unexpected.error"
+	FundingErrorCodePaymentOptionUnavailable        FundingErrorCode = "payment.option-unavailable"
+	FundingErrorCodeBalancePaymentOptionUnavailable FundingErrorCode = "balance.payment-option-unavailable"
+	FundingErrorCodeBalanceAccountNotFound          FundingErrorCode = "balance.account-not-found"
+	FundingErrorCodeBalanceAccountInactive          FundingErrorCode = "balance.account-inactive"
+	FundingErrorCodeBalanceInsufficientFunds        FundingErrorCode = "balance.insufficient-funds"
+	FundingErrorCodeBalanceNoBalanceForCurrency     FundingErrorCode = "balance.no-balance-for-currency"
+	FundingErrorCodeBalanceCurrencyUnsupported      FundingErrorCode = "balance.currency-unsupported"
+	FundingErrorCodePreFundBulkOptionUnavailable    FundingErrorCode = "trustedprefundbulk.payment-option-unavailable"
+	FundingErrorCodePreFundTxOptionUnavailable      FundingErrorCode = "trustedprefundtx.payment-option-unavailable"
+)
+
 // Quote is the parsed representation of a Wise quote — a locked exchange rate
 // offer used to create a transfer. Authenticated quotes expire after 30 minutes.
 //

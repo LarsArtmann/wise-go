@@ -6,12 +6,6 @@ see [ROADMAP.md](ROADMAP.md). For shipped features see [FEATURES.md](FEATURES.md
 
 ## P1 — Close out the core transfer flow
 
-[ ] Add `FundTransfer` — `POST /v1/profiles/{profileId}/transfers/{transferId}/payments`
-(balance funding). The last mock-testable core-flow gap: after funding, the
-quote → recipient → transfer → fund → delivery-estimate loop is complete end to end.
-Source: `docs/status/2026-08-19_18-15_core-transfer-flow-completion.md` (f.1),
-plan doc tier 1.
-
 [ ] Add error-path BDD tests for the write endpoints — HTTP 400 validation, 409
 cancel-not-allowed, 404, SCA 403, and 429-with-Retry-After for `CreateQuote`,
 `CreateRecipient`, `CreateTransfer`, `CancelTransfer`,

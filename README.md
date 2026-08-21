@@ -12,9 +12,9 @@ Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise'
 > **Status: active development (v0.8.1).** The core transfer flow is implemented
 > end-to-end: profiles, balances, transactions, exchange rates, quotes (with
 > `paymentOptions` + fees), recipients, transfers (create / get / list /
-> cancel), delivery estimates, and transfer-requirements validation. See
-> [FEATURES.md](FEATURES.md) for the honest inventory and [ROADMAP.md](ROADMAP.md)
-> for what's next.
+> cancel / **fund**), delivery estimates, and transfer-requirements validation.
+> See [FEATURES.md](FEATURES.md) for the honest inventory and
+> [ROADMAP.md](ROADMAP.md) for what's next.
 
 > **Design story:** [I needed a Go SDK for Wise. Nobody built one.](https://larsartmann.com/blog/when-the-api-has-no-spec-your-types-are-the-spec)
 
@@ -51,7 +51,7 @@ Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise'
 - **Automatic retries with backoff** — Exponential backoff on 429 (rate limit), 5xx, and network errors via [failsafe-go](https://github.com/failsafe-go/failsafe-go). Auth, not-found, and client errors fail immediately.
 - **Typed, classifiable errors** — `AuthError`, `RateLimitError` (with parsed `Retry-After`), `NotFoundError`, `ServerError`. Each carries its Wise API detail and implements `ErrorCode()` / `ErrorFamily()` / `IsRetryable()` from [go-error-family](https://github.com/larsartmann/go-error-family).
 - **Two-layer type system** — Raw wire types live in `internal/raw`; result types expose clean Go with `Money` value objects and branded `Currency`. The mapping is the only bridge.
-- **Write operations** — create quotes (authenticated and unauthenticated), recipients, and transfers; cancel transfers; validate transfer requirements; fetch delivery estimates.
+- **Write operations** — create quotes (authenticated and unauthenticated), recipients, and transfers; fund transfers from a balance; cancel transfers; validate transfer requirements; fetch delivery estimates.
 - **SCA challenge support** — SCA-protected endpoints (e.g. balance statements for UK/EEA profiles) surface as `*SCAChallengeError` with the one-time approval token; complete the challenge with `WithSCAApprovalToken` and retry. See [SCA](#strong-customer-authentication-sca).
 - **Tolerant timestamp handling** — Wise emits four different timestamp formats. One parser accepts them all (zoneless = UTC), and outgoing query timestamps are normalized to UTC `Z` (Wise rejects zone offsets with 422).
 - **Sandbox support** — One-line switch to the Wise sandbox environment.
@@ -316,6 +316,19 @@ Unlike balance statements, `GET /v1/transfers` is **not SCA-protected** and is a
 
 `Transfer.Created` is parsed tolerantly (RFC3339 or Wise's space-separated format; zoneless values are UTC).
 
+Funding a transfer from the profile's balance:
+
+```go
+funding, err := client.FundTransfer(ctx, profileID, transferID)
+// funding.Status → wise.FundingStatusCompleted / FundingStatusCreated / FundingStatusRejected
+// funding.BalanceTransactionID → the debit applied to the balance (BALANCE funding)
+```
+
+A rejected funding (e.g. `FundingErrorCodeBalanceInsufficientFunds`) is a
+_successful API call that declined_ — top up the balance and call `FundTransfer`
+again. `ErrorCode` is an open enum: known codes are constants, unknown codes
+pass through. The endpoint is SCA-protected for UK/EEA profiles.
+
 ### Core transfer flow: quote → recipient → transfer
 
 The 1% Pareto core. A consumer with `GetProfile`, `CreateQuote`, `CreateRecipient`,
@@ -385,15 +398,26 @@ if err != nil {
     log.Fatal(err)
 }
 
-// 4. Track — poll GetTransfer until it leaves waiting_for_funds, then
-//    fund the transfer from a balance and poll until delivered.
+// 4. Fund — debit the balance to trigger processing of the payout. This is the
+//    final money-movement step; until it succeeds the transfer stays
+//    waiting_for_funds. An underfunded balance is not an error return but a
+//    rejected result — top up and call FundTransfer again.
+funding, err := client.FundTransfer(ctx, profile.ID, transfer.ID)
+if err != nil {
+    log.Fatal(err)
+}
+if funding.Status == wise.FundingStatusRejected {
+    log.Fatalf("funding rejected (%s): %s", funding.ErrorCode, funding.ErrorMessage)
+}
+
+// 5. Track — the delivery estimate for the now-funded transfer.
 estimate, err := client.GetDeliveryEstimate(ctx, transfer.ID, "Europe/Berlin")
 if err != nil {
     log.Fatal(err)
 }
 fmt.Printf("expected arrival: %s\n", estimate.EstimatedDeliveryDate)
 
-// 5. Cancel — only possible before the transfer is processed.
+// 6. Cancel — only possible before the transfer is processed.
 cancelled, err := client.CancelTransfer(ctx, transfer.ID)
 if err != nil {
     log.Fatal(err)

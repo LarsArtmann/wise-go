@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- `FundTransfer` (`POST /v1/profiles/{profileId}/transfers/{transferId}/payments`):
+  fund a created transfer from the profile's Wise balance, the final step of
+  the core transfer flow. Returns `*FundTransferResult` with typed
+  `FundingType`, `FundingStatus`, and `FundingErrorCode` (open enum, all 17
+  documented codes as constants). A declined funding (e.g. insufficient
+  balance) is a rejected *result*, not an error; `BalanceTransactionID`
+  identifies the debit applied to the balance. SCA-protected for UK/EEA
+  profiles.
+
 ## [0.8.1] - 2026-08-21
 
 ### Fixed
