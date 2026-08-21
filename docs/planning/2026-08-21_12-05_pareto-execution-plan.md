@@ -275,3 +275,15 @@ Execution order within tiers is table order; the only hard edges are `FundTransf
 ---
 
 _Plan complete. Awaiting approval for Full Execution Mode._
+
+---
+
+## Execution Result — 2026-08-21 (same day)
+
+**Status: all 77 executable tasks of Table B complete; tasks 24–27 remain gated as planned.**
+
+- Tier 1% (1.x): `FundTransfer` shipped with the full gate set — the money-movement loop is closed end to end.
+- Tier 4% (2.x–8.x): error-path BDD for every write endpoint (which exposed and fixed a real defect: exhausted retries discarded the typed error), validate() matrices, `MissingTransferDetails`, `GetQuoteAccountRequirements`, godoc examples, vendorHash.nix.
+- Tier 20% (9.x–23.x): users, statement files (six formats), webhook signature verification, balance lifecycle, MCA + bank details, currencies, per-request correlation IDs, `WithLogger`, ctx-cancellation spec, mTLS docs, the v1.0 audit (`docs/reviews/2026-08-21_v1.0-api-audit.md` — nothing blocks the tag), CI coverage badge (no hand-edited numbers), lychee links gate in `nix flake check`, govulncheck triage (all stdlib, fixed in go1.26.6), Cachix, housekeeping (68-vs-77 resolved).
+- Final gates: `go test -race` 121 specs green, `golangci-lint` 0 issues, `nix flake check` all checks passed.
+- Still gated on the user: sandbox API key (24), v1.0.0 approval (25), typed-recipients decision (26), demand-gated epics (27).

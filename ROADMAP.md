@@ -11,11 +11,15 @@ library that is obviously correct, obviously typed, and obviously safe to depend
 Every monetary amount is `Money` (cents paired with `Currency`). Every entity ID is
 branded. Every error is typed and classifiable. Every API call retries intelligently.
 
-As of v0.8.1, the type-safety redesign is complete AND the core transfer flow is
-live: quotes (create/get with payment options, fees, notices), recipients
-(list/get/create), transfers (list/get/create/cancel), delivery estimates,
-transfer-requirements validation, and exchange rates — 18 endpoint methods across
-9 resources, plus write helpers under the existing retry/error architecture.
+As of 2026-08-21, the type-safety redesign is complete, the core transfer flow is
+live END TO END (quotes, recipients, transfers, funding, delivery estimates,
+transfer-requirements and account-requirements validation, exchange rates), and
+the tier-2 surface shipped: users, statement files in all six formats, webhook
+signature verification, balance lifecycle (create/direct-get/total-funds),
+Multi-Currency Account + bank details, and currency reference data — 31
+endpoint methods, plus observability (WithLogger, per-request correlation IDs)
+and write helpers under the existing retry/error architecture. The v1.0 audit
+(`docs/reviews/2026-08-21_v1.0-api-audit.md`) found nothing blocking the tag.
 The roadmap expands the surface along four axes — completeness, type-safety,
 observability, and scale — while preserving the architectural decisions that make
 the codebase maintainable.
@@ -141,12 +145,15 @@ is clear.
 
 ### Trigger: resource count crosses ~6–8 — REACHED
 
-The SDK now has 9 resources (profiles, balances, transactions, transfers, quotes,
-recipients, exchange rates, delivery estimates, transfer requirements) and 18
-endpoint methods on the flat `client.X` surface. The threshold documented here
+The SDK now has 14 resources (profiles, users, balances, multi-currency account,
+bank details, transactions/statements, transfers, funding, quotes, recipients,
+exchange rates, delivery estimates, transfer requirements, currencies) and 31
+endpoint methods on the flat `client.X` surface — the core flow including
+`FundTransfer` is complete (2026-08-21). The threshold documented here
 has been crossed; the open question is WHEN to pay the refactor cost. The
-recommended sequencing: finish the core flow (`FundTransfer`, tier-2 reads),
-then move to a **service-client sub-structure** in one release cycle:
+recommended sequencing: v1.0 on the flat surface (the 2026-08-21 audit found
+no structural blocker), then move to a **service-client sub-structure** in
+one release cycle:
 
 ```go
 client.Profiles().List(ctx)

@@ -137,8 +137,7 @@ claim here can be verified against the implementation.
 
 ## Out of scope (not yet started)
 
-| Feature                      | Status  | Notes                                         |
-| ---------------------------- | ------- | --------------------------------------------- |
-| Webhooks                     | PLANNED | No code                                       |
-| Statements (CSV/PDF)         | PLANNED | SDK consumes `statement.json` only            |
-| Service-client sub-structure | PLANNED | Trigger reached: 9 resources (see ROADMAP.md) |
+| Feature                      | Status           | Notes                                          |
+| ---------------------------- | ---------------- | ---------------------------------------------- |
+| Statements (CSV/PDF)         | FULLY_FUNCTIONAL | `GetStatement` — all six formats, raw bytes    |
+| Service-client sub-structure | PLANNED          | Trigger reached: 14 resources (see ROADMAP.md) |
