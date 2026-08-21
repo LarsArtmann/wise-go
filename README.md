@@ -50,6 +50,7 @@ Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise'
 - [Webhooks](#webhooks)
 - [Design Decisions](#design-decisions)
 - [Testing](#testing)
+  - [Sandbox verification](#sandbox-verification)
 - [Project Status](#project-status)
 - [Contributing](#contributing)
 - [License](#license)
@@ -782,6 +783,28 @@ GOEXPERIMENT=jsonv2 go test ./...
 ```
 
 Tests use `net/http/httptest` to mock the Wise API — no network access required. The `GOEXPERIMENT=jsonv2` prefix is mandatory (see [Installation](#installation)).
+
+### Sandbox verification
+
+A small live-test suite (`sandbox_live_test.go`) exercises the real sandbox at
+`api.wise-sandbox.com`. It is **key-gated**: every test skips unless
+`WISE_SANDBOX_API_KEY` is set, so the default suite stays offline and CI never
+fails on a missing secret.
+
+Locally:
+
+```bash
+WISE_SANDBOX_API_KEY=<your-sandbox-key> GOEXPERIMENT=jsonv2 \
+  go test -run TestSandboxLive -v -count=1 ./...
+```
+
+In CI: the [Sandbox Live Tests](.github/workflows/sandbox-live.yml) workflow
+runs the same suite on manual dispatch (`workflow_dispatch`). Add the
+`WISE_SANDBOX_API_KEY` secret to the repository first; dispatching without it
+is a green no-op (all tests skip, visible as `SKIP` lines in the log). Current
+coverage is a `GetMe` smoke test — the natural place to grow credentialed
+scenarios (quote → recipient → transfer against sandbox data) once a key is
+available.
 
 ## Project Status
 
