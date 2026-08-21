@@ -4,19 +4,6 @@ Short- and mid-term actionable work for wise-go. Each item is bounded, has clear
 ownership, and can be completed in one sitting. For long-term vision and raw ideas
 see [ROADMAP.md](ROADMAP.md). For shipped features see [FEATURES.md](FEATURES.md).
 
-## P1 — Close out the core transfer flow
-
-[ ] Add validation edge-case unit tests — `CreateTransferRequest.validate`
-(`transfers.go:133`), `ValidateTransferRequirementsRequest.validate`
-(`transfer_requirements.go:42`), `CreateQuoteRequest.validate` (`quotes.go:88`):
-missing customerTransactionId/quote/target, amount/currency mismatch matrix.
-Source: status report 18-15 (f.3).
-
-[ ] Wire `ValidateTransferRequirements` output into transfer creation — a helper
-that maps discovered required fields onto `CreateTransferRequest.Details` (or a
-documented manual-mapping pattern). The discovery is currently one-way.
-Source: status report 18-15 (f.5, e.7).
-
 ## P2 — v1.0 release (API lock)
 
 [ ] Add credentialed Wise sandbox integration tests — create a protected or

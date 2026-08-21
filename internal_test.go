@@ -13,6 +13,230 @@ import (
 	"github.com/larsartmann/wise-go/internal/raw"
 )
 
+// expectRejection asserts err is non-nil, contains wantSubstr, and classifies
+// as a Rejection (the client-side validation contract: fail fast, never
+// retryable, no network round-trip).
+func expectRejection(t *testing.T, err error, wantSubstr string) {
+	t.Helper()
+
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	if !strings.Contains(err.Error(), wantSubstr) {
+		t.Errorf("error %q does not contain %q", err.Error(), wantSubstr)
+	}
+
+	if family := errorfamily.Classify(err); family != errorfamily.Rejection {
+		t.Errorf("Classify() = %v, want Rejection (error: %v)", family, err)
+	}
+}
+
+func TestCreateTransferRequestValidate(t *testing.T) {
+	t.Parallel()
+
+	const (
+		quoteID   = "11144c35-9fe8-4c32-b7fd-d05c2a7734bf"
+		txID      = "22244c35-9fe8-4c32-b7fd-d05c2a7734bf"
+		accountID = int64(98765432)
+	)
+
+	valid := CreateTransferRequest{
+		QuoteID:               NewQuoteID(quoteID),
+		TargetAccount:         NewRecipientID(accountID),
+		CustomerTransactionID: txID,
+	}
+
+	tests := []struct {
+		name      string
+		mutate    func(*CreateTransferRequest)
+		wantSubst string
+	}{
+		{
+			name:      "missing quoteID",
+			mutate:    func(r *CreateTransferRequest) { r.QuoteID = QuoteID{} },
+			wantSubst: "quoteID is required",
+		},
+		{
+			name:      "missing targetAccount",
+			mutate:    func(r *CreateTransferRequest) { r.TargetAccount = RecipientID{} },
+			wantSubst: "targetAccount is required",
+		},
+		{
+			name:      "missing customerTransactionId",
+			mutate:    func(r *CreateTransferRequest) { r.CustomerTransactionID = "" },
+			wantSubst: "customerTransactionId is required",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			req := valid
+			tt.mutate(&req)
+			expectRejection(t, req.validate(), tt.wantSubst)
+		})
+	}
+
+	t.Run("complete request passes", func(t *testing.T) {
+		t.Parallel()
+
+		if err := valid.validate(); err != nil {
+			t.Errorf("validate() = %v, want nil", err)
+		}
+	})
+}
+
+type quoteValidateCase struct {
+	name      string
+	mutate    func(*CreateQuoteRequest)
+	wantSubst string
+}
+
+func quoteValidateCases() []quoteValidateCase {
+	return []quoteValidateCase{
+		{
+			name:      "missing sourceCurrency",
+			mutate:    func(r *CreateQuoteRequest) { r.SourceCurrency = "" },
+			wantSubst: "sourceCurrency is required",
+		},
+		{
+			name:      "missing targetCurrency",
+			mutate:    func(r *CreateQuoteRequest) { r.TargetCurrency = "" },
+			wantSubst: "targetCurrency is required",
+		},
+		{
+			name:      "same currencies",
+			mutate:    func(r *CreateQuoteRequest) { r.TargetCurrency = Currency("EUR") },
+			wantSubst: "must be different",
+		},
+		{
+			name:      "no amount set",
+			mutate:    func(r *CreateQuoteRequest) { r.SourceAmount = nil },
+			wantSubst: "either sourceAmount or targetAmount is required",
+		},
+		{
+			name: "both amounts set",
+			mutate: func(r *CreateQuoteRequest) {
+				r.TargetAmount = &Money{Cents: 1086, Currency: Currency("USD")}
+			},
+			wantSubst: "only one of sourceAmount or targetAmount",
+		},
+		{
+			name: "sourceAmount currency mismatch",
+			mutate: func(r *CreateQuoteRequest) {
+				r.SourceAmount = &Money{Cents: 1000, Currency: Currency("GBP")}
+			},
+			wantSubst: "sourceAmount currency must match sourceCurrency",
+		},
+		{
+			name: "targetAmount currency mismatch",
+			mutate: func(r *CreateQuoteRequest) {
+				r.SourceAmount = nil
+				r.TargetAmount = &Money{Cents: 1086, Currency: Currency("EUR")}
+			},
+			wantSubst: "targetAmount currency must match targetCurrency",
+		},
+	}
+}
+
+func TestCreateQuoteRequestValidate(t *testing.T) {
+	t.Parallel()
+
+	base := func() CreateQuoteRequest {
+		return CreateQuoteRequest{
+			SourceCurrency: Currency("EUR"),
+			TargetCurrency: Currency("USD"),
+			SourceAmount:   &Money{Cents: 1000, Currency: Currency("EUR")},
+		}
+	}
+
+	for _, tt := range quoteValidateCases() {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			req := base()
+			tt.mutate(&req)
+			expectRejection(t, req.validate(), tt.wantSubst)
+		})
+	}
+}
+
+func TestCreateQuoteRequestValidateAccepts(t *testing.T) {
+	t.Parallel()
+
+	t.Run("target-amount quote passes", func(t *testing.T) {
+		t.Parallel()
+
+		req := CreateQuoteRequest{
+			SourceCurrency: Currency("EUR"),
+			TargetCurrency: Currency("USD"),
+			TargetAmount:   &Money{Cents: 1086, Currency: Currency("USD")},
+		}
+
+		if err := req.validate(); err != nil {
+			t.Errorf("validate() = %v, want nil", err)
+		}
+	})
+
+	t.Run("authenticated quote requires profileID", func(t *testing.T) {
+		t.Parallel()
+
+		req := CreateQuoteRequest{
+			SourceCurrency: Currency("EUR"),
+			TargetCurrency: Currency("USD"),
+			SourceAmount:   &Money{Cents: 1000, Currency: Currency("EUR")},
+		}
+
+		expectRejection(t, req.validateAuthenticated(ProfileID{}), "profileID is required")
+	})
+}
+
+func TestValidateTransferRequirementsRequestValidate(t *testing.T) {
+	t.Parallel()
+
+	valid := ValidateTransferRequirementsRequest{
+		TargetAccount: NewRecipientID(98765432),
+		QuoteID:       NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
+	}
+
+	tests := []struct {
+		name      string
+		mutate    func(*ValidateTransferRequirementsRequest)
+		wantSubst string
+	}{
+		{
+			name:      "missing targetAccount",
+			mutate:    func(r *ValidateTransferRequirementsRequest) { r.TargetAccount = RecipientID{} },
+			wantSubst: "targetAccount is required",
+		},
+		{
+			name:      "missing quoteID",
+			mutate:    func(r *ValidateTransferRequirementsRequest) { r.QuoteID = QuoteID{} },
+			wantSubst: "quoteUuid is required",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			req := valid
+			tt.mutate(&req)
+			expectRejection(t, req.validate(), tt.wantSubst)
+		})
+	}
+
+	t.Run("complete request passes", func(t *testing.T) {
+		t.Parallel()
+
+		if err := valid.validate(); err != nil {
+			t.Errorf("validate() = %v, want nil", err)
+		}
+	})
+}
+
 func TestParseRetryAfter(t *testing.T) {
 	t.Parallel()
 
@@ -886,6 +1110,169 @@ func TestMapBalanceParseErrorsAreCorruption(t *testing.T) {
 				t.Errorf("Classify() = %v, want Corruption (error: %v)", family, err)
 			}
 		})
+	}
+}
+
+// requirementField builds a single-field form requirement for tests.
+func requirementField(
+	key, name string,
+	required bool,
+	valuesAllowed ...TransferRequirementValue,
+) TransferRequirement {
+	return TransferRequirement{
+		Type: "transfer",
+		Fields: []TransferRequirementForm{{
+			Name: name,
+			Group: []TransferRequirementField{{
+				Key:           key,
+				Name:          name,
+				Type:          "text",
+				Required:      required,
+				ValuesAllowed: valuesAllowed,
+			}},
+		}},
+	}
+}
+
+type missingDetailsCase struct {
+	name string
+	reqs []TransferRequirement
+	req  CreateTransferRequest
+	want []string
+}
+
+func missingDetailsCases(purposeValues []TransferRequirementValue) []missingDetailsCase {
+	return []missingDetailsCase{
+		{
+			name: "no requirements means nothing missing",
+			reqs: nil,
+			req:  CreateTransferRequest{},
+			want: []string{},
+		},
+		{
+			name: "optional fields are not reported",
+			reqs: []TransferRequirement{
+				requirementField("reference", "Transfer reference", false),
+			},
+			req:  CreateTransferRequest{},
+			want: []string{},
+		},
+		{
+			name: "required modeled field left empty is reported",
+			reqs: []TransferRequirement{
+				requirementField("reference", "Transfer reference", true),
+			},
+			req:  CreateTransferRequest{},
+			want: []string{"Transfer reference"},
+		},
+		{
+			name: "required modeled field set is satisfied",
+			reqs: []TransferRequirement{
+				requirementField("reference", "Transfer reference", true),
+			},
+			req:  CreateTransferRequest{Reference: "Invoice 2026-001"},
+			want: []string{},
+		},
+		{
+			name: "select field with disallowed value is reported",
+			reqs: []TransferRequirement{
+				requirementField("transferPurpose", "Transfer purpose", true, purposeValues...),
+			},
+			req:  CreateTransferRequest{TransferPurpose: "made.up.purpose"},
+			want: []string{"Transfer purpose"},
+		},
+		{
+			name: "select field with allowed value is satisfied",
+			reqs: []TransferRequirement{
+				requirementField("transferPurpose", "Transfer purpose", true, purposeValues...),
+			},
+			req:  CreateTransferRequest{TransferPurpose: "verification.transfers.purpose.other"},
+			want: []string{},
+		},
+		{
+			name: "unmodeled required key is always reported",
+			reqs: []TransferRequirement{
+				requirementField("legalEntityIdentifier", "Legal entity identifier", true),
+			},
+			req:  CreateTransferRequest{},
+			want: []string{"Legal entity identifier"},
+		},
+	}
+}
+
+func TestMissingTransferDetails(t *testing.T) {
+	t.Parallel()
+
+	purposeValues := []TransferRequirementValue{
+		{Key: "verification.transfers.purpose.pay.bills", Name: "Rent or other property expenses"},
+		{Key: "verification.transfers.purpose.other", Name: "Other"},
+	}
+
+	for _, tt := range missingDetailsCases(purposeValues) {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := MissingTransferDetails(tt.reqs, tt.req)
+			if len(got) != len(tt.want) {
+				t.Fatalf("MissingTransferDetails() = %v, want %v", got, tt.want)
+			}
+
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Errorf("MissingTransferDetails()[%d] = %q, want %q", i, got[i], tt.want[i])
+				}
+			}
+		})
+	}
+}
+
+// TestMissingTransferDetailsTwoPassFlow mirrors the documented
+// RefreshRequirementsOnChange pattern: populating the refresh-triggering
+// select reveals a lower-level required field on the second
+// ValidateTransferRequirements round-trip, and MissingTransferDetails catches
+// it before CreateTransfer spends the customerTransactionId.
+func TestMissingTransferDetailsTwoPassFlow(t *testing.T) {
+	t.Parallel()
+
+	purposeValues := []TransferRequirementValue{
+		{Key: "verification.transfers.purpose.intercompany", Name: "Intercompany payment"},
+	}
+
+	firstPass := make([]TransferRequirement, 0, 2)
+	firstPass = append(firstPass,
+		requirementField("transferPurpose", "Transfer purpose", true, purposeValues...),
+	)
+
+	firstPass[0].Fields[0].Group[0].RefreshRequirementsOnChange = true
+	firstPass[0].Fields[0].Group[0].Type = "select"
+
+	req := CreateTransferRequest{}
+
+	if missing := MissingTransferDetails(firstPass, req); len(missing) != 1 {
+		t.Fatalf("first pass: MissingTransferDetails() = %v, want [Transfer purpose]", missing)
+	}
+
+	req.TransferPurpose = "verification.transfers.purpose.intercompany"
+
+	if missing := MissingTransferDetails(firstPass, req); len(missing) != 0 {
+		t.Fatalf("after purpose set: MissingTransferDetails() = %v, want none", missing)
+	}
+
+	secondPass := make([]TransferRequirement, 0, len(firstPass)+1)
+	secondPass = append(secondPass, firstPass...)
+	secondPass = append(secondPass,
+		requirementField("transferPurposeInvoiceNumber", "Invoice number", true),
+	)
+
+	missing := MissingTransferDetails(secondPass, req)
+	if len(missing) != 1 || missing[0] != "Invoice number" {
+		t.Errorf("second pass: MissingTransferDetails() = %v, want [Invoice number]", missing)
+	}
+
+	req.TransferPurposeInvoiceNumber = "INV-2026-001"
+
+	if missing := MissingTransferDetails(secondPass, req); len(missing) != 0 {
+		t.Errorf("after invoice set: MissingTransferDetails() = %v, want none", missing)
 	}
 }
 

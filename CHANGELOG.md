@@ -20,6 +20,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `ListRecipients`: 400 validation, 401, 404, 409 conflict,
   SCA-403 (`*SCAChallengeError` with one-time token), and
   429-with-`Retry-After`/`X-Rate-Limited-By` exhaustion.
+- `MissingTransferDetails(requirements, req)`: cross-reference a
+  transfer-requirements response against a prepared `CreateTransferRequest` to
+  learn which required fields are still unsatisfied before spending a
+  `customerTransactionId`. Select fields are checked against their allowed
+  values; keys outside the typed request surface are reported explicitly.
+- Table-driven unit tests for all three `validate()` functions
+  (transfer, quote, transfer-requirements) covering the missing-field and
+  amount/currency-mismatch matrices, asserting Rejection classification.
 
 ### Fixed
 

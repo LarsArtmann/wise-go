@@ -384,7 +384,18 @@ requirements, err := client.ValidateTransferRequirements(ctx, wise.ValidateTrans
 if err != nil {
     log.Fatal(err)
 }
-_ = requirements // inspect .Fields: required, allowed values, validation regexps
+
+// Cross-reference the response against your prepared request to learn which
+// required fields are still unsatisfied (select choices are checked against
+// their allowed values):
+transferReq := wise.CreateTransferRequest{
+    QuoteID:               quote.ID,
+    TargetAccount:         recipient.ID,
+    CustomerTransactionID: "22244c35-9fe8-4c32-b7fd-d05c2a7734bf",
+}
+if missing := wise.MissingTransferDetails(requirements, transferReq); len(missing) > 0 {
+    log.Fatalf("transfer details still missing: %v", missing)
+}
 
 // 3. Transfer — customerTransactionId is your idempotency key (a UUID).
 //    Reusing it with the same quote + targetAccount returns the existing

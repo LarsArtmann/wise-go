@@ -15,7 +15,9 @@ import (
 //
 // The response is an array of dynamic forms. Fields flagged
 // RefreshRequirementsOnChange mean the validation must be repeated once the
-// field is populated to discover lower-level required fields.
+// field is populated to discover lower-level required fields. Cross-reference
+// the response against a prepared transfer with MissingTransferDetails to
+// learn which required fields are still unsatisfied.
 func (c *Client) ValidateTransferRequirements(
 	ctx context.Context,
 	req ValidateTransferRequirementsRequest,
@@ -55,6 +57,88 @@ func (r ValidateTransferRequirementsRequest) validate() error {
 	}
 
 	return nil
+}
+
+// MissingTransferDetails cross-references a transfer-requirements response
+// against a prepared CreateTransferRequest and returns the human-readable
+// names of fields Wise marked required that the request does not satisfy.
+// An empty result means the request carries every detail required for the
+// corridor; call it after ValidateTransferRequirements and before
+// CreateTransfer to fail before spending a customerTransactionId.
+//
+// Select fields (ValuesAllowed non-empty) are only satisfied by a value from
+// their allowed list. Keys the SDK does not model as typed fields (rare,
+// corridor-specific) are always reported — the corridor then needs a field
+// beyond CreateTransferRequest's surface, and the response's dynamic form
+// describes what Wise expects.
+//
+// Fields flagged RefreshRequirementsOnChange reveal lower-level requirements
+// only after they are populated: re-run ValidateTransferRequirements with the
+// populated value and call MissingTransferDetails on the fresh response.
+func MissingTransferDetails(
+	requirements []TransferRequirement,
+	req CreateTransferRequest,
+) []string {
+	missing := make([]string, 0)
+
+	for _, requirement := range requirements {
+		for _, form := range requirement.Fields {
+			for _, field := range form.Group {
+				if !field.Required {
+					continue
+				}
+
+				value, modeled := transferRequestDetailValue(req, field.Key)
+				if !modeled {
+					missing = append(missing, field.Name)
+
+					continue
+				}
+
+				if value == "" || !selectValueAllowed(field, value) {
+					missing = append(missing, field.Name)
+				}
+			}
+		}
+	}
+
+	return missing
+}
+
+// selectValueAllowed reports whether value is an allowed choice for a select
+// field. Fields without ValuesAllowed accept any non-empty value.
+func selectValueAllowed(field TransferRequirementField, value string) bool {
+	if len(field.ValuesAllowed) == 0 {
+		return true
+	}
+
+	for _, allowed := range field.ValuesAllowed {
+		if allowed.Key == value {
+			return true
+		}
+	}
+
+	return false
+}
+
+// transferRequestDetailValue maps a wire detail key onto the corresponding
+// typed CreateTransferRequest field. The second result reports whether the
+// key is modeled at all.
+func transferRequestDetailValue(req CreateTransferRequest, key string) (string, bool) {
+	switch key {
+	case "reference":
+		return req.Reference, true
+	case "sourceOfFunds":
+		return req.SourceOfFunds, true
+	case "transferPurpose":
+		return req.TransferPurpose, true
+	case "transferPurposeInvoiceNumber":
+		return req.TransferPurposeInvoiceNumber, true
+	case "transferPurposeSubTransferPurpose":
+		return req.TransferPurposeSubTransferPurpose, true
+	default:
+		return "", false
+	}
 }
 
 func (r ValidateTransferRequirementsRequest) toWire() map[string]any {
