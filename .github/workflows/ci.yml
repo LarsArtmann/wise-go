@@ -97,16 +97,29 @@ jobs:
       - name: Run govulncheck
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck ./...
+          govulncheck -show verbose ./... | tee govulncheck.txt
+
+      - name: Upload verbose output
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: govulncheck-report
+          path: govulncheck.txt
     timeout-minutes: 15
   coverage-badge:
     # Generates coverage/badge.json so the README badge renders live data —
     # kills badge drift (the 94.8%→84.2% hand-edit incident).
+    #
+    # Job-level concurrency: the badge job pushes to master, so two runs must
+    # never race the push. Queue instead of cancel — cancel-in-progress could
+    # abort mid-push and leave a rejected-push state behind.
     name: Coverage Badge
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     permissions:
       contents: write
+    concurrency:
+      group: coverage-badge-${{ github.ref }}
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -138,6 +151,9 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add .github/badges/coverage.json
           git diff --cached --quiet || git commit -m "chore(coverage): update badge [skip ci]"
+          # Master may have moved since checkout (e.g. the auto-git daemon or
+          # a merge landed mid-run); rebase the badge commit on tip before push.
+          git pull --rebase --autostash
           git push
     timeout-minutes: 15
   nix:
@@ -156,9 +172,16 @@ jobs:
 
       # Binary cache: pushes build outputs so later runs (and contributors)
       # skip the ~5min sandboxed test build. Public cache, no auth to read.
+      #
+      # WARN-not-fail: the cache name 'larsartmann' and CACHIX_AUTH_TOKEN are
+      # UNVERIFIED (open question g2 — does the cache exist? is the secret
+      # set?). Until that is answered this step degrades to a warning instead
+      # of failing the whole nix job. Flip continue-on-error to false once g2
+      # is resolved.
       - name: Push to Cachix
         if: github.ref == 'refs/heads/master'
         uses: cachix/cachix-action@ad2ddac53f961de1989924296a1f236fcfbaa4fc # v15
+        continue-on-error: true
         with:
           name: larsartmann
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
