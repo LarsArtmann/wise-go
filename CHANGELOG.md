@@ -100,6 +100,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- Internal deduplication, no public API or error-message changes: all 22
+  branded-ID guards now go through one `requireID` helper (replacing the
+  per-endpoint `x.Get() == 0` rejection blocks and the one-off
+  `errTransferIDRequired`), the transfer endpoints map responses through one
+  `toTransfer` wrapper, and `CreateTransferRequest.detailsWire` renders via
+  `TransferRequirementsDetails.toWire` so the details wire keys have a single
+  spelling.
+
 - `GetBalance` (`GET /v4/profiles/{id}/balances/{id}`) now queries the direct
   per-balance endpoint instead of scanning `ListBalances`. Consequence:
   balances with `Visible: false` or a non-`NOT_INVESTED` investment state —

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go/internal/raw"
 )
 
@@ -42,18 +41,12 @@ func (c *Client) ValidateTransferRequirements(
 }
 
 func (r ValidateTransferRequirementsRequest) validate() error {
-	if r.TargetAccount.Get() == 0 {
-		return errorfamily.NewRejection(
-			"wise.transfer.invalid_request",
-			"targetAccount is required",
-		)
+	if err := requireID(r.TargetAccount, "wise.transfer.invalid_request", "targetAccount"); err != nil {
+		return err
 	}
 
-	if r.QuoteID.Get() == "" {
-		return errorfamily.NewRejection(
-			"wise.transfer.invalid_request",
-			"quoteUuid is required",
-		)
+	if err := requireID(r.QuoteID, "wise.transfer.invalid_request", "quoteUuid"); err != nil {
+		return err
 	}
 
 	return nil

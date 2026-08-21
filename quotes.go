@@ -63,18 +63,12 @@ func (c *Client) GetQuote(
 	profileID ProfileID,
 	quoteID QuoteID,
 ) (*Quote, error) {
-	if profileID.Get() == 0 {
-		return nil, errorfamily.NewRejection(
-			"wise.quote.invalid_request",
-			"profileID is required",
-		)
+	if err := requireID(profileID, "wise.quote.invalid_request", "profileID"); err != nil {
+		return nil, err
 	}
 
-	if quoteID.Get() == "" {
-		return nil, errorfamily.NewRejection(
-			"wise.quote.invalid_request",
-			"quoteID is required",
-		)
+	if err := requireID(quoteID, "wise.quote.invalid_request", "quoteID"); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/v3/profiles/%d/quotes/%s", profileID.Get(), quoteID.Get())
@@ -101,11 +95,8 @@ func (c *Client) GetQuoteAccountRequirements(
 	ctx context.Context,
 	req QuoteAccountRequirementsRequest,
 ) ([]AccountRequirement, error) {
-	if req.QuoteID.Get() == "" {
-		return nil, errorfamily.NewRejection(
-			"wise.quote.invalid_request",
-			"quoteID is required",
-		)
+	if err := requireID(req.QuoteID, "wise.quote.invalid_request", "quoteID"); err != nil {
+		return nil, err
 	}
 
 	query := func() string {
@@ -126,10 +117,7 @@ func (c *Client) GetQuoteAccountRequirements(
 		return nil, fmt.Errorf("get account requirements for quote %s: %w", req.QuoteID.Get(), err)
 	}
 
-	result := make([]AccountRequirement, 0, len(requirements))
-	for _, requirement := range requirements {
-		result = append(result, mapAccountRequirement(requirement))
-	}
+	result := mapAccountRequirements(requirements)
 
 	return result, nil
 }
@@ -149,6 +137,17 @@ func mapAccountRequirement(requirement raw.AccountRequirement) AccountRequiremen
 		UsageInfo: requirement.UsageInfo,
 		Fields:    fields,
 	}
+}
+
+// mapAccountRequirements maps every raw account requirement; shared by the
+// GET and POST account-requirements endpoints.
+func mapAccountRequirements(requirements []raw.AccountRequirement) []AccountRequirement {
+	result := make([]AccountRequirement, 0, len(requirements))
+	for _, requirement := range requirements {
+		result = append(result, mapAccountRequirement(requirement))
+	}
+
+	return result
 }
 
 // RefreshQuoteAccountRequirements completes the two-pass recipient flow:
@@ -187,20 +186,12 @@ func (c *Client) RefreshQuoteAccountRequirements(
 		return nil, fmt.Errorf("refresh account requirements for quote %s: %w", req.QuoteID.Get(), err)
 	}
 
-	result := make([]AccountRequirement, 0, len(requirements))
-	for _, requirement := range requirements {
-		result = append(result, mapAccountRequirement(requirement))
-	}
-
-	return result, nil
+	return mapAccountRequirements(requirements), nil
 }
 
 func (r RefreshQuoteAccountRequirementsRequest) validate() error {
-	if r.QuoteID.Get() == "" {
-		return errorfamily.NewRejection(
-			"wise.quote.invalid_request",
-			"quoteID is required",
-		)
+	if err := requireID(r.QuoteID, "wise.quote.invalid_request", "quoteID"); err != nil {
+		return err
 	}
 
 	if r.Recipient.Currency == "" {
@@ -258,11 +249,8 @@ func (r CreateQuoteRequest) validate() error {
 }
 
 func (r CreateQuoteRequest) validateAuthenticated(profileID ProfileID) error {
-	if profileID.Get() == 0 {
-		return errorfamily.NewRejection(
-			"wise.quote.invalid_request",
-			"profileID is required",
-		)
+	if err := requireID(profileID, "wise.quote.invalid_request", "profileID"); err != nil {
+		return err
 	}
 
 	return r.validateCommon()

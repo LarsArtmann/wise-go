@@ -30,8 +30,8 @@ func (c *Client) GetMultiCurrencyAccount(
 	ctx context.Context,
 	profileID ProfileID,
 ) (*MultiCurrencyAccount, error) {
-	if profileID.Get() == 0 {
-		return nil, errorfamily.NewRejection("wise.account.invalid_request", "profileID is required")
+	if err := requireID(profileID, "wise.account.invalid_request", "profileID"); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/v1/profiles/%d/multi-currency-account", profileID.Get())
@@ -145,8 +145,8 @@ func (c *Client) GetBankAccountDetails(
 	ctx context.Context,
 	profileID ProfileID,
 ) ([]BankAccountDetails, error) {
-	if profileID.Get() == 0 {
-		return nil, errorfamily.NewRejection("wise.account_details.invalid_request", "profileID is required")
+	if err := requireID(profileID, "wise.account_details.invalid_request", "profileID"); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/v1/profiles/%d/account-details", profileID.Get())

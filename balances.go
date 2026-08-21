@@ -63,18 +63,12 @@ func (c *Client) GetBalance(
 	profileID ProfileID,
 	balanceID BalanceID,
 ) (*Balance, error) {
-	if profileID.Get() == 0 {
-		return nil, errorfamily.NewRejection(
-			"wise.balance.invalid_request",
-			"profileID is required",
-		)
+	if err := requireID(profileID, "wise.balance.invalid_request", "profileID"); err != nil {
+		return nil, err
 	}
 
-	if balanceID.Get() == 0 {
-		return nil, errorfamily.NewRejection(
-			"wise.balance.invalid_request",
-			"balanceID is required",
-		)
+	if err := requireID(balanceID, "wise.balance.invalid_request", "balanceID"); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/v4/profiles/%d/balances/%d", profileID.Get(), balanceID.Get())
@@ -133,8 +127,8 @@ func (c *Client) CreateBalance(ctx context.Context, req CreateBalanceRequest) (*
 }
 
 func (r CreateBalanceRequest) validate() error {
-	if r.ProfileID.Get() == 0 {
-		return errorfamily.NewRejection("wise.balance.invalid_request", "profileID is required")
+	if err := requireID(r.ProfileID, "wise.balance.invalid_request", "profileID"); err != nil {
+		return err
 	}
 
 	if _, err := NewCurrency(string(r.Currency)); err != nil {
@@ -178,8 +172,8 @@ func (c *Client) GetTotalFunds(
 	profileID ProfileID,
 	currency Currency,
 ) (*TotalFunds, error) {
-	if profileID.Get() == 0 {
-		return nil, errorfamily.NewRejection("wise.total_funds.invalid_request", "profileID is required")
+	if err := requireID(profileID, "wise.total_funds.invalid_request", "profileID"); err != nil {
+		return nil, err
 	}
 
 	if _, err := NewCurrency(string(currency)); err != nil {

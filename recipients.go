@@ -25,11 +25,8 @@ func (c *Client) ListRecipients(
 	ctx context.Context,
 	req ListRecipientsRequest,
 ) ([]Recipient, error) {
-	if req.ProfileID.Get() == 0 {
-		return nil, errorfamily.NewRejection(
-			"wise.recipient.invalid_request",
-			"profileID is required",
-		)
+	if err := requireID(req.ProfileID, "wise.recipient.invalid_request", "profileID"); err != nil {
+		return nil, err
 	}
 
 	var all []Recipient
@@ -132,11 +129,8 @@ func (c *Client) CreateRecipient(
 }
 
 func (r CreateRecipientRequest) validate() error {
-	if r.ProfileID.Get() == 0 {
-		return errorfamily.NewRejection(
-			"wise.recipient.invalid_request",
-			"profileID is required",
-		)
+	if err := requireID(r.ProfileID, "wise.recipient.invalid_request", "profileID"); err != nil {
+		return err
 	}
 
 	if r.Currency == "" {

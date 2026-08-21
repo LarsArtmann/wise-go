@@ -308,12 +308,12 @@ func (c *Client) GetStatement(ctx context.Context, req GetStatementRequest) ([]b
 }
 
 func (r GetStatementRequest) validate() error {
-	if r.ProfileID.Get() == 0 {
-		return errorfamily.NewRejection(invalidRequestCode, "profileID is required")
+	if err := requireID(r.ProfileID, invalidRequestCode, "profileID"); err != nil {
+		return err
 	}
 
-	if r.BalanceID.Get() == 0 {
-		return errorfamily.NewRejection(invalidRequestCode, "balanceID is required")
+	if err := requireID(r.BalanceID, invalidRequestCode, "balanceID"); err != nil {
+		return err
 	}
 
 	if r.Currency == "" {

@@ -2,6 +2,7 @@ package wise
 
 import (
 	id "github.com/larsartmann/go-branded-id"
+	errorfamily "github.com/larsartmann/go-error-family"
 )
 
 // ProfileBrand is a phantom type for ProfileID.
@@ -109,4 +110,16 @@ func NewBalanceTransactionID(v int64) BalanceTransactionID {
 // NewQuoteID creates a new QuoteID from a string UUID value.
 func NewQuoteID(v string) QuoteID {
 	return id.NewID[QuoteBrand](v)
+}
+
+// requireID turns a zero branded ID into a Rejection carrying the endpoint
+// family's invalid-request code. field names the parameter as the Wise API
+// spells it ("profileID" for most fields, but wire names like "targetAccount"
+// and "quoteUuid" where the API uses them).
+func requireID[B any, V comparable](identifier id.ID[B, V], code, field string) error {
+	if identifier.IsZero() {
+		return errorfamily.NewRejection(code, field+" is required")
+	}
+
+	return nil
 }
