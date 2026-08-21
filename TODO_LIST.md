@@ -22,9 +22,8 @@ split are finalized. Requires explicit approval (tagging is irreversible).
 
 ## P3 — Tier-2 API surface (plan doc tier 2 + near-term reports)
 
-[ ] Add mTLS endpoint support — Wise documents `api-mtls.wise.com` and
-`api-mtls.wise-sandbox.com`. Add `WithMTLS(tls.Config)` option or document the
-`WithHTTPClient` + custom Transport pattern more explicitly.
+(shipped 2026-08-21: mTLS pattern documented in README — `WithBaseURL` +
+`WithHTTPClient` compose; no dedicated option needed.)
 
 ## P4 — Tooling & quality
 

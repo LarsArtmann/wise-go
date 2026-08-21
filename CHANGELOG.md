@@ -25,6 +25,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   learn which required fields are still unsatisfied before spending a
   `customerTransactionId`. Select fields are checked against their allowed
   values; keys outside the typed request surface are reported explicitly.
+- mTLS documentation: README section showing the `WithBaseURL` +
+  `WithHTTPClient` transport pattern for Wise's client-certificate endpoints
+  (`api-mtls.wise.com`) — no new API surface needed, the existing options
+  compose cleanly.
 - Observability: `WithLogger` (per-attempt RequestLog with method, URL,
   status, duration, 1-based attempt number — retries visible) and per-request
   correlation IDs via `WithRequestCorrelationID(ctx, id)` (overrides the

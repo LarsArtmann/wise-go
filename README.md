@@ -184,6 +184,36 @@ _, err := client.ListTransfers(ctx, req)
 
 `RequestLog.Attempt` is 1-based; a value above 1 means the request was retried.
 
+### mTLS (client-certificate authentication)
+
+Wise serves compliance-heavy integrations from dedicated mTLS endpoints
+(`api-mtls.wise.com`, sandbox `api-mtls.wise-sandbox.com`) that authenticate
+the client certificate in addition to the API token. The SDK supports this
+without a dedicated option: swap the base URL and inject a TLS-configured
+`http.Client` via `WithHTTPClient`:
+
+```go
+clientCert, err := tls.LoadX509KeyPair("client-cert.pem", "client-key.pem")
+if err != nil {
+    log.Fatal(err)
+}
+
+transport := &http.Transport{
+    TLSClientConfig: &tls.Config{
+        Certificates: []tls.Certificate{clientCert},
+        MinVersion:   tls.VersionTLS12,
+    },
+}
+
+client := wise.New("api-token",
+    wise.WithBaseURL("https://api-mtls.wise.com"),
+    wise.WithHTTPClient(&http.Client{Transport: transport, Timeout: 30 * time.Second}),
+)
+```
+
+The same `WithHTTPClient` pattern covers custom root CAs, corporate proxies,
+and connection-pool tuning; retries, logging, and typed errors work unchanged.
+
 ## API Reference
 
 ### Authentication
