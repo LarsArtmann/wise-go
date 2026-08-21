@@ -1699,6 +1699,153 @@ var _ = Describe("Wise Client", func() {
 		})
 	})
 
+	Describe("RefreshQuoteAccountRequirements", func() {
+		Context("two-pass flow after a refreshRequirementsOnChange field was updated", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/quotes/11144c35-9fe8-4c32-b7fd-d05c2a7734bf/account-requirements",
+					func(w http.ResponseWriter, r *http.Request) {
+						Expect(r.Method).To(Equal(http.MethodPost))
+						Expect(r.Header.Get("Accept-Minor-Version")).To(Equal("1"))
+						Expect(r.URL.Query().Get("originatorLegalEntityType")).To(Equal("PRIVATE"))
+
+						var body map[string]any
+						Expect(json.UnmarshalRead(r.Body, &body)).To(Succeed())
+						Expect(body["currency"]).To(Equal("USD"))
+						Expect(body["type"]).To(Equal("swift_code"))
+						Expect(body["details"]).To(Equal(map[string]any{"legalEntityType": "PRIVATE"}))
+						Expect(body).ToNot(HaveKey("accountHolderName"),
+							"unset form fields must not be sent during a refresh pass")
+						Expect(body).ToNot(HaveKey("profile"))
+
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.MarshalWrite(w, []raw.AccountRequirement{
+							{
+								Type: "swift_code", Title: "SWIFT transfer in USD",
+								Fields: []raw.TransferRequirementForm{
+									{
+										Name: "Recipient",
+										Group: []raw.TransferRequirementField{
+											{Key: "legalEntityType", Name: "Legal entity type", Type: "select",
+												Required: true, RefreshRequirementsOnChange: true},
+											{Key: "address.state", Name: "State", Type: "select",
+												Required: true,
+												ValuesAllowed: []raw.TransferRequirementValue{
+													{Key: "US-CA", Name: "California"},
+													{Key: "US-NY", Name: "New York"},
+												}},
+										},
+									},
+								},
+							},
+						})
+					})
+			})
+
+			It("should send the partial form and return the revised requirements", func() {
+				requirements, err := client.RefreshQuoteAccountRequirements(
+					context.Background(),
+					wise.RefreshQuoteAccountRequirementsRequest{
+						QuoteID:                   wise.NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
+						OriginatorLegalEntityType: "PRIVATE",
+						Recipient: wise.CreateRecipientRequest{
+							Currency: wise.Currency("USD"),
+							Type:     "swift_code",
+							Details:  map[string]string{"legalEntityType": "PRIVATE"},
+						},
+					},
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(requirements).To(HaveLen(1))
+
+				trigger, revealed := requirements[0].Fields[0].Group[0], requirements[0].Fields[0].Group[1]
+				Expect(trigger.RefreshRequirementsOnChange).To(BeTrue())
+				Expect(revealed.Key).To(Equal("address.state"))
+				Expect(revealed.Required).To(BeTrue())
+				Expect(revealed.ValuesAllowed).To(HaveLen(2))
+				Expect(revealed.ValuesAllowed[0].Key).To(Equal("US-CA"))
+			})
+		})
+
+		Context("with empty quote ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.RefreshQuoteAccountRequirements(
+					context.Background(),
+					wise.RefreshQuoteAccountRequirementsRequest{
+						Recipient: wise.CreateRecipientRequest{
+							Currency: wise.Currency("USD"),
+							Type:     "swift_code",
+							Details:  map[string]string{"legalEntityType": "PRIVATE"},
+						},
+					},
+				)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("quoteID is required"))
+			})
+		})
+
+		Context("with missing recipient details", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.RefreshQuoteAccountRequirements(
+					context.Background(),
+					wise.RefreshQuoteAccountRequirementsRequest{
+						QuoteID:   wise.NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
+						Recipient: wise.CreateRecipientRequest{Currency: wise.Currency("USD"), Type: "swift_code"},
+					},
+				)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("recipient details are required"))
+			})
+		})
+
+		Context("with 404 unknown quote", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/quotes/00000000-0000-0000-0000-000000000000/account-requirements",
+					errorHandler(http.StatusNotFound, nil, "NOT_FOUND", "Quote not found"))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.RefreshQuoteAccountRequirements(
+					context.Background(),
+					wise.RefreshQuoteAccountRequirementsRequest{
+						QuoteID: wise.NewQuoteID("00000000-0000-0000-0000-000000000000"),
+						Recipient: wise.CreateRecipientRequest{
+							Currency: wise.Currency("USD"), Type: "swift_code",
+							Details: map[string]string{"legalEntityType": "PRIVATE"},
+						},
+					},
+				)
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+
+		Context("with a corrupt response body", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/quotes/11144c35-9fe8-4c32-b7fd-d05c2a7734bf/account-requirements",
+					func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						_, _ = w.Write([]byte(`{"not":"an array"}`))
+					})
+			})
+
+			It("should classify the decode failure as corruption", func() {
+				_, err := client.RefreshQuoteAccountRequirements(
+					context.Background(),
+					wise.RefreshQuoteAccountRequirementsRequest{
+						QuoteID: wise.NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
+						Recipient: wise.CreateRecipientRequest{
+							Currency: wise.Currency("USD"), Type: "swift_code",
+							Details: map[string]string{"legalEntityType": "PRIVATE"},
+						},
+					},
+				)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("decode response"))
+			})
+		})
+	})
+
 	Describe("ListRecipients", func() {
 		Context("with valid API response", func() {
 			BeforeEach(func() {

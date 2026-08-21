@@ -3,6 +3,7 @@ package wise
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"net/url"
 	"time"
 
@@ -148,6 +149,108 @@ func mapAccountRequirement(requirement raw.AccountRequirement) AccountRequiremen
 		UsageInfo: requirement.UsageInfo,
 		Fields:    fields,
 	}
+}
+
+// RefreshQuoteAccountRequirements completes the two-pass recipient flow:
+// after GetQuoteAccountRequirements returns a field with
+// RefreshRequirementsOnChange=true (e.g. legalEntityType or a country
+// selector), submit the recipient form with that field updated and Wise
+// returns the revised requirements for the chosen route — for example
+// selecting the US reveals the address.state field.
+//
+// The recipient payload does not need to be complete: Wise resolves the
+// dependent form, not the account. Like the GET, the SDK sends
+// Accept-Minor-Version: 1 so recipient name and email fields are included.
+func (c *Client) RefreshQuoteAccountRequirements(
+	ctx context.Context,
+	req RefreshQuoteAccountRequirementsRequest,
+) ([]AccountRequirement, error) {
+	if err := req.validate(); err != nil {
+		return nil, err
+	}
+
+	query := func() string {
+		if req.OriginatorLegalEntityType == "" {
+			return ""
+		}
+
+		return url.Values{"originatorLegalEntityType": []string{req.OriginatorLegalEntityType}}.Encode()
+	}
+
+	path := fmt.Sprintf("/v1/quotes/%s/account-requirements", req.QuoteID.Get())
+
+	var requirements []raw.AccountRequirement
+
+	err := c.request(ctx, http.MethodPost, path, query, req.toWire(), &requirements,
+		map[string]string{"Accept-Minor-Version": "1"})
+	if err != nil {
+		return nil, fmt.Errorf("refresh account requirements for quote %s: %w", req.QuoteID.Get(), err)
+	}
+
+	result := make([]AccountRequirement, 0, len(requirements))
+	for _, requirement := range requirements {
+		result = append(result, mapAccountRequirement(requirement))
+	}
+
+	return result, nil
+}
+
+func (r RefreshQuoteAccountRequirementsRequest) validate() error {
+	if r.QuoteID.Get() == "" {
+		return errorfamily.NewRejection(
+			"wise.quote.invalid_request",
+			"quoteID is required",
+		)
+	}
+
+	if r.Recipient.Currency == "" {
+		return errorfamily.NewRejection(
+			"wise.recipient.invalid_request",
+			"recipient currency is required",
+		)
+	}
+
+	if r.Recipient.Type == "" {
+		return errorfamily.NewRejection(
+			"wise.recipient.invalid_request",
+			"recipient type is required",
+		)
+	}
+
+	if len(r.Recipient.Details) == 0 {
+		return errorfamily.NewRejection(
+			"wise.recipient.invalid_request",
+			"recipient details are required (at least the field that triggered the refresh)",
+		)
+	}
+
+	return nil
+}
+
+// toWire renders the in-progress recipient form for the account-requirements
+// refresh endpoint. Unlike CreateRecipientRequest.toWire it omits fields the
+// caller has not filled in yet: an empty accountHolderName or zero profile
+// would misrepresent the form's state to Wise's dependent-field resolution.
+func (r RefreshQuoteAccountRequirementsRequest) toWire() map[string]any {
+	body := map[string]any{
+		"currency": string(r.Recipient.Currency),
+		"type":     r.Recipient.Type,
+		"details":  r.Recipient.Details,
+	}
+
+	if r.Recipient.ProfileID.Get() != 0 {
+		body["profile"] = r.Recipient.ProfileID.Get()
+	}
+
+	if r.Recipient.AccountHolderName != "" {
+		body["accountHolderName"] = r.Recipient.AccountHolderName
+	}
+
+	if r.Recipient.OwnedByCustomer {
+		body["ownedByCustomer"] = true
+	}
+
+	return body
 }
 
 func (r CreateQuoteRequest) validate() error {

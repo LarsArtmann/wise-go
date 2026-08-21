@@ -1936,3 +1936,112 @@ func TestTransferRequirementsDetailsToWire(t *testing.T) {
 		}
 	})
 }
+
+func TestRefreshQuoteAccountRequirementsRequestValidate(t *testing.T) {
+	t.Parallel()
+
+	valid := RefreshQuoteAccountRequirementsRequest{
+		QuoteID: NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
+		Recipient: CreateRecipientRequest{
+			Currency: Currency("USD"),
+			Type:     "swift_code",
+			Details:  map[string]string{"legalEntityType": "PRIVATE"},
+		},
+	}
+
+	tests := []struct {
+		name      string
+		mutate    func(*RefreshQuoteAccountRequirementsRequest)
+		wantCause string
+	}{
+		{
+			"quoteID", func(r *RefreshQuoteAccountRequirementsRequest) { r.QuoteID = QuoteID{} },
+			"quoteID is required",
+		},
+		{
+			"recipient currency",
+			func(r *RefreshQuoteAccountRequirementsRequest) { r.Recipient.Currency = "" },
+			"recipient currency is required",
+		},
+		{
+			"recipient type", func(r *RefreshQuoteAccountRequirementsRequest) { r.Recipient.Type = "" },
+			"recipient type is required",
+		},
+		{
+			"recipient details",
+			func(r *RefreshQuoteAccountRequirementsRequest) { r.Recipient.Details = nil },
+			"recipient details are required",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run("missing "+tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			req := valid
+			tt.mutate(&req)
+			expectRejection(t, req.validate(), tt.wantCause)
+		})
+	}
+
+	t.Run("valid partial form passes without holder name or profile", func(t *testing.T) {
+		t.Parallel()
+
+		if err := valid.validate(); err != nil {
+			t.Errorf("validate(valid partial form) = %v, want nil", err)
+		}
+	})
+}
+
+// TestRefreshQuoteAccountRequirementsToWire pins the omit-empties contract of
+// the refresh wire body: an in-progress form must not claim an empty
+// accountHolderName or a zero profile, but carries them once set.
+func TestRefreshQuoteAccountRequirementsToWire(t *testing.T) {
+	t.Parallel()
+
+	partial := RefreshQuoteAccountRequirementsRequest{
+		Recipient: CreateRecipientRequest{
+			Currency: Currency("USD"),
+			Type:     "swift_code",
+			Details:  map[string]string{"legalEntityType": "PRIVATE"},
+		},
+	}
+
+	t.Run("partial form omits unset fields", func(t *testing.T) {
+		t.Parallel()
+
+		got := partial.toWire()
+		if got["currency"] != "USD" || got["type"] != "swift_code" {
+			t.Errorf("toWire() = %v, want currency and type", got)
+		}
+		if _, ok := got["profile"]; ok {
+			t.Errorf("toWire() sent profile for a zero ProfileID: %v", got)
+		}
+		if _, ok := got["accountHolderName"]; ok {
+			t.Errorf("toWire() sent accountHolderName for an empty name: %v", got)
+		}
+		if _, ok := got["ownedByCustomer"]; ok {
+			t.Errorf("toWire() sent ownedByCustomer when false: %v", got)
+		}
+	})
+
+	t.Run("set fields render under their wire keys", func(t *testing.T) {
+		t.Parallel()
+
+		complete := partial
+		complete.Recipient.ProfileID = NewProfileID(12345)
+		complete.Recipient.AccountHolderName = "Jane Doe"
+		complete.Recipient.OwnedByCustomer = true
+
+		got := complete.toWire()
+		if got["profile"] != int64(12345) {
+			t.Errorf("toWire()[profile] = %v (%T), want int64 12345", got["profile"], got["profile"])
+		}
+		if got["accountHolderName"] != "Jane Doe" {
+			t.Errorf("toWire()[accountHolderName] = %v, want Jane Doe", got["accountHolderName"])
+		}
+		if got["ownedByCustomer"] != true {
+			t.Errorf("toWire()[ownedByCustomer] = %v, want true", got["ownedByCustomer"])
+		}
+	})
+}

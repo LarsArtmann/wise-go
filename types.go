@@ -574,3 +574,23 @@ type QuoteAccountRequirementsRequest struct {
 	QuoteID                   QuoteID
 	OriginatorLegalEntityType string
 }
+
+// RefreshQuoteAccountRequirementsRequest completes the second pass of the
+// recipient requirements flow: when a field returned by
+// GetQuoteAccountRequirements is flagged RefreshRequirementsOnChange, submit
+// the in-progress recipient form with that field updated and Wise returns the
+// revised field set for the chosen route.
+type RefreshQuoteAccountRequirementsRequest struct {
+	QuoteID QuoteID
+
+	// Recipient is the in-progress create-recipient payload: the same shape
+	// CreateRecipient will eventually submit. Currency, Type, and the Details
+	// collected so far (at minimum the field that triggered the refresh) are
+	// required; AccountHolderName and ProfileID stay optional at this stage
+	// because Wise resolves the dependent form, not the recipient itself.
+	Recipient CreateRecipientRequest
+
+	// OriginatorLegalEntityType is only needed for Correspondent Send
+	// integrations (PRIVATE or BUSINESS); optional.
+	OriginatorLegalEntityType string
+}
