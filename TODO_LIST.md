@@ -22,10 +22,6 @@ split are finalized. Requires explicit approval (tagging is irreversible).
 
 ## P3 — Tier-2 API surface (plan doc tier 2 + near-term reports)
 
-[ ] Add MCA / account details — `GetBankAccountDetails`, `GetMultiCurrencyAccount`.
-
-[ ] Add `ListCurrencies` — `GET /v1/currencies`.
-
 [ ] Add per-request correlation ID override — currently `WithCorrelationID` sets
 a client-wide header (`options.go:73`). Allow per-call override via context or
 request struct for request-level tracing. Note: `options.go:72` doc comment

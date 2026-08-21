@@ -25,6 +25,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   learn which required fields are still unsatisfied before spending a
   `customerTransactionId`. Select fields are checked against their allowed
   values; keys outside the typed request surface are reported explicitly.
+- MCA and bank details: `GetMultiCurrencyAccount` (with the account's own
+  RecipientID for top-ups via transfer) and `GetBankAccountDetails` (every
+  receiving details set with LOCAL/INTERNATIONAL receive options and their
+  display text).
+- `ListCurrencies` (`GET /v1/currencies`): public reference data for
+  currency pickers (code, symbol, name, country keywords, decimal support).
 - Balances expansion: `CreateBalance` (POST /v4/profiles/{id}/balances,
   savings name enforced client-side), a direct `GetBalance`
   (GET /v4/profiles/{id}/balances/{id} — replaces the list+scan fallback and

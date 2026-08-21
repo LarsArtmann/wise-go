@@ -111,6 +111,8 @@
                   ./transfer_requirements.go
                   ./users.go
                   ./webhooks.go
+                  ./account_details.go
+                  ./currencies.go
                   ./internal/raw/types.go
                   ./internal/raw/transfers.go
                   ./internal_test.go

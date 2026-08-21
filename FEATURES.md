@@ -43,6 +43,9 @@ claim here can be verified against the implementation.
 
 | Feature                                    | Status           | Evidence                                                       |
 | ------------------------------------------ | ---------------- | -------------------------------------------------------------- |
+| `GetMultiCurrencyAccount(ctx, ProfileID)`  | FULLY_FUNCTIONAL | `account_details.go`; self-RecipientID for top-ups             |
+| `GetBankAccountDetails(ctx, ProfileID)`    | FULLY_FUNCTIONAL | `account_details.go`; LOCAL/INTERNATIONAL receive options      |
+| `ListCurrencies(ctx)`                      | FULLY_FUNCTIONAL | `currencies.go`; public reference data                         |
 | `ListBalances(ctx, ProfileID)`             | FULLY_FUNCTIONAL | `balances.go`; sends required `types=STANDARD,SAVINGS` query   |
 | `GetBalance(ctx, ProfileID, BalanceID)`    | FULLY_FUNCTIONAL | `balances.go`; direct per-balance endpoint, no filtering       |
 | `CreateBalance(ctx, CreateBalanceRequest)` | FULLY_FUNCTIONAL | `balances.go`; savings name enforced client-side               |

@@ -79,6 +79,65 @@ type TotalFunds struct {
 	TotalAvailable BalanceAmount `json:"totalAvailable"`
 }
 
+// MultiCurrencyAccount from Wise API
+// (GET /v1/profiles/{profileId}/multi-currency-account).
+type MultiCurrencyAccount struct {
+	ID               int64  `json:"id"`
+	ProfileID        int64  `json:"profileId"`
+	RecipientID      int64  `json:"recipientId"`
+	CreationTime     string `json:"creationTime"`
+	ModificationTime string `json:"modificationTime"`
+	Active           bool   `json:"active"`
+	Eligible         bool   `json:"eligible"`
+}
+
+// BankAccountDetails from Wise API
+// (GET /v1/profiles/{profileId}/account-details).
+type BankAccountDetails struct {
+	ID             *int64              `json:"id"` // nil for preview details
+	Currency       BankAccountCurrency `json:"currency"`
+	Title          string              `json:"title"`
+	Subtitle       string              `json:"subtitle"`
+	Status         string              `json:"status"` // "AVAILABLE" or "ACTIVE"
+	Deprecated     bool                `json:"deprecated"`
+	ReceiveOptions []BankReceiveOption `json:"receiveOptions"`
+}
+
+// BankAccountCurrency names the currency of a bank-account-details set.
+type BankAccountCurrency struct {
+	Code string `json:"code"`
+	Name string `json:"name"`
+}
+
+// BankReceiveOption is one receive route (local or SWIFT) of a details set.
+type BankReceiveOption struct {
+	Type        string                 `json:"type"` // "LOCAL" or "INTERNATIONAL"
+	Title       string                 `json:"title"`
+	Description *BankOptionDescription `json:"description"`
+}
+
+// BankOptionDescription carries the display text of a receive option.
+type BankOptionDescription struct {
+	Title string         `json:"title"`
+	Body  string         `json:"body"`
+	CTA   *BankOptionCTA `json:"cta"`
+}
+
+// BankOptionCTA labels the key value of a receive option (e.g. "IBAN").
+type BankOptionCTA struct {
+	Label   string `json:"label"`
+	Content string `json:"content"`
+}
+
+// CurrencyInfo from Wise API (GET /v1/currencies).
+type CurrencyInfo struct {
+	Code             string   `json:"code"`
+	Symbol           string   `json:"symbol"`
+	Name             string   `json:"name"`
+	CountryKeywords  []string `json:"countryKeywords"`
+	SupportsDecimals bool     `json:"supportsDecimals"`
+}
+
 // Cents converts a BalanceAmount to int64 minor units (cents).
 // Uses math.Round to handle IEEE 754 floating-point representation errors.
 func (a BalanceAmount) Cents() int64 {

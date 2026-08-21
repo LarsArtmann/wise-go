@@ -2520,6 +2520,131 @@ var _ = Describe("Wise Client", func() {
 		})
 	})
 
+	Describe("GetMultiCurrencyAccount", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/multi-currency-account",
+					func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.MarshalWrite(w, raw.MultiCurrencyAccount{
+							ID: 1, ProfileID: 12345, RecipientID: 12345678,
+							CreationTime:     "2020-05-20T14:43:16.658Z",
+							ModificationTime: "2020-05-20T14:43:16.658Z",
+							Active:           true, Eligible: true,
+						})
+					})
+			})
+
+			It("should map the account with its self-recipient", func() {
+				account, err := client.GetMultiCurrencyAccount(
+					context.Background(), wise.NewProfileID(12345),
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(account).ToNot(BeNil())
+				Expect(account.ID).To(Equal(int64(1)))
+				Expect(account.RecipientID.Get()).To(Equal(int64(12345678)))
+				Expect(account.Created.Year()).To(Equal(2020))
+				Expect(account.Active).To(BeTrue())
+			})
+		})
+
+		Context("with zero profile ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetMultiCurrencyAccount(context.Background(), wise.ProfileID{})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("profileID is required"))
+			})
+		})
+	})
+
+	Describe("GetBankAccountDetails", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/account-details",
+					func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.MarshalWrite(w, []raw.BankAccountDetails{
+							{
+								ID:         new(int64(14000001)),
+								Currency:   raw.BankAccountCurrency{Code: "EUR", Name: "Euro"},
+								Title:      "Your EUR account details",
+								Subtitle:   "IBAN, SWIFT/BIC",
+								Status:     "ACTIVE",
+								Deprecated: false,
+								ReceiveOptions: []raw.BankReceiveOption{
+									{
+										Type:  "LOCAL",
+										Title: "Local",
+										Description: &raw.BankOptionDescription{
+											Title: "Your EUR account details",
+											Body:  "Receive from a bank in the Eurozone",
+											CTA:   &raw.BankOptionCTA{Label: "IBAN", Content: "BE12 3456 7890 1234"},
+										},
+									},
+								},
+							},
+						})
+					})
+			})
+
+			It("should map the details and receive options", func() {
+				details, err := client.GetBankAccountDetails(
+					context.Background(), wise.NewProfileID(12345),
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(details).To(HaveLen(1))
+
+				detail := details[0]
+				Expect(detail.ID).ToNot(BeNil())
+				Expect(*detail.ID).To(Equal(int64(14000001)))
+				Expect(detail.Currency).To(Equal(wise.Currency("EUR")))
+				Expect(detail.Status).To(Equal(wise.AccountDetailsStatusActive))
+				Expect(detail.ReceiveOptions).To(HaveLen(1))
+				Expect(detail.ReceiveOptions[0].Type).To(Equal(wise.ReceiveOptionTypeLocal))
+				Expect(detail.ReceiveOptions[0].Description.CTA.Content).To(Equal("BE12 3456 7890 1234"))
+			})
+		})
+
+		Context("with zero profile ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetBankAccountDetails(context.Background(), wise.ProfileID{})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("profileID is required"))
+			})
+		})
+	})
+
+	Describe("ListCurrencies", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/currencies", func(w http.ResponseWriter, _ *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, []raw.CurrencyInfo{
+						{
+							Code: "EUR", Symbol: "€", Name: "Euro",
+							CountryKeywords:  []string{"Germany", "France"},
+							SupportsDecimals: true,
+						},
+						{
+							Code: "JPY", Symbol: "¥", Name: "Japanese Yen",
+							CountryKeywords:  []string{"Japan"},
+							SupportsDecimals: false,
+						},
+					})
+				})
+			})
+
+			It("should map the currency reference data", func() {
+				currencies, err := client.ListCurrencies(context.Background())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(currencies).To(HaveLen(2))
+				Expect(currencies[0].Code).To(Equal(wise.Currency("EUR")))
+				Expect(currencies[0].Symbol).To(Equal("€"))
+				Expect(currencies[1].SupportsDecimals).To(BeFalse())
+			})
+		})
+	})
+
 	Describe("Retry", func() {
 		Context("on 429 with Retry-After header", func() {
 			var callCount int

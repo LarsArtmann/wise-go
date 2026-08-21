@@ -63,6 +63,8 @@ func (c *Client) GetMe(ctx context.Context) (*User, error) {
 
 // GetUser returns a user account by ID. Personal API tokens can only read
 // their own user; platform tokens may read their customers'.
+//
+//nolint:dupl // per-endpoint method template; intentionally mirrors GetMultiCurrencyAccount's shape
 func (c *Client) GetUser(ctx context.Context, userID UserID) (*User, error) {
 	if userID.Get() == 0 {
 		return nil, errorfamily.NewRejection(
