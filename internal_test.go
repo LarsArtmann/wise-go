@@ -18,8 +18,8 @@ import (
 	"testing"
 	"time"
 
-	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/failsafe-go/failsafe-go/retrypolicy"
+	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go/internal/raw"
 )
 
@@ -1496,6 +1496,7 @@ func TestParseWiseDate(t *testing.T) {
 		if err != nil {
 			t.Fatalf("parseWiseDate(\"\") error: %v", err)
 		}
+
 		if !got.IsZero() {
 			t.Errorf("parseWiseDate(\"\") = %v, want zero time", got)
 		}
@@ -1508,6 +1509,7 @@ func TestParseWiseDate(t *testing.T) {
 		if err != nil {
 			t.Fatalf("parseWiseDate error: %v", err)
 		}
+
 		want := time.Date(1977, time.January, 31, 0, 0, 0, 0, time.UTC)
 		if !got.Equal(want) {
 			t.Errorf("parseWiseDate = %v, want %v", got, want)
@@ -1521,17 +1523,25 @@ func TestParseWiseDate(t *testing.T) {
 		if err == nil {
 			t.Fatal("parseWiseDate(garbage) = nil error, want error")
 		}
+
 		if !strings.Contains(err.Error(), "not-a-date") {
 			t.Errorf("error %q does not quote the input", err.Error())
 		}
 	})
 }
 
-// TestClassifyExhaustedRetries covers the unwrap arms directly: the guard
-// clauses (non-exceeded error, nil / non-response LastResult) must return nil
-// so doRequest keeps its original error, and a carried 429 response must
-// classify as RateLimitError.
-func TestClassifyExhaustedRetries(t *testing.T) {
+// errTestPlain and friends are static sentinel errors for tests (err113:
+// never construct dynamic errors).
+var (
+	errTestPlain      = errors.New("plain")
+	errTestBoom       = errors.New("boom")
+	errTestRateLimits = errors.New("rate limited")
+)
+
+// TestClassifyExhaustedRetriesGuardClaauses covers the unwrap arms directly:
+// the guard clauses (non-exceeded error, nil / non-response LastResult) must
+// return nil so doRequest keeps its original error.
+func TestClassifyExhaustedRetriesGuardClauses(t *testing.T) {
 	t.Parallel()
 
 	client := New("test-api-key")
@@ -1539,7 +1549,8 @@ func TestClassifyExhaustedRetries(t *testing.T) {
 	t.Run("non-exceeded error returns nil", func(t *testing.T) {
 		t.Parallel()
 
-		if got := client.classifyExhaustedRetries("GET", "http://x", errors.New("plain")); got != nil {
+		got := client.classifyExhaustedRetries("GET", "http://x", errTestPlain)
+		if got != nil {
 			t.Errorf("classifyExhaustedRetries(plain error) = %v, want nil", got)
 		}
 	})
@@ -1547,8 +1558,10 @@ func TestClassifyExhaustedRetries(t *testing.T) {
 	t.Run("exceeded with nil LastResult returns nil", func(t *testing.T) {
 		t.Parallel()
 
-		exceeded := retrypolicy.ExceededError{LastResult: nil, LastError: errors.New("boom")}
-		if got := client.classifyExhaustedRetries("GET", "http://x", exceeded); got != nil {
+		exceeded := retrypolicy.ExceededError{LastResult: nil, LastError: errTestBoom}
+
+		got := client.classifyExhaustedRetries("GET", "http://x", exceeded)
+		if got != nil {
 			t.Errorf("classifyExhaustedRetries(nil LastResult) = %v, want nil", got)
 		}
 	})
@@ -1557,40 +1570,49 @@ func TestClassifyExhaustedRetries(t *testing.T) {
 		t.Parallel()
 
 		exceeded := retrypolicy.ExceededError{LastResult: "a string, not a response"}
-		if got := client.classifyExhaustedRetries("GET", "http://x", exceeded); got != nil {
+
+		got := client.classifyExhaustedRetries("GET", "http://x", exceeded)
+		if got != nil {
 			t.Errorf("classifyExhaustedRetries(string LastResult) = %v, want nil", got)
 		}
 	})
+}
 
-	t.Run("exceeded with a 429 response classifies as RateLimitError", func(t *testing.T) {
-		t.Parallel()
+// TestClassifyExhaustedRetriesRateLimit pins the payoff: a retries-exceeded
+// error carrying a 429 response surfaces as *RateLimitError with Retry-After
+// and the rate-limit scope.
+func TestClassifyExhaustedRetriesRateLimit(t *testing.T) {
+	t.Parallel()
 
-		resp := httptest.NewRecorder()
-		resp.Header().Set("Retry-After", "7")
-		resp.Header().Set("X-Rate-Limited-By", "profile")
-		resp.WriteHeader(http.StatusTooManyRequests)
+	client := New("test-api-key")
 
-		exceeded := retrypolicy.ExceededError{
-			LastResult: resp.Result(),
-			LastError:  errors.New("rate limited"),
-		}
+	resp := httptest.NewRecorder()
+	resp.Header().Set("Retry-After", "7")
+	resp.Header().Set("X-Rate-Limited-By", "profile")
+	resp.WriteHeader(http.StatusTooManyRequests)
 
-		got := client.classifyExhaustedRetries("GET", "http://x", exceeded)
-		if got == nil {
-			t.Fatal("classifyExhaustedRetries(429) = nil, want wrapped RateLimitError")
-		}
+	exceeded := retrypolicy.ExceededError{
+		LastResult: resp.Result(),
+		LastError:  errTestRateLimits,
+	}
 
-		rateLimitErr, ok := errors.AsType[*RateLimitError](got)
-		if !ok {
-			t.Fatalf("got %T, want *RateLimitError: %v", got, got)
-		}
-		if rateLimitErr.RetryAfter != 7*time.Second {
-			t.Errorf("RetryAfter = %v, want 7s", rateLimitErr.RetryAfter)
-		}
-		if rateLimitErr.RateLimitedBy != "profile" {
-			t.Errorf("RateLimitedBy = %q, want %q", rateLimitErr.RateLimitedBy, "profile")
-		}
-	})
+	got := client.classifyExhaustedRetries("GET", "http://x", exceeded)
+	if got == nil {
+		t.Fatal("classifyExhaustedRetries(429) = nil, want wrapped RateLimitError")
+	}
+
+	rateLimitErr, ok := errors.AsType[*RateLimitError](got)
+	if !ok {
+		t.Fatalf("got %T, want *RateLimitError: %v", got, got)
+	}
+
+	if rateLimitErr.RetryAfter != 7*time.Second {
+		t.Errorf("RetryAfter = %v, want 7s", rateLimitErr.RetryAfter)
+	}
+
+	if rateLimitErr.RateLimitedBy != "profile" {
+		t.Errorf("RateLimitedBy = %q, want %q", rateLimitErr.RateLimitedBy, "profile")
+	}
 }
 
 // TestGetRawEdges covers the raw-response path's non-JSON arms: a transport
@@ -1605,6 +1627,7 @@ func TestGetRawEdges(t *testing.T) {
 		closed.Close()
 
 		client := New("test-api-key", WithBaseURL(closed.URL))
+
 		_, err := client.getRaw(context.Background(), "/x", nil)
 		if err == nil {
 			t.Fatal("getRaw against closed server = nil error, want transport error")
@@ -1620,12 +1643,14 @@ func TestGetRawEdges(t *testing.T) {
 		defer server.Close()
 
 		client := New("test-api-key", WithBaseURL(server.URL))
+
 		data, err := client.getRaw(context.Background(), "/statement.csv", func() string {
 			return "currency=EUR"
 		})
 		if err != nil {
 			t.Fatalf("getRaw empty body error: %v", err)
 		}
+
 		if len(data) != 0 {
 			t.Errorf("getRaw empty body = %q, want empty", data)
 		}
@@ -1667,9 +1692,11 @@ func TestExecuteWithLoggingTransportError(t *testing.T) {
 	if last.Status != 0 {
 		t.Errorf("logged Status = %d, want 0 on transport failure", last.Status)
 	}
+
 	if last.Error == nil {
 		t.Error("logged Error = nil, want the transport error")
 	}
+
 	if last.URL == "" || last.Method == "" {
 		t.Errorf("logged entry missing method/URL: %+v", last)
 	}
@@ -1685,10 +1712,12 @@ func TestVerifyWebhookSignatureEdges(t *testing.T) {
 		t.Helper()
 
 		digest := sha256.Sum256(payload)
+
 		sig, err := rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA256, digest[:])
 		if err != nil {
 			t.Fatalf("sign: %v", err)
 		}
+
 		return base64.StdEncoding.EncodeToString(sig)
 	}
 
@@ -1701,6 +1730,7 @@ func TestVerifyWebhookSignatureEdges(t *testing.T) {
 		if !VerifyWebhookSignature([]byte{}, emptySig, fixture.key) {
 			t.Error("VerifyWebhookSignature(empty) = false, want true")
 		}
+
 		if VerifyWebhookSignature([]byte("x"), emptySig, fixture.key) {
 			t.Error("empty signature must not verify different bytes")
 		}
@@ -1709,7 +1739,9 @@ func TestVerifyWebhookSignatureEdges(t *testing.T) {
 	t.Run("multi-megabyte payload verifies", func(t *testing.T) {
 		t.Parallel()
 
-		huge := make([]byte, 5<<20) // 5 MiB
+		huge := make([]byte, 0, 5<<20) // 5 MiB capacity, filled below (makezero)
+
+		huge = append(huge, make([]byte, 5<<20)...)
 		if _, err := rand.Read(huge); err != nil {
 			t.Fatalf("rand: %v", err)
 		}
@@ -1748,10 +1780,12 @@ func TestErrorContexts(t *testing.T) {
 			RetryAfter:    3 * time.Second,
 			RateLimitedBy: "ip",
 		}
+
 		ctx := rateLimitErr.ErrorContext()
 		if ctx["retry_after"] != (3 * time.Second).String() {
 			t.Errorf("ErrorContext = %v, want retry_after 3s", ctx)
 		}
+
 		if ctx["rate_limited_by"] != "ip" {
 			t.Errorf("ErrorContext = %v, want rate_limited_by ip", ctx)
 		}
@@ -1763,6 +1797,142 @@ func TestErrorContexts(t *testing.T) {
 		scaErr := &SCAChallengeError{APIError: APIError{StatusCode: http.StatusForbidden}}
 		if got := scaErr.ErrorCode(); got != errorCodeSCA {
 			t.Errorf("ErrorCode = %q, want %q", got, errorCodeSCA)
+		}
+	})
+}
+
+// TestCreateRecipientRequestValidate covers the full missing-field matrix of
+// the recipient request validator.
+func TestCreateRecipientRequestValidate(t *testing.T) {
+	t.Parallel()
+
+	valid := CreateRecipientRequest{
+		ProfileID:         NewProfileID(12345),
+		Currency:          Currency("GBP"),
+		Type:              "sort_code",
+		AccountHolderName: "Jane Doe",
+		Details:           map[string]string{"sortCode": "040075"},
+	}
+
+	tests := []struct {
+		name      string
+		mutate    func(*CreateRecipientRequest)
+		wantCause string
+	}{
+		{"profileID", func(r *CreateRecipientRequest) { r.ProfileID = ProfileID{} }, "profileID is required"},
+		{"empty currency", func(r *CreateRecipientRequest) { r.Currency = "" }, "currency is required"},
+		{
+			"accountHolderName", func(r *CreateRecipientRequest) { r.AccountHolderName = "" },
+			"accountHolderName is required",
+		},
+		{"route type", func(r *CreateRecipientRequest) { r.Type = "" }, "type is required"},
+		{"details", func(r *CreateRecipientRequest) { r.Details = nil }, "details are required"},
+	}
+
+	for _, tt := range tests {
+		t.Run("missing "+tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			req := valid
+			tt.mutate(&req)
+			expectRejection(t, req.validate(), tt.wantCause)
+		})
+	}
+
+	t.Run("valid request passes", func(t *testing.T) {
+		t.Parallel()
+
+		if err := valid.validate(); err != nil {
+			t.Errorf("validate(valid) = %v, want nil", err)
+		}
+	})
+}
+
+// TestTransferDetailsWire pins the wire rendering of optional transfer
+// details: every field set lands under its documented key, empty fields are
+// omitted.
+func TestTransferDetailsWire(t *testing.T) {
+	t.Parallel()
+
+	t.Run("empty request omits all keys", func(t *testing.T) {
+		t.Parallel()
+
+		if got := (CreateTransferRequest{}).detailsWire(); len(got) != 0 {
+			t.Errorf("detailsWire(empty) = %v, want empty", got)
+		}
+	})
+
+	t.Run("all fields render under their wire keys", func(t *testing.T) {
+		t.Parallel()
+
+		req := CreateTransferRequest{
+			Reference:                         "invoice-42",
+			SourceOfFunds:                     "salary",
+			TransferPurpose:                   "verification",
+			TransferPurposeInvoiceNumber:      "INV-42",
+			TransferPurposeSubTransferPurpose: "other",
+		}
+
+		got := req.detailsWire()
+
+		want := map[string]string{
+			"reference":                         "invoice-42",
+			"sourceOfFunds":                     "salary",
+			"transferPurpose":                   "verification",
+			"transferPurposeInvoiceNumber":      "INV-42",
+			"transferPurposeSubTransferPurpose": "other",
+		}
+		for key, value := range want {
+			if got[key] != value {
+				t.Errorf("detailsWire()[%q] = %q, want %q", key, got[key], value)
+			}
+		}
+
+		if len(got) != len(want) {
+			t.Errorf("detailsWire() = %v, want exactly %d keys", got, len(want))
+		}
+	})
+
+	t.Run("transferRequestDetailValue mirrors the wire keys", func(t *testing.T) {
+		t.Parallel()
+
+		req := CreateTransferRequest{Reference: "invoice-42"}
+
+		if value, ok := transferRequestDetailValue(req, "reference"); !ok || value != "invoice-42" {
+			t.Errorf("transferRequestDetailValue(reference) = %q,%v; want invoice-42,true", value, ok)
+		}
+
+		if _, ok := transferRequestDetailValue(req, "notModeled"); ok {
+			t.Error("transferRequestDetailValue(unknown) = ok, want false")
+		}
+	})
+}
+
+// TestTransferRequirementsDetailsToWire pins the optional-block rendering of
+// the transfer-requirements request.
+func TestTransferRequirementsDetailsToWire(t *testing.T) {
+	t.Parallel()
+
+	t.Run("zero details render nothing", func(t *testing.T) {
+		t.Parallel()
+
+		if got := (TransferRequirementsDetails{}).toWire(); len(got) != 0 {
+			t.Errorf("toWire(zero) = %v, want empty", got)
+		}
+	})
+
+	t.Run("set fields render under their wire keys", func(t *testing.T) {
+		t.Parallel()
+
+		got := (TransferRequirementsDetails{
+			Reference:          "ref-1",
+			SourceOfFunds:      "salary",
+			SourceOfFundsOther: "dividends",
+		}).toWire()
+
+		if got["reference"] != "ref-1" || got["sourceOfFunds"] != "salary" ||
+			got["sourceOfFundsOther"] != "dividends" {
+			t.Errorf("toWire() = %v, want the three set keys", got)
 		}
 	})
 }

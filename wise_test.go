@@ -1542,6 +1542,8 @@ var _ = Describe("Wise Client", func() {
 						SourceAmount:   10,
 						TargetAmount:   10.86,
 						Rate:           1.086,
+						CreatedTime:    "2023-01-15T10:27:22Z",
+						ExpirationTime: "2023-01-15T10:57:22Z",
 					})
 				})
 			})
