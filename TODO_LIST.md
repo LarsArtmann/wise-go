@@ -100,3 +100,20 @@ building `go_1_26` from nixpkgs source takes 15+ minutes. Add
 `cachix/cachix-action` with a public cache for `nixpkgs` to keep CI under
 5 minutes (only `cachix/install-nix-action` is wired today:
 `.github/workflows/ci.yml:107`).
+
+[ ] Automate the README coverage badge — CI-generated coverage value (no
+hand-edited numbers; the 94.8% badge was stale for three versions before the
+2026-08-21 audit re-measured 84.2% by hand). Add a measurement note (command +
+package basis) until automation lands. Source: 2026-08-21 status report (d.2,
+f.1), pareto plan task 20.
+
+[ ] Add a markdown link checker (lychee via flake) to `nix flake check` or
+pre-commit — the 2026-08-21 audit hand-grepped only 3 of 8+ docs; ghost
+references (like the unverified `wise-api-openapi.json` path incident) are
+exactly what a checker catches. Source: 2026-08-21 status report (e.3, f.2),
+pareto plan task 21.
+
+[ ] Housekeeping bundle — resolve the 68-vs-77 spec-count discrepancy (derive
+the real `It(` count), mention `docs/reviews/wise-api-core-schemas.json` in
+AGENTS.md beside the OpenAPI spec (two spec files exist; docs reference one).
+Source: 2026-08-21 status report (d.5, f.10, f.11), pareto plan task 23.
