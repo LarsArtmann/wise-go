@@ -72,3 +72,5 @@ go.work.sum
 result
 result-*
 .direnv/
+# BuildFlow filesystem-probe temp artifacts
+buildflow-fsprobe-*
