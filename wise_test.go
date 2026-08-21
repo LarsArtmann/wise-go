@@ -2255,6 +2255,87 @@ var _ = Describe("Wise Client", func() {
 		})
 	})
 
+	Describe("GetStatement", func() {
+		Context("with CSV happy path", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/balance-statements/100/statement.csv",
+					func(w http.ResponseWriter, r *http.Request) {
+						Expect(r.Method).To(Equal(http.MethodGet))
+						expectTransactionQueryParams(r, "EUR",
+							"2023-01-01T00:00:00Z", "2023-01-31T23:59:59Z")
+
+						w.Header().Set("Content-Type", "text/csv")
+						_, _ = w.Write([]byte("Date,Description,Amount\n2023-01-15,Coffee,-4.50\n"))
+					})
+			})
+
+			It("should return the raw statement bytes", func() {
+				data, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					BalanceID: wise.NewBalanceID(100),
+					Currency:  wise.Currency("EUR"),
+					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
+					Format:    wise.StatementFormatCSV,
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(data).To(ContainSubstring("Coffee,-4.50"))
+			})
+		})
+
+		Context("with a different format", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/balance-statements/100/statement.pdf",
+					func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "application/pdf")
+						_, _ = w.Write([]byte("%PDF-1.7 fake"))
+					})
+			})
+
+			It("should forward the format in the path", func() {
+				data, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					BalanceID: wise.NewBalanceID(100),
+					Currency:  wise.Currency("EUR"),
+					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
+					Format:    wise.StatementFormatPDF,
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(data).To(HavePrefix("%PDF"))
+			})
+		})
+
+		Context("with an unknown format", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					BalanceID: wise.NewBalanceID(100),
+					Currency:  wise.Currency("EUR"),
+					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
+					Format:    wise.StatementFormat("docx"),
+				})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("unknown statement format"))
+			})
+		})
+
+		Context("with a zero balance ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					Currency:  wise.Currency("EUR"),
+					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
+					Format:    wise.StatementFormatCSV,
+				})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("balanceID is required"))
+			})
+		})
+	})
+
 	Describe("GetMe", func() {
 		Context("with valid API response", func() {
 			BeforeEach(func() {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"time"
 
 	id "github.com/larsartmann/go-branded-id"
 	errorfamily "github.com/larsartmann/go-error-family"
@@ -214,6 +215,110 @@ func (r ListTransactionsRequest) validate() error {
 		return errorfamily.NewRejection(
 			invalidRequestCode,
 			"intervalStart must not be after intervalEnd",
+		)
+	}
+
+	return nil
+}
+
+// StatementFormat identifies a balance-statement file format. The format
+// selects the endpoint suffix; use ListTransactions for the parsed JSON form.
+type StatementFormat string
+
+// Statement file formats Wise serves for a balance.
+const (
+	StatementFormatCSV   StatementFormat = "csv"
+	StatementFormatPDF   StatementFormat = "pdf"  // Includes Wise branding.
+	StatementFormatXLSX  StatementFormat = "xlsx" // Excel.
+	StatementFormatCAMT  StatementFormat = "xml"  // CAMT.053 XML.
+	StatementFormatMT940 StatementFormat = "mt940"
+	StatementFormatQIF   StatementFormat = "qif"
+)
+
+// isKnownStatementFormat reports whether format is one the SDK can request
+// (kept in sync with the StatementFormat constants so an unknown format is
+// rejected client-side instead of 404ing server-side).
+func isKnownStatementFormat(format StatementFormat) bool {
+	switch format {
+	case StatementFormatCSV, StatementFormatPDF, StatementFormatXLSX,
+		StatementFormatCAMT, StatementFormatMT940, StatementFormatQIF:
+		return true
+	default:
+		return false
+	}
+}
+
+// GetStatementRequest parameters for downloading a balance statement as a
+// file. The interval From..To cannot exceed 469 days (Wise limit).
+type GetStatementRequest struct {
+	ProfileID ProfileID
+	BalanceID BalanceID
+	Currency  Currency
+	From      time.Time
+	To        time.Time
+	Type      DetailType // Optional transaction-type filter.
+	Format    StatementFormat
+}
+
+// GetStatement downloads a balance statement as a file in the requested
+// format (CSV, PDF, XLSX, CAMT.053 XML, MT940, or QIF) and returns its raw
+// bytes. Use ListTransactions for the typed JSON statement instead.
+//
+// The endpoint is SCA-protected for UK/EEA profiles.
+func (c *Client) GetStatement(ctx context.Context, req GetStatementRequest) ([]byte, error) {
+	if err := req.validate(); err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/v1/profiles/%d/balance-statements/%d/statement.%s",
+		req.ProfileID.Get(), req.BalanceID.Get(), req.Format)
+
+	query := func() string {
+		v := url.Values{}
+		v.Set("currency", string(req.Currency))
+		v.Set("intervalStart", formatWiseTimestamp(req.From))
+		v.Set("intervalEnd", formatWiseTimestamp(req.To))
+
+		if req.Type != "" {
+			v.Set("type", string(req.Type))
+		}
+
+		return v.Encode()
+	}
+
+	data, err := c.getRaw(ctx, path, query)
+	if err != nil {
+		return nil, fmt.Errorf("get %s statement for profileID=%d balanceID=%d: %w",
+			req.Format, req.ProfileID.Get(), req.BalanceID.Get(), err)
+	}
+
+	return data, nil
+}
+
+func (r GetStatementRequest) validate() error {
+	if r.ProfileID.Get() == 0 {
+		return errorfamily.NewRejection(invalidRequestCode, "profileID is required")
+	}
+
+	if r.BalanceID.Get() == 0 {
+		return errorfamily.NewRejection(invalidRequestCode, "balanceID is required")
+	}
+
+	if r.Currency == "" {
+		return errorfamily.NewRejection(invalidRequestCode, "currency is required")
+	}
+
+	if r.From.After(r.To) {
+		return errorfamily.NewRejection(
+			invalidRequestCode,
+			"intervalStart must not be after intervalEnd",
+		)
+	}
+
+	if !isKnownStatementFormat(r.Format) {
+		return errorfamily.NewRejection(
+			invalidRequestCode,
+			fmt.Sprintf("unknown statement format %q (want csv, pdf, xlsx, xml, mt940, or qif)", r.Format),
 		)
 	}
 

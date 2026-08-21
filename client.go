@@ -165,6 +165,37 @@ func (c *Client) put(ctx context.Context, path string, body, target any) error {
 	return c.request(ctx, http.MethodPut, path, nil, body, target, nil)
 }
 
+// getRaw performs a GET and returns the response body without JSON decoding,
+// for endpoints that serve files (statement.csv/.pdf/.xlsx and friends).
+func (c *Client) getRaw(ctx context.Context, path string, query func() string) ([]byte, error) {
+	fullURL := c.baseURL + path
+
+	if query != nil {
+		if q := query(); q != "" {
+			fullURL += "?" + q
+		}
+	}
+
+	resp, err := c.doRequest(ctx, http.MethodGet, fullURL, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	rc := &responseCloser{resp: resp}
+	defer rc.close()
+
+	if err := c.checkError(resp); err != nil {
+		return nil, fmt.Errorf("request %s %s: %w", http.MethodGet, fullURL, err)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read response body from %s: %w", fullURL, err)
+	}
+
+	return body, nil
+}
+
 func (c *Client) request(
 	ctx context.Context,
 	method string,

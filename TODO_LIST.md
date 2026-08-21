@@ -22,9 +22,6 @@ split are finalized. Requires explicit approval (tagging is irreversible).
 
 ## P3 — Tier-2 API surface (plan doc tier 2 + near-term reports)
 
-[ ] Add `GetStatement` with format parameter — CSV/PDF/XLSX (SDK consumes
-`statement.json` only today).
-
 [ ] Add webhook signature verification helper — no REST calls; high value,
 self-contained.
 

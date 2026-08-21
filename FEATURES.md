@@ -50,17 +50,18 @@ claim here can be verified against the implementation.
 
 ## Transactions
 
-| Feature                                                  | Status               | Evidence                                                                             |
-| -------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------ |
-| `ListTransactions(ctx, ListTransactionsRequest)`         | FULLY_FUNCTIONAL     | `transactions.go:15`; BDD-tested                                                     |
-| `ListTransactionsRequest.Type` filter forwarding         | FULLY_FUNCTIONAL     | `transactions.go:33`; BDD-tested                                                     |
-| Request validation (empty currency, inverted date range) | FULLY_FUNCTIONAL     | `transactions.go:208`; returns `wise.transactions.invalid_request` (`:204`)          |
-| Transaction type classification                          | FULLY_FUNCTIONAL     | `transactions.go:177`; CARD_PAYMENT / CARD_REFUND split fixed 2026-07-18             |
-| Cross-currency transaction mapping                       | FULLY_FUNCTIONAL     | `transactions.go:135` `mapExchange`; uses transaction currency, not request currency |
-| `Transaction.Exchange` (`*TransactionExchange`)          | FULLY_FUNCTIONAL     | `types.go:119`; nil for non-conversion transactions                                  |
-| `EndOfStatementBalance` exposure                         | FULLY_FUNCTIONAL     | `types.go:192`; surfaced as `Money` on `ListTransactionsResponse`                    |
-| `Transaction.Date` UTC semantics                         | PARTIALLY_FUNCTIONAL | `helpers.go:75` parses as UTC; Wise sends no TZ — documented in field comment        |
-| Pagination                                               | PLANNED              | Wise returns all transactions in one response; no endpoint requires it yet           |
+| Feature                                                   | Status               | Evidence                                                                             |
+| --------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------ |
+| `ListTransactions(ctx, ListTransactionsRequest)`          | FULLY_FUNCTIONAL     | `transactions.go:15`; BDD-tested                                                     |
+| `GetStatement` file download (csv/pdf/xlsx/xml/mt940/qif) | FULLY_FUNCTIONAL     | `transactions.go`; raw bytes, client-side format validation                          |
+| `ListTransactionsRequest.Type` filter forwarding          | FULLY_FUNCTIONAL     | `transactions.go:33`; BDD-tested                                                     |
+| Request validation (empty currency, inverted date range)  | FULLY_FUNCTIONAL     | `transactions.go:208`; returns `wise.transactions.invalid_request` (`:204`)          |
+| Transaction type classification                           | FULLY_FUNCTIONAL     | `transactions.go:177`; CARD_PAYMENT / CARD_REFUND split fixed 2026-07-18             |
+| Cross-currency transaction mapping                        | FULLY_FUNCTIONAL     | `transactions.go:135` `mapExchange`; uses transaction currency, not request currency |
+| `Transaction.Exchange` (`*TransactionExchange`)           | FULLY_FUNCTIONAL     | `types.go:119`; nil for non-conversion transactions                                  |
+| `EndOfStatementBalance` exposure                          | FULLY_FUNCTIONAL     | `types.go:192`; surfaced as `Money` on `ListTransactionsResponse`                    |
+| `Transaction.Date` UTC semantics                          | PARTIALLY_FUNCTIONAL | `helpers.go:75` parses as UTC; Wise sends no TZ — documented in field comment        |
+| Pagination                                                | PLANNED              | Wise returns all transactions in one response; no endpoint requires it yet           |
 
 ## Error handling
 
