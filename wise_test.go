@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json/v2"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -51,6 +52,47 @@ func testTx(id, txType string, amount float64) raw.StatementTransaction {
 var unauthorizedHandler = func(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusUnauthorized)
 	_, _ = w.Write([]byte(`{"errors":[{"code":"UNAUTHORIZED","message":"Invalid API key"}]}`))
+}
+
+// errorHandler serves a fixed error status with a Wise-style error body and
+// optional extra headers (Retry-After, X-Rate-Limited-By, ...).
+func errorHandler(status int, headers map[string]string, code, message string) http.HandlerFunc {
+	return func(w http.ResponseWriter, _ *http.Request) {
+		for name, value := range headers {
+			w.Header().Set(name, value)
+		}
+
+		w.WriteHeader(status)
+		_, _ = w.Write(fmt.Appendf(nil, `{"errors":[{"code":%q,"message":%q}]}`, code, message))
+	}
+}
+
+// scaChallengeHandler serves Wise's header-only SCA rejection: 403 with an
+// empty body, the verdict in x-2fa-approval-result and the one-time token in
+// x-2fa-approval.
+var scaChallengeHandler = func(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("X-2fa-Approval-Result", "REJECTED")
+	w.Header().Set("X-2fa-Approval", "one-time-token-123")
+	w.WriteHeader(http.StatusForbidden)
+}
+
+// validQuoteRequest is a minimal request that passes CreateQuote validation.
+func validQuoteRequest() wise.CreateQuoteRequest {
+	return wise.CreateQuoteRequest{
+		SourceCurrency: wise.Currency("EUR"),
+		TargetCurrency: wise.Currency("USD"),
+		SourceAmount:   &wise.Money{Cents: 1000, Currency: wise.Currency("EUR")},
+	}
+}
+
+// validCreateTransferRequest is a minimal request that passes
+// CreateTransfer validation.
+func validCreateTransferRequest() wise.CreateTransferRequest {
+	return wise.CreateTransferRequest{
+		QuoteID:               wise.NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
+		TargetAccount:         wise.NewRecipientID(98765432),
+		CustomerTransactionID: "22244c35-9fe8-4c32-b7fd-d05c2a7734bf",
+	}
 }
 
 func expectListProfilesError(client *wise.Client, substr string) {
@@ -1166,6 +1208,49 @@ var _ = Describe("Wise Client", func() {
 				Expect(transfer.RecipientID.Get()).To(Equal(int64(98765432)))
 			})
 		})
+
+		Context("with 404 unknown transfer", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/16521632", errorHandler(
+					http.StatusNotFound, nil, "NOT_FOUND", "Transfer not found",
+				))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.GetTransfer(context.Background(), wise.NewTransferID(16521632))
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+
+		Context("with 401 unauthorized", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/16521632", errorHandler(
+					http.StatusUnauthorized, nil, "UNAUTHORIZED", "Invalid API key",
+				))
+			})
+
+			It("should surface an AuthError", func() {
+				_, err := client.GetTransfer(context.Background(), wise.NewTransferID(16521632))
+				authErr, ok := errors.AsType[*wise.AuthError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.AuthError, got %T: %v", err, err)
+				Expect(authErr.StatusCode).To(Equal(http.StatusUnauthorized))
+			})
+		})
+
+		Context("with 403 SCA challenge", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/16521632", scaChallengeHandler)
+			})
+
+			It("should surface an SCAChallengeError", func() {
+				_, err := client.GetTransfer(context.Background(), wise.NewTransferID(16521632))
+				scaErr, ok := errors.AsType[*wise.SCAChallengeError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.SCAChallengeError, got %T: %v", err, err)
+				Expect(scaErr.TwoFAApprovalToken()).To(Equal("one-time-token-123"))
+			})
+		})
 	})
 
 	Describe("CreateQuote", func() {
@@ -1212,6 +1297,102 @@ var _ = Describe("Wise Client", func() {
 				Expect(quote.ID.Get()).To(Equal("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"))
 				Expect(quote.Source.Cents).To(Equal(int64(1000)))
 				Expect(quote.Profile.Get()).To(Equal(int64(12345)))
+			})
+		})
+
+		Context("with 400 validation response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v3/profiles/12345/quotes", errorHandler(
+					http.StatusBadRequest, nil,
+					"VALIDATION_INVALID_SOURCE_AMOUNT", "must be greater than zero",
+				))
+			})
+
+			It("should surface an APIError with code and message", func() {
+				_, err := client.CreateQuote(
+					context.Background(), wise.NewProfileID(12345), validQuoteRequest(),
+				)
+				apiErr, ok := errors.AsType[*wise.APIError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.APIError, got %T: %v", err, err)
+				Expect(apiErr.StatusCode).To(Equal(http.StatusBadRequest))
+				Expect(apiErr.Message).To(ContainSubstring("VALIDATION_INVALID_SOURCE_AMOUNT"))
+				Expect(apiErr.Message).To(ContainSubstring("must be greater than zero"))
+			})
+		})
+
+		Context("with 401 unauthorized", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v3/profiles/12345/quotes", errorHandler(
+					http.StatusUnauthorized, nil, "UNAUTHORIZED", "Invalid API key",
+				))
+			})
+
+			It("should surface an AuthError", func() {
+				_, err := client.CreateQuote(
+					context.Background(), wise.NewProfileID(12345), validQuoteRequest(),
+				)
+				authErr, ok := errors.AsType[*wise.AuthError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.AuthError, got %T: %v", err, err)
+				Expect(authErr.StatusCode).To(Equal(http.StatusUnauthorized))
+			})
+		})
+
+		Context("with 403 SCA challenge", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v3/profiles/12345/quotes", scaChallengeHandler)
+			})
+
+			It("should surface an SCAChallengeError with the one-time token", func() {
+				_, err := client.CreateQuote(
+					context.Background(), wise.NewProfileID(12345), validQuoteRequest(),
+				)
+				scaErr, ok := errors.AsType[*wise.SCAChallengeError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.SCAChallengeError, got %T: %v", err, err)
+				Expect(scaErr.TwoFAApprovalToken()).To(Equal("one-time-token-123"))
+			})
+		})
+
+		Context("with 404 unknown profile", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v3/profiles/12345/quotes", errorHandler(
+					http.StatusNotFound, nil, "NOT_FOUND", "Profile not found",
+				))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.CreateQuote(
+					context.Background(), wise.NewProfileID(12345), validQuoteRequest(),
+				)
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+
+		Context("with 429 rate limit and Retry-After", func() {
+			BeforeEach(func() {
+				// Fast retries so the spec exhausts the policy quickly.
+				client = wise.New("test-api-key",
+					wise.WithBaseURL(server.URL),
+					wise.WithRetry(1, time.Millisecond, time.Millisecond),
+				)
+
+				mux.HandleFunc("/v3/profiles/12345/quotes", errorHandler(
+					http.StatusTooManyRequests,
+					map[string]string{"Retry-After": "30", "X-Rate-Limited-By": "profile"},
+					"RATE_LIMITED", "Too many requests",
+				))
+			})
+
+			It("should exhaust retries and surface RateLimitError with headers", func() {
+				_, err := client.CreateQuote(
+					context.Background(), wise.NewProfileID(12345), validQuoteRequest(),
+				)
+				rlErr, ok := errors.AsType[*wise.RateLimitError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.RateLimitError, got %T: %v", err, err)
+				Expect(rlErr.RetryAfter).To(Equal(30 * time.Second))
+				Expect(rlErr.RateLimitedBy).To(Equal("profile"))
+				Expect(rlErr.IsRetryable()).To(BeTrue())
 			})
 		})
 	})
@@ -1282,6 +1463,23 @@ var _ = Describe("Wise Client", func() {
 				Expect(recipients[0].Details["sortCode"]).To(Equal("040075"))
 			})
 		})
+
+		Context("with 401 unauthorized", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v2/accounts", errorHandler(
+					http.StatusUnauthorized, nil, "UNAUTHORIZED", "Invalid API key",
+				))
+			})
+
+			It("should surface an AuthError", func() {
+				_, err := client.ListRecipients(context.Background(), wise.ListRecipientsRequest{
+					ProfileID: wise.NewProfileID(12345),
+				})
+				authErr, ok := errors.AsType[*wise.AuthError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.AuthError, got %T: %v", err, err)
+				Expect(authErr.StatusCode).To(Equal(http.StatusUnauthorized))
+			})
+		})
 	})
 
 	Describe("GetRecipient", func() {
@@ -1350,6 +1548,69 @@ var _ = Describe("Wise Client", func() {
 				Expect(recipient.ID.Get()).To(Equal(int64(98765432)))
 			})
 		})
+
+		Context("with 400 validation response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/accounts", errorHandler(
+					http.StatusBadRequest, nil,
+					"VALIDATION_INVALID_SORT_CODE", "sortCode must be 6 digits",
+				))
+			})
+
+			It("should surface an APIError with the validation message", func() {
+				_, err := client.CreateRecipient(context.Background(), wise.CreateRecipientRequest{
+					ProfileID:         wise.NewProfileID(12345),
+					Currency:          wise.Currency("GBP"),
+					Type:              "sort_code",
+					AccountHolderName: "Jane Doe",
+					Details:           map[string]string{"sortCode": "040075"},
+				})
+				apiErr, ok := errors.AsType[*wise.APIError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.APIError, got %T: %v", err, err)
+				Expect(apiErr.StatusCode).To(Equal(http.StatusBadRequest))
+				Expect(apiErr.Message).To(ContainSubstring("sortCode must be 6 digits"))
+			})
+		})
+
+		Context("with 404 unknown profile", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/accounts", errorHandler(
+					http.StatusNotFound, nil, "NOT_FOUND", "Profile not found",
+				))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.CreateRecipient(context.Background(), wise.CreateRecipientRequest{
+					ProfileID:         wise.NewProfileID(12345),
+					Currency:          wise.Currency("GBP"),
+					Type:              "sort_code",
+					AccountHolderName: "Jane Doe",
+					Details:           map[string]string{"sortCode": "040075"},
+				})
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+
+		Context("with 403 SCA challenge", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/accounts", scaChallengeHandler)
+			})
+
+			It("should surface an SCAChallengeError", func() {
+				_, err := client.CreateRecipient(context.Background(), wise.CreateRecipientRequest{
+					ProfileID:         wise.NewProfileID(12345),
+					Currency:          wise.Currency("GBP"),
+					Type:              "sort_code",
+					AccountHolderName: "Jane Doe",
+					Details:           map[string]string{"sortCode": "040075"},
+				})
+				scaErr, ok := errors.AsType[*wise.SCAChallengeError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.SCAChallengeError, got %T: %v", err, err)
+				Expect(scaErr.TwoFAApprovalToken()).To(Equal("one-time-token-123"))
+			})
+		})
 	})
 
 	Describe("CreateTransfer", func() {
@@ -1391,6 +1652,91 @@ var _ = Describe("Wise Client", func() {
 				Expect(transfer.Status).To(Equal(wise.TransferStatusIncomingPaymentWaiting))
 			})
 		})
+
+		Context("with 400 validation response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers", errorHandler(
+					http.StatusBadRequest, nil,
+					"VALIDATION_INVALID_QUOTE", "Quote expired or not found",
+				))
+			})
+
+			It("should surface an APIError", func() {
+				_, err := client.CreateTransfer(context.Background(), validCreateTransferRequest())
+				apiErr, ok := errors.AsType[*wise.APIError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.APIError, got %T: %v", err, err)
+				Expect(apiErr.StatusCode).To(Equal(http.StatusBadRequest))
+				Expect(apiErr.Message).To(ContainSubstring("Quote expired"))
+			})
+		})
+
+		Context("with 409 duplicate customerTransactionId", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers", errorHandler(
+					http.StatusConflict, nil,
+					"TRANSFER_EXISTS", "Transfer with this customerTransactionId already exists",
+				))
+			})
+
+			It("should surface an APIError carrying the conflict", func() {
+				_, err := client.CreateTransfer(context.Background(), validCreateTransferRequest())
+				apiErr, ok := errors.AsType[*wise.APIError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.APIError, got %T: %v", err, err)
+				Expect(apiErr.StatusCode).To(Equal(http.StatusConflict))
+				Expect(apiErr.Message).To(ContainSubstring("already exists"))
+			})
+		})
+
+		Context("with 404 unknown quote", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers", errorHandler(
+					http.StatusNotFound, nil, "NOT_FOUND", "Quote not found",
+				))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.CreateTransfer(context.Background(), validCreateTransferRequest())
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+
+		Context("with 403 SCA challenge", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers", scaChallengeHandler)
+			})
+
+			It("should surface an SCAChallengeError", func() {
+				_, err := client.CreateTransfer(context.Background(), validCreateTransferRequest())
+				scaErr, ok := errors.AsType[*wise.SCAChallengeError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.SCAChallengeError, got %T: %v", err, err)
+				Expect(scaErr.TwoFAApprovalToken()).To(Equal("one-time-token-123"))
+			})
+		})
+
+		Context("with 429 rate limit and Retry-After", func() {
+			BeforeEach(func() {
+				client = wise.New("test-api-key",
+					wise.WithBaseURL(server.URL),
+					wise.WithRetry(1, time.Millisecond, time.Millisecond),
+				)
+
+				mux.HandleFunc("/v1/transfers", errorHandler(
+					http.StatusTooManyRequests,
+					map[string]string{"Retry-After": "17", "X-Rate-Limited-By": "ip"},
+					"RATE_LIMITED", "Too many requests",
+				))
+			})
+
+			It("should exhaust retries and surface RateLimitError", func() {
+				_, err := client.CreateTransfer(context.Background(), validCreateTransferRequest())
+				rlErr, ok := errors.AsType[*wise.RateLimitError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.RateLimitError, got %T: %v", err, err)
+				Expect(rlErr.RetryAfter).To(Equal(17 * time.Second))
+				Expect(rlErr.RateLimitedBy).To(Equal("ip"))
+			})
+		})
 	})
 
 	Describe("CancelTransfer", func() {
@@ -1428,6 +1774,38 @@ var _ = Describe("Wise Client", func() {
 				_, err := client.CancelTransfer(context.Background(), wise.TransferID{})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("transferID is required"))
+			})
+		})
+
+		Context("with 409 cancellation not allowed", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/16521634/cancel", errorHandler(
+					http.StatusConflict, nil,
+					"TRANSFER_CANNOT_BE_CANCELLED", "Transfer already processed",
+				))
+			})
+
+			It("should surface an APIError carrying the conflict", func() {
+				_, err := client.CancelTransfer(context.Background(), wise.NewTransferID(16521634))
+				apiErr, ok := errors.AsType[*wise.APIError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.APIError, got %T: %v", err, err)
+				Expect(apiErr.StatusCode).To(Equal(http.StatusConflict))
+				Expect(apiErr.Message).To(ContainSubstring("already processed"))
+			})
+		})
+
+		Context("with 404 unknown transfer", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/16521634/cancel", errorHandler(
+					http.StatusNotFound, nil, "NOT_FOUND", "Transfer not found",
+				))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.CancelTransfer(context.Background(), wise.NewTransferID(16521634))
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
 			})
 		})
 	})
@@ -1519,6 +1897,44 @@ var _ = Describe("Wise Client", func() {
 				)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("transferID is required"))
+			})
+		})
+
+		Context("with 409 payment already exists", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/transfers/16521634/payments", errorHandler(
+					http.StatusConflict, nil,
+					"PaymentAlreadyExistsError", "Transfer is already funded",
+				))
+			})
+
+			It("should surface an APIError carrying the conflict", func() {
+				_, err := client.FundTransfer(
+					context.Background(),
+					wise.NewProfileID(12345),
+					wise.NewTransferID(16521634),
+				)
+				apiErr, ok := errors.AsType[*wise.APIError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.APIError, got %T: %v", err, err)
+				Expect(apiErr.StatusCode).To(Equal(http.StatusConflict))
+				Expect(apiErr.Message).To(ContainSubstring("already funded"))
+			})
+		})
+
+		Context("with 403 SCA challenge", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/transfers/16521634/payments", scaChallengeHandler)
+			})
+
+			It("should surface an SCAChallengeError", func() {
+				_, err := client.FundTransfer(
+					context.Background(),
+					wise.NewProfileID(12345),
+					wise.NewTransferID(16521634),
+				)
+				scaErr, ok := errors.AsType[*wise.SCAChallengeError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.SCAChallengeError, got %T: %v", err, err)
+				Expect(scaErr.TwoFAApprovalToken()).To(Equal("one-time-token-123"))
 			})
 		})
 	})
@@ -1654,6 +2070,48 @@ var _ = Describe("Wise Client", func() {
 				)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("quoteUuid is required"))
+			})
+		})
+
+		Context("with 400 validation response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfer-requirements", errorHandler(
+					http.StatusBadRequest, nil,
+					"VALIDATION_FAILED", "Transfer purpose is required for this corridor",
+				))
+			})
+
+			It("should surface an APIError with the validation message", func() {
+				_, err := client.ValidateTransferRequirements(
+					context.Background(),
+					wise.ValidateTransferRequirementsRequest{
+						TargetAccount: wise.NewRecipientID(98765432),
+						QuoteID:       wise.NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
+					},
+				)
+				apiErr, ok := errors.AsType[*wise.APIError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.APIError, got %T: %v", err, err)
+				Expect(apiErr.StatusCode).To(Equal(http.StatusBadRequest))
+				Expect(apiErr.Message).To(ContainSubstring("Transfer purpose is required"))
+			})
+		})
+
+		Context("with 403 SCA challenge", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfer-requirements", scaChallengeHandler)
+			})
+
+			It("should surface an SCAChallengeError", func() {
+				_, err := client.ValidateTransferRequirements(
+					context.Background(),
+					wise.ValidateTransferRequirementsRequest{
+						TargetAccount: wise.NewRecipientID(98765432),
+						QuoteID:       wise.NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
+					},
+				)
+				scaErr, ok := errors.AsType[*wise.SCAChallengeError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.SCAChallengeError, got %T: %v", err, err)
+				Expect(scaErr.TwoFAApprovalToken()).To(Equal("one-time-token-123"))
 			})
 		})
 	})

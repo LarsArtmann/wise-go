@@ -226,10 +226,44 @@ func (c *Client) doRequest(
 			return c.httpClient.Do(req)
 		})
 	if err != nil {
+		if classified := c.classifyExhaustedRetries(method, fullURL, err); classified != nil {
+			return nil, classified
+		}
+
 		return nil, fmt.Errorf("execute %s %s: %w", method, fullURL, err)
 	}
 
 	return resp, nil
+}
+
+// classifyExhaustedRetries unwraps failsafe's retries-exceeded error and
+// classifies its final response, so exhausted retries still surface the typed
+// error the last attempt produced (RateLimitError with Retry-After,
+// ServerError) instead of an opaque wrapper that carries no classification.
+// Returns nil when err is not a retries-exceeded error or holds no response.
+func (c *Client) classifyExhaustedRetries(method, fullURL string, err error) error {
+	exceeded := retrypolicy.AsExceededError(err)
+	if exceeded == nil {
+		return nil
+	}
+
+	lastResp, ok := exceeded.LastResult.(*http.Response)
+	if !ok || lastResp == nil {
+		return nil
+	}
+
+	if lastResp.Body != nil {
+		defer func() {
+			_ = lastResp.Body.Close()
+		}()
+	}
+
+	apiErr := c.checkError(lastResp)
+	if apiErr == nil {
+		return nil
+	}
+
+	return fmt.Errorf("execute %s %s after retries: %w", method, fullURL, apiErr)
 }
 
 func (c *Client) setHeaders(req *http.Request) {

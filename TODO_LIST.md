@@ -6,13 +6,6 @@ see [ROADMAP.md](ROADMAP.md). For shipped features see [FEATURES.md](FEATURES.md
 
 ## P1 — Close out the core transfer flow
 
-[ ] Add error-path BDD tests for the write endpoints — HTTP 400 validation, 409
-cancel-not-allowed, 404, SCA 403, and 429-with-Retry-After for `CreateQuote`,
-`CreateRecipient`, `CreateTransfer`, `CancelTransfer`,
-`ValidateTransferRequirements` (zero-ID/missing-field rejections exist; the HTTP
-error matrix does not — `ListRecipients`/`ListTransfers` have none either).
-Source: status report 18-15 (f.2, f.4).
-
 [ ] Add validation edge-case unit tests — `CreateTransferRequest.validate`
 (`transfers.go:133`), `ValidateTransferRequirementsRequest.validate`
 (`transfer_requirements.go:42`), `CreateQuoteRequest.validate` (`quotes.go:88`):

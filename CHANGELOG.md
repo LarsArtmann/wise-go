@@ -16,6 +16,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   balance) is a rejected *result*, not an error; `BalanceTransactionID`
   identifies the debit applied to the balance. SCA-protected for UK/EEA
   profiles.
+- Error-path BDD coverage for every write endpoint plus `GetTransfer` and
+  `ListRecipients`: 400 validation, 401, 404, 409 conflict,
+  SCA-403 (`*SCAChallengeError` with one-time token), and
+  429-with-`Retry-After`/`X-Rate-Limited-By` exhaustion.
+
+### Fixed
+
+- Exhausted retries now surface the typed error of the final attempt. When
+  the retry policy gave up on 429/5xx responses, failsafe-go's opaque
+  `retries exceeded` wrapper replaced the classification — consumers never
+  saw `*RateLimitError` (with `Retry-After`) or `*ServerError`, losing
+  `IsRetryable`/`ErrorFamily` semantics. `doRequest` now classifies the last
+  response carried by the exceeded-retries error.
 
 ## [0.8.1] - 2026-08-21
 
