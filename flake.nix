@@ -31,7 +31,7 @@
   };
 
   outputs =
-    inputs@{ self, ... }:
+    inputs:
     let
       fs = inputs.nixpkgs.lib.fileset;
       sourceFiles = fs.unions [
@@ -114,7 +114,7 @@
         {
           # Hermetic test check with race detection and coverage output,
           # matching the original buildGoModule test check.
-          checks.test = config.packages.default.overrideAttrs (old: {
+          checks.test = config.packages.default.overrideAttrs (_old: {
             pname = "wise-go-test";
             doCheck = true;
             checkPhase = ''
