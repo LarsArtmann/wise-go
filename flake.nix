@@ -54,6 +54,7 @@
               gopls
               golangci-lint
               go-tools # staticcheck + helpers
+              lychee # local link checks; same tool the links check runs
             ];
             GOWORK = "off";
             GOPRIVATE = "github.com/larsartmann";
@@ -153,6 +154,8 @@
                   ./example_test.go
                   ./wise_test.go
                   ./sandbox_live_test.go
+                  ./readme_guard_test.go
+                  ./README.md
                 ];
               };
               vendorHash = import ./vendorHash.nix;
