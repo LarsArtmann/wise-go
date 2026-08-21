@@ -33,6 +33,8 @@
 - **`retrypolicy.ExceededError` matches by VALUE** — `retrypolicy.AsExceededError` (and `errors.As` on it) matches the struct, not a pointer. In tests exercising `classifyExhaustedRetries`, construct `retrypolicy.ExceededError{...}`, never `&retrypolicy.ExceededError{...}`.
 - **`newAPIError` takes a `string` body and returns `error`** — In tests, construct `&APIError{...}`/`&RateLimitError{...}` directly instead of calling `newAPIError` and unwrapping; the signature (`status int, body string, ...`) does not fit table-driven fixtures.
 
+- **`Accept-Minor-Version: 1` on account-requirements** — Wise versions the account-requirements response schema; minor version 1 includes the recipient name/email fields and is what Wise recommends for all new integrations. The SDK always sends it on those endpoints via the `extraHeaders` hook (see `quotes.go`), never via `setHeaders` (it is endpoint-specific content negotiation, not auth). Any future account-requirements endpoint must send the same header.
+
 ## Conventions
 
 - **Error handling** — Domain error types (`APIError`, `RateLimitError`, etc.) implement `go-error-family` interfaces (`ErrorCode`, `ErrorFamily`, `ErrorContext`, `IsRetryable`). Error wrapping at call sites uses `fmt.Errorf("context: %w", err)` — the inner error carries the classification. `errorfamily.WrapCorruption` is used specifically for response decode failures. `errorfamily.NewRejection` is used for "not found" and client-side validation errors.

@@ -47,8 +47,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   mapping (DOB parsed as UTC date; nullable details/address preserved).
 - `GetStatement` file download (statement files): download a balance statement as raw bytes
   in CSV, PDF, XLSX, CAMT.053 XML, MT940, or QIF via a new binary-response
-  path (`getRaw`). Unknown formats are rejected client-side; the interval
-  and currency rules mirror `ListTransactions`.
+  path (`getRaw`). Unknown formats and intervals beyond Wise's 469-day
+  statement limit are rejected client-side (split longer periods into
+  multiple requests); the interval and currency rules otherwise mirror
+  `ListTransactions`. `Locale` (optional 2-character language code)
+  localizes the statement.
 - `CreateBalance` (`POST /v4/profiles/{id}/balances`): open a new STANDARD or
   SAVINGS balance (savings name enforced client-side).
 - `GetTotalFunds` (`GET /v4/profiles/{id}/total-funds/{currency}`): the
