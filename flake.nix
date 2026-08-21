@@ -149,6 +149,7 @@
                   ./internal_test.go
                   ./example_test.go
                   ./wise_test.go
+                  ./sandbox_live_test.go
                 ];
               };
               vendorHash = import ./vendorHash.nix;

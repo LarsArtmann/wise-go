@@ -1,0 +1,33 @@
+name: Sandbox Live Tests
+
+# Manual dispatch only: exercises the real Wise sandbox (api.wise-sandbox.com).
+# Gated on the WISE_SANDBOX_API_KEY secret — the Go tests skip themselves when
+# it is absent, so dispatching without the secret is a green no-op (see the
+# SKIP lines in the log), never a false failure.
+on:
+  workflow_dispatch:
+
+env:
+  GO_VERSION: "1.26"
+  # go-branded-id and go-error-family use encoding/json/v2, which requires
+  # the jsonv2 experiment on Go 1.26.
+  GOEXPERIMENT: "jsonv2"
+
+jobs:
+  sandbox-live:
+    name: Sandbox Smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Run sandbox live tests
+        env:
+          WISE_SANDBOX_API_KEY: ${{ secrets.WISE_SANDBOX_API_KEY }}
+        run: go test -run TestSandboxLive -v -count=1 ./...
+
+    timeout-minutes: 10
