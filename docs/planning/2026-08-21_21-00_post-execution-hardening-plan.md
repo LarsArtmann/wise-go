@@ -27,7 +27,7 @@ POST account-requirements (completes the recipient two-pass story), type-model p
 - **Sandbox live tests** — blocked on sandbox API key (question g1). Task 4 makes it key-drop-ready.
 - **v1.0.0 tag** — blocked on user approval of the green audit + version call (question g3).
 - **Typed recipient `Details`** — blocked on the typed-vs-map decision (question g3-adjacent, carried across four reports).
-- **`docs/DOMAIN_LANGUAGE.md`** — blocked on create-or-decline decision.
+- **`docs/DOMAIN_LANGUAGE.md`** — ~~blocked on create-or-decline decision~~ **STALE: resolved** — the file already exists (created 2026-08-08, tracked). No gated work remains here.
 - **Long-tail epics** — WithMetrics, `Page[T]`, property tests, service-client refactor, tier-3/4 APIs. Demand-gated.
 - **Cachix cache name/auth** — blocked on question g2; CI step degrades to warn until answered.
 
@@ -56,7 +56,7 @@ Sorted: Pareto tier → impact → effort. **Effort** in minutes. `Gate` = per-t
 
 **Executable subtotal (1–14): 825 min ≈ 13.75 h focused work.** Tasks 1–5 (the 1%): ~4.5 h.
 
-**Gated (NOT scheduled):** G1 sandbox live tests (key), G2 v1.0.0 tag (approval + version call), G3 typed recipients (decision), G4 DOMAIN_LANGUAGE.md (decision), G5 long-tail epics (demand), G6 cachix name/auth (g2).
+**Gated (NOT scheduled):** G1 sandbox live tests (key), G2 v1.0.0 tag (approval + version call), G3 typed recipients (decision), ~~G4 DOMAIN_LANGUAGE.md (decision)~~ **stale — file exists since 2026-08-08**, G5 long-tail epics (demand), G6 cachix name/auth (g2).
 
 ---
 
