@@ -27,6 +27,20 @@ v0.9.0 shipped 2026-08-21; remaining: tag `v1.0.0`.
 
 ## P4 — Tooling & quality
 
+[ ] Adopt `go-retry` v0.4.0 in place of the failsafe-go executor — swap the
+`failsafe-go` retry executor in `client.go` for
+`github.com/larsartmann/go-retry` `retry.Do`; delete
+`classifyExhaustedRetries` (go-retry's exhaustion error carries the final
+typed error via `WithCause` and `errors.Is`/`errors.AsType` traverse to it —
+verified by probe 2026-08-21, no shim needed); feed Wise's `Retry-After`
+(`RateLimitError.RetryAfter`, including the HTTP-date form) through
+`Config.DelayFunc`, which failsafe-go's policy cannot express. Analysis and
+probe evidence: go-retry repo,
+`docs/planning/2026-08-21_23-48_go-retry-cap-and-semantics-hardening.md`
+(M10). Before executing, record why the in-house library overrides the
+how-to-golang failsafe-go mandate for this repo (maintained-by-owner,
+zero-dep, Retry-After-aware).
+
 (shipped 2026-08-21, execution session:)
 
 - **govulncheck triaged** — all 4 reachable findings (GO-2026-6218, -6090,
