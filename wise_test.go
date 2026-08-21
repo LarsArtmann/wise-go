@@ -615,6 +615,40 @@ var _ = Describe("Wise Client", func() {
 				Expect(err.Error()).To(ContainSubstring("profileID is required"))
 			})
 		})
+
+		Context("with 401 unauthorized", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v4/profiles/12345/total-funds/EUR", errorHandler(
+					http.StatusUnauthorized, nil, "UNAUTHORIZED", "Invalid API key",
+				))
+			})
+
+			It("should surface an AuthError", func() {
+				_, err := client.GetTotalFunds(
+					context.Background(), wise.NewProfileID(12345), wise.Currency("EUR"),
+				)
+				authErr, ok := errors.AsType[*wise.AuthError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.AuthError, got %T: %v", err, err)
+				Expect(authErr.StatusCode).To(Equal(http.StatusUnauthorized))
+			})
+		})
+
+		Context("with 404 unknown profile", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v4/profiles/404/total-funds/EUR", errorHandler(
+					http.StatusNotFound, nil, "NOT_FOUND", "Profile not found",
+				))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.GetTotalFunds(
+					context.Background(), wise.NewProfileID(404), wise.Currency("EUR"),
+				)
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
 	})
 
 	Describe("ListTransactions", func() {
@@ -2425,6 +2459,48 @@ var _ = Describe("Wise Client", func() {
 				Expect(err.Error()).To(ContainSubstring("balanceID is required"))
 			})
 		})
+
+		Context("with 404 unknown balance", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/balance-statements/404/statement.csv", errorHandler(
+					http.StatusNotFound, nil, "NOT_FOUND", "Balance not found",
+				))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					BalanceID: wise.NewBalanceID(404),
+					Currency:  wise.Currency("EUR"),
+					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
+					Format:    wise.StatementFormatCSV,
+				})
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+
+		Context("with 403 SCA challenge", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/balance-statements/100/statement.csv", scaChallengeHandler)
+			})
+
+			It("should surface an SCAChallengeError", func() {
+				_, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					BalanceID: wise.NewBalanceID(100),
+					Currency:  wise.Currency("EUR"),
+					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
+					Format:    wise.StatementFormatCSV,
+				})
+				scaErr, ok := errors.AsType[*wise.SCAChallengeError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.SCAChallengeError, got %T: %v", err, err)
+				Expect(scaErr.TwoFAApprovalToken()).To(Equal("one-time-token-123"))
+			})
+		})
 	})
 
 	Describe("GetMe", func() {
@@ -2477,6 +2553,21 @@ var _ = Describe("Wise Client", func() {
 				Expect(user.Details).To(BeNil())
 			})
 		})
+
+		Context("with 401 unauthorized", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/me", errorHandler(
+					http.StatusUnauthorized, nil, "UNAUTHORIZED", "Invalid API key",
+				))
+			})
+
+			It("should surface an AuthError", func() {
+				_, err := client.GetMe(context.Background())
+				authErr, ok := errors.AsType[*wise.AuthError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.AuthError, got %T: %v", err, err)
+				Expect(authErr.StatusCode).To(Equal(http.StatusUnauthorized))
+			})
+		})
 	})
 
 	Describe("GetUser", func() {
@@ -2518,6 +2609,24 @@ var _ = Describe("Wise Client", func() {
 				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
 			})
 		})
+
+		Context("with 403 plain rejection (no SCA headers)", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/users/403", errorHandler(
+					http.StatusForbidden, nil, "FORBIDDEN", "Insufficient permissions",
+				))
+			})
+
+			It("should surface an AuthError, not an SCAChallengeError", func() {
+				_, err := client.GetUser(context.Background(), wise.NewUserID(403))
+				authErr, ok := errors.AsType[*wise.AuthError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.AuthError, got %T: %v", err, err)
+				Expect(authErr.StatusCode).To(Equal(http.StatusForbidden))
+
+				_, isSCA := errors.AsType[*wise.SCAChallengeError](err)
+				Expect(isSCA).To(BeFalse(), "a 403 without 2FA headers must not classify as SCA")
+			})
+		})
 	})
 
 	Describe("GetMultiCurrencyAccount", func() {
@@ -2553,6 +2662,23 @@ var _ = Describe("Wise Client", func() {
 				_, err := client.GetMultiCurrencyAccount(context.Background(), wise.ProfileID{})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("profileID is required"))
+			})
+		})
+
+		Context("with 404 unknown profile", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/404/multi-currency-account", errorHandler(
+					http.StatusNotFound, nil, "NOT_FOUND", "Profile not found",
+				))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.GetMultiCurrencyAccount(
+					context.Background(), wise.NewProfileID(404),
+				)
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
 			})
 		})
 	})
@@ -2612,6 +2738,23 @@ var _ = Describe("Wise Client", func() {
 				Expect(err.Error()).To(ContainSubstring("profileID is required"))
 			})
 		})
+
+		Context("with 404 unknown profile", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/404/account-details", errorHandler(
+					http.StatusNotFound, nil, "NOT_FOUND", "Profile not found",
+				))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.GetBankAccountDetails(
+					context.Background(), wise.NewProfileID(404),
+				)
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
 	})
 
 	Describe("ListCurrencies", func() {
@@ -2641,6 +2784,21 @@ var _ = Describe("Wise Client", func() {
 				Expect(currencies[0].Code).To(Equal(wise.Currency("EUR")))
 				Expect(currencies[0].Symbol).To(Equal("€"))
 				Expect(currencies[1].SupportsDecimals).To(BeFalse())
+			})
+		})
+
+		Context("with 401 unauthorized", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/currencies", errorHandler(
+					http.StatusUnauthorized, nil, "UNAUTHORIZED", "Invalid API key",
+				))
+			})
+
+			It("should surface an AuthError", func() {
+				_, err := client.ListCurrencies(context.Background())
+				authErr, ok := errors.AsType[*wise.AuthError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.AuthError, got %T: %v", err, err)
+				Expect(authErr.StatusCode).To(Equal(http.StatusUnauthorized))
 			})
 		})
 	})

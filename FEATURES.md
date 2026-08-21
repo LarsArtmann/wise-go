@@ -30,28 +30,28 @@ claim here can be verified against the implementation.
 
 ## Profiles
 
-| Feature                | Status           | Evidence                               |
-| ---------------------- | ---------------- | -------------------------------------- |
-| `ListProfiles(ctx)`    | FULLY_FUNCTIONAL | `profiles.go:31`; BDD-tested           |
-| `GetProfile(ctx, id)`  | FULLY_FUNCTIONAL | `profiles.go:13`; BDD-tested           |
-| `GetMe(ctx)`           | FULLY_FUNCTIONAL | `users.go`; typed `UserID`, BDD-tested |
-| `GetUser(ctx, id)`     | FULLY_FUNCTIONAL | `users.go`; 404 + zero-ID BDD-tested   |
-| Personal-profile parse | FULLY_FUNCTIONAL | `profiles.go:31` name construction     |
-| Business-profile parse | FULLY_FUNCTIONAL | `profiles.go:31` BusinessName branch   |
+| Feature                | Status           | Evidence                                                 |
+| ---------------------- | ---------------- | -------------------------------------------------------- |
+| `ListProfiles(ctx)`    | FULLY_FUNCTIONAL | `profiles.go:31`; BDD-tested                             |
+| `GetProfile(ctx, id)`  | FULLY_FUNCTIONAL | `profiles.go:13`; BDD-tested                             |
+| `GetMe(ctx)`           | FULLY_FUNCTIONAL | `users.go`; typed `UserID`, 401 + nil-details BDD-tested |
+| `GetUser(ctx, id)`     | FULLY_FUNCTIONAL | `users.go`; 404, plain-403, zero-ID BDD-tested           |
+| Personal-profile parse | FULLY_FUNCTIONAL | `profiles.go:31` name construction                       |
+| Business-profile parse | FULLY_FUNCTIONAL | `profiles.go:31` BusinessName branch                     |
 
 ## Balances
 
-| Feature                                    | Status           | Evidence                                                       |
-| ------------------------------------------ | ---------------- | -------------------------------------------------------------- |
-| `GetMultiCurrencyAccount(ctx, ProfileID)`  | FULLY_FUNCTIONAL | `account_details.go`; self-RecipientID for top-ups             |
-| `GetBankAccountDetails(ctx, ProfileID)`    | FULLY_FUNCTIONAL | `account_details.go`; LOCAL/INTERNATIONAL receive options      |
-| `ListCurrencies(ctx)`                      | FULLY_FUNCTIONAL | `currencies.go`; public reference data                         |
-| `ListBalances(ctx, ProfileID)`             | FULLY_FUNCTIONAL | `balances.go`; sends required `types=STANDARD,SAVINGS` query   |
-| `GetBalance(ctx, ProfileID, BalanceID)`    | FULLY_FUNCTIONAL | `balances.go`; direct per-balance endpoint, no filtering       |
-| `CreateBalance(ctx, CreateBalanceRequest)` | FULLY_FUNCTIONAL | `balances.go`; savings name enforced client-side               |
-| `GetTotalFunds(ctx, ProfileID, Currency)`  | FULLY_FUNCTIONAL | `balances.go`; Worth + Available as `Money`                    |
-| Filter visible + non-investment balances   | FULLY_FUNCTIONAL | `balances.go:43`; drops `Visible: false` and invested balances |
-| Fetch hidden or invested balances          | FULLY_FUNCTIONAL | `GetBalance` direct endpoint retrieves them individually       |
+| Feature                                    | Status           | Evidence                                                           |
+| ------------------------------------------ | ---------------- | ------------------------------------------------------------------ |
+| `GetMultiCurrencyAccount(ctx, ProfileID)`  | FULLY_FUNCTIONAL | `account_details.go`; self-RecipientID for top-ups, 404 BDD        |
+| `GetBankAccountDetails(ctx, ProfileID)`    | FULLY_FUNCTIONAL | `account_details.go`; LOCAL/INTERNATIONAL receive options, 404 BDD |
+| `ListCurrencies(ctx)`                      | FULLY_FUNCTIONAL | `currencies.go`; public reference data, 401 BDD                    |
+| `ListBalances(ctx, ProfileID)`             | FULLY_FUNCTIONAL | `balances.go`; sends required `types=STANDARD,SAVINGS` query       |
+| `GetBalance(ctx, ProfileID, BalanceID)`    | FULLY_FUNCTIONAL | `balances.go`; direct per-balance endpoint, no filtering           |
+| `CreateBalance(ctx, CreateBalanceRequest)` | FULLY_FUNCTIONAL | `balances.go`; savings name enforced client-side                   |
+| `GetTotalFunds(ctx, ProfileID, Currency)`  | FULLY_FUNCTIONAL | `balances.go`; Worth + Available as `Money`, 401/404 BDD           |
+| Filter visible + non-investment balances   | FULLY_FUNCTIONAL | `balances.go:43`; drops `Visible: false` and invested balances     |
+| Fetch hidden or invested balances          | FULLY_FUNCTIONAL | `GetBalance` direct endpoint retrieves them individually           |
 
 ## Transactions
 
