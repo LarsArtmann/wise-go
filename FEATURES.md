@@ -143,6 +143,16 @@ claim here can be verified against the implementation.
 | `ListBalances` `types` query param (v0.5.3)    | FULLY_FUNCTIONAL | `balances.go:18,23`; live API 400s without it             |
 | Mapper errors classified `Corruption` (v0.5.2) | FULLY_FUNCTIONAL | `internal_test.go`; fail-fast instead of retry loops      |
 
+## Webhooks
+
+| Feature                                                        | Status           | Evidence                                                                   |
+| -------------------------------------------------------------- | ---------------- | -------------------------------------------------------------------------- |
+| `ParseWebhookPublicKey` (PKIX + PKCS#1 PEM, RSA-only)          | FULLY_FUNCTIONAL | `webhooks.go:27`; garbage/non-RSA input rejected with clear errors         |
+| `VerifyWebhookSignature` (RSA-SHA256 over raw body)            | FULLY_FUNCTIONAL | `webhooks.go:58`; valid/tampered/wrong-key/malformed/empty/5 MiB tested    |
+| `HeaderWebhookSignature` / `HeaderDeliveryID` constants        | FULLY_FUNCTIONAL | `webhooks.go:16,22`; delivery-dedup guidance in README Webhooks section    |
+| Subscription management (create/list/get/delete, app + profile) | PLANNED          | Tier-4 item #49; 9 operations in OpenAPI spec, no code yet                 |
+| Typed event payload decoding (transfers#state-change, etc.)    | PLANNED          | Consumers decode the verified JSON themselves today                        |
+
 ## Out of scope (not yet started)
 
 | Feature                      | Status           | Notes                                          |
