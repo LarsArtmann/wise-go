@@ -270,6 +270,8 @@ type DeliveryEstimate struct {
 // Fields is a dynamic form description: each entry groups one or more form
 // controls (keyed by the JSON field name they map to) with validation
 // metadata and, for selects, the list of allowed values.
+//
+// art-dupl:accept wire types intentionally mirror the parsed domain types in the root wise package; the tag-free domain layer decouples callers from the JSON shapes
 type TransferRequirement struct {
 	Type   string                    `json:"type"`
 	Fields []TransferRequirementForm `json:"fields"`

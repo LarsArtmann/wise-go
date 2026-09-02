@@ -530,6 +530,8 @@ type TransferRequirementsDetails struct {
 
 // TransferRequirement is the parsed representation of one dynamic form from
 // the transfer-requirements response.
+//
+// art-dupl:accept parsed domain types intentionally mirror the tagged wire types in internal/raw; the tag-free domain layer decouples callers from the JSON shapes
 type TransferRequirement struct {
 	Type   string
 	Fields []TransferRequirementForm
