@@ -1,39 +1,8 @@
 # BuildFlow Configuration
 # See: https://github.com/larsartmann/buildflow
-
-# Environment variables injected into all tool subprocesses.
-# Required: go-branded-id v0.5.1 + go-error-family v0.10.0 import encoding/json/v2.
+# Required: go-branded-id v0.5.1 + go-error-family v0.10.0 import
+# encoding/json/v2.
 env:
   GOEXPERIMENT: jsonv2
 
-# Build mode: full, fast, ci, dev, pre-commit
-build_mode: full
-
-# Parallel execution
-parallel: true
-max_concurrency: 4
-
-# File settings
 max_file_size: 700
-dupl_threshold: 30
-semantic: true
-
-# TODO comment severity: debug, info, warn, error
-todo_severity: info
-
-# Patterns to exclude from checks
-exclude:
-  - vendor
-  - .git
-  - node_modules
-  - .next
-  - dist
-  - "*.pb.go"
-  - "*.gen.go"
-
-# Auto-fix settings
-auto_fix: false
-
-# Logging
-verbose: false
-log_level: info
