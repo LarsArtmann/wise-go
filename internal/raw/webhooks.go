@@ -6,14 +6,14 @@ package raw
 // unknown fields are ignored by the JSON decoder so Wise can add fields
 // without breaking the SDK.
 type Subscription struct {
-	ID string `json:"id"`
-	//nolint:tagliatelle // Wise's webhook wire uses snake_case, unlike the camelCase core API
+	ID   string `json:"id"`
 	Name string `json:"name"`
 	//nolint:tagliatelle // Wise's webhook wire uses snake_case, unlike the camelCase core API
 	TriggerOn string               `json:"trigger_on"`
 	Delivery  SubscriptionDelivery `json:"delivery"`
 	//nolint:tagliatelle // Wise's webhook wire uses snake_case, unlike the camelCase core API
-	CreatedAt string              `json:"created_at"`
+	CreatedAt string `json:"created_at"`
+	//nolint:tagliatelle // Wise's webhook wire uses snake_case, unlike the camelCase core API
 	CreatedBy SubscriptionCreator `json:"created_by"`
 	Scope     SubscriptionScope   `json:"scope"`
 }
