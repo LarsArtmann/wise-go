@@ -88,7 +88,3 @@ func BenchmarkParseWebhookEvent(b *testing.B) {
 		}
 	}
 }
-
-var _ = jsontext.Value{}  // jsontext referenced via json.RawMessage-free types above
-var _ = json.Unmarshal // keep the json import honest if benchmarks shrink
-var _ = fmt.Sprintf

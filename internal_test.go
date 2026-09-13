@@ -2186,3 +2186,69 @@ func TestRefreshQuoteAccountRequirementsToWire(t *testing.T) {
 		}
 	})
 }
+
+// FuzzParseWiseTimestamp pins the tolerant parser's invariants: it never
+// panics, accepts every layout it documents (an RFC3339 input must parse,
+// and a zoneless-layout input must come back as UTC).
+func FuzzParseWiseTimestamp(f *testing.F) {
+	f.Add("2020-05-27T10:27:22Z")
+	f.Add("2018-01-10T12:15:00.000+0000")
+	f.Add("2020-05-27T10:27:22")
+	f.Add("2020-05-27 10:27:22")
+	f.Add("")
+	f.Add("garbage")
+
+	f.Fuzz(func(t *testing.T, s string) {
+		got, err := parseWiseTimestamp(s) //nolint:govet // errcheck-style triage is the fuzz invariant itself
+		if err != nil {
+			return // unparseable input is fine; panics are not
+		}
+
+		// RFC3339 input must round-trip.
+		if want, wantErr := time.Parse(time.RFC3339, s); wantErr == nil && !got.Equal(want) {
+			t.Fatalf("parseWiseTimestamp(%q) = %v, want RFC3339 round-trip %v", s, got, want)
+		}
+
+		// Zoneless layout input must yield UTC.
+		if _, wantErr := time.Parse("2006-01-02T15:04:05", s); wantErr == nil {
+			if got.Location() != time.UTC {
+				t.Fatalf("parseWiseTimestamp(%q) zoneless layout must be UTC, got %v", s, got.Location())
+			}
+		}
+	})
+}
+
+// FuzzNewCurrency pins the currency validator's contract: it accepts exactly
+// three uppercase ASCII letters and nothing else.
+func FuzzNewCurrency(f *testing.F) {
+	f.Add("EUR")
+	f.Add("usd")
+	f.Add("EURO")
+	f.Add("E1R")
+	f.Add("")
+
+	f.Fuzz(func(t *testing.T, s string) {
+		got, err := NewCurrency(s)
+		if err != nil {
+			if got != "" {
+				t.Fatalf("NewCurrency(%q) returned %q alongside an error", s, got)
+			}
+
+			return
+		}
+
+		if len(s) != 3 {
+			t.Fatalf("NewCurrency(%q) accepted a non-3-letter code", s)
+		}
+
+		for _, c := range s {
+			if c < 'A' || c > 'Z' {
+				t.Fatalf("NewCurrency(%q) accepted a non-uppercase-ASCII letter", s)
+			}
+		}
+
+		if string(got) != s {
+			t.Fatalf("NewCurrency(%q) = %q, want the input verbatim", s, got)
+		}
+	})
+}
