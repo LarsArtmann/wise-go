@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
@@ -238,6 +239,66 @@ var _ = Describe("Wise Client", func() {
 			It("should keep Go's default agent", func() {
 				_, err := client.GetMe(context.Background())
 				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("Concurrency", func() {
+		Context("one shared client serving parallel requests", func() {
+			It("should isolate per-request context and responses under -race", func() {
+				const workers = 16
+
+				var mu sync.Mutex
+				seen := map[string]bool{}
+
+				mux.HandleFunc("/v1/rates", func(w http.ResponseWriter, r *http.Request) {
+					corr := r.Header.Get("X-External-Correlation-Id")
+					mu.Lock()
+					seen[corr] = true
+					mu.Unlock()
+
+					var idx int
+					_, _ = fmt.Sscanf(corr, "corr-%d", &idx)
+
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = fmt.Fprintf(w,
+						`{"source":"EUR","target":"USD","rate":%d,"time":"2023-01-01T00:00:00Z"}`,
+						1000+idx)
+				})
+
+				type rateResult struct {
+					rate float64
+					err  error
+				}
+				results := make([]rateResult, workers)
+				var wg sync.WaitGroup
+				for i := range workers {
+					wg.Add(1)
+					go func() {
+						defer wg.Done()
+						ctx := wise.WithRequestCorrelationID(
+							context.Background(), fmt.Sprintf("corr-%d", i))
+						rate, err := client.GetExchangeRate(
+							ctx, wise.Currency("EUR"), wise.Currency("USD"), time.Time{})
+						res := rateResult{err: err}
+						if rate != nil {
+							res.rate = rate.Rate
+						}
+						results[i] = res
+					}()
+				}
+				wg.Wait()
+
+				for i := range workers {
+					Expect(results[i].err).ToNot(HaveOccurred(),
+						"worker %d request failed", i)
+					Expect(results[i].rate).To(Equal(float64(1000+i)),
+						"worker %d got another request's response", i)
+				}
+				for i := range workers {
+					Expect(seen).To(HaveKey(fmt.Sprintf("corr-%d", i)))
+				}
+				Expect(seen).To(HaveLen(workers))
 			})
 		})
 	})

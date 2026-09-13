@@ -24,6 +24,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `WebhookEvent.TransferStateChange`, `WebhookEvent.TransferPayoutFailure`,
   and `WebhookEvent.BalanceCredit` (with `Money` conversion). Malformed
   envelopes/payloads are corruption-classified (`wise.webhook.decode`).
+- `WithUserAgent` client option: sets a custom `User-Agent` header on every
+  outgoing request (Wise asks integrations to identify themselves); defaults
+  to the SDK's own agent string.
+- `Profile.UserID` and `Profile.PublicID`: the user ID and public ID fields
+  returned by the profiles endpoints, now surfaced on the parsed `Profile`.
+- Client concurrency pinned by test: a shared `*Client` serves parallel
+  requests (headers, correlation IDs, response decoding) safely under
+  `-race`.
+
+### Changed
+
+- Internal, no public API or error-message changes: the shared fetch-by-ID
+  helper takes branded IDs directly and routes through `requireID`
+  (callers no longer unwrap `.Get()` themselves); mapper errors carry the raw
+  offending values; `SCAChallengeError` gained an error context; benchmarks
+  for the hot mappers and parsers (`bench_test.go`) and raw wire-format
+  round-trip tests (`internal/raw`) lock the serialization contract.
 
 ### Fixed
 
