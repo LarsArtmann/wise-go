@@ -145,14 +145,12 @@ func expectTransactionQueryParams(r *http.Request, currency, intervalStart, inte
 }
 
 func listBalances(ctx context.Context, client *wise.Client) ([]wise.Balance, error) {
-	//nolint:wrapcheck // transparent pass-through; tests assert on the original error.
 	return client.ListBalances(ctx, wise.NewProfileID(12345))
 }
 
 func getBalance(
 	ctx context.Context, client *wise.Client, balanceID int64,
 ) (*wise.Balance, error) {
-	//nolint:wrapcheck // transparent pass-through; tests assert on the original error.
 	return client.GetBalance(ctx, wise.NewProfileID(12345), wise.NewBalanceID(balanceID))
 }
 
