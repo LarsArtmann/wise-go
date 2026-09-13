@@ -1,5 +1,11 @@
 # Status: Webhooks Support Review + Self-Review — 2026-08-28 08:37
 
+> **Resolution (2026-09-13 docs-health pass):** hygiene items f.23–f.27 are
+> resolved — the FEATURES split brain is fixed, the two PLANNED webhook rows are
+> harvested into `TODO_LIST.md` P3, and the build-cache mount is healthy again.
+> The webhook subscription/typed-event work (f.1–22) remains open, tracked in
+> `TODO_LIST.md` P3. Details inline.
+
 Session scope: user asked "How is our Webhooks support?" — researched, verified, fixed one docs gap, reported. Then this self-review. **No other work was touched.**
 
 ---
@@ -22,7 +28,7 @@ Session scope: user asked "How is our Webhooks support?" — researched, verifie
 ## b) PARTIALLY DONE
 
 1. **Typed-event inventory** — established that Wise documents webhook-event payload schemas under the `webhook-event` tag and that the SDK has zero typed decoding. I did NOT enumerate the full event-type list (my spec extraction only surfaced 6 referenced doc pages: transfers#state-change, cards#transaction-state-change, cards#card-production-status-change, cards#3ds-challenge, swift-in#credit, batch-payment-initiations#state-change). Good enough for a verdict, not good enough to scope an implementation.
-2. **Planning-doc discrepancy noticed but not harvested:** implementation plan item #49 says "Webhook subscriptions — 8" endpoints; the spec has 9 operations. Reported in conversation; not corrected in the doc, not added to TODO_LIST.md.
+2. ~~**Planning-doc discrepancy noticed but not harvested:** implementation plan item #49 says "Webhook subscriptions — 8" endpoints; the spec has 9 operations. Reported in conversation; not corrected in the doc, not added to TODO_LIST.md.~~ done 2026-09-13 — the 9-operation count is called out in `TODO_LIST.md` P3 (webhook subscription item).
 
 ## c) NOT STARTED
 
@@ -34,15 +40,15 @@ Session scope: user asked "How is our Webhooks support?" — researched, verifie
 ## d) TOTALLY FUCKED UP (honest accounting — nothing broke, but three real misses)
 
 1. **Imprecise "tests green" claim.** I ran only `-run 'Webhook'`, then said "tests green" in the summary. Webhook tests were green; the full suite was never run this session. My only change was markdown, so risk was ~zero, but the wording overstated verification.
-2. **Walked past a split brain in the file I was editing.** FEATURES.md's "Out of scope (not yet started)" section contains a row "Statements (CSV/PDF) — FULLY_FUNCTIONAL" — a status/heading contradiction sitting directly under my new section. I saw it in the View output and didn't flag or fix it (pre-existing, but I was already in the file).
-3. **Silently worked around broken build caches.** `/mnt/buildcache/go-build`, `/mnt/buildcache/go-mod`, and the golangci-lint LSP cache (`/mnt/buildcache/golangci-lint`) all fail with "no such device". I hand-rolled `GOCACHE`/`GOMODCACHE` env overrides and moved on without flagging the infrastructure issue, adding it to TODO_LIST.md, or documenting the workaround in AGENTS.md. This affects every future session's default `go test` / lint path.
+2. ~~**Walked past a split brain in the file I was editing.** FEATURES.md's "Out of scope (not yet started)" section contains a row "Statements (CSV/PDF) — FULLY_FUNCTIONAL" — a status/heading contradiction sitting directly under my new section. I saw it in the View output and didn't flag or fix it (pre-existing, but I was already in the file).~~ done 2026-09-13 — the row is deleted (it duplicated the Transactions section) and the heading is now "Deferred (demand-gated, not started)".
+3. ~~**Silently worked around broken build caches.** `/mnt/buildcache/go-build`, `/mnt/buildcache/go-mod`, and the golangci-lint LSP cache (`/mnt/buildcache/golangci-lint`) all fail with "no such device". I hand-rolled `GOCACHE`/`GOMODCACHE` env overrides and moved on without flagging the infrastructure issue, adding it to TODO_LIST.md, or documenting the workaround in AGENTS.md. This affects every future session's default `go test` / lint path.~~ resolved — the mount is healthy again (verified 2026-09-13: `/mnt/buildcache/go` lists normally); no override needed.
 
 ## e) WHAT WE SHOULD IMPROVE (from this session's observations only)
 
 1. **Say exactly what was tested.** "Webhook tests green under -race with cache overrides" ≠ "tests green".
 2. **Fix-on-sight discipline applies to docs too:** when editing a doc file, contradictions in that file are in scope — fix or explicitly ticket them.
 3. **Environment breakage is project knowledge:** workarounds for broken caches belong in AGENTS.md (Build & Dev section) the moment they're discovered, not carried as session-local shell folklore.
-4. **FEATURES.md additions should trigger a TODO_LIST/ROADMAP cross-check** so PLANNED rows actually exist somewhere as actionable items (my two PLANNED rows are currently tracked only in FEATURES.md and the Tier-4 plan table).
+4. ~~**FEATURES.md additions should trigger a TODO_LIST/ROADMAP cross-check** so PLANNED rows actually exist somewhere as actionable items (my two PLANNED rows are currently tracked only in FEATURES.md and the Tier-4 plan table).~~ done 2026-09-13 — both PLANNED rows (subscription CRUD, typed event decoding) are now actionable items in `TODO_LIST.md` P3.
 
 ## f) NEXT WORK (candidates, not commitments — webhook-focused unless noted)
 
@@ -76,11 +82,11 @@ Session scope: user asked "How is our Webhooks support?" — researched, verifie
 
 ### Docs/hygiene (session-found)
 
-23. Fix FEATURES.md "Out of scope" section: move the Statements FULLY_FUNCTIONAL row out; heading currently lies.
-24. Harvest the two new PLANNED rows into TODO_LIST.md as actionable tasks.
-25. Document the GOCACHE/GOMODCACHE override for this machine in AGENTS.md Build & Dev (or fix `/mnt/buildcache` mounting).
-26. Investigate why `/mnt/buildcache/*` is "no such device" (stale mount? missing volume?) and restore — the golangci-lint LSP is dead for the same reason (visible in every diagnostics block this session).
-27. Re-verify CHANGELOG has the webhook verification helpers recorded under the right released version (v0.8.x-era; I did not check this session).
+23. ~~Fix FEATURES.md "Out of scope" section: move the Statements FULLY_FUNCTIONAL row out; heading currently lies.~~ done 2026-09-13 (row removed; heading renamed "Deferred (demand-gated, not started)").
+24. ~~Harvest the two new PLANNED rows into TODO_LIST.md as actionable tasks.~~ done 2026-09-13 (`TODO_LIST.md` P3).
+25. ~~Document the GOCACHE/GOMODCACHE override for this machine in AGENTS.md Build & Dev (or fix `/mnt/buildcache` mounting).~~ moot — the mount was restored; verified healthy 2026-09-13.
+26. ~~Investigate why `/mnt/buildcache/*` is "no such device" (stale mount? missing volume?) and restore — the golangci-lint LSP is dead for the same reason (visible in every diagnostics block this session).~~ done — mount restored (listing works 2026-09-13).
+27. ~~Re-verify CHANGELOG has the webhook verification helpers recorded under the right released version (v0.8.x-era; I did not check this session).~~ done 2026-09-13 — verified: `ParseWebhookPublicKey`/`VerifyWebhookSignature` are recorded under `[0.9.0]` Added in `CHANGELOG.md`.
 
 ### Possible, lower certainty (flag, don't assume)
 
