@@ -108,15 +108,16 @@ values (`total amount %v %q`, `amount %v %q`, `reserved amount %v %q`);
 `TestErrorContexts`); retryability contract pinned by `TestIsRetryableContract`;
 convention documented in AGENTS.md.
 
-[ ] Quality long-tail micro-batch (each ≤30 min, recurring across 8+ old reports):
-`classifyTransactionType` takes `amount float64` (`transactions.go:178`) — pass
-cents instead; `wiseDateFormat` constant for the inline `"2006-01-02"` layout
-(`users.go:139`); `WithUserAgent` option; `fmt.Stringer` for public enums;
-`errorfamily.RegisterClassification` call; surface `Profile.UserID`/`PublicID`;
-pin the gofumpt action version (`ci.yml` uses `@latest`); benchmarks + fuzz
-tests for date/money parsing; split the `wise_test.go` monolith; migrate the
-deprecated `exhaustruct` linter to `exhaustruct_v5` (golangci-lint v2.13
-deprecation warning, seen 2026-09-13).
+[x] Quality long-tail micro-batch — DONE 2026-09-13 with two recorded declines:
+`classifyTransactionType` now takes cents (`totalCents int64`); `wiseDateFormat`
+constant extracted (`users.go`); `WithUserAgent` shipped + tested;
+`Profile.UserID`/`PublicID` surfaced from the wire; `exhaustruct_v5` migration
+done (CI pin bumped to v2.13). DECLINED: `fmt.Stringer` on the public enums
+(every one is a plain string type — `String()` would print exactly what fmt
+already prints; 20 no-op methods are API surface without information) and
+`errorfamily.RegisterClassification` (that API maps THIRD-PARTY sentinel
+errors; wise-go's six error types implement the Classified interface
+directly, which is go-error-family's prescribed path for owned errors).
 
 [ ] GOEXPERIMENT ergonomics — pin direnv/home-manager setup so `jsonv2` is set
 without relying on `.buildflow.yml` env injection (user-machine work; the

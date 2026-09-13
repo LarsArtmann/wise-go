@@ -22,6 +22,9 @@ func TestWiseClient(t *testing.T) {
 	RunSpecs(t, "Wise SDK Suite")
 }
 
+// meFixtureJSON is a minimal personal-profile /v1/me response body.
+const meFixtureJSON = `{"id":1,"type":"PERSONAL","email":"t@t.com","createdAt":"2023-01-01T00:00:00Z"}`
+
 func stdBalance(
 	id int64,
 	currency, name string,
@@ -212,7 +215,7 @@ var _ = Describe("Wise Client", func() {
 					}
 
 					w.Header().Set("Content-Type", "application/json")
-					_, _ = w.Write([]byte(`{"id":1,"type":"PERSONAL","email":"t@t.com","createdAt":"2023-01-01T00:00:00Z"}`))
+					_, _ = w.Write([]byte(meFixtureJSON))
 				})
 
 				client = wise.New("test-api-key",
@@ -226,9 +229,9 @@ var _ = Describe("Wise Client", func() {
 
 		Context("without a custom agent", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/v1/me", func(w http.ResponseWriter, r *http.Request) {
+				mux.HandleFunc("/v1/me", func(w http.ResponseWriter, _ *http.Request) {
 					w.Header().Set("Content-Type", "application/json")
-					_, _ = w.Write([]byte(`{"id":1,"type":"PERSONAL","email":"t@t.com","createdAt":"2023-01-01T00:00:00Z"}`))
+					_, _ = w.Write([]byte(meFixtureJSON))
 				})
 			})
 
