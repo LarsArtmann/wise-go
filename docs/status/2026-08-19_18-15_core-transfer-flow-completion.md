@@ -70,13 +70,13 @@
 
 ### Core transfer flow (remaining)
 
-- `FundTransfer` (`POST /v1/profiles/{profileId}/transfers/{transferId}/payments`) — the last piece for a fully fleshed end-to-end flow (fund the transfer, then poll delivery).
-- Automating requirement→transfer-details feedback loop (use `ValidateTransferRequirements` output to populate `CreateTransferRequest.Details`).
+- ~~`FundTransfer` (`POST /v1/profiles/{profileId}/transfers/{transferId}/payments`) — the last piece for a fully fleshed end-to-end flow (fund the transfer, then poll delivery).~~ done at `e508572` (v0.9.0, execution session 2026-08-21; typed `FundTransferResult` + 17 funding-error codes).
+- ~~Automating requirement→transfer-details feedback loop (use `ValidateTransferRequirements` output to populate `CreateTransferRequest.Details`).~~ done at `e508572` (v0.9.0 — `MissingTransferDetails(requirements, req)` cross-reference helper + two-pass flow).
 
 ### Tier 2 (plan doc)
 
-- `GetQuoteAccountRequirements` (`GET /v1/quotes/{quoteId}/account-requirements`) — only remaining tier-1 row in the plan.
-- `GetMe`/`GetUser`, `GetStatement` formats, Webhook signature verification, `CreateBalance`, direct `GetBalance`, `GetTotalFunds`, `GetBankAccountDetails`, `GetMultiCurrencyAccount`, `ListCurrencies`, per-request correlation ID.
+- ~~`GetQuoteAccountRequirements` (`GET /v1/quotes/{quoteId}/account-requirements`) — only remaining tier-1 row in the plan.~~ done at `e508572` (v0.9.0).
+- ~~`GetMe`/`GetUser`, `GetStatement` formats, Webhook signature verification, `CreateBalance`, direct `GetBalance`, `GetTotalFunds`, `GetBankAccountDetails`, `GetMultiCurrencyAccount`, `ListCurrencies`, per-request correlation ID.~~ all done at `e508572` (v0.9.0, execution session 2026-08-21).
 
 ### Deeper tiers
 
@@ -84,7 +84,7 @@
 
 ### Observability & quality
 
-- Sandbox credential integration tests (needs user's key), `WithLogger`/`WithMetrics` hooks, mTLS docs, context-aware retry cancellation, godoc examples for new public types, v1.0 API audit, property-based tests, Cachix cache.
+- ~~Sandbox credential integration tests (needs user's key),~~ workflow + key-gated test shipped (`ecdc738`); live run still blocked on the key (TODO_LIST P2). ~~`WithLogger`/`WithMetrics` hooks,~~ `WithLogger` done at `e508572`; `WithMetrics` still open (ROADMAP). ~~mTLS docs,~~ done (README). ~~Context-aware retry cancellation,~~ done at `e508572`. ~~godoc examples for new public types,~~ done (`20810a7`, 20 examples). ~~v1.0 API audit,~~ done (green, `docs/reviews/2026-08-21_v1.0-api-audit.md`). ~~Property-based tests,~~ still open (ROADMAP). ~~Cachix cache.~~ wired (`ad2ddac`), token still user-gated (TODO_LIST P2).
 
 ---
 

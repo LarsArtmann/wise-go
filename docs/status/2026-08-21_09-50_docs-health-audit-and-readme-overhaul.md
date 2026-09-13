@@ -1,5 +1,13 @@
 # wise-go Status Report — Docs-Health Audit + README Overhaul
 
+> **Resolution (2026-09-13 docs-health pass):** f.1–f.5 and f.10–f.23 all shipped
+> (v0.9.0 `e508572` + hardening reports; DOMAIN_LANGUAGE.md existed already since
+> 2026-08-08). Still open: f.24 sandbox key (user-gated, TODO_LIST P2), f.25
+> v1.0.0 tag + re-audit (TODO_LIST P1), f.27 Cachix token (user-gated, P2),
+> f.31 typed recipients (user decision, P2), f.32–f.40 long-tail (ROADMAP/
+> TODO_LIST P4 micro-batch). g.1/g.2/g.3: sandbox key still needed;
+> DOMAIN_LANGUAGE.md exists; typed-vs-map still undecided. Inline markers below.
+
 **Date:** 2026-08-21 09:50 CEST
 **Branch:** master
 **Session scope:** Full docs-health AUDIT (BUILD + HARVEST + VERIFY + ANNOTATE) over the three `2026-08-1*` files and the five living docs, followed by a dedicated README overhaul pass. **No Go source was modified.** This report covers only this session's run and what it noticed.
@@ -58,46 +66,46 @@ Nothing is broken or shipped in a dangerous state (all gates green). Honest fail
 
 _Items 1–12 are new from this session's observations. Items 13–40 are carry-over engineering work already routed into TODO_LIST.md at P1–P4 with evidence — listed here for completeness, do NOT double-add._
 
-1. Automate the README coverage badge (CI step uploading/computing coverage; kill hand-edited numbers). Impact: High. Effort: M. Quality. _(d.2, TODO_LIST P4 adjacent)_
-2. Add a markdown link checker (lychee via flake) to `nix flake check` or pre-commit. Impact: Medium. Effort: S. Quality.
-3. Decide + possibly create `docs/DOMAIN_LANGUAGE.md`. Impact: Medium. Effort: M. Documentation. _(blocked on g.2)_
-4. Godoc examples for `CancelTransfer`, `GetDeliveryEstimate`, `ValidateTransferRequirements`, expanded `Quote`. Impact: Medium. Effort: S–M. Documentation. _(= TODO_LIST P4)_
-5. Extract `vendorHash` from `flake.nix` into `vendorHash.nix`. Impact: Low. Effort: S. Cleanup. _(= TODO_LIST P4)_
-6. Add error-path BDD tests for write endpoints (400/404/409/SCA/429 matrix). Impact: High. Effort: M. Quality. _(= TODO_LIST P1)_
-7. Validation edge-case unit tests for the three `validate()` funcs. Impact: High. Effort: S–M. Quality. _(= TODO_LIST P1)_
-8. `FundTransfer` — close the end-to-end flow. Impact: Critical. Effort: M. Feature. _(= TODO_LIST P1)_
-9. Wire `ValidateTransferRequirements` output → `CreateTransferRequest.Details` helper or documented pattern. Impact: High. Effort: M. Feature. _(= TODO_LIST P1)_
-10. Resolve the 68-vs-77 spec-count discrepancy (one grep: derive the real `It(` count via `ginkgo` or test -v). Impact: Trivial. Effort: S. Quality. _(d.5)_
-11. Mention `wise-api-core-schemas.json` in AGENTS.md next to the OpenAPI spec (two spec files exist; docs reference one). Impact: Low. Effort: S. Documentation.
-12. Add "how coverage is measured" note (command + package basis) wherever the badge lives, until automation lands. Impact: Low. Effort: S. Documentation.
-13. `GetQuoteAccountRequirements` (last tier-1 row). Impact: High. Effort: S. Feature. _(P3)_
-14. `GetMe` / `GetUser`. Impact: Medium. Effort: S. Feature. _(P3)_
-15. `GetStatement` with format param (CSV/PDF/XLSX). Impact: Medium. Effort: M. Feature. _(P3)_
-16. Webhook signature verification helper. Impact: High. Effort: M. Feature. _(P3)_
-17. `CreateBalance`. Impact: Medium. Effort: S. Feature. _(P3)_
-18. Direct `GetBalance` endpoint (replace client-side scan). Impact: Medium. Effort: S. Feature. _(P3)_
-19. `GetTotalFunds`. Impact: Medium. Effort: S. Feature. _(P3)_
-20. `GetBankAccountDetails` + `GetMultiCurrencyAccount`. Impact: Medium. Effort: M. Feature. _(P3)_
-21. `ListCurrencies`. Impact: Low. Effort: S. Feature. _(P3)_
-22. Per-request correlation ID override. Impact: Medium. Effort: S. Feature. _(P3)_
-23. mTLS support/docs. Impact: Medium. Effort: S. Documentation/Feature. _(P3)_
-24. Credentialed sandbox integration-test workflow. Impact: Critical. Effort: M. Quality. _(P2, blocked on g.1)_
-25. v1.0 API audit + lock. Impact: High. Effort: M. Quality. _(P2)_
-26. `govulncheck` findings triage (GO-2026-6218 et al.). Impact: Medium. Effort: S. Quality. _(P4)_
-27. Cachix binary cache for CI. Impact: Medium. Effort: S. CI. _(P4)_
-28. `WithLogger` request/response hook. Impact: Medium. Effort: M. Feature. _(ROADMAP)_
-29. `WithMetrics` hook. Impact: Low. Effort: M. Feature. _(ROADMAP)_
-30. Context-aware retry cancellation. Impact: Medium. Effort: M. Quality. _(ROADMAP)_
-31. Typed recipient-detail structs or per-corridor key constants. Impact: High. Effort: M/L. Feature. _(blocked on g.3)_
-32. `Quote` residual fields (`rateExpirationTime`, `targetAmountAllowed`, `user`). Impact: Low. Effort: S. Feature.
-33. Generic `Page[T]` pagination abstraction (third paginated endpoint trigger). Impact: Low. Effort: M. Refactor.
-34. Property-based tests for Money/Quote/Transfer mapping. Impact: Medium. Effort: M. Quality.
-35. Service-client sub-structure decision + migration plan (threshold reached; sequence after core-flow completion). Impact: High. Effort: L. Refactor.
-36. Sandbox simulation helpers. Impact: Low. Feature.
-37. `GetAccountRequirements` (recipient-first flow). Impact: Medium. Effort: M. Feature.
-38. `CheckAccountQuoteCompatibility`. Impact: Low. Effort: S. Feature.
-39. Batch groups / direct debit / bulk settlement APIs. Impact: Low. Effort: L. Feature.
-40. Cards/KYC/SCA-factor/disputes APIs. Impact: Low. Effort: L. Feature. _(long tail, demand-gated)_
+1. ~~Automate the README coverage badge (CI step uploading/computing coverage; kill hand-edited numbers). Impact: High. Effort: M. Quality.~~ done (CI `coverage-badge` job + `.github/badges/coverage.json`; execution session 20.x) — note: frozen while CI is disabled on GitHub (2026-09-13).
+2. ~~Add a markdown link checker (lychee via flake) to `nix flake check` or pre-commit. Impact: Medium. Effort: S. Quality.~~ done (offline `links` gate in `nix flake check`, execution session 21.x).
+3. ~~Decide + possibly create `docs/DOMAIN_LANGUAGE.md`. Impact: Medium. Effort: M. Documentation.~~ moot — file existed since 2026-08-08 (g.2 resolved).
+4. ~~Godoc examples for `CancelTransfer`, `GetDeliveryEstimate`, `ValidateTransferRequirements`, expanded `Quote`. Impact: Medium. Effort: S–M. Documentation.~~ done at `e508572` (7.x) + `20810a7` (8.x); now 20 examples.
+5. ~~Extract `vendorHash` from `flake.nix` into `vendorHash.nix`. Impact: Low. Effort: S. Cleanup.~~ done (execution session 8.x).
+6. ~~Add error-path BDD tests for write endpoints (400/404/409/SCA/429 matrix). Impact: High. Effort: M. Quality.~~ done at `e508572` (2.x–3.x).
+7. ~~Validation edge-case unit tests for the three `validate()` funcs. Impact: High. Effort: S–M. Quality.~~ done at `e508572` (4.x).
+8. ~~`FundTransfer` — close the end-to-end flow. Impact: Critical. Effort: M. Feature.~~ done at `e508572` (1.x).
+9. ~~Wire `ValidateTransferRequirements` output → `CreateTransferRequest.Details` helper or documented pattern. Impact: High. Effort: M. Feature.~~ done at `e508572` (`MissingTransferDetails`).
+10. ~~Resolve the 68-vs-77 spec-count discrepancy (one grep: derive the real `It(` count via `ginkgo` or test -v). Impact: Trivial. Effort: S. Quality.~~ done (execution session 23.x; counting bases documented in report 18-15).
+11. ~~Mention `wise-api-core-schemas.json` in AGENTS.md next to the OpenAPI spec (two spec files exist; docs reference one). Impact: Low. Effort: S. Documentation.~~ done (execution session 23.2).
+12. ~~Add "how coverage is measured" note (command + package basis) wherever the badge lives, until automation lands. Impact: Low. Effort: S. Documentation.~~ done (README badge comment, execution session 23.3).
+13. ~~`GetQuoteAccountRequirements` (last tier-1 row). Impact: High. Effort: S. Feature.~~ done at `e508572` (6.x).
+14. ~~`GetMe` / `GetUser`. Impact: Medium. Effort: S. Feature.~~ done at `e508572` (9.x).
+15. ~~`GetStatement` with format param (CSV/PDF/XLSX). Impact: Medium. Effort: M. Feature.~~ done at `e508572` (10.x, all six formats).
+16. ~~Webhook signature verification helper. Impact: High. Effort: M. Feature.~~ done at `e508572` (11.x).
+17. ~~`CreateBalance`. Impact: Medium. Effort: S. Feature.~~ done at `e508572` (12.x).
+18. ~~Direct `GetBalance` endpoint (replace client-side scan). Impact: Medium. Effort: S. Feature.~~ done at `e508572` (12.2, behavior change changelogged).
+19. ~~`GetTotalFunds`. Impact: Medium. Effort: S. Feature.~~ done at `e508572` (12.3).
+20. ~~`GetBankAccountDetails` + `GetMultiCurrencyAccount`. Impact: Medium. Effort: M. Feature.~~ done at `e508572` (13.x).
+21. ~~`ListCurrencies`. Impact: Low. Effort: S. Feature.~~ done at `e508572` (14.x).
+22. ~~Per-request correlation ID override. Impact: Medium. Effort: S. Feature.~~ done at `e508572` (15.x).
+23. ~~mTLS support/docs. Impact: Medium. Effort: S. Documentation/Feature.~~ done at `e508572` (18.x, README section).
+24. ~~Credentialed sandbox integration-test workflow. Impact: Critical. Effort: M. Quality.~~ workflow + key-gated tests shipped (`ecdc738`); live run still blocked on the key (TODO_LIST P2).
+25. ~~v1.0 API audit + lock. Impact: High. Effort: M. Quality.~~ audit done 2026-08-21 (green, `docs/reviews/2026-08-21_v1.0-api-audit.md`); the tag itself still user-gated (TODO_LIST P1); re-audit queued for the v0.10.0 additions (2026-09-13).
+26. ~~`govulncheck` findings triage (GO-2026-6218 et al.). Impact: Medium. Effort: S. Quality.~~ done (execution session 22.x — all stdlib, fixed by toolchain; re-run queued on 1.26.7, TODO_LIST P4).
+27. ~~Cachix binary cache for CI. Impact: Medium. Effort: S. CI.~~ wired (`ad2ddac`); token still user-gated (TODO_LIST P2).
+28. ~~`WithLogger` request/response hook. Impact: Medium. Effort: M. Feature.~~ done at `e508572` (16.x).
+29. `WithMetrics` hook. Impact: Low. Effort: M. Feature. ← still open (ROADMAP).
+30. ~~Context-aware retry cancellation. Impact: Medium. Effort: M. Quality.~~ done at `e508572` (17.x).
+31. ~~Typed recipient-detail structs or per-corridor key constants. Impact: High. Effort: M/L. Feature.~~ still user-gated (TODO_LIST P2; five reports and counting).
+32. `Quote` residual fields (`rateExpirationTime`, `targetAmountAllowed`, `user`). Impact: Low. Effort: S. Feature. ← still open (ROADMAP long-tail).
+33. ~~Generic `Page[T]` pagination abstraction (third paginated endpoint trigger). Impact: Low. Effort: M. Refactor.~~ still gated by its own trigger (two paginated endpoints; ROADMAP guard stands).
+34. Property-based tests for Money/Quote/Transfer mapping. Impact: Medium. Effort: M. Quality. ← still open (TODO_LIST P4 micro-batch).
+35. ~~Service-client sub-structure decision + migration plan (threshold reached; sequence after core-flow completion). Impact: High. Effort: L. Refactor.~~ decision recorded in ROADMAP: v1.0 on the flat surface first, then service clients in one release cycle.
+36. Sandbox simulation helpers. Impact: Low. Feature. ← still open (ROADMAP long-tail).
+37. `GetAccountRequirements` (recipient-first flow). Impact: Medium. Effort: M. Feature. ← still open (plan tier 3+).
+38. `CheckAccountQuoteCompatibility`. Impact: Low. Effort: S. Feature. ← still open (plan tier 3+).
+39. Batch groups / direct debit / bulk settlement APIs. Impact: Low. Effort: L. Feature. ← still open (plan tier 3/4, demand-gated).
+40. Cards/KYC/SCA-factor/disputes APIs. Impact: Low. Effort: L. Feature. ← still open (plan tier 4, demand-gated).
 
 ## g) Questions I Cannot Answer Without You
 

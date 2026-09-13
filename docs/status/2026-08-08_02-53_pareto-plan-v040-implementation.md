@@ -1,5 +1,20 @@
 # Status Report — 2026-08-08 02:53
 
+> **Resolution (2026-09-13 docs-health pass):** v0.4.0 shipped (`4902dc3`),
+> v0.5.0 followed (`59577d4`). Leftover verdicts: items 3–6 done (`4902dc3`
+> era), 8 still open (TODO_LIST P4 micro-batch), 9 done (v0.5.0 `DetailType`),
+> 10–14 **NOT-DO by design** (AGENTS.md: `Money` is a serialization boundary
+> with no arithmetic methods), 15 done (`20810a7`), 16–18 done (v0.8.0), 19
+> split — signature verification done (v0.9.0), typed events/subscription CRUD
+> still open (TODO_LIST P3), 20 done (v0.9.0, six formats), 21–22 gated
+> (ROADMAP), 23 done (`e508572` ctx cancellation), 24 done (`e508572`
+> `WithLogger`), 25 open (ROADMAP), 26 superseded by `X-External-Correlation-Id`,
+> 27 done (README mTLS), 28 done (`WithHTTPClient(Doer)`), 29 open (ROADMAP),
+> 30–31 done, 32–34 open (ADRs), 36 done, 37 open, 38 done, 39–40 open
+> (templates), 41–43 done/one open (43 internal/raw tests, P4), 44 done, 45 open
+> (coverage threshold), 46 done, 47 done, 48 open, 49 open, 50 open (release
+> automation), v1.0.0 tag user-gated (TODO_LIST P1), toMoney decision open (P4).
+
 ## Session: Pareto Execution Plan Implementation
 
 Executed the full Pareto plan from `docs/planning/2026-08-08_02-13_pareto-execution-plan.md`.
@@ -163,31 +178,31 @@ All code builds, tests, lints, and passes `nix flake check`. No broken state was
 
 1. ~~Update ROADMAP.md — remove stale v0.3.0/HasMore/TransactionTypeUnknown/ProfileResult/BalanceResult references~~ done (2026-08-08 docs-health pass)
 2. ~~Update FEATURES.md — remove HasMore, add Money/Currency/internal/raw features, update statuses~~ done (2026-08-08 docs-health pass)
-3. Update CONTRIBUTING.md — replace AmountCents/TotalCents/ProfileResult/BalanceResult with new API
-4. Add BDD test for `EndOfStatementBalance` when the API returns empty/zero values
-5. Add BDD test for `toMoney` currency validation failure path
-6. Add test coverage for `internal/raw.BalanceAmount.Cents()` (move or duplicate from internal_test.go)
+3. ~~Update CONTRIBUTING.md — replace AmountCents/TotalCents/ProfileResult/BalanceResult with new API~~ done (v0.5.0 P4)
+4. ~~Add BDD test for `EndOfStatementBalance` when the API returns empty/zero values~~ done (`wise_test.go` zero-balance spec)
+5. ~~Add BDD test for `toMoney` currency validation failure path~~ done (`TestToMoneyInvalidCurrency`, internal_test.go)
+6. ~~Add test coverage for `internal/raw.BalanceAmount.Cents()` (move or duplicate from internal_test.go)~~ done (`TestBalanceAmountCents`)
 
 ### Short-term (next sprint)
 
 7. ~~Tag v0.4.0 — the code is ready, migration guide is written~~ done — tagged `v0.4.0`
-8. Make `classifyTransactionType` take `int64` cents instead of `float64`
-9. Make `ListTransactionsRequest.Type` a typed enum instead of `string`
-10. Add `Money.Add(Money) (Money, error)` with currency mismatch check
-11. Add `Money.Sub(Money) (Money, error)` with currency mismatch check
-12. Add `Money.IsZero() bool` helper
-13. Add `Money.IsNegative() bool` helper
-14. Consider `Money.Equal(Money) bool` for test ergonomics
-15. Add godoc examples for `Money` and `Currency` (testable examples via `ExampleMoney_String()`)
-16. Write operations (POST/PATCH/DELETE) — the ROADMAP's Axis 1 next priority
-17. Quotes API (`ListQuotes` / `CreateQuote`) — unblocks transfers workstream
-18. Recipients API (`ListRecipients` / `CreateRecipient`)
+8. Make `classifyTransactionType` take `int64` cents instead of `float64` ← still open (TODO_LIST P4, verified 2026-09-13: signature still `float64`)
+9. ~~Make `ListTransactionsRequest.Type` a typed enum instead of `string`~~ done — v0.5.0 (`59577d4`)
+10. ~~Add `Money.Add(Money) (Money, error)` with currency mismatch check~~ NOT-DO by design — `Money` is a serialization boundary, no arithmetic (AGENTS.md convention)
+11. ~~Add `Money.Sub(Money) (Money, error)` with currency mismatch check~~ NOT-DO by design (same convention)
+12. ~~Add `Money.IsZero() bool` helper~~ NOT-DO by design (same convention)
+13. ~~Add `Money.IsNegative() bool` helper~~ NOT-DO by design (same convention)
+14. ~~Consider `Money.Equal(Money) bool` for test ergonomics~~ NOT-DO by design (same convention)
+15. ~~Add godoc examples for `Money` and `Currency` (testable examples via `ExampleMoney_String()`)~~ done (example_test.go)
+16. ~~Write operations (POST/PATCH/DELETE) — the ROADMAP's Axis 1 next priority~~ done — v0.8.0/v0.9.0 (quotes, recipients, transfers, funding)
+17. ~~Quotes API (`ListQuotes` / `CreateQuote`) — unblocks transfers workstream~~ done — v0.8.0 (`CreateQuote`/`GetQuote`/`CreateUnauthenticatedQuote`)
+18. ~~Recipients API (`ListRecipients` / `CreateRecipient`)~~ done — v0.8.0
 
 ### Medium-term (v0.5.0 - v0.6.0)
 
-19. Webhooks — `VerifyWebhookSignature` helper + typed webhook event structs
-20. Statements (CSV/PDF) — `GetStatement` with format parameter
-21. Service-client sub-structure when resource count crosses 6-8 (ROADMAP Axis 3 trigger)
+19. ~~Webhooks — `VerifyWebhookSignature` helper~~ done — v0.9.0 (`e508572`) ~~+ typed webhook event structs~~ still open (TODO_LIST P3)
+20. ~~Statements (CSV/PDF) — `GetStatement` with format parameter~~ done — v0.9.0 (all six formats)
+21. Service-client sub-structure when resource count crosses 6-8 (ROADMAP Axis 3 trigger) ← still gated (threshold reached; sequencing decision in ROADMAP.md)
 22. Extract narrow service interfaces (`ProfileLister`, `BalanceLister`) when a consumer asks
 23. Add `context.Context` awareness to retry policy (currently uses `executor.WithContext`)
 24. Add request/response logging hook (`WithLogger` option)

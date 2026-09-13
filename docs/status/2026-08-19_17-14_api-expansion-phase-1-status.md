@@ -35,7 +35,7 @@
 
 1. **Full API coverage** — only the 1% Pareto core (transfer flow) is implemented. The plan documents the remaining ~130 endpoints.
 2. ~~**`Quote` type** — simplified to essential fields (ID, Source/Target Money, PayIn/PayOut, Rate, Created, ExpirationTime, Status, Profile). Does not yet expose `paymentOptions`, fees, notices, `guaranteedTargetAmount`, etc.~~ done at `607f17d`
-3. **`Recipient.Details`** — exposed as `map[string]string`. This is pragmatic but loses the typed, currency-specific shape Wise returns. Callers must know the required fields for their corridor.
+3. **`Recipient.Details`** — exposed as `map[string]string`. This is pragmatic but loses the typed, currency-specific shape Wise returns. Callers must know the required fields for their corridor. ← still the open design decision (TODO_LIST P2, carried through five reports as of 2026-09-13)
 4. **`CreateTransferRequest`** — covers the common case plus reference/source-of-funds/transfer-purpose fields. Does not yet model the full transfer-requirements validation flow.
 5. **OpenAPI spec** — discovered mid-implementation, downloaded to `docs/reviews/wise-api-openapi.json` and used to correct the quote-ID type. Not yet used to generate or validate all types.
 6. **Pagination** — implemented for `ListRecipients` and already existed for `ListTransfers`. No generic `Page[T]` abstraction yet.
@@ -49,31 +49,31 @@
 - ~~`CancelTransfer` (`PUT /v1/transfers/{id}/cancel`)~~ done at `05ee22a`
 - ~~`GetDeliveryEstimate` (`GET /v1/delivery-estimates/{id}`)~~ done at `5ef7302`
 - ~~`ValidateTransferRequirements` (`POST /v1/transfer-requirements`)~~ done at `97c6379`
-- Fund transfer (`POST /v1/profiles/{id}/transfers/{id}/payments`) ← still open (TODO_LIST P1)
+- ~~Fund transfer (`POST /v1/profiles/{id}/transfers/{id}/payments`)~~ done at `e508572` (v0.9.0, 2026-08-21)
 
 ### Statements
 
-- CSV / PDF / XLSX / CAMT.053 / MT940 / QIF statement formats
+- ~~CSV / PDF / XLSX / CAMT.053 / MT940 / QIF statement formats~~ done at `e508572` (v0.9.0 — all six formats via `getRaw`, 469-day client-side limit)
 
 ### Users
 
-- `GET /me`, `GET /users/{id}`
+- ~~`GET /me`, `GET /users/{id}`~~ done at `e508572` (v0.9.0)
 
 ### Balances expanded
 
-- `CreateBalance`
-- `GetBalance` via direct endpoint (`GET /v4/profiles/{id}/balances/{id}`)
-- `GetTotalFunds`
+- ~~`CreateBalance`~~ done at `e508572` (v0.9.0)
+- ~~`GetBalance` via direct endpoint (`GET /v4/profiles/{id}/balances/{id}`)~~ done at `e508572` (v0.9.0)
+- ~~`GetTotalFunds`~~ done at `e508572` (v0.9.0)
 
 ### Bank account details & MCA
 
-- `GetBankAccountDetails`
-- `GetMultiCurrencyAccount`
+- ~~`GetBankAccountDetails`~~ done at `e508572` (v0.9.0)
+- ~~`GetMultiCurrencyAccount`~~ done at `e508572` (v0.9.0)
 
 ### Webhooks
 
-- Signature verification helper
-- Subscription CRUD
+- ~~Signature verification helper~~ done at `e508572` (v0.9.0)
+- Subscription CRUD ← still open (TODO_LIST P3, 2026-09-13)
 
 ### Batch groups, direct debit, bulk settlement
 
