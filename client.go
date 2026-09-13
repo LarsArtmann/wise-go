@@ -32,6 +32,7 @@ type Doer interface {
 type Client struct {
 	apiKey           string
 	baseURL          string
+	userAgent        string
 	correlationID    string
 	scaApprovalToken string
 	httpClient       Doer
@@ -88,6 +89,7 @@ func New(apiKey string, opts ...Option) *Client {
 	return &Client{
 		apiKey:           apiKey,
 		baseURL:          cfg.baseURL,
+		userAgent:        cfg.userAgent,
 		correlationID:    cfg.correlationID,
 		scaApprovalToken: cfg.scaApprovalToken,
 		executor:         failsafe.With(retry),
@@ -359,6 +361,12 @@ func (c *Client) classifyExhaustedRetries(method, fullURL string, err error) err
 func (c *Client) setHeaders(ctx context.Context, req *http.Request) {
 	if c.apiKey != "" {
 		req.Header.Set("Authorization", "Bearer "+c.apiKey)
+	}
+
+	// Wise asks integrations to identify themselves; a custom User-Agent
+	// replaces Go's default "Go-http-client/1.1".
+	if c.userAgent != "" {
+		req.Header.Set("User-Agent", c.userAgent)
 	}
 
 	// A per-request correlation ID from the context overrides the

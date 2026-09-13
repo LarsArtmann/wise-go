@@ -71,6 +71,8 @@ Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise'
 - **Write operations** — create quotes (authenticated and unauthenticated), recipients, and transfers; fund transfers from a balance; cancel transfers; validate transfer requirements; fetch delivery estimates.
 - **SCA challenge support** — SCA-protected endpoints (e.g. balance statements for UK/EEA profiles) surface as `*SCAChallengeError` with the one-time approval token; complete the challenge with `WithSCAApprovalToken` and retry. See [SCA](#strong-customer-authentication-sca).
 - **Statement & receipt downloads** — balance statements in CSV/PDF/XLSX/CAMT.053/MT940/QIF, transfer receipts (PDF), and MT103 payout proofs returned as raw bytes with client-side validation.
+- **Webhook subscriptions & typed events** — register, list, and delete profile webhook subscriptions, then parse deliveries with `ParseWebhookEvent`: typed payloads for transfer state changes, payout failures, and balance credits; unknown event types never break your handler.
+- **Identify your integration** — `WithUserAgent` replaces Go's default client agent with your own (`bank-sync/1.0`), as Wise recommends.
 - **Tolerant timestamp handling** — Wise emits four different timestamp formats. One parser accepts them all (zoneless = UTC), and outgoing query timestamps are normalized to UTC `Z` (Wise rejects zone offsets with 422).
 - **Sandbox support** — One-line switch to the Wise sandbox environment.
 - **Minimal dependencies** — Three focused production deps: `failsafe-go`, `go-branded-id`, `go-error-family`.

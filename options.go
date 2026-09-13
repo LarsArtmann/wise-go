@@ -9,6 +9,7 @@ import (
 type config struct {
 	apiKey           string
 	baseURL          string
+	userAgent        string
 	timeout          time.Duration
 	maxRetries       int
 	retryMin         time.Duration
@@ -71,6 +72,15 @@ func WithSandbox() Option {
 func WithBaseURL(url string) Option {
 	return func(c *config) {
 		c.baseURL = url
+	}
+}
+
+// WithUserAgent sets the User-Agent header sent with every request, e.g.
+// "bank-sync/1.0 (github.com/acme/bank-sync)". Wise recommends integrations
+// identify themselves; without it requests carry Go's default client agent.
+func WithUserAgent(userAgent string) Option {
+	return func(c *config) {
+		c.userAgent = userAgent
 	}
 }
 

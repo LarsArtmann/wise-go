@@ -201,6 +201,44 @@ var _ = Describe("Wise Client", func() {
 		})
 	})
 
+	Describe("WithUserAgent", func() {
+		Context("with a custom agent", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/me", func(w http.ResponseWriter, r *http.Request) {
+					if r.Header.Get("User-Agent") != "bank-sync/1.0" {
+						w.WriteHeader(http.StatusBadRequest)
+
+						return
+					}
+
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = w.Write([]byte(`{"id":1,"type":"PERSONAL","email":"t@t.com","createdAt":"2023-01-01T00:00:00Z"}`))
+				})
+
+				client = wise.New("test-api-key",
+					wise.WithBaseURL(server.URL), wise.WithUserAgent("bank-sync/1.0"))
+			})
+
+			It("should forward the custom User-Agent", func() {
+				Expect(client.GetMe(context.Background())).ToNot(BeNil())
+			})
+		})
+
+		Context("without a custom agent", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/me", func(w http.ResponseWriter, r *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = w.Write([]byte(`{"id":1,"type":"PERSONAL","email":"t@t.com","createdAt":"2023-01-01T00:00:00Z"}`))
+				})
+			})
+
+			It("should keep Go's default agent", func() {
+				_, err := client.GetMe(context.Background())
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+	})
+
 	Describe("Authenticate", func() {
 		Context("with valid credentials", func() {
 			BeforeEach(func() {
