@@ -126,6 +126,59 @@ func (c *Client) GetTransfer(ctx context.Context, transferID TransferID) (*Trans
 	return toTransfer("map transfer", transfer)
 }
 
+// GetTransferReceipt downloads the branded confirmation receipt for a
+// transfer as a PDF (GET /v1/transfers/{transferId}/receipt.pdf) and returns
+// its raw bytes.
+//
+// Wise only issues receipts once a transfer has been paid out: for a
+// transfer that never reached the outgoing_payment_sent state (or an unknown
+// ID) the endpoint answers 404, classified as *NotFoundError. The endpoint
+// is not SCA-protected and is available to personal API tokens in all
+// regions.
+func (c *Client) GetTransferReceipt(ctx context.Context, transferID TransferID) ([]byte, error) {
+	if err := requireID(transferID, "wise.transfer.invalid_request", "transferID"); err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/v1/transfers/%d/receipt.pdf", transferID.Get())
+
+	data, err := c.getRaw(ctx, path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("get receipt for transfer %d: %w", transferID.Get(), err)
+	}
+
+	return data, nil
+}
+
+// GetTransferPayoutInfo returns the banking-partner payout information for a
+// transfer (GET /v1/transfers/{transferId}/invoices/bankingpartner):
+// processor, delivery mode, the partner bank's tracking reference, and the
+// SWIFT MT103 message when the corridor produced one.
+//
+// MT103 is nil when no SWIFT message exists for the transfer. The endpoint
+// is not SCA-protected.
+func (c *Client) GetTransferPayoutInfo(ctx context.Context, transferID TransferID) (*TransferPayoutInfo, error) {
+	if err := requireID(transferID, "wise.transfer.invalid_request", "transferID"); err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/v1/transfers/%d/invoices/bankingpartner", transferID.Get())
+
+	var payout raw.PayoutInfo
+
+	if err := c.get(ctx, path, &payout); err != nil {
+		return nil, fmt.Errorf("get payout info for transfer %d: %w", transferID.Get(), err)
+	}
+
+	return &TransferPayoutInfo{
+		ProcessorName:           payout.ProcessorName,
+		DeliveryMode:            payout.DeliveryMode,
+		BankingPartnerReference: payout.BankingPartnerReference,
+		BankingPartnerName:      payout.BankingPartnerName,
+		MT103:                   payout.MT103,
+	}, nil
+}
+
 func (r CreateTransferRequest) validate() error {
 	if err := requireID(r.QuoteID, "wise.transfer.invalid_request", "quoteID"); err != nil {
 		return err

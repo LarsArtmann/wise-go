@@ -31,6 +31,17 @@ type TransferDetails struct {
 	Reference string `json:"reference"`
 }
 
+// PayoutInfo from the banking-partner invoice endpoint
+// (GET /v1/transfers/{transferId}/invoices/bankingpartner).
+// MT103 is a nullable string on the wire (null for non-SWIFT corridors).
+type PayoutInfo struct {
+	ProcessorName           string  `json:"processorName"`
+	DeliveryMode            string  `json:"deliveryMode"`
+	BankingPartnerReference string  `json:"bankingPartnerReference"`
+	BankingPartnerName      string  `json:"bankingPartnerName"`
+	MT103                   *string `json:"mt103"`
+}
+
 // FundingResponse from the fund-transfer endpoint
 // (POST /v1/profiles/{profileId}/transfers/{transferId}/payments).
 // The payload is discriminated by "type": the BALANCE variant carries

@@ -247,6 +247,21 @@ const (
 	TransferStatusChargedBack            TransferStatus = "charged_back"
 )
 
+// TransferPayoutInfo is the banking-partner payout information for a
+// transfer: who processed the payment, how it was delivered, the partner
+// bank's tracking reference, and the SWIFT MT103 message when the corridor
+// produced one.
+//
+// MT103 is nil when no SWIFT message exists for the transfer (non-SWIFT
+// corridors, or the message is not yet available).
+type TransferPayoutInfo struct {
+	ProcessorName           string
+	DeliveryMode            string
+	BankingPartnerReference string
+	BankingPartnerName      string
+	MT103                   *string
+}
+
 // FundTransferResult is the parsed result of funding a transfer with
 // FundTransfer.
 //

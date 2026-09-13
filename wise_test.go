@@ -2841,6 +2841,134 @@ var _ = Describe("Wise Client", func() {
 		})
 	})
 
+	Describe("GetTransferReceipt", func() {
+		Context("with a paid-out transfer", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/987654/receipt.pdf", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Method).To(Equal(http.MethodGet))
+					w.Header().Set("Content-Type", "application/pdf")
+					_, _ = w.Write([]byte("%PDF-1.7 receipt"))
+				})
+			})
+
+			It("should return the raw receipt bytes", func() {
+				data, err := client.GetTransferReceipt(context.Background(), wise.NewTransferID(987654))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(data).To(HavePrefix("%PDF-1.7"))
+			})
+		})
+
+		Context("with a transfer that has no receipt", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/987654/receipt.pdf",
+					errorHandler(http.StatusNotFound, nil, "NOT_FOUND", "Transfer not found"))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.GetTransferReceipt(context.Background(), wise.NewTransferID(987654))
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr).ToNot(BeNil())
+			})
+		})
+
+		Context("with an invalid API key", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/987654/receipt.pdf", unauthorizedHandler)
+			})
+
+			It("should surface an AuthError", func() {
+				_, err := client.GetTransferReceipt(context.Background(), wise.NewTransferID(987654))
+				authErr, ok := errors.AsType[*wise.AuthError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.AuthError, got %T: %v", err, err)
+				Expect(authErr).ToNot(BeNil())
+			})
+		})
+
+		Context("with a zero transfer ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetTransferReceipt(context.Background(), wise.NewTransferID(0))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("transferID is required"))
+			})
+		})
+	})
+
+	Describe("GetTransferPayoutInfo", func() {
+		Context("with a SWIFT payout", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/987654/invoices/bankingpartner", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Method).To(Equal(http.MethodGet))
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = w.Write([]byte(`{
+						"processorName": "Acme Bank Ltd.",
+						"deliveryMode": "SWIFT",
+						"bankingPartnerReference": "ABCD1234",
+						"bankingPartnerName": "Global Bank Corp.",
+						"mt103": "{1:F01XXXXGBXXAXXX0000000000}{4:\n:20:1234567\n-}"
+					}`))
+				})
+			})
+
+			It("should return the mapped payout info with MT103", func() {
+				info, err := client.GetTransferPayoutInfo(context.Background(), wise.NewTransferID(987654))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(info).ToNot(BeNil())
+				Expect(info.ProcessorName).To(Equal("Acme Bank Ltd."))
+				Expect(info.DeliveryMode).To(Equal("SWIFT"))
+				Expect(info.BankingPartnerReference).To(Equal("ABCD1234"))
+				Expect(info.BankingPartnerName).To(Equal("Global Bank Corp."))
+				Expect(info.MT103).ToNot(BeNil())
+				Expect(*info.MT103).To(ContainSubstring(":20:1234567"))
+			})
+		})
+
+		Context("with a non-SWIFT corridor", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/987654/invoices/bankingpartner", func(w http.ResponseWriter, _ *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = w.Write([]byte(`{
+						"processorName": "Acme Bank Ltd.",
+						"deliveryMode": "LOCAL",
+						"bankingPartnerReference": "ABCD1234",
+						"bankingPartnerName": "Global Bank Corp.",
+						"mt103": null
+					}`))
+				})
+			})
+
+			It("should return nil MT103", func() {
+				info, err := client.GetTransferPayoutInfo(context.Background(), wise.NewTransferID(987654))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(info).ToNot(BeNil())
+				Expect(info.MT103).To(BeNil())
+				Expect(info.DeliveryMode).To(Equal("LOCAL"))
+			})
+		})
+
+		Context("with an unknown transfer", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/987654/invoices/bankingpartner",
+					errorHandler(http.StatusNotFound, nil, "NOT_FOUND", "Transfer not found"))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.GetTransferPayoutInfo(context.Background(), wise.NewTransferID(987654))
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr).ToNot(BeNil())
+			})
+		})
+
+		Context("with a zero transfer ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetTransferPayoutInfo(context.Background(), wise.NewTransferID(0))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("transferID is required"))
+			})
+		})
+	})
+
 	Describe("GetMe", func() {
 		Context("with valid API response", func() {
 			BeforeEach(func() {

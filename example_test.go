@@ -181,6 +181,41 @@ func ExampleClient_GetStatement() {
 	}
 }
 
+// Download the branded confirmation receipt for a paid-out transfer. Wise
+// answers 404 until the transfer reached outgoing_payment_sent; treat
+// *wise.NotFoundError as "no receipt (yet)", not as a hard failure.
+//
+//nolint:testableexamples // documentation-only; runs against the live API
+func ExampleClient_GetTransferReceipt() {
+	client := wise.New("your-api-key")
+
+	pdf, err := client.GetTransferReceipt(context.Background(), wise.NewTransferID(987654))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := os.WriteFile("transfer-987654-receipt.pdf", pdf, 0o600); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// Fetch the SWIFT MT103 proof-of-payment for a transfer. MT103 is nil for
+// non-SWIFT corridors.
+//
+//nolint:testableexamples // documentation-only; runs against the live API
+func ExampleClient_GetTransferPayoutInfo() {
+	client := wise.New("your-api-key")
+
+	info, err := client.GetTransferPayoutInfo(context.Background(), wise.NewTransferID(987654))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if info.MT103 != nil {
+		fmt.Println("delivery mode:", info.DeliveryMode)
+	}
+}
+
 // Verify a webhook delivery before trusting its payload. Parse the
 // subscription's public key once at startup; verify the raw body exactly as
 // received against the X-Signature-SHA256 header on every delivery.
