@@ -167,6 +167,12 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
+      # No SSH/deploy-key or token step is needed here: all flake inputs that
+      # used git+ssh URLs (go-nix-helpers, go-branded-id, go-error-family) are
+      # PUBLIC repos and were migrated to github: URLs pinned by rev, so
+      # `nix flake check` resolves them anonymously. If a dep ever goes
+      # private, add webfactory/ssh-agent with a read-only deploy key
+      # (libgit2-based Nix git fetches ignore git-config insteadOf).
       - name: Run nix flake check
         run: nix flake check
 

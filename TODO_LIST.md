@@ -80,9 +80,11 @@ First provide SSH auth for the `git+ssh://` flake inputs (deploy key or
 re-enable. Until then the coverage badge stays frozen at its last CI-measured
 value.
 
-[ ] Re-run `govulncheck` on the go1.26.7 toolchain — the 4 reachable findings
-(GO-2026-6218, -6090, -5972, -5026) were stdlib bugs fixed in go1.26.6; the
-toolchain has since moved (go.mod `go 1.26.7`), so confirm zero findings.
+[x] Re-run `govulncheck` on the go1.26.7 toolchain — DONE 2026-09-13 (govulncheck
+1.8.0, `GOEXPERIMENT=jsonv2`): **"No vulnerabilities found."** The 4 reachable
+findings (GO-2026-6218, -6090, -5972, -5026) were stdlib bugs fixed in
+go1.26.6; the go1.26.7 toolchain clears them all. CI re-runs this in the
+`govulncheck` job once the workflow is re-enabled.
 
 [ ] Close the dedup-refactor follow-ups
 (`docs/status/2026-08-21_23-10_dedup-refactor-self-review.md` f): direct table
