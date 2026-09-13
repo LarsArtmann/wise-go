@@ -164,6 +164,26 @@
                   README.md FEATURES.md ROADMAP.md TODO_LIST.md CHANGELOG.md CONTRIBUTING.md AGENTS.md
                 touch $out
               '';
+
+          # Breaking-change check against the latest tagged release
+          # (gorelease reports removed/changed exported API). Needs network
+          # to fetch the base version, so it is an app (nix run), never a
+          # sandboxed check.
+          apps.apidiff =
+            let
+              apidiff = pkgs.writeShellApplication {
+                name = "apidiff";
+                runtimeInputs = [ pkgs.go ];
+                text = ''
+                  export GOEXPERIMENT=jsonv2
+                  exec go run golang.org/x/exp/cmd/gorelease@latest -base=latest "$@"
+                '';
+              };
+            in
+            {
+              type = "app";
+              program = pkgs.lib.getExe apidiff;
+            };
         };
     };
 }

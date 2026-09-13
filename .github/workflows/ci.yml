@@ -49,6 +49,18 @@ jobs:
       - name: Test
         run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
 
+      # Gate, not just metric: a silent drop under 90% must fail the build.
+      # 90 leaves ~1.4pt headroom over the measured 91.4% (2026-09-13) so
+      # additive surface changes don't flake the job, but real test debt does.
+      - name: Coverage threshold
+        run: |
+          TOTAL=$(go tool cover -func=coverage.out | awk '/^total:/ {sub("%", "", $3); print $3}')
+          echo "Total coverage: ${TOTAL}%"
+          if awk -v p="$TOTAL" 'BEGIN { exit (p+0 < 90.0) ? 0 : 1 }'; then
+            echo "::error::Coverage ${TOTAL}% is below the 90% gate"
+            exit 1
+          fi
+
       - name: Check go mod tidy
         run: |
           cp go.mod go.mod.bak && cp go.sum go.sum.bak 2>/dev/null || true
