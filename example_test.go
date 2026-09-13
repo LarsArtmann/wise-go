@@ -400,3 +400,98 @@ func ExampleClient_GetBankAccountDetails() {
 		}
 	}
 }
+
+// Register a webhook subscription so Wise POSTs an event envelope to your
+// HTTPS endpoint whenever the chosen event occurs, then delete it when done.
+//
+//nolint:testableexamples // documentation-only; runs against the live API
+func ExampleClient_CreateProfileWebhookSubscription() {
+	client := wise.New("your-api-key")
+	profileID := wise.NewProfileID(12345)
+
+	sub, err := client.CreateProfileWebhookSubscription(context.Background(), profileID,
+		wise.CreateWebhookSubscriptionRequest{
+			Name:      "Payout watcher",
+			TriggerOn: wise.WebhookEventTransfersStateChange,
+			Delivery: wise.WebhookDelivery{
+				Version: "4.0.0",
+				URL:     "https://example.com/hooks/wise",
+			},
+		})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("registered", sub.ID.Get(), "for", sub.TriggerOn)
+
+	// Later: stop the deliveries.
+	err = client.DeleteProfileWebhookSubscription(context.Background(), profileID, sub.ID)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+// Verify a delivery, then decode the envelope and its typed payload. Unknown
+// event types parse fine — the data stays raw — so new Wise events never
+// break your handler.
+//
+//nolint:testableexamples // documentation-only; needs a live delivery body
+func ExampleParseWebhookEvent() {
+	webhookKey, err := wise.ParseWebhookPublicKey([]byte(`-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA... (from the dashboard)
+-----END PUBLIC KEY-----`))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	http.HandleFunc("/webhooks/wise", func(w http.ResponseWriter, r *http.Request) {
+		body, readErr := io.ReadAll(r.Body)
+		if readErr != nil {
+			http.Error(w, "read body", http.StatusBadRequest)
+
+			return
+		}
+
+		if !wise.VerifyWebhookSignature(body, r.Header.Get(wise.HeaderWebhookSignature), webhookKey) {
+			http.Error(w, "invalid signature", http.StatusUnauthorized)
+
+			return
+		}
+
+		event, parseErr := wise.ParseWebhookEvent(body)
+		if parseErr != nil {
+			http.Error(w, "malformed event", http.StatusBadRequest)
+
+			return
+		}
+
+		switch event.EventType {
+		case wise.WebhookEventTransfersStateChange:
+			state, stateErr := event.TransferStateChange()
+			if stateErr != nil {
+				http.Error(w, "malformed payload", http.StatusBadRequest)
+
+				return
+			}
+
+			if state.CurrentState == "blocked" {
+				log.Printf("transfer %d blocked (was %s)", state.Resource.ID, state.PreviousState)
+			}
+		case wise.WebhookEventTransfersPayoutFailure:
+			failure, failureErr := event.TransferPayoutFailure()
+			if failureErr != nil {
+				http.Error(w, "malformed payload", http.StatusBadRequest)
+
+				return
+			}
+
+			log.Printf("payout failed: %s", failure.FailureReasonCode)
+		default:
+			// Unrecognized event type: the envelope is valid, the payload is
+			// raw. Log it and acknowledge — Wise redelivers otherwise.
+			log.Printf("unhandled event %s", event.EventType)
+		}
+
+		w.WriteHeader(http.StatusOK)
+	})
+}

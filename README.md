@@ -52,6 +52,8 @@ Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise'
 - [Error Handling](#error-handling)
 - [Strong Customer Authentication (SCA)](#strong-customer-authentication-sca)
 - [Webhooks](#webhooks)
+  - [Webhook subscriptions](#webhook-subscriptions)
+  - [Typed event decoding](#typed-event-decoding)
 - [Design Decisions](#design-decisions)
 - [Testing](#testing)
   - [Sandbox verification](#sandbox-verification)
@@ -805,7 +807,8 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // Trustworthy delivery: decode the event JSON and process it.
+    // Trustworthy delivery: parse the envelope and its typed payload —
+    // see [Typed event decoding](#typed-event-decoding) below.
 }
 ```
 
@@ -815,6 +818,67 @@ per delivery attempt — exposed as `wise.HeaderDeliveryID`) is the
 deduplication key — record it and skip already-seen deliveries. Signature
 verification alone is not enough: a verified delivery can still be a
 redelivery of an event you already processed.
+
+### Webhook subscriptions
+
+Subscriptions are the standing instruction for Wise to deliver events to your
+HTTPS endpoint. The SDK covers the profile-level CRUD (user API token);
+application-level subscriptions need a client-credentials token and are
+deliberately out of scope (see ROADMAP):
+
+```go
+profileID := wise.NewProfileID(12345)
+
+sub, err := client.CreateProfileWebhookSubscription(ctx, profileID,
+    wise.CreateWebhookSubscriptionRequest{
+        Name:      "Payout watcher",
+        TriggerOn: wise.WebhookEventTransfersStateChange, // open enum; any event type string works
+        Delivery:  wise.WebhookDelivery{Version: "4.0.0", URL: "https://example.com/hooks/wise"},
+    })
+
+subs, err := client.ListProfileWebhookSubscriptions(ctx, profileID)
+sub, err := client.GetProfileWebhookSubscription(ctx, profileID, sub.ID)
+err := client.DeleteProfileWebhookSubscription(ctx, profileID, sub.ID)
+```
+
+Wise's subscription endpoints live on the quarterly versioned API surface
+(`/2026Q3/profiles/{profileId}/subscriptions`) — the SDK sends that path
+automatically. There is no update operation: subscriptions are created and
+deleted, never edited.
+
+### Typed event decoding
+
+`ParseWebhookEvent` decodes the envelope Wise POSTs (schema version,
+subscription ID, event type, sent-at) and keeps the payload raw. Typed
+accessors decode the payload per event type; unknown event types never fail —
+new Wise events parse with the data left raw for hand decoding:
+
+```go
+event, err := wise.ParseWebhookEvent(body) // body = the verified raw bytes
+if err != nil {
+    // Undecodable or malformed envelope: reject the delivery.
+    http.Error(w, "malformed event", http.StatusBadRequest)
+
+    return
+}
+
+switch event.EventType {
+case wise.WebhookEventTransfersStateChange:
+    state, err := event.TransferStateChange() // *TransferStateChangeData
+    // state.CurrentState / state.PreviousState are TransferStatus values.
+case wise.WebhookEventTransfersPayoutFailure:
+    failure, err := event.TransferPayoutFailure() // *TransferPayoutFailureData
+case wise.WebhookEventBalancesCredit:
+    credit, err := event.BalanceCredit() // *BalanceCreditData with Money amounts
+default:
+    // Unknown event type: log and acknowledge — Wise redelivers otherwise.
+}
+```
+
+Available typed payloads today: `transfers#state-change`,
+`transfers#payout-failure`, and `balances#credit`. Malformed envelopes and
+payloads are corruption-classified errors (`wise.webhook.decode`), so a
+broken sender is distinguishable from a routing mistake.
 
 ## Design Decisions
 
