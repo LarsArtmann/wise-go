@@ -29,6 +29,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   SWIFT MT103 message (`*string`, nil for non-SWIFT corridors) as
   `*TransferPayoutInfo`. Accounting-grade proof-of-payment retrieval.
 
+### Changed
+
+- Go toolchain requirement bumped to **1.26.7** (`go.mod` `go` directive,
+  commit `14523ae`); nix flake inputs pinned and CI workflow file refreshed
+  (the workflow itself remains disabled on GitHub).
+
 ## [0.9.0] - 2026-08-21
 
 > **Behavior changes** — review before upgrading:
