@@ -1,6 +1,3 @@
-// unlike the camelCase core API
-//
-//nolint:tagliatelle // Wise's webhook wire surface (this entire file) uses snake_case,
 package raw
 
 import "encoding/json/jsontext"

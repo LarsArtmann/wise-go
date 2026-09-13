@@ -277,6 +277,12 @@ linters:
         linters:
           - exhaustruct_v5
           - revive
+      # Wise's webhook wire surface (subscriptions, event envelopes, event
+      # payloads) uses snake_case JSON keys, unlike the camelCase core API;
+      # the raw wire types must mirror it.
+      - path: internal/raw/webhooks\.go
+        linters:
+          - tagliatelle
       - path: types\.go
         linters:
           - revive
