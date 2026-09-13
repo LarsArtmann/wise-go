@@ -8,7 +8,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- Nothing yet.
+- Profile-level webhook subscription management: `CreateProfileWebhookSubscription`,
+  `ListProfileWebhookSubscriptions`, `GetProfileWebhookSubscription`, and
+  `DeleteProfileWebhookSubscription` (204 delete) against the quarterly
+  versioned surface (`/2026Q3/profiles/{profileId}/subscriptions`). Typed
+  `WebhookSubscription` result (UUID-branded `WebhookSubscriptionID`,
+  `WebhookDelivery`, `WebhookCreator`, `WebhookScope`), validated
+  `CreateWebhookSubscriptionRequest` (HTTPS-only delivery URL), and the
+  `WebhookEventType` open enum with the 33 documented event constants.
+  Application-level subscriptions stay deferred (client-credentials token
+  story — see ROADMAP).
+- Typed webhook event decoding: `ParseWebhookEvent` decodes the delivery
+  envelope (tolerant `sent_at` parsing; unknown event types pass through with
+  the payload left raw) and typed accessors decode the high-value payloads —
+  `WebhookEvent.TransferStateChange`, `WebhookEvent.TransferPayoutFailure`,
+  and `WebhookEvent.BalanceCredit` (with `Money` conversion). Malformed
+  envelopes/payloads are corruption-classified (`wise.webhook.decode`).
 
 ### Fixed
 

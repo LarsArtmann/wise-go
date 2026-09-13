@@ -46,19 +46,22 @@ exists) — the CI cachix step (`cachix-action` pinned to verified v15 commit
 
 ## P3 — Tier-3 API surface (next feature work)
 
-[ ] Webhook subscription CRUD + test notifications — 9 operations in the OpenAPI
-spec across 5 paths (app-level need client-credentials tokens; profile-level fit
-today's user-token client). Wire types, public `WebhookSubscription` +
-branded `WebhookSubscriptionID`, client methods, BDD, docs. Full breakdown:
-`docs/status/2026-08-28_08-37_webhooks-review-and-self-review.md` f.1–13
-(plan item Tier-4 #49 says 8 operations; the spec has 9).
-**Design question first: ship profile-level only, or pull the client-credentials
-token flow (OAuth) into scope?**
+[x] Webhook subscription CRUD (profile level) — DONE 2026-09-13:
+`Create/List/Get/DeleteProfileWebhookSubscription` shipped against
+`/2026Q3/profiles/{profileId}/subscriptions` with wire types, public
+`WebhookSubscription`, branded `WebhookSubscriptionID` (UUID string per spec),
+validation, BDD, README, and FEATURES rows. App-level operations
+(+`test-notifications`, spec: app-level only) are DEFERRED pending the
+client-credentials token decision — see ROADMAP "Application-level webhook
+subscriptions (deferred 2026-09-13)". Plan item #49's "8"→9 count corrected.
 
-[ ] Typed webhook event decoding — `WebhookEvent` envelope + `WebhookEventType`
-enum + `ParseWebhookEvent`, tolerant timestamps via `parseWiseTimestamp`;
-fixtures + unknown-event forward-compatibility tests. Breakdown:
-`docs/status/2026-08-28_08-37_webhooks-review-and-self-review.md` f.14–22.
+[x] Typed webhook event decoding — DONE 2026-09-13: `WebhookEvent` envelope +
+`WebhookEventType` open enum (33 documented constants) + `ParseWebhookEvent`
+(tolerant timestamps, unknown-event passthrough) + typed payload accessors for
+`transfers#state-change`, `transfers#payout-failure`, and `balances#credit`
+(the plan's deposits#* events are not documented on the live webhook-event
+reference — dropped per verification). Unknown-event + corruption tests
+included.
 
 ## P4 — Tooling & quality
 
