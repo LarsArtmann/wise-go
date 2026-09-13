@@ -102,7 +102,9 @@ cents instead; `wiseDateFormat` constant for the inline `"2006-01-02"` layout
 (`users.go:139`); `WithUserAgent` option; `fmt.Stringer` for public enums;
 `errorfamily.RegisterClassification` call; surface `Profile.UserID`/`PublicID`;
 pin the gofumpt action version (`ci.yml` uses `@latest`); benchmarks + fuzz
-tests for date/money parsing; split the `wise_test.go` monolith.
+tests for date/money parsing; split the `wise_test.go` monolith; migrate the
+deprecated `exhaustruct` linter to `exhaustruct_v5` (golangci-lint v2.13
+deprecation warning, seen 2026-09-13).
 
 [ ] GOEXPERIMENT ergonomics — pin direnv/home-manager setup so `jsonv2` is set
 without relying on `.buildflow.yml` env injection (user-machine work; the
