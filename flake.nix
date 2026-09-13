@@ -58,6 +58,7 @@
         ./currencies.go
         ./internal/raw/types.go
         ./internal/raw/transfers.go
+        ./internal/raw/webhooks.go
         ./internal_test.go
         ./example_test.go
         ./wise_test.go

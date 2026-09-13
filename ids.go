@@ -32,6 +32,9 @@ type BalanceTransactionBrand struct{}
 // QuoteBrand is a phantom type for QuoteID.
 type QuoteBrand struct{}
 
+// WebhookSubscriptionBrand is a phantom type for WebhookSubscriptionID.
+type WebhookSubscriptionBrand struct{}
+
 // ProfileID is a strongly-typed identifier for Wise profiles.
 type ProfileID = id.ID[ProfileBrand, int64]
 
@@ -65,6 +68,11 @@ type BalanceTransactionID = id.ID[BalanceTransactionBrand, int64]
 // Note: Wise quote IDs are UUIDs (strings), unlike the integer IDs used for
 // profiles, balances, transfers, and recipients.
 type QuoteID = id.ID[QuoteBrand, string]
+
+// WebhookSubscriptionID is a strongly-typed identifier for Wise webhook
+// subscriptions. Like QuoteID it is a UUID string on the wire (spec:
+// "UUID that uniquely identifies the subscription"), not an int64.
+type WebhookSubscriptionID = id.ID[WebhookSubscriptionBrand, string]
 
 // NewProfileID creates a new ProfileID from an int64 value.
 func NewProfileID(v int64) ProfileID {
@@ -110,6 +118,12 @@ func NewBalanceTransactionID(v int64) BalanceTransactionID {
 // NewQuoteID creates a new QuoteID from a string UUID value.
 func NewQuoteID(v string) QuoteID {
 	return id.NewID[QuoteBrand](v)
+}
+
+// NewWebhookSubscriptionID creates a new WebhookSubscriptionID from a string
+// UUID value.
+func NewWebhookSubscriptionID(v string) WebhookSubscriptionID {
+	return id.NewID[WebhookSubscriptionBrand](v)
 }
 
 // requireID turns a zero branded ID into a Rejection carrying the endpoint

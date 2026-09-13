@@ -24,7 +24,9 @@ on:
 
 env:
   GO_VERSION: "1.26"
-  GOLANGCI_LINT_VERSION: v2.12
+  # v2.13+ is required: the exhaustruct_v5 linter (the forced replacement of
+  # the deprecated exhaustruct) only exists in golangci-lint v2.13.0+.
+  GOLANGCI_LINT_VERSION: v2.13
   # go-branded-id and go-error-family use encoding/json/v2, which requires
   # the jsonv2 experiment on Go 1.26. Inherited by all jobs below.
   GOEXPERIMENT: "jsonv2"

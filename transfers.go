@@ -202,7 +202,7 @@ func (r CreateTransferRequest) validate() error {
 // TransferRequirementsDetails.toWire so the details wire keys have one
 // spelling across every endpoint that accepts a details block.
 func (r CreateTransferRequest) detailsWire() map[string]string {
-	return TransferRequirementsDetails{ //nolint:exhaustruct // CreateTransferRequest carries neither sourceOfFundsOther nor transferNature
+	return TransferRequirementsDetails{ //nolint:exhaustruct_v5 // CreateTransferRequest carries neither sourceOfFundsOther nor transferNature
 		Reference:                         r.Reference,
 		SourceOfFunds:                     r.SourceOfFunds,
 		TransferPurpose:                   r.TransferPurpose,
