@@ -42,6 +42,68 @@ func expectRejection(t *testing.T, err error, wantSubstr string) {
 	}
 }
 
+// TestRequireID pins the zero-ID guard's contract: every rejection carries
+// the endpoint family's invalid-request code and the "<field> is required"
+// message, for int64-branded and string-branded IDs alike.
+func TestRequireID(t *testing.T) {
+	tests := []struct {
+		name     string
+		err      error
+		wantCode string
+		wantMsg  string
+	}{
+		{
+			"zero int64 ID", requireID(NewProfileID(0), "wise.profile.invalid_request", "profileID"),
+			"wise.profile.invalid_request", "profileID is required",
+		},
+		{
+			"nonzero int64 ID", requireID(NewProfileID(12345), "wise.profile.invalid_request", "profileID"),
+			"", "",
+		},
+		{
+			"empty string ID", requireID(NewQuoteID(""), "wise.quote.invalid_request", "quoteID"),
+			"wise.quote.invalid_request", "quoteID is required",
+		},
+		{
+			"nonempty string ID", requireID(NewQuoteID("11114444-..."), "wise.quote.invalid_request", "quoteID"),
+			"", "",
+		},
+		{
+			"empty webhook subscription ID", requireID(NewWebhookSubscriptionID(""), "wise.webhook.invalid_request", "subscriptionID"),
+			"wise.webhook.invalid_request", "subscriptionID is required",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.wantCode == "" {
+				if tt.err != nil {
+					t.Fatalf("requireID() = %v, want nil", tt.err)
+				}
+
+				return
+			}
+
+			if tt.err == nil {
+				t.Fatal("requireID() = nil, want rejection")
+			}
+
+			coder, ok := tt.err.(interface{ ErrorCode() string })
+			if !ok {
+				t.Fatalf("error does not implement ErrorCode: %T", tt.err)
+			}
+
+			if got := coder.ErrorCode(); got != tt.wantCode {
+				t.Errorf("ErrorCode() = %q, want %q", got, tt.wantCode)
+			}
+
+			if got := tt.err.Error(); got != tt.wantMsg {
+				t.Errorf("Error() = %q, want %q", got, tt.wantMsg)
+			}
+		})
+	}
+}
+
 func TestCreateTransferRequestValidate(t *testing.T) {
 	t.Parallel()
 

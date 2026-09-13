@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	id "github.com/larsartmann/go-branded-id"
 	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go/internal/raw"
 )
@@ -28,23 +29,20 @@ const (
 // fetchByID validates a non-zero ID and performs a GET for a single resource.
 // It centralises the boilerplate shared by GetProfile, GetTransfer, and future
 // get-by-id endpoints so the public methods stay short and resource-specific.
-func fetchByID[T any](
+func fetchByID[T any, B any, V comparable](
 	ctx context.Context,
 	client *Client,
-	id int64,
+	identifier id.ID[B, V],
 	resource string,
 	path string,
 	target *T,
 ) error {
-	if id == 0 {
-		return errorfamily.NewRejection(
-			"wise."+resource+".invalid_request",
-			resource+"ID is required",
-		)
+	if err := requireID(identifier, "wise."+resource+".invalid_request", resource+"ID"); err != nil {
+		return err
 	}
 
 	if err := client.get(ctx, path, target); err != nil {
-		return fmt.Errorf("get %s %d: %w", resource, id, err)
+		return fmt.Errorf("get %s %v: %w", resource, identifier.Get(), err)
 	}
 
 	return nil

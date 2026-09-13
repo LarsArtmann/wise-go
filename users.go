@@ -66,7 +66,7 @@ func (c *Client) GetMe(ctx context.Context) (*User, error) {
 func (c *Client) GetUser(ctx context.Context, userID UserID) (*User, error) {
 	var user raw.User
 
-	if err := fetchByID(ctx, c, userID.Get(), "user",
+	if err := fetchByID(ctx, c, userID, "user",
 		fmt.Sprintf("/v1/users/%d", userID.Get()), &user); err != nil {
 		return nil, err
 	}

@@ -119,7 +119,7 @@ func (c *Client) GetTransfer(ctx context.Context, transferID TransferID) (*Trans
 
 	var transfer raw.Transfer
 
-	if err := fetchByID(ctx, c, transferID.Get(), "transfer", path, &transfer); err != nil {
+	if err := fetchByID(ctx, c, transferID, "transfer", path, &transfer); err != nil {
 		return nil, err
 	}
 
@@ -202,7 +202,8 @@ func (r CreateTransferRequest) validate() error {
 // TransferRequirementsDetails.toWire so the details wire keys have one
 // spelling across every endpoint that accepts a details block.
 func (r CreateTransferRequest) detailsWire() map[string]string {
-	return TransferRequirementsDetails{ //nolint:exhaustruct_v5 // CreateTransferRequest carries neither sourceOfFundsOther nor transferNature
+	//nolint:exhaustruct_v5 // spec-verified: the create-transfer schema's details accept exactly these five keys; sourceOfFundsOther and transferNature are requirements-only
+	return TransferRequirementsDetails{
 		Reference:                         r.Reference,
 		SourceOfFunds:                     r.SourceOfFunds,
 		TransferPurpose:                   r.TransferPurpose,

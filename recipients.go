@@ -90,7 +90,7 @@ func (c *Client) GetRecipient(ctx context.Context, recipientID RecipientID) (*Re
 
 	var recipient raw.Recipient
 
-	if err := fetchByID(ctx, c, recipientID.Get(), "recipient", path, &recipient); err != nil {
+	if err := fetchByID(ctx, c, recipientID, "recipient", path, &recipient); err != nil {
 		return nil, err
 	}
 
