@@ -356,39 +356,50 @@ func TestClassifyTransactionType(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name     string
-		wiseType DetailType
-		amount   float64
-		want     TransactionType
+		name       string
+		wiseType   DetailType
+		totalCents int64
+		want       TransactionType
 	}{
-		{name: "card payment debit", wiseType: DetailTypeCardPayment, amount: -10, want: TransactionTypeCard},
+		{name: "card payment debit", wiseType: DetailTypeCardPayment, totalCents: -1000, want: TransactionTypeCard},
 		{
-			name:     "card payment credit still card (not refund)",
-			wiseType: DetailTypeCardPayment,
-			amount:   25,
-			want:     TransactionTypeCard,
+			name:       "card payment credit still card (not refund)",
+			wiseType:   DetailTypeCardPayment,
+			totalCents: 2500,
+			want:       TransactionTypeCard,
 		},
-		{name: "card payment zero still card", wiseType: DetailTypeCardPayment, amount: 0, want: TransactionTypeCard},
-		{name: "card refund positive", wiseType: DetailTypeCardRefund, amount: 25, want: TransactionTypeRefund},
-		{name: "card refund zero", wiseType: DetailTypeCardRefund, amount: 0, want: TransactionTypeCard},
-		{name: "transfer", wiseType: DetailTypeTransfer, amount: 100, want: TransactionTypeTransfer},
-		{name: "payment", wiseType: DetailTypePayment, amount: -50, want: TransactionTypePayment},
-		{name: "conversion", wiseType: DetailTypeConversion, amount: -100, want: TransactionTypeExchange},
-		{name: "exchange alias", wiseType: DetailTypeExchange, amount: 50, want: TransactionTypeExchange},
-		{name: "fee", wiseType: DetailTypeFee, amount: -0.5, want: TransactionTypeFee},
-		{name: "unknown positive is credit", wiseType: "SOMETHING_NEW", amount: 10, want: TransactionTypeCredit},
-		{name: "unknown negative is debit", wiseType: "SOMETHING_NEW", amount: -10, want: TransactionTypeDebit},
-		{name: "unknown zero is debit", wiseType: "SOMETHING_NEW", amount: 0, want: TransactionTypeDebit},
+		{
+			name:       "card payment zero still card",
+			wiseType:   DetailTypeCardPayment,
+			totalCents: 0,
+			want:       TransactionTypeCard,
+		},
+		{name: "card refund positive", wiseType: DetailTypeCardRefund, totalCents: 2500, want: TransactionTypeRefund},
+		{name: "card refund zero", wiseType: DetailTypeCardRefund, totalCents: 0, want: TransactionTypeCard},
+		{name: "transfer", wiseType: DetailTypeTransfer, totalCents: 10000, want: TransactionTypeTransfer},
+		{name: "payment", wiseType: DetailTypePayment, totalCents: -5000, want: TransactionTypePayment},
+		{name: "conversion", wiseType: DetailTypeConversion, totalCents: -10000, want: TransactionTypeExchange},
+		{name: "exchange alias", wiseType: DetailTypeExchange, totalCents: 5000, want: TransactionTypeExchange},
+		{name: "fee", wiseType: DetailTypeFee, totalCents: -50, want: TransactionTypeFee},
+		{name: "unknown positive is credit", wiseType: "SOMETHING_NEW", totalCents: 1000, want: TransactionTypeCredit},
+		{name: "unknown negative is debit", wiseType: "SOMETHING_NEW", totalCents: -1000, want: TransactionTypeDebit},
+		{name: "unknown zero is debit", wiseType: "SOMETHING_NEW", totalCents: 0, want: TransactionTypeDebit},
+		{
+			name:       "sub-cent amount is debit (cents floor)",
+			wiseType:   "SOMETHING_NEW",
+			totalCents: 0,
+			want:       TransactionTypeDebit,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := classifyTransactionType(tt.wiseType, tt.amount)
+			got := classifyTransactionType(tt.wiseType, tt.totalCents)
 			if got != tt.want {
-				t.Errorf("classifyTransactionType(%q, %v) = %v, want %v",
-					tt.wiseType, tt.amount, got, tt.want)
+				t.Errorf("classifyTransactionType(%q, %d) = %v, want %v",
+					tt.wiseType, tt.totalCents, got, tt.want)
 			}
 		})
 	}

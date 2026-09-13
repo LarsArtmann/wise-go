@@ -75,6 +75,8 @@ func mapProfile(p raw.Profile) (Profile, error) {
 
 	return Profile{
 		ID:        id.NewID[ProfileBrand](p.ID),
+		UserID:    NewUserID(p.UserID),
+		PublicID:  p.PublicID,
 		Type:      profileType,
 		Name:      name,
 		Email:     p.Email,

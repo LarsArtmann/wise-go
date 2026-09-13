@@ -129,6 +129,9 @@ func mapUser(user raw.User) (User, error) {
 	return result, nil
 }
 
+// wiseDateFormat is the layout of Wise's date-only values ("1977-01-01").
+const wiseDateFormat = "2006-01-02"
+
 // parseWiseDate parses a Wise date-only value ("1977-01-01"). An empty value
 // yields the zero time; zoneless dates are interpreted as UTC.
 func parseWiseDate(s string) (time.Time, error) {
@@ -136,7 +139,7 @@ func parseWiseDate(s string) (time.Time, error) {
 		return time.Time{}, nil
 	}
 
-	t, err := time.Parse("2006-01-02", s)
+	t, err := time.Parse(wiseDateFormat, s)
 	if err != nil {
 		return time.Time{}, fmt.Errorf("parse date %q: %w", s, err)
 	}

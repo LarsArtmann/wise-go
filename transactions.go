@@ -86,7 +86,7 @@ func mapTransaction(
 				t.Date, profileID.Get(), balanceID.Get(), currency))
 	}
 
-	txType := classifyTransactionType(DetailType(t.Details.Type), t.Amount.Value)
+	txType := classifyTransactionType(DetailType(t.Details.Type), t.Amount.Cents())
 
 	total, err := toMoney(t.Amount)
 	if err != nil {
@@ -175,12 +175,12 @@ const (
 // does not change with sign). CARD_REFUND is amount-dependent: positive amounts
 // are classified as refunds, non-positive fall back to card. See README for the
 // full contract.
-func classifyTransactionType(wiseType DetailType, amount float64) TransactionType {
+func classifyTransactionType(wiseType DetailType, totalCents int64) TransactionType {
 	switch wiseType {
 	case DetailTypeCardPayment:
 		return TransactionTypeCard
 	case DetailTypeCardRefund:
-		if amount > 0 {
+		if totalCents > 0 {
 			return TransactionTypeRefund
 		}
 
@@ -194,7 +194,7 @@ func classifyTransactionType(wiseType DetailType, amount float64) TransactionTyp
 	case DetailTypeFee:
 		return TransactionTypeFee
 	default:
-		if amount > 0 {
+		if totalCents > 0 {
 			return TransactionTypeCredit
 		}
 

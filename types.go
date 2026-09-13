@@ -83,7 +83,12 @@ func (m Money) String() string {
 
 // Profile is the parsed representation of a Wise profile.
 type Profile struct {
-	ID        ProfileID
+	ID ProfileID
+	// UserID is the owning user account's ID (GetUser reads it).
+	UserID UserID
+	// PublicID is Wise's opaque public identifier for the profile (wire
+	// "publicId") — a reference string, distinct from the numeric ID.
+	PublicID  string
 	Type      ProfileType
 	Name      string
 	Email     string

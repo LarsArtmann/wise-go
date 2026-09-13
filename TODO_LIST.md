@@ -89,19 +89,24 @@ findings (GO-2026-6218, -6090, -5972, -5026) were stdlib bugs fixed in
 go1.26.6; the go1.26.7 toolchain clears them all. CI re-runs this in the
 `govulncheck` job once the workflow is re-enabled.
 
-[ ] Close the dedup-refactor follow-ups
-(`docs/status/2026-08-21_23-10_dedup-refactor-self-review.md` f): direct table
-test for `requireID` (+ pin its error contract); route `fetchByID` through
-`requireID` (currently two zero-ID idioms, `helpers.go:37`); add
-`SourceOfFundsOther`/`TransferNature` to `CreateTransferRequest` and delete the
-`//nolint:exhaustruct` at `transfers.go:205` (verify field acceptance in
-`docs/reviews/wise-api-openapi.json` first); inspect the 6 suppressed art-dupl
-groups; decide `requireNonEmpty` for non-ID string validations.
+[x] Close the dedup-refactor follow-ups — DONE 2026-09-13: `TestRequireID`
+pins the contract (`[rejection:wise.<domain>.invalid_request] <field> is
+required`, int64 + string rows); `fetchByID` now takes the branded ID and
+routes through `requireID` (4 callers updated, message contract unchanged);
+`SourceOfFundsOther`/`TransferNature` were NOT added — spec verification
+showed the create-transfer schema's details accept exactly the five keys
+`CreateTransferRequest` already carries, so the `nolint` at `transfers.go:205`
+stays as the spec-verified marker; art-dupl re-inspected (ONE suppressed
+group today, the TransferRequirement mirror — the "6 groups" figure was
+stale); `requireNonEmpty` declined with rationale in AGENTS.md.
 
-[ ] Error-context polish (`docs/status/2026-08-08_12-27_erraudit-review-and-error-context-improvements.md`):
-capture the read error in `body, _ := readBody(resp)` (`client.go:382`); add
-raw-input values to `map*` error contexts; `ErrorContext`/`IsRetryable` on
-`AuthError`/`NotFoundError`; document the error-context convention in AGENTS.md.
+[x] Error-context polish — DONE 2026-09-13: `checkError` surfaces unreadable
+response bodies instead of silently empty ones; `map*` errors carry raw wire
+values (`total amount %v %q`, `amount %v %q`, `reserved amount %v %q`);
+`SCAChallengeError.ErrorContext` exposes the 2FA verdict headers;
+`AuthError`/`NotFoundError` keep their promoted contexts (pinned by
+`TestErrorContexts`); retryability contract pinned by `TestIsRetryableContract`;
+convention documented in AGENTS.md.
 
 [ ] Quality long-tail micro-batch (each ≤30 min, recurring across 8+ old reports):
 `classifyTransactionType` takes `amount float64` (`transactions.go:178`) — pass
