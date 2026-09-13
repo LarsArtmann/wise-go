@@ -112,8 +112,8 @@ claim here can be verified against the implementation.
 
 | Feature                           | Status           | Evidence                                                                                                      |
 | --------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------- |
-| Godoc examples for the public API | FULLY_FUNCTIONAL | `example_test.go`; 20 `Example*` funcs (compile-only doc examples + 3 runnable) covering every resource group |
-| README API reference              | FULLY_FUNCTIONAL | All 14 resources documented with runnable snippets + TOC                                                      |
+| Godoc examples for the public API | FULLY_FUNCTIONAL | `example_test.go`; 22 `Example*` funcs (compile-only doc examples + 3 runnable) covering every resource group |
+| README API reference              | FULLY_FUNCTIONAL | All 15 resources documented with runnable snippets + TOC                                                      |
 
 ## API surface expansion (v0.8.0)
 
@@ -165,4 +165,4 @@ claim here can be verified against the implementation.
 
 | Feature                      | Status  | Notes                                          |
 | ---------------------------- | ------- | ---------------------------------------------- |
-| Service-client sub-structure | PLANNED | Trigger reached: 14 resources (see ROADMAP.md) |
+| Service-client sub-structure | PLANNED | Trigger reached: 15 resources (see ROADMAP.md) |

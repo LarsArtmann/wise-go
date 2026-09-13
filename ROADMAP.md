@@ -29,10 +29,11 @@ preserving the architectural decisions that make the codebase maintainable.
 
 Today: tiers 1 and 2 of
 `docs/planning/2026-08-19_wise-api-full-implementation-plan.md` are complete —
-33 endpoint methods across 14 resources. The core transfer flow is live end to end:
+37 endpoint methods across 15 resources. The core transfer flow is live end to end:
 quotes (including account requirements and the two-pass refresh), recipients,
 transfers (including receipts and MT103 payout info), funding, delivery estimates,
-exchange rates, transfer-requirements validation.
+exchange rates, transfer-requirements validation — plus webhook subscription CRUD
+and typed event parsing on the 2026Q3 surface.
 
 ### Shipped 2026-08-21 (previously near-term)
 
@@ -177,10 +178,10 @@ is clear.
 
 ### Trigger: resource count crosses ~6–8 — REACHED
 
-The SDK now has 14 resources (profiles, users, balances, multi-currency account,
+The SDK now has 15 resources (profiles, users, balances, multi-currency account,
 bank details, transactions/statements, transfers/receipts, funding, quotes,
 recipients, exchange rates, delivery estimates, transfer requirements,
-currencies) and 33 endpoint methods on the flat `client.X` surface — the core
+currencies, webhooks) and 37 endpoint methods on the flat `client.X` surface — the core
 flow including `FundTransfer` is complete (2026-08-21). The threshold documented
 here
 has been crossed; the open question is WHEN to pay the refactor cost. The
