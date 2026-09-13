@@ -35,8 +35,10 @@
 
 - **`Accept-Minor-Version: 1` on account-requirements** — Wise versions the account-requirements response schema; minor version 1 includes the recipient name/email fields and is what Wise recommends for all new integrations. The SDK always sends it on those endpoints via the `extraHeaders` hook (see `quotes.go`), never via `setHeaders` (it is endpoint-specific content negotiation, not auth). Any future account-requirements endpoint must send the same header.
 
-- **Coverage badge job** — `.github/workflows/ci.yml` runs a `coverage-badge` job after every push to master: it measures coverage, rewrites the percentage in README.md, and pushes back. It owns its own concurrency group with `cancel-in-progress: false` (queue, never abort mid-push) and rebases before pushing. Consequence: the badge percentage in the repo lags local measurement until the branch is pushed.
+- **Coverage badge job** — `.github/workflows/ci.yml` has a `coverage-badge` job that runs after every push to master WHEN CI IS ENABLED: it measures coverage, rewrites the percentage in README.md, and pushes back. It owns its own concurrency group with `cancel-in-progress: false` (queue, never abort mid-push) and rebases before pushing. Consequence: the badge percentage in the repo lags local measurement until the branch is pushed — and it is currently FROZEN because the CI workflow is disabled on GitHub (see Build & Dev); the badge shows the last CI-measured value, not current coverage.
 - **Godoc examples are compile-only** — every `Example*` func in `example_test.go` carries `//nolint:testableexamples` because the examples deliberately have no `// Output:` comment: they construct real clients and would hit the live API if executed. They exist for godoc, not for `go test`; do not add Output comments or remove the nolints.
+
+- **`GetTransferReceipt` 404 means "no receipt yet"** — Wise answers the receipt endpoint with 404 until the transfer reaches `outgoing_payment_sent`; the SDK surfaces `*NotFoundError`, which consumers must treat as "not paid out (yet)", not a hard failure. Not SCA-protected (unlike statements).
 
 ## Conventions
 

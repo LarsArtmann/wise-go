@@ -14,12 +14,14 @@ The unofficial Go SDK for the [Wise](https://wise.com) (TransferWise) API.
 
 Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise's wire types directly — `float64` for money, untyped string IDs, inconsistent date formats. **wise-go fills that gap** with hand-written types that make invalid states hard to reach: monetary amounts as `int64` cents (never `float64`), branded IDs that prevent mixing `ProfileID` with `BalanceID` at compile time, and behavioral error classification so you can retry on intent rather than string-matching status codes.
 
-> **Status: active development (v0.8.1).** The core transfer flow is implemented
-> end-to-end: profiles, balances, transactions, exchange rates, quotes (with
-> `paymentOptions` + fees), recipients, transfers (create / get / list /
-> cancel / **fund**), delivery estimates, and transfer-requirements validation.
-> See [FEATURES.md](FEATURES.md) for the honest inventory and
-> [ROADMAP.md](ROADMAP.md) for what's next.
+> **Status: active development (v0.10.0).** The core transfer flow is implemented
+> end-to-end — profiles, users, balances, transactions and statement file downloads
+> (CSV/PDF/XLSX/CAMT.053/MT940/QIF), exchange rates, quotes (with `paymentOptions`
+> + fees), recipients, transfers (create / get / list / cancel / **fund** /
+> receipt / MT103 payout info), delivery estimates, and transfer-requirements
+> validation — plus webhook signature verification, observability hooks, and
+> balance lifecycle management. See [FEATURES.md](FEATURES.md) for the honest
+> inventory and [ROADMAP.md](ROADMAP.md) for what's next.
 
 > **Design story:** [I needed a Go SDK for Wise. Nobody built one.](https://larsartmann.com/blog/when-the-api-has-no-spec-your-types-are-the-spec)
 
@@ -36,6 +38,7 @@ Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise'
   - [Balances](#balances)
   - [Transactions](#transactions)
   - [Statements](#statements)
+  - [Transfer receipts & MT103](#transfer-receipts--mt103)
   - [Quotes](#quotes)
   - [Recipients](#recipients)
   - [Exchange rates](#exchange-rates)
@@ -64,6 +67,7 @@ Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise'
 - **Two-layer type system** — Raw wire types live in `internal/raw`; result types expose clean Go with `Money` value objects and branded `Currency`. The mapping is the only bridge.
 - **Write operations** — create quotes (authenticated and unauthenticated), recipients, and transfers; fund transfers from a balance; cancel transfers; validate transfer requirements; fetch delivery estimates.
 - **SCA challenge support** — SCA-protected endpoints (e.g. balance statements for UK/EEA profiles) surface as `*SCAChallengeError` with the one-time approval token; complete the challenge with `WithSCAApprovalToken` and retry. See [SCA](#strong-customer-authentication-sca).
+- **Statement & receipt downloads** — balance statements in CSV/PDF/XLSX/CAMT.053/MT940/QIF, transfer receipts (PDF), and MT103 payout proofs returned as raw bytes with client-side validation.
 - **Tolerant timestamp handling** — Wise emits four different timestamp formats. One parser accepts them all (zoneless = UTC), and outgoing query timestamps are normalized to UTC `Z` (Wise rejects zone offsets with 422).
 - **Sandbox support** — One-line switch to the Wise sandbox environment.
 - **Minimal dependencies** — Three focused production deps: `failsafe-go`, `go-branded-id`, `go-error-family`.
