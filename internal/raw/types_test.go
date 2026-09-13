@@ -14,6 +14,7 @@ func TestProfileWireJSON(t *testing.T) {
 	t.Parallel()
 
 	var profile Profile
+
 	body := []byte(`{
 		"id": 1,
 		"publicId": "pub-1",
@@ -43,6 +44,7 @@ func TestSubscriptionWireJSON(t *testing.T) {
 	t.Parallel()
 
 	var subscription Subscription
+
 	body := []byte(`{
 		"id": "72195556-e5cb-495e-a010-b37a4f2a3043",
 		"name": "Payout watcher",
@@ -70,6 +72,7 @@ func TestWebhookEventEnvelopeWireJSON(t *testing.T) {
 	t.Parallel()
 
 	var envelope WebhookEventEnvelope
+
 	body := []byte(`{
 		"data": {"any": "shape"},
 		"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
@@ -95,6 +98,7 @@ func TestTransferPayoutFailureDataWireJSON(t *testing.T) {
 	t.Parallel()
 
 	var payload TransferPayoutFailureData
+
 	body := []byte(`{
 		"transfer_id": 111,
 		"profile_id": 222,
