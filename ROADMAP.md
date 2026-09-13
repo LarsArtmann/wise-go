@@ -73,6 +73,19 @@ explicit approval.
   `api.wise-sandbox.com`. The workflow and test skeleton are in place
   (manual dispatch, key-gated); blocked on a sandbox API key.
 
+- **Application-level webhook subscriptions (deferred 2026-09-13)** — the spec
+  also exposes `/applications/{clientKey}/subscriptions` (2 CRUD ops + GET +
+  `test-notifications`), but they require a **client-credentials token**
+  (`clientKey` provisioned by Wise tech support), while wise-go is
+  user-API-key-only. Options on the table: (a) stay user-token-only — zero
+  new auth surface, app-level endpoints stay out; (b) add a client-credentials
+  token mode — pulls OAuth `POST /oauth/token` into scope (tier-4 #36) plus a
+  second auth strategy in `setHeaders`. Consequence of (a): platform
+  integrators managing subscriptions per-customer keep using profile-level
+  subscriptions; consequence of (b): real auth-surface growth that the flat
+  v1.0 surface should not carry without a demand signal. `TestWebhookSubscription`
+  (spec: app-level only) ships with whichever option wins.
+
 ### Long-term
 
 - **Tier 3/4 of the plan** — batch groups, direct debit, bulk settlement, cards,
