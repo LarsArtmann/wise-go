@@ -231,12 +231,13 @@ func mapBalance(b raw.Balance) (Balance, error) {
 
 	amount, err := toMoney(b.Amount)
 	if err != nil {
-		return Balance{}, fmt.Errorf("amount: %w", err)
+		return Balance{}, fmt.Errorf("amount %v %q: %w", b.Amount.Value, b.Amount.Currency, err)
 	}
 
 	reserved, err := toMoney(b.ReservedAmount)
 	if err != nil {
-		return Balance{}, fmt.Errorf("reserved amount: %w", err)
+		return Balance{}, fmt.Errorf("reserved amount %v %q: %w",
+			b.ReservedAmount.Value, b.ReservedAmount.Currency, err)
 	}
 
 	return Balance{

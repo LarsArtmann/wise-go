@@ -383,7 +383,12 @@ func (c *Client) checkError(resp *http.Response) error {
 		return nil
 	}
 
-	body, _ := readBody(resp)
+	body, readErr := readBody(resp)
+	if readErr != nil && body == "" {
+		// An unreadable body must not masquerade as an empty Wise response —
+		// surface the read failure in the error's message/body instead.
+		body = fmt.Sprintf("(response body could not be read: %v)", readErr)
+	}
 
 	return newAPIError(
 		resp.StatusCode,

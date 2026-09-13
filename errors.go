@@ -121,6 +121,14 @@ func (e *SCAChallengeError) ErrorCode() string {
 	return errorCodeSCA
 }
 
+func (e *SCAChallengeError) ErrorContext() map[string]string {
+	return map[string]string{
+		"status_code":           strconv.Itoa(e.StatusCode),
+		"approval_result":       e.Headers.Get(HeaderTwoFAApprovalResult),
+		"approval_token_issued": strconv.FormatBool(e.TwoFAApprovalToken() != ""),
+	}
+}
+
 func (e *SCAChallengeError) Error() string {
 	return fmt.Sprintf(
 		"wise: sca challenge (%d): strong customer authentication required "+

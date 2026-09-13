@@ -90,7 +90,7 @@ func mapTransaction(
 
 	total, err := toMoney(t.Amount)
 	if err != nil {
-		return Transaction{}, fmt.Errorf("total amount: %w", err)
+		return Transaction{}, fmt.Errorf("total amount %v %q: %w", t.Amount.Value, t.Amount.Currency, err)
 	}
 
 	amount := total

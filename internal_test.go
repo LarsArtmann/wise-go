@@ -54,7 +54,8 @@ func TestRequireID(t *testing.T) {
 	}{
 		{
 			"zero int64 ID", requireID(NewProfileID(0), "wise.profile.invalid_request", "profileID"),
-			"wise.profile.invalid_request", "profileID is required",
+			"wise.profile.invalid_request",
+			"[rejection:wise.profile.invalid_request] profileID is required",
 		},
 		{
 			"nonzero int64 ID", requireID(NewProfileID(12345), "wise.profile.invalid_request", "profileID"),
@@ -62,15 +63,18 @@ func TestRequireID(t *testing.T) {
 		},
 		{
 			"empty string ID", requireID(NewQuoteID(""), "wise.quote.invalid_request", "quoteID"),
-			"wise.quote.invalid_request", "quoteID is required",
+			"wise.quote.invalid_request",
+			"[rejection:wise.quote.invalid_request] quoteID is required",
 		},
 		{
 			"nonempty string ID", requireID(NewQuoteID("11114444-..."), "wise.quote.invalid_request", "quoteID"),
 			"", "",
 		},
 		{
-			"empty webhook subscription ID", requireID(NewWebhookSubscriptionID(""), "wise.webhook.invalid_request", "subscriptionID"),
-			"wise.webhook.invalid_request", "subscriptionID is required",
+			"empty webhook subscription ID",
+			requireID(NewWebhookSubscriptionID(""), "wise.webhook.invalid_request", "subscriptionID"),
+			"wise.webhook.invalid_request",
+			"[rejection:wise.webhook.invalid_request] subscriptionID is required",
 		},
 	}
 
@@ -1861,6 +1865,65 @@ func TestErrorContexts(t *testing.T) {
 			t.Errorf("ErrorCode = %q, want %q", got, errorCodeSCA)
 		}
 	})
+
+	t.Run("SCAChallengeError context carries the 2FA verdict headers", func(t *testing.T) {
+		t.Parallel()
+
+		headers := http.Header{}
+		headers.Set(HeaderTwoFAApprovalResult, "REJECTED")
+		headers.Set(HeaderTwoFAApproval, "ott-123")
+		scaErr := &SCAChallengeError{APIError: APIError{StatusCode: http.StatusForbidden, Headers: headers}}
+
+		ctx := scaErr.ErrorContext()
+		if ctx["status_code"] != "403" {
+			t.Errorf("ErrorContext = %v, want status_code 403", ctx)
+		}
+
+		if ctx["approval_result"] != "REJECTED" {
+			t.Errorf("ErrorContext = %v, want approval_result REJECTED", ctx)
+		}
+
+		if ctx["approval_token_issued"] != "true" {
+			t.Errorf("ErrorContext = %v, want approval_token_issued true", ctx)
+		}
+	})
+
+	t.Run("AuthError and NotFoundError expose the promoted status-code context", func(t *testing.T) {
+		t.Parallel()
+
+		authErr := &AuthError{APIError: APIError{StatusCode: http.StatusUnauthorized}}
+		if ctx := authErr.ErrorContext(); ctx["status_code"] != "401" {
+			t.Errorf("ErrorContext = %v, want status_code 401", ctx)
+		}
+
+		notFoundErr := &NotFoundError{APIError: APIError{StatusCode: http.StatusNotFound}}
+		if ctx := notFoundErr.ErrorContext(); ctx["status_code"] != "404" {
+			t.Errorf("ErrorContext = %v, want status_code 404", ctx)
+		}
+	})
+}
+
+// TestIsRetryableContract pins the retryability contract of the six error
+// types: only RateLimitError and ServerError are retryable. The four
+// non-retryable types deliberately do not implement IsRetryable — absence is
+// the convention for "not retryable".
+func TestIsRetryableContract(t *testing.T) {
+	t.Parallel()
+
+	for _, err := range []error{
+		&APIError{}, &AuthError{}, &SCAChallengeError{}, &NotFoundError{},
+	} {
+		if _, implements := err.(interface{ IsRetryable() bool }); implements {
+			t.Errorf("%T implements IsRetryable, want absence (non-retryable by convention)", err)
+		}
+	}
+
+	for _, err := range []error{&RateLimitError{}, &ServerError{}} {
+		retryable, implements := err.(interface{ IsRetryable() bool })
+		if !implements || !retryable.IsRetryable() {
+			t.Errorf("%T should implement IsRetryable()=true", err)
+		}
+	}
 }
 
 // TestCreateRecipientRequestValidate covers the full missing-field matrix of
