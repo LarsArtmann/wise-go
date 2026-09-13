@@ -48,14 +48,14 @@
 6. **Tier 4% — webhook subscription types (7.1–7.7).** Spec-verified:
    subscription IDs are **UUID strings** (→ `WebhookSubscriptionID =
    id.ID[WebhookSubscriptionBrand, string]`), request = `name` + `trigger_on`
-   + `delivery{version,url}`. Shipped: `internal/raw` wire types
-   (Subscription/Delivery/Creator/Scope), public `WebhookSubscription`,
-   `WebhookDelivery`, `WebhookCreator(+Type)`, `WebhookScope(+Domain)`,
-   `CreateWebhookSubscriptionRequest` with client-side validation
-   (HTTPS-only URL, all required fields) and `toWire()`, plus the
-   `WebhookEventType` **open enum with 33 documented constants** (union of
-   the OpenAPI spec's references and the live webhook-event page). Flake
-   fileset updated; build green.
+   - `delivery{version,url}`. Shipped: `internal/raw` wire types
+     (Subscription/Delivery/Creator/Scope), public `WebhookSubscription`,
+     `WebhookDelivery`, `WebhookCreator(+Type)`, `WebhookScope(+Domain)`,
+     `CreateWebhookSubscriptionRequest` with client-side validation
+     (HTTPS-only URL, all required fields) and `toWire()`, plus the
+     `WebhookEventType` **open enum with 33 documented constants** (union of
+     the OpenAPI spec's references and the live webhook-event page). Flake
+     fileset updated; build green.
 7. **Tier 4% — profile webhook CRUD (8.1–8.5).** Four client methods —
    `CreateProfileWebhookSubscription`, `ListProfileWebhookSubscriptions`,
    `GetProfileWebhookSubscription`, `DeleteProfileWebhookSubscription` (204)
@@ -67,11 +67,11 @@
    timestamps as corruption.
 8. **Tier 4% — BDD suite for the four methods (9.1–9.5).** Ginkgo specs
    covering: create happy path **with wire-body assertions** (snake_case keys)
-   + 400 + 401; the five-case client-side validation matrix (missing
-   name/triggerOn/version, non-HTTPS URL, zero profile ID — no network call);
-   list (two subscriptions ordered + empty + corrupt-`created_at` corruption +
-   401 + zero ID); get (happy + 404 + both zero-ID rejections); delete (204 +
-   404 + zero-ID).
+   - 400 + 401; the five-case client-side validation matrix (missing
+     name/triggerOn/version, non-HTTPS URL, zero profile ID — no network call);
+     list (two subscriptions ordered + empty + corrupt-`created_at` corruption +
+     401 + zero ID); get (happy + 404 + both zero-ID rejections); delete (204 +
+     404 + zero-ID).
 9. **Tier 4% — typed webhook event decoding (12.1–12.6, 14.1–14.3).**
    `WebhookEvent` envelope (schema version, subscription ID, event type,
    tolerant `sent_at` via `parseWiseTimestamp`, `jsontext.Value` raw data),
@@ -258,8 +258,8 @@
 5. **A placeholder survived briefly in CHANGELOG** ("- Nothing yet below."
    under the new Added entries) — self-caught on re-read, removed.
 6. **Living-doc counts went stale mid-session** (see b4): I updated
-   FEATURES/CHANGELOG/TODO for the webhook *features* but did not refresh
-   the *counts* (33→37 methods, 20→22 examples, 14→15 resources) that the
+   FEATURES/CHANGELOG/TODO for the webhook _features_ but did not refresh
+   the _counts_ (33→37 methods, 20→22 examples, 14→15 resources) that the
    same changes invalidates. This is exactly the drift class the docs-health
    pass hunts; it must be closed in the next pass (f1–f3).
 7. **Not fucked up but worth stating:** nothing was committed by hand and

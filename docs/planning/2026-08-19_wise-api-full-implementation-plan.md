@@ -92,24 +92,24 @@ This plan maps the full API surface, applies Pareto prioritisation, and defines 
 
 ### Tier 4 — Specialised / partner-only / long tail
 
-| #  | Category                             | Count | Notes                                                                          |
-| -- | ------------------------------------ | ----- | ------------------------------------------------------------------------------ |
-| 36 | OAuth token                          | 1     | `POST /oauth/token` — only if SDK takes over token exchange                    |
-| 37 | JOSE playground                      | 6     | Signature/encryption testing                                                   |
-| 38 | Users write                          | 4     | Signup, exists, contact email                                                  |
-| 39 | Claim account                        | 1     | `POST /user/claim-account`                                                     |
-| 40 | Profile verification                 | 8     | KYC review, additional verification, FaceTec                                   |
-| 41 | Link requests / embedded flows       | 4     | iframe/webview helpers                                                         |
-| 42 | SCA / one-time tokens                | 10    | OTT status, SCA sessions, OTP channels                                         |
-| 43 | PIN / facemaps / device fingerprints | 8     | JWE-encrypted SCA factors                                                      |
-| 44 | Cards                                | ~25   | Orders, transactions, limits, spend controls, disputes, sensitive details, 3DS |
-| 45 | Digital wallets                      | 4     | Apple/Google Pay push provisioning                                             |
-| 46 | Disputes                             | 7     | Card dispute management                                                        |
-| 47 | Incoming transfers                   | 1     | Partner-only                                                                   |
-| 48 | Payins                               | 1     | PayNow QR                                                                      |
+| #  | Category                             | Count                                                                                                                                                                   | Notes                                                                          |
+| -- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| 36 | OAuth token                          | 1                                                                                                                                                                       | `POST /oauth/token` — only if SDK takes over token exchange                    |
+| 37 | JOSE playground                      | 6                                                                                                                                                                       | Signature/encryption testing                                                   |
+| 38 | Users write                          | 4                                                                                                                                                                       | Signup, exists, contact email                                                  |
+| 39 | Claim account                        | 1                                                                                                                                                                       | `POST /user/claim-account`                                                     |
+| 40 | Profile verification                 | 8                                                                                                                                                                       | KYC review, additional verification, FaceTec                                   |
+| 41 | Link requests / embedded flows       | 4                                                                                                                                                                       | iframe/webview helpers                                                         |
+| 42 | SCA / one-time tokens                | 10                                                                                                                                                                      | OTT status, SCA sessions, OTP channels                                         |
+| 43 | PIN / facemaps / device fingerprints | 8                                                                                                                                                                       | JWE-encrypted SCA factors                                                      |
+| 44 | Cards                                | ~25                                                                                                                                                                     | Orders, transactions, limits, spend controls, disputes, sensitive details, 3DS |
+| 45 | Digital wallets                      | 4                                                                                                                                                                       | Apple/Google Pay push provisioning                                             |
+| 46 | Disputes                             | 7                                                                                                                                                                       | Card dispute management                                                        |
+| 47 | Incoming transfers                   | 1                                                                                                                                                                       | Partner-only                                                                   |
+| 48 | Payins                               | 1                                                                                                                                                                       | PayNow QR                                                                      |
 | 49 | Webhook subscriptions                | ~~8~~ 9 (corrected 2026-09-13: the OpenAPI spec has 9 operations across 5 paths — 2 app-level CRUD + 2 app-level get/delete + test-notifications + 4 profile-level ops) | Application + profile level                                                    |
-| 50 | Cases                                | 3     | Partner support                                                                |
-| 51 | Sandbox simulations                  | ~15   | Testing-only helpers                                                           |
+| 50 | Cases                                | 3                                                                                                                                                                       | Partner support                                                                |
+| 51 | Sandbox simulations                  | ~15                                                                                                                                                                     | Testing-only helpers                                                           |
 
 ---
 

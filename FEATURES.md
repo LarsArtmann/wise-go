@@ -152,14 +152,14 @@ claim here can be verified against the implementation.
 
 ## Webhooks
 
-| Feature                                                         | Status           | Evidence                                                                |
-| --------------------------------------------------------------- | ---------------- | ----------------------------------------------------------------------- |
-| `ParseWebhookPublicKey` (PKIX + PKCS#1 PEM, RSA-only)           | FULLY_FUNCTIONAL | `webhooks.go:27`; garbage/non-RSA input rejected with clear errors      |
-| `VerifyWebhookSignature` (RSA-SHA256 over raw body)             | FULLY_FUNCTIONAL | `webhooks.go:58`; valid/tampered/wrong-key/malformed/empty/5 MiB tested |
-| `HeaderWebhookSignature` / `HeaderDeliveryID` constants         | FULLY_FUNCTIONAL | `webhooks.go:16,22`; delivery-dedup guidance in README Webhooks section |
-| Profile webhook subscription CRUD (`Create`/`List`/`Get`/`Delete`) | FULLY_FUNCTIONAL | `webhooks.go:98,125,157,186`; BDD-tested (happy/400/401/404/204/validation); app-level scope deferred (ROADMAP) |
-| `WebhookEventType` open enum (33 documented event constants)    | FULLY_FUNCTIONAL | `types.go`; unknown event types pass through by design                  |
-| `ParseWebhookEvent` envelope + typed payloads (`TransferStateChange`, `TransferPayoutFailure`, `BalanceCredit`) | FULLY_FUNCTIONAL | `webhooks.go:291+`; unknown-event passthrough + corruption-classified malformed-envelope tests |
+| Feature                                                                                                         | Status           | Evidence                                                                                                        |
+| --------------------------------------------------------------------------------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------- |
+| `ParseWebhookPublicKey` (PKIX + PKCS#1 PEM, RSA-only)                                                           | FULLY_FUNCTIONAL | `webhooks.go:27`; garbage/non-RSA input rejected with clear errors                                              |
+| `VerifyWebhookSignature` (RSA-SHA256 over raw body)                                                             | FULLY_FUNCTIONAL | `webhooks.go:58`; valid/tampered/wrong-key/malformed/empty/5 MiB tested                                         |
+| `HeaderWebhookSignature` / `HeaderDeliveryID` constants                                                         | FULLY_FUNCTIONAL | `webhooks.go:16,22`; delivery-dedup guidance in README Webhooks section                                         |
+| Profile webhook subscription CRUD (`Create`/`List`/`Get`/`Delete`)                                              | FULLY_FUNCTIONAL | `webhooks.go:98,125,157,186`; BDD-tested (happy/400/401/404/204/validation); app-level scope deferred (ROADMAP) |
+| `WebhookEventType` open enum (33 documented event constants)                                                    | FULLY_FUNCTIONAL | `types.go`; unknown event types pass through by design                                                          |
+| `ParseWebhookEvent` envelope + typed payloads (`TransferStateChange`, `TransferPayoutFailure`, `BalanceCredit`) | FULLY_FUNCTIONAL | `webhooks.go:291+`; unknown-event passthrough + corruption-classified malformed-envelope tests                  |
 
 ## Deferred (demand-gated, not started)
 
