@@ -2199,7 +2199,7 @@ func FuzzParseWiseTimestamp(f *testing.F) {
 	f.Add("garbage")
 
 	f.Fuzz(func(t *testing.T, s string) {
-		got, err := parseWiseTimestamp(s) //nolint:govet // errcheck-style triage is the fuzz invariant itself
+		got, err := parseWiseTimestamp(s)
 		if err != nil {
 			return // unparseable input is fine; panics are not
 		}

@@ -59,7 +59,9 @@
         ./internal/raw/types.go
         ./internal/raw/transfers.go
         ./internal/raw/webhooks.go
+        ./internal/raw/types_test.go
         ./internal_test.go
+        ./bench_test.go
         ./example_test.go
         ./wise_test.go
         ./sandbox_live_test.go
