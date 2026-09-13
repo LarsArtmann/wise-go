@@ -5,14 +5,17 @@ package raw
 // equivalents). Field set mirrors the documented Subscription response;
 // unknown fields are ignored by the JSON decoder so Wise can add fields
 // without breaking the SDK.
-type Subscription struct { //nolint:tagliatelle // Wise's webhook wire uses snake_case (trigger_on, created_at, created_by), unlike the camelCase core API
-	ID        string               `json:"id"`
-	Name      string               `json:"name"`
+type Subscription struct {
+	ID string `json:"id"`
+	//nolint:tagliatelle // Wise's webhook wire uses snake_case, unlike the camelCase core API
+	Name string `json:"name"`
+	//nolint:tagliatelle // Wise's webhook wire uses snake_case, unlike the camelCase core API
 	TriggerOn string               `json:"trigger_on"`
 	Delivery  SubscriptionDelivery `json:"delivery"`
-	CreatedAt string               `json:"created_at"`
-	CreatedBy SubscriptionCreator  `json:"created_by"`
-	Scope     SubscriptionScope    `json:"scope"`
+	//nolint:tagliatelle // Wise's webhook wire uses snake_case, unlike the camelCase core API
+	CreatedAt string              `json:"created_at"`
+	CreatedBy SubscriptionCreator `json:"created_by"`
+	Scope     SubscriptionScope   `json:"scope"`
 }
 
 // SubscriptionDelivery is the delivery block of a Subscription: the HTTPS

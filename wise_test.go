@@ -3459,4 +3459,369 @@ var _ = Describe("Wise Client", func() {
 			})
 		})
 	})
+
+	var (
+		validSubscriptionJSON string
+		validCreateReq        wise.CreateWebhookSubscriptionRequest
+	)
+
+	BeforeEach(func() {
+		validSubscriptionJSON = `{
+		"id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+		"name": "Payout watcher",
+		"trigger_on": "transfers#state-change",
+		"delivery": {"version": "4.0.0", "url": "https://example.com/hooks/wise"},
+		"created_at": "2026-09-13T10:00:00Z",
+		"created_by": {"id": "api-key-123", "type": "user"},
+		"scope": {"domain": "profile", "id": "12345"}
+	}`
+
+		validCreateReq = wise.CreateWebhookSubscriptionRequest{
+			Name:      "Payout watcher",
+			TriggerOn: wise.WebhookEventTransfersStateChange,
+			Delivery:  wise.WebhookDelivery{Version: "4.0.0", URL: "https://example.com/hooks/wise"},
+		}
+	})
+
+	Describe("CreateProfileWebhookSubscription", func() {
+		Context("with a valid subscription request", func() {
+			var requestBody map[string]any
+
+			BeforeEach(func() {
+				mux.HandleFunc("/2026Q3/profiles/12345/subscriptions", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Method).To(Equal(http.MethodPost))
+
+					var body map[string]any
+					Expect(json.UnmarshalRead(r.Body, &body)).To(Succeed())
+					requestBody = body
+
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = w.Write([]byte(validSubscriptionJSON))
+				})
+			})
+
+			It("should POST the wire body and map the created subscription", func() {
+				sub, err := client.CreateProfileWebhookSubscription(
+					context.Background(), wise.NewProfileID(12345), validCreateReq,
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(sub.ID.Get()).To(Equal("72195556-e5cb-495e-a010-b37a4f2a3043"))
+				Expect(sub.Name).To(Equal("Payout watcher"))
+				Expect(sub.TriggerOn).To(Equal(wise.WebhookEventTransfersStateChange))
+				Expect(sub.Delivery.Version).To(Equal("4.0.0"))
+				Expect(sub.Delivery.URL).To(Equal("https://example.com/hooks/wise"))
+				Expect(sub.CreatedAt.Equal(time.Date(2026, 9, 13, 10, 0, 0, 0, time.UTC))).To(BeTrue())
+				Expect(sub.CreatedBy.ID).To(Equal("api-key-123"))
+				Expect(sub.CreatedBy.Type).To(Equal(wise.WebhookCreatorTypeUser))
+				Expect(sub.Scope.Domain).To(Equal(wise.WebhookScopeDomainProfile))
+				Expect(sub.Scope.ID).To(Equal("12345"))
+
+				Expect(requestBody["name"]).To(Equal("Payout watcher"))
+				Expect(requestBody["trigger_on"]).To(Equal("transfers#state-change"))
+				delivery, ok := requestBody["delivery"].(map[string]any)
+				Expect(ok).To(BeTrue(), "expected delivery object, got %T", requestBody["delivery"])
+				Expect(delivery["version"]).To(Equal("4.0.0"))
+				Expect(delivery["url"]).To(Equal("https://example.com/hooks/wise"))
+			})
+		})
+
+		Context("with a Wise validation rejection", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/2026Q3/profiles/12345/subscriptions",
+					errorHandler(http.StatusBadRequest, nil, "VALIDATION_ERROR", "trigger_on: unrecognized event type"))
+			})
+
+			It("should surface an APIError", func() {
+				_, err := client.CreateProfileWebhookSubscription(
+					context.Background(), wise.NewProfileID(12345), validCreateReq,
+				)
+				apiErr, ok := errors.AsType[*wise.APIError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.APIError, got %T: %v", err, err)
+				Expect(apiErr.StatusCode).To(Equal(http.StatusBadRequest))
+			})
+		})
+
+		Context("with an invalid API key", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/2026Q3/profiles/12345/subscriptions", unauthorizedHandler)
+			})
+
+			It("should surface an AuthError", func() {
+				_, err := client.CreateProfileWebhookSubscription(
+					context.Background(), wise.NewProfileID(12345), validCreateReq,
+				)
+				authErr, ok := errors.AsType[*wise.AuthError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.AuthError, got %T: %v", err, err)
+				Expect(authErr.StatusCode).To(Equal(http.StatusUnauthorized))
+			})
+		})
+	})
+
+	Describe("CreateProfileWebhookSubscription request validation", func() {
+		It("should reject malformed requests without calling the API", func() {
+			cases := []struct {
+				name    string
+				profile wise.ProfileID
+				req     wise.CreateWebhookSubscriptionRequest
+				message string
+			}{
+				{
+					"missing name", wise.NewProfileID(12345),
+					wise.CreateWebhookSubscriptionRequest{
+						TriggerOn: wise.WebhookEventTransfersStateChange,
+						Delivery:  wise.WebhookDelivery{Version: "4.0.0", URL: "https://example.com/h"},
+					},
+					"name is required",
+				},
+				{
+					"missing triggerOn", wise.NewProfileID(12345),
+					wise.CreateWebhookSubscriptionRequest{
+						Name:     "Payout watcher",
+						Delivery: wise.WebhookDelivery{Version: "4.0.0", URL: "https://example.com/h"},
+					},
+					"triggerOn is required",
+				},
+				{
+					"missing delivery version", wise.NewProfileID(12345),
+					wise.CreateWebhookSubscriptionRequest{
+						Name:      "Payout watcher",
+						TriggerOn: wise.WebhookEventTransfersStateChange,
+						Delivery:  wise.WebhookDelivery{URL: "https://example.com/h"},
+					},
+					"delivery.version is required",
+				},
+				{
+					"non-HTTPS delivery URL", wise.NewProfileID(12345),
+					wise.CreateWebhookSubscriptionRequest{
+						Name:      "Payout watcher",
+						TriggerOn: wise.WebhookEventTransfersStateChange,
+						Delivery:  wise.WebhookDelivery{Version: "4.0.0", URL: "http://example.com/h"},
+					},
+					"delivery.url must be an HTTPS URL",
+				},
+				{"zero profile ID", wise.NewProfileID(0), validCreateReq, "profileID is required"},
+			}
+
+			for _, tc := range cases {
+				_, err := client.CreateProfileWebhookSubscription(context.Background(), tc.profile, tc.req)
+				Expect(err).To(HaveOccurred(), tc.name)
+				Expect(err.Error()).To(ContainSubstring(tc.message), tc.name)
+			}
+		})
+	})
+
+	Describe("ListProfileWebhookSubscriptions", func() {
+		Context("with two subscriptions", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/2026Q3/profiles/12345/subscriptions", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Method).To(Equal(http.MethodGet))
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = w.Write([]byte(`[
+						{
+							"id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+							"name": "Payout watcher",
+							"trigger_on": "transfers#state-change",
+							"delivery": {"version": "4.0.0", "url": "https://example.com/hooks/wise"},
+							"created_at": "2026-09-13T10:00:00Z",
+							"created_by": {"id": "api-key-123", "type": "user"},
+							"scope": {"domain": "profile", "id": "12345"}
+						},
+						{
+							"id": "9c1f6c1a-39cb-4a4c-8f2e-cc9eef54c92b",
+							"name": "Balance alerts",
+							"trigger_on": "balances#credit",
+							"delivery": {"version": "4.0.0", "url": "https://example.com/hooks/balance"},
+							"created_at": "2026-09-13T09:00:00Z",
+							"created_by": {"id": "client-key-9", "type": "application"},
+							"scope": {"domain": "profile", "id": "12345"}
+						}
+					]`))
+				})
+			})
+
+			It("should return both subscriptions in order", func() {
+				subs, err := client.ListProfileWebhookSubscriptions(context.Background(), wise.NewProfileID(12345))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(subs).To(HaveLen(2))
+				Expect(subs[0].Name).To(Equal("Payout watcher"))
+				Expect(subs[1].Name).To(Equal("Balance alerts"))
+				Expect(subs[1].TriggerOn).To(Equal(wise.WebhookEventBalancesCredit))
+				Expect(subs[1].CreatedBy.Type).To(Equal(wise.WebhookCreatorTypeApplication))
+			})
+		})
+
+		Context("with no subscriptions", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/2026Q3/profiles/12345/subscriptions", func(w http.ResponseWriter, _ *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = w.Write([]byte(`[]`))
+				})
+			})
+
+			It("should return an empty slice", func() {
+				subs, err := client.ListProfileWebhookSubscriptions(context.Background(), wise.NewProfileID(12345))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(subs).To(BeEmpty())
+			})
+		})
+
+		Context("with a corrupt created_at timestamp", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/2026Q3/profiles/12345/subscriptions", func(w http.ResponseWriter, _ *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = w.Write([]byte(`[{
+						"id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+						"name": "Payout watcher",
+						"trigger_on": "transfers#state-change",
+						"delivery": {"version": "4.0.0", "url": "https://example.com/hooks/wise"},
+						"created_at": "not-a-timestamp",
+						"created_by": {"id": "api-key-123", "type": "user"},
+						"scope": {"domain": "profile", "id": "12345"}
+					}]`))
+				})
+			})
+
+			It("should classify the mapper failure as corruption", func() {
+				_, err := client.ListProfileWebhookSubscriptions(context.Background(), wise.NewProfileID(12345))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("parse created_at"))
+			})
+		})
+
+		Context("with an invalid API key", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/2026Q3/profiles/12345/subscriptions", unauthorizedHandler)
+			})
+
+			It("should surface an AuthError", func() {
+				_, err := client.ListProfileWebhookSubscriptions(context.Background(), wise.NewProfileID(12345))
+				authErr, ok := errors.AsType[*wise.AuthError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.AuthError, got %T: %v", err, err)
+				Expect(authErr.StatusCode).To(Equal(http.StatusUnauthorized))
+			})
+		})
+
+		Context("with a zero profile ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.ListProfileWebhookSubscriptions(context.Background(), wise.NewProfileID(0))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("profileID is required"))
+			})
+		})
+	})
+
+	Describe("GetProfileWebhookSubscription", func() {
+		Context("with an existing subscription", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/2026Q3/profiles/12345/subscriptions/72195556-e5cb-495e-a010-b37a4f2a3043",
+					func(w http.ResponseWriter, r *http.Request) {
+						Expect(r.Method).To(Equal(http.MethodGet))
+						w.Header().Set("Content-Type", "application/json")
+						_, _ = w.Write([]byte(validSubscriptionJSON))
+					})
+			})
+
+			It("should return the mapped subscription", func() {
+				sub, err := client.GetProfileWebhookSubscription(
+					context.Background(),
+					wise.NewProfileID(12345),
+					wise.NewWebhookSubscriptionID("72195556-e5cb-495e-a010-b37a4f2a3043"),
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(sub.Name).To(Equal("Payout watcher"))
+				Expect(sub.TriggerOn).To(Equal(wise.WebhookEventTransfersStateChange))
+			})
+		})
+
+		Context("with an unknown subscription", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/2026Q3/profiles/12345/subscriptions/72195556-e5cb-495e-a010-b37a4f2a3043",
+					errorHandler(http.StatusNotFound, nil, "NOT_FOUND", "Subscription not found"))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.GetProfileWebhookSubscription(
+					context.Background(),
+					wise.NewProfileID(12345),
+					wise.NewWebhookSubscriptionID("72195556-e5cb-495e-a010-b37a4f2a3043"),
+				)
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+
+		Context("with zero IDs", func() {
+			It("should reject a zero profile ID without calling the API", func() {
+				_, err := client.GetProfileWebhookSubscription(
+					context.Background(),
+					wise.NewProfileID(0),
+					wise.NewWebhookSubscriptionID("72195556-e5cb-495e-a010-b37a4f2a3043"),
+				)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("profileID is required"))
+			})
+
+			It("should reject a zero subscription ID without calling the API", func() {
+				_, err := client.GetProfileWebhookSubscription(
+					context.Background(),
+					wise.NewProfileID(12345),
+					wise.NewWebhookSubscriptionID(""),
+				)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("subscriptionID is required"))
+			})
+		})
+	})
+
+	Describe("DeleteProfileWebhookSubscription", func() {
+		Context("with an existing subscription", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/2026Q3/profiles/12345/subscriptions/72195556-e5cb-495e-a010-b37a4f2a3043",
+					func(w http.ResponseWriter, r *http.Request) {
+						Expect(r.Method).To(Equal(http.MethodDelete))
+						w.WriteHeader(http.StatusNoContent)
+					})
+			})
+
+			It("should acknowledge the delete without error", func() {
+				err := client.DeleteProfileWebhookSubscription(
+					context.Background(),
+					wise.NewProfileID(12345),
+					wise.NewWebhookSubscriptionID("72195556-e5cb-495e-a010-b37a4f2a3043"),
+				)
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+
+		Context("with an unknown subscription", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/2026Q3/profiles/12345/subscriptions/72195556-e5cb-495e-a010-b37a4f2a3043",
+					errorHandler(http.StatusNotFound, nil, "NOT_FOUND", "Subscription not found"))
+			})
+
+			It("should surface a NotFoundError", func() {
+				err := client.DeleteProfileWebhookSubscription(
+					context.Background(),
+					wise.NewProfileID(12345),
+					wise.NewWebhookSubscriptionID("72195556-e5cb-495e-a010-b37a4f2a3043"),
+				)
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+
+		Context("with zero IDs", func() {
+			It("should reject a zero subscription ID without calling the API", func() {
+				err := client.DeleteProfileWebhookSubscription(
+					context.Background(),
+					wise.NewProfileID(12345),
+					wise.NewWebhookSubscriptionID(""),
+				)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("subscriptionID is required"))
+			})
+		})
+	})
 })
