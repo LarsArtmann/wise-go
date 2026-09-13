@@ -1,5 +1,14 @@
 # Status Report: erraudit Review & Error Context Improvements
 
+> **Resolution (2026-09-13 docs-health pass):** the fullURL fixes shipped and
+> exceeded (every request path carries it, `client.go`), error-path BDD and
+> `TestErrorContexts` landed (v0.9.0), structured retry logging via `WithLogger`
+> shipped. Still open, routed (TODO_LIST P4): `body, _ := readBody(resp)` error
+> capture (`client.go:382`), raw-input context in `map*` errors,
+> `ErrorContext`/`IsRetryable` on `AuthError`/`NotFoundError`, AGENTS.md
+> error-context convention, curated erraudit config + CI gate, and the
+> samber/oops adopt-or-decline decision (user).
+
 **Date:** 2026-08-08 12:27 CEST
 **Session scope:** Run erraudit, review violations, fix legitimate issues, document findings
 

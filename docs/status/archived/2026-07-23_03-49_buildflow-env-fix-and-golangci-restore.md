@@ -1,5 +1,14 @@
 # Status Report — wise-go Session 2026-07-23 (Early Morning)
 
+> **RESOLVED — archived 2026-09-13.** The buildflow env fix held (`.buildflow.yml`
+> `env: GOEXPERIMENT` verified 2026-09-13), the curated `.golangci.yml` survived,
+> and every GitHub Action is SHA-pinned. Its own e.7 complaint (the 07-18 report
+> still said "CI WILL BREAK" un-annotated) is now fixed — that report carries a
+> resolution banner. Remaining opens (direnv/home-manager GOEXPERIMENT pin,
+> go-fix doc, `nix flake check --all-systems`, root-package-files suppression)
+> are user-env or micro items routed to TODO_LIST P4. Nothing actionable is
+> lost here.
+
 > Generated 2026-07-23 03:49 · Session scope: fix 3 buildflow failures (go-fix, govalid-generate, test-race) + restore clobbered .golangci.yml
 
 ---

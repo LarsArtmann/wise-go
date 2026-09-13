@@ -1,5 +1,13 @@
 # Status Report — v0.5.0 Release
 
+> **Resolution (2026-09-13 docs-health pass):** v0.5.0 shipped and the follow-up
+> P-batches largely landed through v0.9.0/v0.10.0. Still open, routed:
+> gofumpt action pin + `wise.Version` + gorelease + `internal/raw` test file +
+> concurrent-safety test + coverage-threshold gate + `WithMetrics` + examples
+> for the list endpoints (TODO_LIST P4 micro-batch); Cachix token user-gated
+> (P2); v1.0.0 tag user-gated (P1; audit green 2026-08-21); sealed union WONT
+> (data-model review); gofumpt pin (P4).
+
 **Date:** 2026-08-08 03:32
 **Tag:** `v0.5.0` (at `59577d4`)
 **Session scope:** Bundle remaining TODO_LIST items (P2-P5) into a v0.5.0 release

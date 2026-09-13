@@ -145,33 +145,37 @@ The raw `ExchangeDetails` struct in `types.go` still has `FromCurrency` and `ToC
 
 ## f) Up to 25 Things to Get Done Next
 
+> **Inline resolution (2026-09-13 docs-health pass):** the 07-18 appendix below
+> missed these rows — struck here. Evidence: v0.4.0 `4902dc3`, v0.8.0–v0.9.0
+> `e508572`, direct GetBalance v0.9.0.
+
 | #  | Priority | Task                                                                                    |
 | -- | -------- | --------------------------------------------------------------------------------------- |
-| 1  | HIGH     | Replace `classifyTransactionType`'s `amount float64` param with `totalCents int64`      |
-| 2  | HIGH     | Wire `Retry-After` into failsafe-go's backoff policy (custom delay computation)         |
-| 3  | HIGH     | Register domain error types with `errorfamily.RegisterClassification`                   |
-| 4  | MED      | Add a `GetProfile` method (single-profile endpoint) if Wise supports it                 |
-| 5  | MED      | Remove or reach `TransactionTypeUnknown` (currently unreachable)                        |
-| 6  | MED      | Extract `wiseDateFormat` constant from `parseWiseDate`                                  |
-| 7  | MED      | Add integration test with a real Wise sandbox (gated behind build tag or env var)       |
-| 8  | MED      | Document `GetBalance` O(n) cost and consider optional in-memory caching                 |
-| 9  | LOW      | Add `fmt.Stringer` implementations for `ProfileType`, `BalanceType`, `TransactionType`  |
-| 10 | LOW      | Consider `ExchangeDetails.Rate` as a string or decimal type for precision               |
-| 11 | LOW      | Add `Profile.UserID` to `ProfileResult` (the raw `Profile.UserID` is currently dropped) |
-| 12 | LOW      | Add `Profile.PublicID` to `ProfileResult` (currently dropped)                           |
-| 13 | LOW      | Add a `Roundtripper` interface for request/response logging or debugging                |
-| 14 | LOW      | Add `context.Context` propagation into failsafe-go retry logging                        |
-| 15 | LOW      | Add `Exchange` field to the transaction type classification docs in README              |
-| 16 | LOW      | Add benchmarks for hot paths (`Cents()`, `classifyTransactionType`, `mapTransaction`)   |
-| 17 | LOW      | Add `Example_` test functions for godoc                                                 |
-| 18 | LOW      | Consider `go:generate` for enum string-to-value maps (parseXType functions)             |
-| 19 | LOW      | Add `CHANGELOG.md` entry for this session's changes                                     |
-| 20 | LOW      | Consider splitting `internal_test.go` by domain (errors_test.go, helpers_test.go)       |
-| 21 | LOW      | Add `WithUserAgent` option (currently no custom User-Agent header)                      |
-| 22 | LOW      | Add `WithLogger` option for structured debug logging                                    |
-| 23 | LOW      | Consider a `Money` type (cents + currency) instead of separate fields                   |
-| 24 | LOW      | Add `StatementResponse.EndOfStatementBalance` to `ListTransactionsResponse`             |
-| 25 | LOW      | Write operations: transfers, quotes, payouts (major feature work)                       |
+| 1  | HIGH     | Replace `classifyTransactionType`'s `amount float64` param with `totalCents int64` ← still open (TODO_LIST P4; signature still `float64` 2026-09-13)      |
+| 2  | HIGH     | Wire `Retry-After` into failsafe-go's backoff policy (custom delay computation) ← still open (folded into the go-retry TODO_LIST P4 item)      |
+| 3  | HIGH     | Register domain error types with `errorfamily.RegisterClassification` ← still open (TODO_LIST P4)      |
+| 4  | MED      | ~~Add a `GetProfile` method (single-profile endpoint) if Wise supports it~~ done — v0.8.0 (`profiles.go:13`)      |
+| 5  | MED      | ~~Remove or reach `TransactionTypeUnknown` (currently unreachable)~~ done — v0.4.0 removed the constant (`4902dc3`)      |
+| 6  | MED      | Extract `wiseDateFormat` constant from `parseWiseDate` ← still open (TODO_LIST P4 micro-batch)      |
+| 7  | MED      | ~~Add integration test with a real Wise sandbox (gated behind build tag or env var)~~ done — `sandbox_live_test.go` (env-key-gated) + `sandbox-live.yml` (`ecdc738`); live run blocked on key (TODO_LIST P2)      |
+| 8  | MED      | ~~Document `GetBalance` O(n) cost and consider optional in-memory caching~~ moot/done — v0.9.0 switched to the direct per-balance endpoint      |
+| 9  | LOW      | Add `fmt.Stringer` implementations for `ProfileType`, `BalanceType`, `TransactionType` ← still open (TODO_LIST P4 micro-batch)      |
+| 10 | LOW      | Consider `ExchangeDetails.Rate` as a string or decimal type for precision ← still open (deferred-by-design; `Rate float64`)      |
+| 11 | LOW      | Add `Profile.UserID` to `ProfileResult` (the raw `Profile.UserID` is currently dropped) ← still open (TODO_LIST P4 micro-batch)      |
+| 12 | LOW      | Add `Profile.PublicID` to `ProfileResult` (currently dropped) ← still open (TODO_LIST P4 micro-batch)      |
+| 13 | LOW      | ~~Add a `Roundtripper` interface for request/response logging or debugging~~ done — `Doer` interface (`client.go:27`) + `WithHTTPClient`      |
+| 14 | LOW      | ~~Add `context.Context` propagation into failsafe-go retry logging~~ done — ctx cancellation + `RequestLog` with attempt numbers (v0.9.0)      |
+| 15 | LOW      | ~~Add `Exchange` field to the transaction type classification docs in README~~ done — README "Amount semantics"      |
+| 16 | LOW      | Add benchmarks for hot paths (`Cents()`, `classifyTransactionType`, `mapTransaction`) ← still open (TODO_LIST P4 micro-batch)      |
+| 17 | LOW      | ~~Add `Example_` test functions for godoc~~ done — 20 `Example*` funcs (`example_test.go`)      |
+| 18 | LOW      | Consider `go:generate` for enum string-to-value maps (parseXType functions) ← still open (micro)      |
+| 19 | LOW      | ~~Add `CHANGELOG.md` entry for this session's changes~~ done — v0.2.0 entry      |
+| 20 | LOW      | Consider splitting `internal_test.go` by domain (errors_test.go, helpers_test.go) ← still open (P4; partially done — example/sandbox/readme-guard tests already split out)      |
+| 21 | LOW      | Add `WithUserAgent` option (currently no custom User-Agent header) ← still open (TODO_LIST P4 micro-batch)      |
+| 22 | LOW      | ~~Add `WithLogger` option for structured debug logging~~ done — v0.9.0 (`WithLogger` + `RequestLog`)      |
+| 23 | LOW      | ~~Consider a `Money` type (cents + currency) instead of separate fields~~ done — v0.4.0 `Money` value object (`4902dc3`)      |
+| 24 | LOW      | ~~Add `StatementResponse.EndOfStatementBalance` to `ListTransactionsResponse`~~ done — v0.4.0 (`types.go`)      |
+| 25 | LOW      | ~~Write operations: transfers, quotes, payouts (major feature work)~~ done — v0.8.0–v0.9.0 (quotes, recipients, transfers, funding, cancel; payouts n/a)      |
 
 ---
 
@@ -216,9 +220,9 @@ A follow-up review pass on 2026-07-18 (post-v0.2.0, commit `218c2d3` + same-day 
 
 **Confirmed still open and not yet re-tracked:**
 
-- Item **#1** (replace `amount float64` with `totalCents int64` in classifier) — moot once `Money` lands; the classifier signature will change with it.
-- Item **#2** (wire `Retry-After` into failsafe-go backoff) — still open.
-- Item **#3** (`errorfamily.RegisterClassification`) — `go-error-family v0.6.1` exposes the API; wise-go does not yet call it. Still open.
+- Item **#1** (replace `amount float64` with `totalCents int64` in classifier) — moot once `Money` lands; the classifier signature will change with it. ← Money landed (v0.4.0) but the signature is STILL `float64` (2026-09-13); now a standalone TODO_LIST P4 item.
+- Item **#2** (wire `Retry-After` into failsafe-go backoff) — still open. ← still open 2026-09-13; folded into the go-retry migration item (TODO_LIST P4).
+- Item **#3** (`errorfamily.RegisterClassification`) — `go-error-family v0.6.1` exposes the API; wise-go does not yet call it. Still open. ← still open 2026-09-13 (TODO_LIST P4).
 - Items **#4, #6, #7, #8, #9, #10, #11, #12, #14, #16, #17, #18, #20, #21, #22** — still open as written; no progress since this report.
 
 **Question (g) resolution path:** the `ProfileType` lowercase vs wire-uppercase casing question is now one instance of the broader enum-casing inconsistency documented in `docs/brainstorming/2026-07-18_data-model-review.html` (Step 4 of its migration roadmap). Decision deferred to v0.3.0 where all enum casings will be normalized together.

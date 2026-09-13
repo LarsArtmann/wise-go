@@ -1,5 +1,8 @@
 # wise-go — Pareto Execution Plan
 
+> **ARCHIVED 2026-09-13** — see the EXECUTED note below; M16's remaining tail
+> (v1.0 audit + tag) is tracked in `TODO_LIST.md` P1.
+
 > Generated 2026-08-08 02:13 · Pareto-driven · Source: TODO_LIST.md + ROADMAP.md + live codebase audit
 >
 > **Status: EXECUTED.** All tiers (M1–M15) were completed in the 2026-08-08 session.

@@ -1,5 +1,17 @@
 # Wise API Docs Study — Changelog & API Reference Analysis
 
+> **Resolution (2026-09-13 docs-health pass):** tier 1–2 shipped through
+> v0.9.0/v0.10.0 (quotes, recipients, transfers + receipts + MT103 payout info,
+> funding, rates, statements, users, MCA/bank details, currencies, webhook
+> signature verification, observability, mTLS docs). Still open, routed:
+> webhook subscription CRUD + typed events (TODO_LIST P3); addresses,
+> balance-capacity, `Profile.currentState`/`externalCustomerId`, OAuth token
+> endpoint, 2026Q4 global version header, simulation endpoints, batch groups
+> (plan tier 3/4 → ROADMAP); cards/KYC/SCA-sessions/disputes stay tier-3/4
+> demand-gated; OB-package and JOSE remain declined (ROADMAP non-goals);
+> x-trace-id stays WONT (intermediary-set). This study remains the canonical
+> gap map cited from AGENTS.md — keep it in place.
+
 **Date:** 2026-08-08
 **Sources:** [changelog](https://docs.wise.com/changelog) | [API reference](https://docs.wise.com/api-reference) | [environments](https://docs.wise.com/guides/developer/environments)
 

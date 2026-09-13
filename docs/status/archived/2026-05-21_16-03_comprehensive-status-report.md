@@ -1,5 +1,14 @@
 # Status Report — wise-go
 
+> **RESOLVED — archived 2026-09-13.** Every decision recorded here held: the
+> flat root package stayed (raw types moved to `internal/raw` in v0.4.0,
+> `4902dc3`), the curated `.golangci.yml` was restored and protected
+> (`2026-07-23` report), flake.nix shipped and became canonical, coverage is
+> CI-measured (badge; frozen while CI is disabled on GitHub, 2026-09-13).
+> Leftovers (fuzz/benchmarks/version constant, coverage fail-gate,
+> wise_test.go split) are routed to TODO_LIST P4 micro-batch. Nothing
+> actionable is lost here.
+
 **Date:** 2026-05-21 16:03 CEST
 **Branch:** master (1 commit ahead of origin/master)
 **Working tree:** clean

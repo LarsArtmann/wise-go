@@ -1,5 +1,11 @@
 # Status Report — wise-go
 
+> **RESOLVED — archived 2026-09-13.** The dedup/error-context work landed
+> (`34061ff` lineage) and was superseded by later dedup rounds (`630894d`
+> requireID/toTransfer consolidation). Follow-on quality items (fuzz tests,
+> benchmarks, version constant, pprof) are routed to TODO_LIST P4 micro-batch.
+> Nothing actionable is lost here.
+
 **Date:** 2026-05-21 15:19 CEST
 **Branch:** master (up to date with origin/master)
 **Files changed:** 2 (transactions.go, wise_test.go)

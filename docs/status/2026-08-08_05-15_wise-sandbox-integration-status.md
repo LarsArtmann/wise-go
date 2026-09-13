@@ -1,5 +1,12 @@
 # wise-go Session Status Report
 
+> **Resolution (2026-09-13 docs-health pass):** the spec this report demanded now
+> exists — `sandbox_live_test.go` (env-key-gated) + active dispatch-only workflow
+> `.github/workflows/sandbox-live.yml` + README "Sandbox verification" section
+> (hardening 4.x, commit `ecdc738`). Still blocked exactly as predicted: the
+> `WISE_SANDBOX_API_KEY` secret (TODO_LIST P2) — no first recorded run, so
+> troubleshooting/rate-budget/redaction sections remain unwritten.
+
 **Snapshot:** 2026-08-08 05:15 CEST\
 **Scope:** This report covers only the current session's investigation of Wise sandbox and integration testing, plus the TODO entry added as a result. It does not re-audit unrelated project work.
 

@@ -1,5 +1,14 @@
 # Status Report — wise-go Session 2026-07-18 (Evening)
 
+> **RESOLVED — archived 2026-09-13.** Every actionable item in sections b/c/e/f
+> shipped or was superseded: the v0.3.0 breaking-change set (Money, Currency,
+> enum casing, internal/raw, HasMore removal) shipped v0.4.0 (`4902dc3`); GOEXPERIMENT
+> is pinned in flake + `.buildflow.yml` + CI + CONTRIBUTING; the curated
+> `.golangci.yml` was restored and guard-documented (07-23 report); nix CI job
+> exists. Remaining opens (Retry-After→backoff via go-retry, WithUserAgent,
+> Stringer, benchmarks, coverage gap, CONTRIBUTING upgrade-deps section) are
+> routed to TODO_LIST P4 micro-batch. Nothing actionable is lost here.
+
 > Generated 2026-07-18 20:21 · Session scope: execute paste.txt workflow (commit, Pareto plan, push) + recover from buildflow Verschlimmbesserung
 
 ---

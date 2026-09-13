@@ -1,5 +1,11 @@
 # Status Report — wise-go
 
+> **RESOLVED — archived 2026-09-13.** The zero-clone state held and was
+> re-achieved after later additions (`630894d`: art-dupl actionable groups 6→0).
+> The `now` param was removed (07-05 session), golines/gofumpt enforcement is
+> in the format gate. Leftovers (fuzz/benchmarks/version constant) are routed
+> to TODO_LIST P4 micro-batch. Nothing actionable is lost here.
+
 **Date:** 2026-05-21 16:19 CEST
 **Branch:** master (2 commits ahead of origin/master)
 **Working tree:** uncommitted changes in `wise_test.go`

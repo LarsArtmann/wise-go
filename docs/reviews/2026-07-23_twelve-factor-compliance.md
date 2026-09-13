@@ -1,5 +1,14 @@
 # Twelve-Factor Compliance Review: wise-go
 
+> **Resolution (2026-09-13 docs-health pass):** its recommendations largely
+> landed — nix canonical in CI (file refreshed `14523ae`; workflow still
+> disabled on GitHub), GOEXPERIMENT documented everywhere, sandbox workflow
+> shipped (`ecdc738`), CHANGELOG immutable, env-var-free library preserved
+> (only the sandbox test reads `WISE_SANDBOX_API_KEY`). Still open, routed:
+> tagged-release automation (TODO_LIST P1), concurrency-safety doc/test +
+> retry-composition guidance + transport redaction note (TODO_LIST P4 /
+> ROADMAP), gofumpt pin (TODO_LIST P4).
+
 **Assessment date:** 2026-07-23\
 **Repository:** `github.com/larsartmann/wise-go`\
 **Reference:** [The Twelve-Factor App](https://12factor.net/)\
