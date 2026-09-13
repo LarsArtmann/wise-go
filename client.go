@@ -167,6 +167,10 @@ func (c *Client) put(ctx context.Context, path string, body, target any) error {
 	return c.request(ctx, http.MethodPut, path, nil, body, target, nil)
 }
 
+func (c *Client) delete(ctx context.Context, path string) error {
+	return c.request(ctx, http.MethodDelete, path, nil, nil, nil, nil)
+}
+
 // getRaw performs a GET and returns the response body without JSON decoding,
 // for endpoints that serve files (statement.csv/.pdf/.xlsx and friends).
 func (c *Client) getRaw(ctx context.Context, path string, query func() string) ([]byte, error) {

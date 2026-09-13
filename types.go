@@ -620,3 +620,112 @@ type RefreshQuoteAccountRequirementsRequest struct {
 	// integrations (PRIVATE or BUSINESS); optional.
 	OriginatorLegalEntityType string
 }
+
+// WebhookEventType names the Wise event a webhook subscription listens for
+// (the create request's TriggerOn) or that a delivered event envelope
+// carries. The set is open: Wise adds event types over time, so any string
+// is representable and unknown values pass through unchanged.
+type WebhookEventType string
+
+// Documented Wise webhook event types (the trigger_on values), from the
+// OpenAPI spec and the live webhook-event reference. The list is a
+// convenience, not a constraint — subscriptions accept any event type string.
+const (
+	WebhookEventTransfersStateChange                    WebhookEventType = "transfers#state-change"
+	WebhookEventTransfersPayoutFailure                  WebhookEventType = "transfers#payout-failure"
+	WebhookEventTransfersActiveCases                    WebhookEventType = "transfers#active-cases"
+	WebhookEventTransfersRefund                         WebhookEventType = "transfers#refund"
+	WebhookEventTransfersCaseStateChange                WebhookEventType = "transfers#case-state-change"
+	WebhookEventBalancesCredit                          WebhookEventType = "balances#credit"
+	WebhookEventBalancesDebit                           WebhookEventType = "balances#debit"
+	WebhookEventBalancesThresholdMet                    WebhookEventType = "balances#threshold-met"
+	WebhookEventBalancesPendingTransactionStateChange   WebhookEventType = "balances#pending-transaction-state-change"
+	WebhookEventBatchPaymentInitiationsStateChange      WebhookEventType = "batch-payment-initiations#state-change"
+	WebhookEventBatchTransfersStateChange               WebhookEventType = "batch-transfers#state-change"
+	WebhookEventCards3DSChallenge                       WebhookEventType = "cards#3ds-challenge"
+	WebhookEventCardsCardProductionStatusChange         WebhookEventType = "cards#card-production-status-change"
+	WebhookEventCardsCardStatusChange                   WebhookEventType = "cards#card-status-change"
+	WebhookEventCardsTransactionStateChange             WebhookEventType = "cards#transaction-state-change"
+	WebhookEventCustomerAgreementsAgreementStatusChange WebhookEventType = "customer-agreements#agreement-status-change"
+	WebhookEventDirectDebitsStateChange                 WebhookEventType = "direct-debits#state-change"
+	WebhookEventProfilesDocumentStateChange             WebhookEventType = "profiles#document-state-change"
+	WebhookEventProfilesVerificationStateChange         WebhookEventType = "profiles#verification-state-change"
+	WebhookEventRecipientAccountsStateChange            WebhookEventType = "recipient-accounts#state-change"
+	WebhookEventSimulationsCardTransactionCreated       WebhookEventType = "simulations#card-transaction-created"
+	WebhookEventSimulationsCardTransactionCleared       WebhookEventType = "simulations#card-transaction-cleared"
+	WebhookEventSimulationsCardTransactionReversed      WebhookEventType = "simulations#card-transaction-reversed"
+	WebhookEventSpendTransactionStateChange             WebhookEventType = "spend#transaction-state-change"
+	WebhookEventSwiftInCredit                           WebhookEventType = "swift-in#credit"
+	WebhookEventTrustedPartiesStateChange               WebhookEventType = "trusted-parties#state-change"
+	WebhookEventVouchersStateChange                     WebhookEventType = "vouchers#state-change"
+	WebhookEventVouchersBatchStateChange                WebhookEventType = "vouchers#batch-state-change"
+	WebhookEventVouchersBalanceCheck                    WebhookEventType = "vouchers#balance-check"
+	WebhookEventVouchersRedemptionStatusChange          WebhookEventType = "vouchers#redemption-status-change"
+	WebhookEventVouchersRedemptionNotification          WebhookEventType = "vouchers#redemption-notification"
+	WebhookEventAccountDetailsOrderOrderStateChange     WebhookEventType = "account-details-order#order-state-change"
+	WebhookEventAccountDetailsPaymentStateChange        WebhookEventType = "account-details-payment#state-change"
+)
+
+// WebhookDelivery is the transport contract of a webhook subscription: the
+// HTTPS endpoint Wise POSTs event envelopes to, and the event-schema
+// semantic version (e.g. "4.0.0") those payloads use.
+type WebhookDelivery struct {
+	Version string
+	URL     string
+}
+
+// WebhookCreatorType identifies what created a webhook subscription. Open
+// string: unknown creator types pass through unchanged.
+type WebhookCreatorType string
+
+// Documented webhook subscription creator types.
+const (
+	WebhookCreatorTypeApplication WebhookCreatorType = "application"
+	WebhookCreatorTypeUser        WebhookCreatorType = "user"
+)
+
+// WebhookCreator identifies what created a webhook subscription.
+type WebhookCreator struct {
+	ID   string
+	Type WebhookCreatorType
+}
+
+// WebhookScopeDomain names the owning surface of a webhook subscription.
+// Open string: unknown domains pass through unchanged.
+type WebhookScopeDomain string
+
+// Documented webhook subscription scope domains.
+const (
+	WebhookScopeDomainApplication WebhookScopeDomain = "application"
+	WebhookScopeDomainProfile     WebhookScopeDomain = "profile"
+)
+
+// WebhookScope names the owning surface of a webhook subscription: the
+// client key (application scope) or the profile ID (profile scope).
+type WebhookScope struct {
+	Domain WebhookScopeDomain
+	ID     string
+}
+
+// WebhookSubscription is a registered webhook: the standing instruction for
+// Wise to POST an event envelope to Delivery.URL whenever the TriggerOn
+// event occurs. Subscriptions have no update operation — they are created,
+// listed, fetched, and deleted, never edited.
+type WebhookSubscription struct {
+	ID        WebhookSubscriptionID
+	Name      string
+	TriggerOn WebhookEventType
+	Delivery  WebhookDelivery
+	CreatedAt time.Time
+	CreatedBy WebhookCreator
+	Scope     WebhookScope
+}
+
+// CreateWebhookSubscriptionRequest registers a new webhook subscription.
+// Name, TriggerOn, and Delivery (version + URL) are required by Wise; they
+// are validated client-side so a malformed request never reaches the API.
+type CreateWebhookSubscriptionRequest struct {
+	Name      string
+	TriggerOn WebhookEventType
+	Delivery  WebhookDelivery
+}
