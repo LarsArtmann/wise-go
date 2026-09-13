@@ -30,11 +30,21 @@ Immutable objects defined by attributes.
 | ------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------- |
 | Cents               | Monetary amount in minor units (int64)       | `1234.56 EUR` → `123456` cents; avoids float64 precision loss                      |
 | BalanceAmount       | Wise API monetary value with currency        | Wire format: `{value: 1234.56, currency: "EUR"}`; converted to cents via `Cents()` |
-| TransactionType     | Classification of a transaction              | Enum: card, credit, debit, exchange, fee, refund, transfer, payment, unknown       |
+| TransactionType     | Classification of a transaction              | Enum: card, credit, debit, exchange, fee, refund, transfer, payment (`unknown` removed in v0.4.0 — never returned by the classifier) |
 | ProfileType         | Kind of profile                              | Enum: personal, business                                                           |
-| BalanceType         | Kind of balance                              | Enum: STANDARD, SAVINGS                                                            |
+| BalanceType         | Kind of balance                              | Enum: standard, savings (lowercase public values; wire uses UPPERCASE)             |
 | InvestmentState     | Whether a balance is invested in Wise        | Values: `NOT_INVESTED`, `INVESTED`; only non-invested balances are returned        |
 | TransactionExchange | Currency-conversion details on a transaction | From/to amounts in cents, rate; nil for non-conversion transactions                |
+| Money               | Paired cents + currency value object         | `Money{Cents int64, Currency Currency}`; no arithmetic by design (see AGENTS.md)   |
+
+## Entities (extended)
+
+| Term       | Definition                                        | Context                                                              |
+| ---------- | ------------------------------------------------- | -------------------------------------------------------------------- |
+| Transfer    | An outgoing money movement between a quote and a recipient | Has lifecycle status (`TransferStatus` open enum)            |
+| Quote       | A locked exchange-rate offer that can back a transfer        | UUID-string ID (`QuoteID`), unlike int64 entity IDs          |
+| Recipient   | A payout destination (bank account, etc.)                     | `details` is polymorphic per currency/corridor               |
+| SCA         | Strong Customer Authentication (3-D Secure-like challenge)   | HTTP 403 with empty body; one-time token in response headers |
 
 ## Raw vs Result Types
 
@@ -42,8 +52,8 @@ The SDK uses a two-layer type system:
 
 | Layer        | Purpose                                 | Example                                                           |
 | ------------ | --------------------------------------- | ----------------------------------------------------------------- |
-| Raw types    | Mirror Wise JSON wire format exactly    | `Profile` with `CreatedAt string` and `Type string`               |
-| Result types | Strongly-typed public API for consumers | `ProfileResult` with `CreatedAt time.Time` and `Type ProfileType` |
+| Raw types    | Mirror Wise JSON wire format exactly    | `raw.Profile` with `CreatedAt string` and `Type string`           |
+| Result types | Strongly-typed public API for consumers | `Profile` with `CreatedAt time.Time` and `Type ProfileType`       |
 
 Mapping functions (`mapProfile`, `mapBalance`, `mapTransaction`) convert between layers.
 

@@ -11,27 +11,28 @@ library that is obviously correct, obviously typed, and obviously safe to depend
 Every monetary amount is `Money` (cents paired with `Currency`). Every entity ID is
 branded. Every error is typed and classifiable. Every API call retries intelligently.
 
-As of 2026-08-21, the type-safety redesign is complete, the core transfer flow is
+As of 2026-09-13, the type-safety redesign is complete, the core transfer flow is
 live END TO END (quotes, recipients, transfers, funding, delivery estimates,
-transfer-requirements and account-requirements validation, exchange rates), and
+transfer-requirements and account-requirements validation, exchange rates),
 the tier-2 surface shipped: users, statement files in all six formats, webhook
 signature verification, balance lifecycle (create/direct-get/total-funds),
-Multi-Currency Account + bank details, and currency reference data — 31
+Multi-Currency Account + bank details, and currency reference data — 33
 endpoint methods, plus observability (WithLogger, per-request correlation IDs)
-and write helpers under the existing retry/error architecture. The v1.0 audit
-(`docs/reviews/2026-08-21_v1.0-api-audit.md`) found nothing blocking the tag.
-The roadmap expands the surface along four axes — completeness, type-safety,
-observability, and scale — while preserving the architectural decisions that make
-the codebase maintainable.
+and write helpers under the existing retry/error architecture. v0.9.0 and
+v0.10.0 (transfer receipts + MT103 payout info) have shipped; the v1.0 audit
+(`docs/reviews/2026-08-21_v1.0-api-audit.md`) found nothing blocking the tag
+(re-audit pending for the two v0.10.0 methods). The roadmap expands the surface
+along four axes — completeness, type-safety, observability, and scale — while
+preserving the architectural decisions that make the codebase maintainable.
 
 ## Axis 1: Completeness (API surface)
 
 Today: tiers 1 and 2 of
 `docs/planning/2026-08-19_wise-api-full-implementation-plan.md` are complete —
-32 endpoint methods across 14 resources. The core transfer flow is live end to end:
+33 endpoint methods across 14 resources. The core transfer flow is live end to end:
 quotes (including account requirements and the two-pass refresh), recipients,
-transfers, funding, delivery estimates, exchange rates, transfer-requirements
-validation.
+transfers (including receipts and MT103 payout info), funding, delivery estimates,
+exchange rates, transfer-requirements validation.
 
 ### Shipped 2026-08-21 (previously near-term)
 
@@ -52,9 +53,18 @@ validation.
   MT940, QIF) via the raw-response path; 469-day interval enforced client-side,
   `Locale` localizes the export.
 
-**Release state:** shipped as **v0.9.0** (2026-08-21). The v1.0 audit is green
-(`docs/reviews/2026-08-21_v1.0-api-audit.md`); the v1.0.0 tag remains gated on
-the maintainer's explicit approval (question g3 in the hardening plan).
+**Shipped v0.10.0 (2026-09-13, tag pending):**
+
+- **`GetTransferReceipt`** — branded PDF confirmation receipt for paid-out
+  transfers (404 = not yet paid out).
+- **`GetTransferPayoutInfo`** — banking-partner proof of payment with the
+  SWIFT MT103 message (`*string`, nil for non-SWIFT corridors).
+
+**Release state:** shipped as **v0.9.0** (2026-08-21) and **v0.10.0**
+(2026-09-13, code + CHANGELOG complete, tag pending approval). The v1.0 audit is
+green (`docs/reviews/2026-08-21_v1.0-api-audit.md`; re-audit the two v0.10.0
+methods before tagging); the v1.0.0 tag remains gated on the maintainer's
+explicit approval.
 
 ### Medium-term
 
@@ -154,10 +164,11 @@ is clear.
 ### Trigger: resource count crosses ~6–8 — REACHED
 
 The SDK now has 14 resources (profiles, users, balances, multi-currency account,
-bank details, transactions/statements, transfers, funding, quotes, recipients,
-exchange rates, delivery estimates, transfer requirements, currencies) and 31
-endpoint methods on the flat `client.X` surface — the core flow including
-`FundTransfer` is complete (2026-08-21). The threshold documented here
+bank details, transactions/statements, transfers/receipts, funding, quotes,
+recipients, exchange rates, delivery estimates, transfer requirements,
+currencies) and 33 endpoint methods on the flat `client.X` surface — the core
+flow including `FundTransfer` is complete (2026-08-21). The threshold documented
+here
 has been crossed; the open question is WHEN to pay the refactor cost. The
 recommended sequencing: v1.0 on the flat surface (the 2026-08-21 audit found
 no structural blocker), then move to a **service-client sub-structure** in
