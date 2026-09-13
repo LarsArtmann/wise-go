@@ -10,6 +10,7 @@
 package wise
 
 import (
+	"encoding/json/jsontext"
 	"fmt"
 	"time"
 )
@@ -728,4 +729,62 @@ type CreateWebhookSubscriptionRequest struct {
 	Name      string
 	TriggerOn WebhookEventType
 	Delivery  WebhookDelivery
+}
+
+// WebhookEvent is the envelope Wise POSTs to a subscription's delivery URL
+// whenever a subscribed event occurs. Data stays raw (jsontext.Value): the
+// typed payload is decoded per event type via the accessor methods
+// (TransferStateChange, TransferPayoutFailure, BalanceCredit), so unknown
+// future event types parse without breaking. Compose with
+// VerifyWebhookSignature — verify the raw request bytes first, then parse
+// the same bytes; no combined helper is provided because a failed
+// verification is a transport-level rejection (answer 401/403), not a parse
+// error.
+type WebhookEvent struct {
+	SchemaVersion  string
+	SubscriptionID WebhookSubscriptionID
+	EventType      WebhookEventType
+	SentAt         time.Time
+	Data           jsontext.Value
+}
+
+// WebhookResource identifies the entity an event payload is about
+// (e.g. the transfer that changed state, or the balance account that was
+// credited). AccountID is only present for transfer events.
+type WebhookResource struct {
+	Type      string
+	ID        int64
+	ProfileID int64
+	AccountID *int64
+}
+
+// TransferStateChangeData is the typed payload of transfers#state-change
+// events: the transfer's new and previous states. Wise recommends also
+// subscribing to transfers#payout-failure — a payout can fail without the
+// transfer state changing.
+type TransferStateChangeData struct {
+	Resource      WebhookResource
+	CurrentState  TransferStatus
+	PreviousState TransferStatus
+	OccurredAt    time.Time
+}
+
+// TransferPayoutFailureData is the typed payload of transfers#payout-failure
+// events (schema version 5.0.0). FailureReasonCode is an open set — Wise
+// adds new codes over time, so handle unrecognized codes defensively.
+type TransferPayoutFailureData struct {
+	TransferID         TransferID
+	ProfileID          ProfileID
+	FailureReasonCode  string
+	FailureDescription string
+	OccurredAt         time.Time
+}
+
+// BalanceCreditData is the typed payload of balances#credit events: the
+// credited amount and the resulting balance, as Money.
+type BalanceCreditData struct {
+	Resource               WebhookResource
+	Amount                 Money
+	PostTransactionBalance Money
+	OccurredAt             time.Time
 }

@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/json/v2"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -273,4 +274,142 @@ func toWebhookSubscription(label string, subscription raw.Subscription) (*Webhoo
 			ID:     subscription.Scope.ID,
 		},
 	}, nil
+}
+
+// ParseWebhookEvent decodes the envelope Wise POSTs to a subscription's
+// delivery URL: schema version, subscription ID, event type, sent-at
+// timestamp, and the raw data payload. The event type set is open —
+// envelopes with event types this SDK has never seen parse successfully
+// (Data stays raw for hand decoding), so new Wise events never break your
+// handler.
+//
+// Compose with VerifyWebhookSignature: verify the raw request bytes first,
+// then parse the same bytes (see VerifyWebhookSignature for the signature
+// header). Malformed envelopes — undecodable JSON, a missing event type, an
+// unparseable sent_at — are corruption-classified errors: the sender's bytes
+// cannot be trusted, so the delivery should be rejected.
+func ParseWebhookEvent(payload []byte) (*WebhookEvent, error) {
+	var envelope raw.WebhookEventEnvelope
+
+	if err := json.UnmarshalRead(payload, &envelope); err != nil {
+		return nil, errorfamily.WrapCorruption(err, "wise.webhook.decode", "parse webhook event envelope")
+	}
+
+	if envelope.EventType == "" {
+		//nolint:err113 // corruption-classified decode failure; no sentinel to wrap
+		return nil, errorfamily.WrapCorruption(errors.New("event_type is empty"),
+			"wise.webhook.decode", "parse webhook event envelope")
+	}
+
+	sentAt, err := parseWiseTimestamp(envelope.SentAt)
+	if err != nil {
+		return nil, errorfamily.WrapCorruption(err, "wise.webhook.decode", "parse webhook sent_at")
+	}
+
+	return &WebhookEvent{
+		SchemaVersion:  envelope.SchemaVersion,
+		SubscriptionID: NewWebhookSubscriptionID(envelope.SubscriptionID),
+		EventType:      WebhookEventType(envelope.EventType),
+		SentAt:         sentAt,
+		Data:           envelope.Data,
+	}, nil
+}
+
+// TransferStateChange decodes the data payload of a transfers#state-change
+// event. Calling it on an envelope of a different event type fails with a
+// corruption-classified error.
+func (e *WebhookEvent) TransferStateChange() (*TransferStateChangeData, error) {
+	var payload raw.TransferStateChangeData
+
+	if err := json.UnmarshalRead(e.Data, &payload); err != nil {
+		return nil, errorfamily.WrapCorruption(err, "wise.webhook.decode",
+			"decode transfers#state-change payload")
+	}
+
+	occurredAt, err := parseWiseTimestamp(payload.OccurredAt)
+	if err != nil {
+		return nil, errorfamily.WrapCorruption(err, "wise.webhook.decode",
+			"parse transfers#state-change occurred_at")
+	}
+
+	return &TransferStateChangeData{
+		Resource:      toWebhookResource(payload.Resource),
+		CurrentState:  TransferStatus(payload.CurrentState),
+		PreviousState: TransferStatus(payload.PreviousState),
+		OccurredAt:    occurredAt,
+	}, nil
+}
+
+// TransferPayoutFailure decodes the data payload of a transfers#payout-failure
+// event. Calling it on an envelope of a different event type fails with a
+// corruption-classified error.
+func (e *WebhookEvent) TransferPayoutFailure() (*TransferPayoutFailureData, error) {
+	var payload raw.TransferPayoutFailureData
+
+	if err := json.UnmarshalRead(e.Data, &payload); err != nil {
+		return nil, errorfamily.WrapCorruption(err, "wise.webhook.decode",
+			"decode transfers#payout-failure payload")
+	}
+
+	occurredAt, err := parseWiseTimestamp(payload.OccurredAt)
+	if err != nil {
+		return nil, errorfamily.WrapCorruption(err, "wise.webhook.decode",
+			"parse transfers#payout-failure occurred_at")
+	}
+
+	return &TransferPayoutFailureData{
+		TransferID:         NewTransferID(payload.TransferID),
+		ProfileID:          NewProfileID(payload.ProfileID),
+		FailureReasonCode:  payload.FailureReasonCode,
+		FailureDescription: payload.FailureDescription,
+		OccurredAt:         occurredAt,
+	}, nil
+}
+
+// BalanceCredit decodes the data payload of a balances#credit event. Calling
+// it on an envelope of a different event type fails with a
+// corruption-classified error.
+func (e *WebhookEvent) BalanceCredit() (*BalanceCreditData, error) {
+	var payload raw.BalanceCreditData
+
+	if err := json.UnmarshalRead(e.Data, &payload); err != nil {
+		return nil, errorfamily.WrapCorruption(err, "wise.webhook.decode",
+			"decode balances#credit payload")
+	}
+
+	amount, err := toMoney(raw.BalanceAmount{Value: payload.Amount, Currency: payload.Currency})
+	if err != nil {
+		return nil, fmt.Errorf("map balances#credit amount: %w", err)
+	}
+
+	balance, err := toMoney(raw.BalanceAmount{
+		Value:    payload.PostTransactionBalanceAmount,
+		Currency: payload.Currency,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("map balances#credit post-transaction balance: %w", err)
+	}
+
+	occurredAt, err := parseWiseTimestamp(payload.OccurredAt)
+	if err != nil {
+		return nil, errorfamily.WrapCorruption(err, "wise.webhook.decode",
+			"parse balances#credit occurred_at")
+	}
+
+	return &BalanceCreditData{
+		Resource:               toWebhookResource(payload.Resource),
+		Amount:                 amount,
+		PostTransactionBalance: balance,
+		OccurredAt:             occurredAt,
+	}, nil
+}
+
+// toWebhookResource maps the wire resource block to its public type.
+func toWebhookResource(resource raw.WebhookEventResource) WebhookResource {
+	return WebhookResource{
+		Type:      resource.Type,
+		ID:        resource.ID,
+		ProfileID: resource.ProfileID,
+		AccountID: resource.AccountID,
+	}
 }
