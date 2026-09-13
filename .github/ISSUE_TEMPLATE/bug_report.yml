@@ -1,0 +1,75 @@
+name: Bug report
+description: Report a problem with the wise-go SDK
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please include a minimal
+        reproduction — issues with a failing snippet get fixed fastest.
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: Where does the problem occur?
+      options:
+        - Wise sandbox (api.wise-sandbox.com)
+        - Wise live API (api.wise.com)
+        - Both / not environment-specific
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Expected vs actual behavior, including the full error value (types like `*APIError`/`*RateLimitError` print their classification).
+      placeholder: |
+        Expected: ...
+        Actual: ...
+        Error: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: A Go snippet that compiles and fails. Redact API keys and personal data.
+      render: go
+    validations:
+      required: true
+
+  - type: textarea
+    id: wise-request
+    attributes:
+      label: Wise API details (if applicable)
+      description: Endpoint path, request body (redacted), and the response status/headers. The `X-External-Correlation-Id` you sent helps Wise support look up the call.
+
+  - type: input
+    id: version
+    attributes:
+      label: wise-go version
+      placeholder: v0.10.0
+    validations:
+      required: true
+
+  - type: input
+    id: go-version
+    attributes:
+      label: Go version
+      description: Output of `go version`. Note the SDK requires `GOEXPERIMENT=jsonv2`.
+      placeholder: go1.26.7
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I redacted API keys and personal data
+          required: true
+        - label: I searched existing issues for duplicates
+          required: true

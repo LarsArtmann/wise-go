@@ -1,0 +1,40 @@
+name: Feature request
+description: Propose an SDK improvement or a new Wise API endpoint
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The SDK covers a curated subset of the Wise API (core transfer flow,
+        tier-2 reads, webhooks). Endpoint requests are welcome — the
+        authoritative source for what an endpoint accepts is Wise's OpenAPI
+        spec, so a link to the specific operation helps a lot.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to achieve, and what blocks you today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: endpoint
+    attributes:
+      label: Wise API endpoint (if applicable)
+      description: Method + path (e.g. `GET /v3/profiles/{profileId}/balances`), or a link to the operation in Wise's API reference.
+      placeholder: "GET /v1/..."
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed API shape
+      description: Client method signature and result types, if you have a preference. Branded IDs and typed errors are the house style.
+      render: go
+
+  - type: checkboxes
+    id: alternatives
+    attributes:
+      label: Workaround
+      options:
+        - label: I can work around this today (describe how above)
