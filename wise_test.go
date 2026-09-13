@@ -248,16 +248,20 @@ var _ = Describe("Wise Client", func() {
 			It("should isolate per-request context and responses under -race", func() {
 				const workers = 16
 
-				var mu sync.Mutex
-				seen := map[string]bool{}
+				var (
+					seenMu sync.Mutex
+					seen   = map[string]bool{}
+				)
 
 				mux.HandleFunc("/v1/rates", func(w http.ResponseWriter, r *http.Request) {
 					corr := r.Header.Get("X-External-Correlation-Id")
-					mu.Lock()
+
+					seenMu.Lock()
 					seen[corr] = true
-					mu.Unlock()
+					seenMu.Unlock()
 
 					var idx int
+
 					_, _ = fmt.Sscanf(corr, "corr-%d", &idx)
 
 					w.Header().Set("Content-Type", "application/json")
@@ -270,24 +274,30 @@ var _ = Describe("Wise Client", func() {
 					rate float64
 					err  error
 				}
-				results := make([]rateResult, workers)
-				var wg sync.WaitGroup
+
+				var results [workers]rateResult
+
+				var workerWg sync.WaitGroup
+
 				for i := range workers {
-					wg.Add(1)
-					go func() {
-						defer wg.Done()
+					workerWg.Go(func() {
 						ctx := wise.WithRequestCorrelationID(
 							context.Background(), fmt.Sprintf("corr-%d", i))
+
 						rate, err := client.GetExchangeRate(
 							ctx, wise.Currency("EUR"), wise.Currency("USD"), time.Time{})
+
 						res := rateResult{err: err}
+
 						if rate != nil {
 							res.rate = rate.Rate
 						}
+
 						results[i] = res
-					}()
+					})
 				}
-				wg.Wait()
+
+				workerWg.Wait()
 
 				for i := range workers {
 					Expect(results[i].err).ToNot(HaveOccurred(),
@@ -295,9 +305,11 @@ var _ = Describe("Wise Client", func() {
 					Expect(results[i].rate).To(Equal(float64(1000+i)),
 						"worker %d got another request's response", i)
 				}
+
 				for i := range workers {
 					Expect(seen).To(HaveKey(fmt.Sprintf("corr-%d", i)))
 				}
+
 				Expect(seen).To(HaveLen(workers))
 			})
 		})
