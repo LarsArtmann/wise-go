@@ -83,16 +83,16 @@
       "locked": {
         "lastModified": 1785250432,
         "narHash": "sha256-sXmjQG6Me3SufnYO08it/5aqeGCe8fD3GYvU3/5uUgw=",
-        "ref": "refs/heads/master",
+        "owner": "LarsArtmann",
+        "repo": "go-branded-id",
         "rev": "e61b48b0f00e217e3475d8f1caf272455401f6eb",
-        "revCount": 141,
-        "type": "git",
-        "url": "ssh://git@github.com/LarsArtmann/go-branded-id"
+        "type": "github"
       },
       "original": {
+        "owner": "LarsArtmann",
+        "repo": "go-branded-id",
         "rev": "e61b48b0f00e217e3475d8f1caf272455401f6eb",
-        "type": "git",
-        "url": "ssh://git@github.com/LarsArtmann/go-branded-id"
+        "type": "github"
       }
     },
     "go-error-family": {
@@ -100,16 +100,16 @@
       "locked": {
         "lastModified": 1785079049,
         "narHash": "sha256-aKL1tjQ8AQzIV6g5+361HTTOOdtgzfWwwfQCZHwaojo=",
-        "ref": "refs/heads/master",
+        "owner": "LarsArtmann",
+        "repo": "go-error-family",
         "rev": "8ec5aeb6d3f6f45a8315436d934f1a761a07f4f8",
-        "revCount": 267,
-        "type": "git",
-        "url": "ssh://git@github.com/LarsArtmann/go-error-family"
+        "type": "github"
       },
       "original": {
+        "owner": "LarsArtmann",
+        "repo": "go-error-family",
         "rev": "8ec5aeb6d3f6f45a8315436d934f1a761a07f4f8",
-        "type": "git",
-        "url": "ssh://git@github.com/LarsArtmann/go-error-family"
+        "type": "github"
       }
     },
     "go-nix-helpers": {
@@ -124,16 +124,16 @@
       "locked": {
         "lastModified": 1789008741,
         "narHash": "sha256-UNEyHXDhu0a3HINDuETaszDkoPiD/A71096arbZbZkI=",
-        "ref": "master",
+        "owner": "LarsArtmann",
+        "repo": "go-nix-helpers",
         "rev": "16c3184262c55377aba2126dc20e028637f58aa0",
-        "revCount": 155,
-        "type": "git",
-        "url": "ssh://git@github.com/LarsArtmann/go-nix-helpers"
+        "type": "github"
       },
       "original": {
-        "ref": "master",
-        "type": "git",
-        "url": "ssh://git@github.com/LarsArtmann/go-nix-helpers"
+        "owner": "LarsArtmann",
+        "repo": "go-nix-helpers",
+        "rev": "16c3184262c55377aba2126dc20e028637f58aa0",
+        "type": "github"
       }
     },
     "nixpkgs": {

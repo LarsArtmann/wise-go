@@ -10,7 +10,7 @@
     };
 
     go-nix-helpers = {
-      url = "git+ssh://git@github.com/LarsArtmann/go-nix-helpers?ref=master";
+      url = "github:LarsArtmann/go-nix-helpers?rev=16c3184262c55377aba2126dc20e028637f58aa0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -20,12 +20,12 @@
     };
 
     go-branded-id = {
-      url = "git+ssh://git@github.com/LarsArtmann/go-branded-id?rev=e61b48b0f00e217e3475d8f1caf272455401f6eb";
+      url = "github:LarsArtmann/go-branded-id?rev=e61b48b0f00e217e3475d8f1caf272455401f6eb";
       flake = false;
     };
 
     go-error-family = {
-      url = "git+ssh://git@github.com/LarsArtmann/go-error-family?rev=8ec5aeb6d3f6f45a8315436d934f1a761a07f4f8";
+      url = "github:LarsArtmann/go-error-family?rev=8ec5aeb6d3f6f45a8315436d934f1a761a07f4f8";
       flake = false;
     };
   };
