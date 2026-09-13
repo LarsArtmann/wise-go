@@ -186,6 +186,64 @@
               type = "app";
               program = pkgs.lib.getExe apidiff;
             };
+
+          # Living-docs health: link check + godoc render + count-claims
+          # freshness (the drift class that let "33 methods" outlive the
+          # 37-method surface). Run from the repo root: nix run .#doc-verify.
+          apps.doc-verify =
+            let
+              doc-verify = pkgs.writeShellApplication {
+                name = "doc-verify";
+                runtimeInputs = [
+                  pkgs.go
+                  pkgs.git
+                  pkgs.lychee
+                ];
+                text = ''
+                  set -euo pipefail
+                  cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+                  status=0
+
+                  export GOEXPERIMENT=jsonv2
+
+                  # 1. godoc must render cleanly.
+                  if ! go doc -all . > /dev/null; then
+                    echo "FAIL: go doc -all does not render"
+                    status=1
+                  fi
+
+                  # 2. Count claims in living docs must match the real surface.
+                  actual_methods="$(go doc -all . | grep -c '^func (c \*Client)' || true)"
+                  claimed_methods="$(grep -oE '[0-9]+ endpoint methods' AGENTS.md | head -1 | grep -oE '^[0-9]+' || true)"
+                  if [ -n "$claimed_methods" ] && [ "$claimed_methods" != "$actual_methods" ]; then
+                    echo "FAIL: AGENTS.md claims $claimed_methods endpoint methods, actual is $actual_methods"
+                    status=1
+                  fi
+
+                  actual_examples="$(grep -c '^func Example' example_test.go || true)"
+                  claimed_examples="$(grep -oE '[0-9]+ .Example.. funcs' FEATURES.md | head -1 | grep -oE '^[0-9]+' || true)"
+                  if [ -n "$claimed_examples" ] && [ "$claimed_examples" != "$actual_examples" ]; then
+                    echo "FAIL: FEATURES.md claims $claimed_examples Example funcs, actual is $actual_examples"
+                    status=1
+                  fi
+
+                  # 3. No ghost relative links in the living docs.
+                  if ! lychee --offline --no-progress \
+                    README.md FEATURES.md ROADMAP.md TODO_LIST.md CHANGELOG.md CONTRIBUTING.md AGENTS.md; then
+                    status=1
+                  fi
+
+                  if [ "$status" -eq 0 ]; then
+                    echo "doc-verify: all checks passed"
+                  fi
+                  exit "$status"
+                '';
+              };
+            in
+            {
+              type = "app";
+              program = pkgs.lib.getExe doc-verify;
+            };
         };
     };
 }
