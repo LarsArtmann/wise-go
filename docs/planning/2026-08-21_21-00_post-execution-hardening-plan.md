@@ -1,5 +1,12 @@
 # wise-go Post-Execution Hardening Plan — v0.8.1+ → release
 
+> **EXECUTED 60/60 — archived 2026-09-13.** Completion verified in
+> `docs/status/2026-08-21_22-31_hardening-completion.md` (race + lint + coverage
+> 90.8% + `nix flake check` green). Gated items: G1 sandbox key and G2 cachix
+> token still user-gated (`TODO_LIST.md` P2); G3 version call made (v0.9.0
+> shipped `e508572`, v0.10.0 followed `fe896a8`); G4 struck below; G5
+> demand-gated (`ROADMAP.md`). Nothing actionable is lost here.
+
 **Date:** 2026-08-21 21:00 CEST
 **Inputs:** `docs/status/2026-08-21_20-57_execution-session-self-review.md` (sections a–g: 50 next-work items, 4 partials, 5 gated items, 7 process failures), TODO_LIST.md (2 user-gated items), the v1.0 audit (`docs/reviews/2026-08-21_v1.0-api-audit.md` — green).
 **Baseline:** 31 endpoint methods / 14 resources, 121 BDD specs, 86.9% coverage, 0 lint issues, `nix flake check` green, 19 unpushed commits on master.

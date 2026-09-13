@@ -1,5 +1,13 @@
 # Status Report: nix-private-go-repos Migration
 
+> **Resolution (2026-09-13 docs-health pass):** b.3/c.6 (docs updates) are done —
+> AGENTS.md Build & Dev now documents the `go-standard` module, `mkPreparedSource`
+> and the git+ssh inputs. c.7 resolved (the "unrelated" changes were the
+> `requireID` dedup refactor, committed as `630894d`). b.1/c.2 (CI SSH auth for
+> git+ssh inputs) remain OPEN — consolidated into the CI-re-enable item in
+> `TODO_LIST.md` P4 (confirmed 2026-09-13: CI is still `disabled_manually`, last
+> run 2026-07-05, and no workflow carries SSH auth yet).
+
 **Date:** 2026-08-21 23:10 CEST\
 **Session:** Application of `nix-private-go-repos` skill to `wise-go`\
 **Reporter:** Crush
@@ -50,7 +58,7 @@ Migrated `wise-go` from a raw `buildGoModule` + `vendorHash.nix` setup to the re
 
 1. **CI authentication for private flake inputs.** The local migration is complete, but CI runners still need SSH access to fetch `git+ssh://` inputs. The skill outlines two strategies (deploy keys or `GITHUB_TOKEN` + `insteadOf`), but neither has been implemented or tested in a workflow.
 2. **Understanding of unrelated working-tree changes.** Several Go source files, `AGENTS.md`, and `CHANGELOG.md` were modified during the session (likely by the auto-git daemon or build tooling). I left them untouched per the safety rule not to revert changes one did not author, but their intent/origin is not fully clear.
-3. **Documentation updates for the new flake.** `AGENTS.md` and `README.md` still describe the old raw `buildGoModule` structure; no migration note has been added yet.
+3. ~~**Documentation updates for the new flake.** `AGENTS.md` and `README.md` still describe the old raw `buildGoModule` structure; no migration note has been added yet.~~ done 2026-09-13 — AGENTS.md Build & Dev documents the `go-standard` flake module, `mkPreparedSource`, and the private-input fetch model (README never described the old flake structure, nothing to update there).
 
 ---
 
@@ -61,8 +69,8 @@ Migrated `wise-go` from a raw `buildGoModule` + `vendorHash.nix` setup to the re
 3. Cross-system verification (`aarch64-linux`, `x86_64-darwin`, `aarch64-darwin`).
 4. Adding a govulncheck flake check (it is only in the devShell via `go-standard` defaults).
 5. Exposing `lintAsCheck` if a hermetic `checks.lint` is desired.
-6. Updating project docs (`AGENTS.md`, `README.md`, `CHANGELOG.md`) to reflect the new flake architecture.
-7. Resolving or reverting the unrelated auto-generated source/docs changes.
+6. ~~Updating project docs (`AGENTS.md`, `README.md`, `CHANGELOG.md`) to reflect the new flake architecture.~~ done 2026-09-13 (AGENTS.md; README has no flake-structure content; CHANGELOG is for library-API changes — flake tooling deliberately not changelogged).
+7. ~~Resolving or reverting the unrelated auto-generated source/docs changes.~~ resolved — they were the concurrent `requireID`/`toTransfer` dedup refactor, intentionally committed as `630894d` (see `2026-08-21_23-10_dedup-refactor-self-review.md`).
 8. Fresh-clone build test from a machine without the Nix cache.
 
 ---
@@ -116,8 +124,8 @@ Nothing is catastrophically broken. The one real risk is that **CI will break im
 26. Test a fresh `git clone` followed by `nix flake check`.
 27. Test the build with `--option substitute false` to verify true sandbox independence.
 28. Verify `git config url."git@github.com:".insteadOf` is documented for new devs.
-29. Add a `docs/reviews/2026-08-21_nix-private-go-repos-migration.md` retrospective.
-30. Update `TODO_LIST.md` with remaining CI/docs tasks.
+29. ~~Add a `docs/reviews/2026-08-21_nix-private-go-repos-migration.md` retrospective.~~ moot — this report is the retrospective.
+30. ~~Update `TODO_LIST.md` with remaining CI/docs tasks.~~ done 2026-09-13 (CI-re-enable item with SSH-auth prerequisite in P4).
 31. Verify `nix develop -c golangci-lint run ./...` still passes.
 32. Check `buildflow` compatibility with the new flake outputs.
 33. Confirm the pre-commit hook still runs `nix fmt` correctly.

@@ -1,5 +1,11 @@
 # Hardening Plan Completion — Final Status Report
 
+> **Resolution (2026-09-13 docs-health pass):** the version call (g3) is made —
+> **v0.9.0 shipped 2026-08-21 (`e508572`)**, followed by **v0.10.0**
+> (2026-09-13, `fe896a8`, tag pending). The 23 commits were pushed (branch in
+> sync with origin/master). g1 (sandbox key) and g2 (Cachix token) remain
+> user-gated, tracked in `TODO_LIST.md` P2.
+
 **Date:** 2026-08-21 22:31 CEST
 **Plan:** `docs/planning/2026-08-21_21-00_post-execution-hardening-plan.md` (Table B: 60 tasks)
 **Progress:** **60 of 60 executable tasks done and verified** (Tier 1%: 23/23 · Tier 4%: 20/20 · Tier 20%: 17/17).
@@ -80,8 +86,8 @@ Coverage: 90.4% → **90.8%** (refresh endpoint + guard test add covered stateme
 
 ## d) Open gated questions — NOT answered, by design
 
-1. **g1 — Sandbox API key** (`WISE_SANDBOX_API_KEY`): the live-test workflow dispatches green-without-key; a key drop makes it real.
-2. **g2 — Cachix**: does cache `larsartmann` exist and is `CACHIX_AUTH_TOKEN` set? The CI step degrades to a warning until answered.
-3. **g3 — Version call**: 0.9.0 first or straight to v1.0.0? The `[Unreleased]` block is cut-ready for either; no tag exists and none was created.
+1. **g1 — Sandbox API key** (`WISE_SANDBOX_API_KEY`): the live-test workflow dispatches green-without-key; a key drop makes it real. ← still user-gated (TODO_LIST P2, 2026-09-13).
+2. **g2 — Cachix**: does cache `larsartmann` exist and is `CACHIX_AUTH_TOKEN` set? The CI step degrades to a warning until answered. ← still user-gated (TODO_LIST P2, 2026-09-13).
+3. ~~**g3 — Version call**: 0.9.0 first or straight to v1.0.0? The `[Unreleased]` block is cut-ready for either; no tag exists and none was created.~~ done — v0.9.0 shipped 2026-08-21 (`e508572`); v0.10.0 followed 2026-09-13 (`fe896a8`).
 
-**Not pushed.** 23 commits await the maintainer's review; push and tag only on instruction.
+~~**Not pushed.** 23 commits await the maintainer's review; push and tag only on instruction.~~ Pushed — branch in sync with origin/master (verified 2026-09-13).

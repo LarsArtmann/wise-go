@@ -1,5 +1,13 @@
 # Hardening Plan Execution — Comprehensive Status Report
 
+> **Resolution (2026-09-13 docs-health pass):** this 31/60 snapshot is
+> SUPERSEDED by `2026-08-21_22-31_hardening-completion.md` (60/60 verified).
+> The pending 8.x examples commit landed as `20810a7`; AGENTS.md gotchas landed
+> as `9d9d7a5`; the plan's G4 was struck in `2026-08-21_21-00_post-execution-hardening-plan.md`.
+> Every 9.x–14.x task below is verified done there; g1 (sandbox key) and g2
+> (Cachix) remain user-gated in `TODO_LIST.md` P2; the version call (g3) was
+> made — v0.9.0 shipped `e508572`, v0.10.0 followed `fe896a8`.
+
 **Date:** 2026-08-21 21:46 CEST
 **Plan:** `docs/planning/2026-08-21_21-00_post-execution-hardening-plan.md` (Table B: 60 tasks)
 **Progress:** 31 of 60 tasks done (Tier 1% complete: 23/23 · Tier 4%: 8/20 · Tier 20%: 0/17)
@@ -53,7 +61,7 @@
 
 ## b) Partially done / needs finishing
 
-- **8.x Godoc examples (3 of 3 batches WRITTEN AND VERIFIED, NOT COMMITTED):** all 10 examples (GetStatement, VerifyWebhookSignature, ListCurrencies, CreateBalance, GetTotalFunds, GetBalance, GetMe, GetUser, GetMultiCurrencyAccount, GetBankAccountDetails) are appended to `example_test.go` (+214 lines), imports fixed, `go test -race` green, lint 0 issues — but the change sits **uncommitted in the working tree** (I verified then moved to reporting, per your instruction). The working tree is clean otherwise. First next-step: commit it (the daemon may have picked it up by the time you read this — check `git log -- example_test.go`).
+- **8.x Godoc examples (3 of 3 batches WRITTEN AND VERIFIED, ~~NOT COMMITTED~~):** all 10 examples (GetStatement, VerifyWebhookSignature, ListCurrencies, CreateBalance, GetTotalFunds, GetBalance, GetMe, GetUser, GetMultiCurrencyAccount, GetBankAccountDetails) are appended to `example_test.go` (+214 lines), imports fixed, `go test -race` green, lint 0 issues — ~~but the change sits **uncommitted in the working tree** (I verified then moved to reporting, per your instruction). The working tree is clean otherwise. First next-step: commit it (the daemon may have picked it up by the time you read this — check `git log -- example_test.go`).~~ committed by the daemon as `20810a7` (verified in `2026-08-21_22-31`, Bookkeeping section).
 - **9.x Tier-4% boundary (9.6) not yet run** — full suite + lint are green from 7.x/8.x work, but the plan's tier-boundary `nix flake check` after 8.x+9.x hasn't happened (blocked on 9.x itself being pending).
 - **Coverage badge** shows 86.9% until the next push to master runs the badge job; the 90.4% number is local-measured only.
 

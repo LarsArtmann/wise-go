@@ -1,5 +1,12 @@
 # wise-go Pareto Execution Plan — v0.8.1 → v1.0
 
+> **EXECUTED — archived 2026-09-13.** All 80 executable Table B tasks completed
+> (Execution Result below; verified in `docs/status/2026-08-21_20-57` and
+> `_22-31`). Tasks 24–27 were gated: sandbox key (still user-gated,
+> `TODO_LIST.md` P2), v1.0.0 tag (still user-gated, TODO_LIST P1), typed
+> recipient Details (still user-gated, TODO_LIST P2), long-tail epics
+> (`ROADMAP.md`). Nothing actionable is lost here.
+
 **Date:** 2026-08-21 12:05 CEST
 **Inputs:** `TODO_LIST.md` (19 open items, rebuilt 2026-08-21), `ROADMAP.md` (4 axes), `docs/status/2026-08-21_09-50_docs-health-audit-and-readme-overhaul.md` (f-list), `docs/status/2026-08-19_18-15_core-transfer-flow-completion.md` (f-list), `docs/planning/2026-08-19_wise-api-full-implementation-plan.md` (tier model).
 **Baseline:** v0.8.1 — 18 endpoint methods / 9 resources, core transfer flow complete except `FundTransfer`; 84.2% coverage; all mock-tested; docs freshly audited (2026-08-21).

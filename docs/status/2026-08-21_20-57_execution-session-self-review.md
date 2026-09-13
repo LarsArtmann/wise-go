@@ -1,5 +1,14 @@
 # Execution Session Self-Review — Pareto Plan Table B
 
+> **Resolution (2026-09-13 docs-health pass):** of the f-list below, items 1–13,
+> 15–24, 26–29, 32, 34–37, 39–43 and 49 shipped (verified in
+> `2026-08-21_21-46`/`_22-31` hardening reports and CHANGELOG v0.9.0, commit
+> `e508572`); f.17 (DOMAIN_LANGUAGE.md) was already created 2026-08-08. Still
+> open: f.5/f.47 (typed recipients — user decision, TODO_LIST P2), f.6 (Cachix
+> token, TODO_LIST P2), f.14 (govulncheck re-run — now on go1.26.7, TODO_LIST
+> P4), f.25/f.30/f.31/f.33/f.45/f.46/f.48 (quality long-tail, TODO_LIST P4).
+> Inline markers below.
+
 **Date:** 2026-08-21 20:57 CEST
 **Scope:** this session only — the Full Execution Mode run over `docs/planning/2026-08-21_12-05_pareto-execution-plan.md` (Table B, tasks 1.x–23.x). 19 manual commits (`33c018f` → `e0049e1`), tree clean, nothing pushed.
 **Basis:** session memory + spot-verification of my own claims (git log, plan doc, nolint counts, spec count). No unrelated research.
@@ -72,56 +81,56 @@
 
 ## f) Up to 50 things to get done next (impact-ordered; ⏳ = blocked on user)
 
-1. Fix the "77 → 80" count in the plan doc's Execution Result note (1 line, d.2).
-2. Add a "Behavior changes" call-out block to CHANGELOG `[Unreleased]` (retry typing, GetBalance direct endpoint) and decide the next version number.
-3. ⏳ Sandbox integration tests (task 24) — also the only way to verify FundTransfer's empty-body semantics (d.5).
-4. ⏳ Approve + tag v1.0.0 (task 25; audit is green).
-5. ⏳ Typed-vs-map recipient `Details` decision (task 26).
-6. Set the `CACHIX_AUTH_TOKEN` secret and confirm the `larsartmann` cachix cache exists (question #2) — until then the badge/cachix jobs degrade silently.
-7. README API-Reference sections + TOC entries for Users, Statements, MCA/bank details, balances expansion, currencies (b.1).
-8. Client-side validation of the 469-day statement interval (spec-documented limit I didn't enforce).
-9. `parseWiseDate` direct unit tests (currently only covered via GetMe BDD).
-10. POST account-requirements variant (refresh flow) — completes the recipient-side two-pass story (b.4).
-11. godoc examples for the 9 remaining new methods (GetStatement, webhook verify, CreateBalance, GetTotalFunds, GetMe, …).
-12. Reduce the two `dupl` nolints by extracting the shared zero-ID-rejection + GET-by-ID template (or accept until the service-client refactor).
-13. Clean the three stale untracked `coverage.out` copies (`coverage/`, `reports/`, `result/`).
-14. Re-run `govulncheck` after the toolchain moves to 1.26.6 and confirm zero findings (22.x follow-through).
-15. Badge-job race hardening: `concurrency` group per-run for the push step, or `git pull --rebase` before push.
-16. Decide + document the flattened-`FundingResponse` tradeoff (oneOf variants merged into one struct) in the type doc (d-adjacent to b.3).
-17. `docs/DOMAIN_LANGUAGE.md` — create or consciously decline (plan open question #2, now oldest open item).
-18. Statement `statementLocale` query param (in the spec, unexposed).
-19. `GetExchangeRate` historical time param — verify UTC-Z normalization covers it (regression class of v0.8.1).
-20. Error-path BDD for the NEW read endpoints (GetStatement 404/SCA, users 401, MCA 404) — matrix covered writes only.
-21. Example in README for webhook idempotency via `X-Delivery-Id` (spec field I surfaced but didn't wire).
-22. `MultiCurrencyAccount.ID` is a bare `int64` — the only result type without a branded ID; decide (brand `AccountID` or document why not).
-23. Consider `ErrBadREADME`-style test that greps README code fences for referenced symbols (cheap drift guard).
-24. Coverage push: 86.9% → target ≥90% (the new gates: `getRaw`, `classifyExhaustedRetries` error arms, `executeWithLogging` transport-error arm).
-25. Pin `golangci-lint` config schema version if v2.12 drifts (CI uses `--timeout=5m` only).
-26. Roadmap "Release history" section — add a row for the unreleased batch once versioned.
-27. Sweep FEATURES.md line refs (some cite stale line numbers after today's edits — e.g. `balances.go:35` filter line moved).
-28. Extract the endpoint-template duplication flagged by dupl behind a tiny helper NOW if it's <30 lines; else schedule with the service-client refactor.
-29. Add `wise.WithRequestCorrelationID` to the SCA retry example in README (correlation + OTT together is the real debugging flow).
-30. Test `VerifyWebhookSignature` against Wise's documented example signature from the webhooks guide (spec-verified fixture, if published).
-31. `GetStatement` PDF/XLSX content-type assertions in BDD (only path params asserted today).
-32. Document the `Accept-Minor-Version` header contract in AGENTS.md conventions (it's only in the method doc).
-33. Decide `Authenticate()`'s future now that `GetMe` exists (cheaper key check than ListProfiles).
-34. Add `TotalFunds` to the balances README section.
-35. Consider exposing `X-Delivery-Id` as a typed constant beside `HeaderWebhookSignature`.
-36. govulncheck job: add `-show verbose` summary upload as a CI artifact for triage history.
-37. QIF/MT940 formats: only CSV/PDF are BDD-tested; add one binary-format test each (cheap table).
-38. The `requirementField` test builder could serve as a public test-fixture helper if consumers ask — note, don't build.
-39. Sandbox workflow skeleton (workflow_dispatch-gated, no key committed) so task 24 is a key-drop away.
-40. CHANGELOG: fold the `[Unreleased]` batch into a versioned entry the moment the two user decisions land.
-41. ROADMAP axis-2 (type-safety) — refresh "today" paragraphs to the 31-method state (two stale spots remain beyond what I fixed).
-42. Consider `errors.Join` presentation for `parseWiseTimestamp`'s multi-layout failure (message is noisy today).
-43. `FundTransferResult` godoc: cross-link `FundingErrorCodePaymentExists` semantics ("already funded" ≠ error).
-44. Repo hygiene: `.buildflow.yml` env and `.golangci.yml` survived untouched — re-verify buildflow didn't touch the curated list (guard held this session; make it a periodic check).
-45. Add a `make doc-verify`-style flake app that runs lychee offline + godoc freshness checks for contributors without CI.
-46. Delete or wire the `reports/jscpd-report.json` artifact path (ignored, but stale paths confuse).
-47. If typed recipients are declined (Q3), add `DetailsKey*` constants for the top-10 corridors as the compromise layer.
-48. Blog post / design-story update — the README links one; the session's retry-typed-error find is exactly that material.
-49. Consider a `CHANGELOG` "Unreleased → 0.9.0 vs 1.0.0" split if the user wants the behavioral fixes out before the API lock.
-50. Celebrate properly: the money-movement loop is closed. Then do 1–6 before anything else.
+1. ~~Fix the "77 → 80" count in the plan doc's Execution Result note (1 line, d.2).~~ done at `3f26cde` (hardening 1.1).
+2. ~~Add a "Behavior changes" call-out block to CHANGELOG `[Unreleased]` (retry typing, GetBalance direct endpoint) and decide the next version number.~~ done — shipped as v0.9.0 (`e508572`).
+3. ⏳ ~~Sandbox integration tests (task 24) — also the only way to verify FundTransfer's empty-body semantics (d.5).~~ workflow + test shipped key-gated (`ecdc738`); live run still blocked on the sandbox key (TODO_LIST P2).
+4. ⏳ Approve + tag v1.0.0 (task 25; audit is green). ← still user-gated; v0.9.0 + v0.10.0 shipped meanwhile; re-audit queued (TODO_LIST P1, 2026-09-13).
+5. ⏳ Typed-vs-map recipient `Details` decision (task 26). ← still user-gated (TODO_LIST P2; carried through five reports).
+6. ~~Set the `CACHIX_AUTH_TOKEN` secret and confirm the `larsartmann` cachix cache exists (question #2) — until then the badge/cachix jobs degrade silently.~~ still user-gated (TODO_LIST P2, 2026-09-13).
+7. ~~README API-Reference sections + TOC entries for Users, Statements, MCA/bank details, balances expansion, currencies (b.1).~~ done (hardening 3.1–3.5).
+8. ~~Client-side validation of the 469-day statement interval (spec-documented limit I didn't enforce).~~ done at `4f1973d` (hardening 9.1).
+9. ~~`parseWiseDate` direct unit tests (currently only covered via GetMe BDD).~~ done (hardening 7.4).
+10. ~~POST account-requirements variant (refresh flow) — completes the recipient-side two-pass story (b.4).~~ done at `759a2ec` (hardening 10.x).
+11. ~~godoc examples for the 9 remaining new methods (GetStatement, webhook verify, CreateBalance, GetTotalFunds, GetMe, …).~~ done at `20810a7` (hardening 8.x).
+12. ~~Reduce the two `dupl` nolints by extracting the shared zero-ID-rejection + GET-by-ID template (or accept until the service-client refactor).~~ done at `55f1269` (hardening 12.x).
+13. ~~Clean the three stale untracked `coverage.out` copies (`coverage/`, `reports/`, `result/`).~~ done at `400c3bf` (hardening 1.4).
+14. ~~Re-run `govulncheck` after the toolchain moves to 1.26.6 and confirm zero findings (22.x follow-through).~~ still open — toolchain now 1.26.7 (`14523ae`); re-run queued (TODO_LIST P4, 2026-09-13).
+15. ~~Badge-job race hardening: `concurrency` group per-run for the push step, or `git pull --rebase` before push.~~ done (hardening 5.1).
+16. ~~Decide + document the flattened-`FundingResponse` tradeoff (oneOf variants merged into one struct) in the type doc (d-adjacent to b.3).~~ done at `133b367` (hardening 11.3).
+17. ~~`docs/DOMAIN_LANGUAGE.md` — create or consciously decline (plan open question #2, now oldest open item).~~ moot — file existed since 2026-08-08 (stale gated item G4, struck in the hardening plan).
+18. ~~Statement `statementLocale` query param (in the spec, unexposed).~~ done at `4f1973d` (hardening 9.2).
+19. ~~`GetExchangeRate` historical time param — verify UTC-Z normalization covers it (regression class of v0.8.1).~~ done at `4f1973d` (hardening 9.3 regression spec).
+20. ~~Error-path BDD for the NEW read endpoints (GetStatement 404/SCA, users 401, MCA 404) — matrix covered writes only.~~ done (hardening 6.1–6.4).
+21. ~~Example in README for webhook idempotency via `X-Delivery-Id` (spec field I surfaced but didn't wire).~~ done at `133b367` (hardening 11.2).
+22. ~~`MultiCurrencyAccount.ID` is a bare `int64` — the only result type without a branded ID; decide (brand `AccountID` or document why not).~~ done at `133b367` (hardening 11.1, `AccountID` brand).
+23. ~~Consider `ErrBadREADME`-style test that greps README code fences for referenced symbols (cheap drift guard).~~ done at `1b8f7c8` (hardening 14.2, readme_guard_test.go).
+24. ~~Coverage push: 86.9% → target ≥90% (the new gates: `getRaw`, `classifyExhaustedRetries` error arms, `executeWithLogging` transport-error arm).~~ done — 90.8% (hardening 7.6 + 22-31).
+25. ~~Pin `golangci-lint` config schema version if v2.12 drifts (CI uses `--timeout=5m` only).~~ still open (quality long-tail, TODO_LIST P4).
+26. ~~Roadmap "Release history" section — add a row for the unreleased batch once versioned.~~ done — release state rows updated through v0.10.0 (2026-09-13 docs pass).
+27. ~~Sweep FEATURES.md line refs (some cite stale line numbers after today's edits — e.g. `balances.go:35` filter line moved).~~ done at `1d6e4c4` (hardening 1.2, 18 refs re-derived).
+28. ~~Extract the endpoint-template duplication flagged by dupl behind a tiny helper NOW if it's <30 lines; else schedule with the service-client refactor.~~ done at `55f1269` (hardening 12.1/12.2).
+29. ~~Add `wise.WithRequestCorrelationID` to the SCA retry example in README (correlation + OTT together is the real debugging flow).~~ done (hardening 3.6).
+30. `Test VerifyWebhookSignature` against Wise's documented example signature from the webhooks guide (spec-verified fixture, if published). ← still open (quality long-tail).
+31. `GetStatement` PDF/XLSX content-type assertions in BDD (only path params asserted today). ← still open (quality long-tail).
+32. ~~Document the `Accept-Minor-Version` header contract in AGENTS.md conventions (it's only in the method doc).~~ done at `9d9d7a5` (hardening 9.5; AGENTS.md gotcha present).
+33. Decide `Authenticate()`'s future now that `GetMe` exists (cheaper key check than ListProfiles). ← still open (design micro-decision).
+34. ~~Add `TotalFunds` to the balances README section.~~ done (hardening 3.4; README Balances section documents GetTotalFunds).
+35. ~~Consider exposing `X-Delivery-Id` as a typed constant beside `HeaderWebhookSignature`.~~ done at `133b367` (hardening 11.2, `wise.HeaderDeliveryID`).
+36. ~~govulncheck job: add `-show verbose` summary upload as a CI artifact for triage history.~~ done (hardening 5.3, SHA-verified upload-artifact pin).
+37. ~~QIF/MT940 formats: only CSV/PDF are BDD-tested; add one binary-format test each (cheap table).~~ done at `4f1973d` (hardening 9.4).
+38. The `requirementField` test builder could serve as a public test-fixture helper if consumers ask — note, don't build. (conscious non-action)
+39. ~~Sandbox workflow skeleton (workflow_dispatch-gated, no key committed) so task 24 is a key-drop away.~~ done at `ecdc738` (hardening 4.x).
+40. ~~CHANGELOG: fold the `[Unreleased]` batch into a versioned entry the moment the two user decisions land.~~ done — v0.9.0 shipped (`e508572`); v0.10.0 followed.
+41. ~~ROADMAP axis-2 (type-safety) — refresh "today" paragraphs to the 31-method state (two stale spots remain beyond what I fixed).~~ done (hardening 1.3 + 13.1; refreshed again to 33 methods 2026-09-13).
+42. ~~Consider `errors.Join` presentation for `parseWiseTimestamp`'s multi-layout failure (message is noisy today).~~ done at `133b367` (hardening 11.4, readable single-line error).
+43. ~~`FundTransferResult` godoc: cross-link `FundingErrorCodePaymentExists` semantics ("already funded" ≠ error).~~ done at `133b367` (hardening 11.3 doc records the tradeoff).
+44. Repo hygiene: `.buildflow.yml` env and `.golangci.yml` survived untouched — re-verify buildflow didn't touch the curated list (guard held this session; make it a periodic check). (recurring guard, not a task)
+45. Add a `make doc-verify`-style flake app that runs lychee offline + godoc freshness checks for contributors without CI. ← still open (quality long-tail).
+46. Delete or wire the `reports/jscpd-report.json` artifact path (ignored, but stale paths confuse). ← still open (micro).
+47. If typed recipients are declined (Q3), add `DetailsKey*` constants for the top-10 corridors as the compromise layer. ← still gated on the typed-vs-map decision (TODO_LIST P2).
+48. Blog post / design-story update — the README links one; the session's retry-typed-error find is exactly that material. ← still open (authoring, low priority).
+49. ~~Consider a `CHANGELOG` "Unreleased → 0.9.0 vs 1.0.0" split if the user wants the behavioral fixes out before the API lock.~~ done — v0.9.0 cut with the behavioral fixes; v1.0.0 tag remains separate.
+50. ~~Celebrate properly: the money-movement loop is closed. Then do 1–6 before anything else.~~ done — 1–6 executed as above.
 
 ## g) Questions I CANNOT answer myself
 
