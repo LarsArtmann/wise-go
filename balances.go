@@ -25,9 +25,9 @@ const (
 
 // ListBalances returns all balances for a profile.
 //
-// Only visible, non-investment balances are returned. Wise exposes no
-// per-balance endpoint, so there is no way to fetch a hidden or invested
-// balance individually through this SDK.
+// Only visible, non-investment balances are returned. Hidden and invested
+// balances are retrievable individually via GetBalance, which reads the
+// direct per-balance endpoint without filtering.
 func (c *Client) ListBalances(ctx context.Context, profileID ProfileID) ([]Balance, error) {
 	path := fmt.Sprintf("/v4/profiles/%d/balances?types=%s", profileID.Get(), balanceTypesQuery)
 
