@@ -61,6 +61,8 @@
         ./internal/raw/webhooks.go
         ./internal/raw/types_test.go
         ./internal_test.go
+        ./errors_test.go
+        ./helpers_test.go
         ./bench_test.go
         ./example_test.go
         ./wise_test.go
