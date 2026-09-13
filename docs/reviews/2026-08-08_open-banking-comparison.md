@@ -83,11 +83,11 @@ func (c *Client) setAuth(req *http.Request) {
 
 ## 3. Base URLs
 
-| Environment                 | wise-go SDK                             | Open Banking API                                                                                                     |
-| --------------------------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| **Production**              | `https://api.wise.com`                  | `https://openbanking.transferwise.com`                                                                               |
+| Environment                 | wise-go SDK                                                                                                                 | Open Banking API                                                                                                     |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **Production**              | `https://api.wise.com`                                                                                                      | `https://openbanking.transferwise.com`                                                                               |
 | **Sandbox**                 | ~~`https://api.sandbox.transferwise.tech`~~ `https://api.wise-sandbox.com` (V1 deprecated 2026-06-30; corrected 2026-09-13) | `https://openbanking.wise-sandbox.com`                                                                               |
-| **Authorization (browser)** | N/A                                     | `https://transferwise.com/openbanking/authorize` (prod) / `https://wise-sandbox.com/openbanking/authorize` (sandbox) |
+| **Authorization (browser)** | N/A                                                                                                                         | `https://transferwise.com/openbanking/authorize` (prod) / `https://wise-sandbox.com/openbanking/authorize` (sandbox) |
 
 ---
 

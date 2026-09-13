@@ -99,21 +99,21 @@ claim here can be verified against the implementation.
 
 ## Build & tooling
 
-| Feature                                                | Status           | Evidence                                     |
-| ------------------------------------------------------ | ---------------- | -------------------------------------------- |
-| `go test ./...`                                        | FULLY_FUNCTIONAL | httptest mocks; no network required          |
-| `golangci-lint run`                                    | FULLY_FUNCTIONAL | 0 issues                                     |
+| Feature                                                | Status               | Evidence                                                                                                                                                                                 |
+| ------------------------------------------------------ | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `go test ./...`                                        | FULLY_FUNCTIONAL     | httptest mocks; no network required                                                                                                                                                      |
+| `golangci-lint run`                                    | FULLY_FUNCTIONAL     | 0 issues                                                                                                                                                                                 |
 | `.github/workflows/ci.yml` (build/test/lint/vulncheck) | PARTIALLY_FUNCTIONAL | Workflow file maintained (refreshed 2026-09-12, commit `14523ae`) but still `disabled_manually` on GitHub since 2026-07-05; no runs since. `sandbox-live.yml` is active (dispatch-gated) |
-| `nix flake check`                                      | FULLY_FUNCTIONAL | Format + sandboxed test via the `go-standard` module (`checks.test` race + coverage)   |
-| `nix fmt` (gofumpt + goimports + nixfmt)               | FULLY_FUNCTIONAL | `flake.nix` treefmt config                   |
-| BDD tests via Ginkgo + httptest                        | FULLY_FUNCTIONAL | `wise_test.go`                               |
+| `nix flake check`                                      | FULLY_FUNCTIONAL     | Format + sandboxed test via the `go-standard` module (`checks.test` race + coverage)                                                                                                     |
+| `nix fmt` (gofumpt + goimports + nixfmt)               | FULLY_FUNCTIONAL     | `flake.nix` treefmt config                                                                                                                                                               |
+| BDD tests via Ginkgo + httptest                        | FULLY_FUNCTIONAL     | `wise_test.go`                                                                                                                                                                           |
 
 ## Documentation
 
-| Feature                           | Status           | Evidence                                                                                                        |
-| --------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------- |
+| Feature                           | Status           | Evidence                                                                                                      |
+| --------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------- |
 | Godoc examples for the public API | FULLY_FUNCTIONAL | `example_test.go`; 20 `Example*` funcs (compile-only doc examples + 3 runnable) covering every resource group |
-| README API reference              | FULLY_FUNCTIONAL | All 14 resources documented with runnable snippets + TOC                                                        |
+| README API reference              | FULLY_FUNCTIONAL | All 14 resources documented with runnable snippets + TOC                                                      |
 
 ## API surface expansion (v0.8.0)
 
@@ -132,14 +132,14 @@ claim here can be verified against the implementation.
 | `GetDeliveryEstimate`                   | FULLY_FUNCTIONAL | `delivery_estimates.go`                                         |
 | `ValidateTransferRequirements`          | FULLY_FUNCTIONAL | `transfer_requirements.go`                                      |
 | `GetQuoteAccountRequirements`           | FULLY_FUNCTIONAL | `quotes.go`; route forms, `Accept-Minor-Version: 1`             |
-| `RefreshQuoteAccountRequirements`          | FULLY_FUNCTIONAL | `quotes.go`; two-pass flow, omit-empties partial form, BDD+unit |
+| `RefreshQuoteAccountRequirements`       | FULLY_FUNCTIONAL | `quotes.go`; two-pass flow, omit-empties partial form, BDD+unit |
 
 ## API surface expansion (v0.10.0)
 
-| Feature                             | Status           | Evidence                                                          |
-| ----------------------------------- | ---------------- | ------------------------------------------------------------------ |
-| `GetTransferReceipt` PDF download   | FULLY_FUNCTIONAL | `transfers.go`; raw bytes, 404 = `*NotFoundError` (no receipt yet) |
-| `GetTransferPayoutInfo` (MT103)     | FULLY_FUNCTIONAL | `transfers.go`; `TransferPayoutInfo`, nil `MT103` for non-SWIFT    |
+| Feature                           | Status           | Evidence                                                           |
+| --------------------------------- | ---------------- | ------------------------------------------------------------------ |
+| `GetTransferReceipt` PDF download | FULLY_FUNCTIONAL | `transfers.go`; raw bytes, 404 = `*NotFoundError` (no receipt yet) |
+| `GetTransferPayoutInfo` (MT103)   | FULLY_FUNCTIONAL | `transfers.go`; `TransferPayoutInfo`, nil `MT103` for non-SWIFT    |
 
 ## Wire format hardening
 
@@ -162,6 +162,6 @@ claim here can be verified against the implementation.
 
 ## Deferred (demand-gated, not started)
 
-| Feature                      | Status           | Notes                                          |
-| ---------------------------- | ---------------- | ---------------------------------------------- |
-| Service-client sub-structure | PLANNED          | Trigger reached: 14 resources (see ROADMAP.md) |
+| Feature                      | Status  | Notes                                          |
+| ---------------------------- | ------- | ---------------------------------------------- |
+| Service-client sub-structure | PLANNED | Trigger reached: 14 resources (see ROADMAP.md) |

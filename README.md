@@ -17,11 +17,12 @@ Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise'
 > **Status: active development (v0.10.0).** The core transfer flow is implemented
 > end-to-end — profiles, users, balances, transactions and statement file downloads
 > (CSV/PDF/XLSX/CAMT.053/MT940/QIF), exchange rates, quotes (with `paymentOptions`
-> + fees), recipients, transfers (create / get / list / cancel / **fund** /
-> receipt / MT103 payout info), delivery estimates, and transfer-requirements
-> validation — plus webhook signature verification, observability hooks, and
-> balance lifecycle management. See [FEATURES.md](FEATURES.md) for the honest
-> inventory and [ROADMAP.md](ROADMAP.md) for what's next.
+>
+> - fees), recipients, transfers (create / get / list / cancel / **fund** /
+>   receipt / MT103 payout info), delivery estimates, and transfer-requirements
+>   validation — plus webhook signature verification, observability hooks, and
+>   balance lifecycle management. See [FEATURES.md](FEATURES.md) for the honest
+>   inventory and [ROADMAP.md](ROADMAP.md) for what's next.
 
 > **Design story:** [I needed a Go SDK for Wise. Nobody built one.](https://larsartmann.com/blog/when-the-api-has-no-spec-your-types-are-the-spec)
 
