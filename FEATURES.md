@@ -132,7 +132,14 @@ claim here can be verified against the implementation.
 | `GetDeliveryEstimate`                   | FULLY_FUNCTIONAL | `delivery_estimates.go`                                         |
 | `ValidateTransferRequirements`          | FULLY_FUNCTIONAL | `transfer_requirements.go`                                      |
 | `GetQuoteAccountRequirements`           | FULLY_FUNCTIONAL | `quotes.go`; route forms, `Accept-Minor-Version: 1`             |
-| `RefreshQuoteAccountRequirements`       | FULLY_FUNCTIONAL | `quotes.go`; two-pass flow, omit-empties partial form, BDD+unit |
+| `RefreshQuoteAccountRequirements`          | FULLY_FUNCTIONAL | `quotes.go`; two-pass flow, omit-empties partial form, BDD+unit |
+
+## API surface expansion (v0.10.0)
+
+| Feature                             | Status           | Evidence                                                          |
+| ----------------------------------- | ---------------- | ------------------------------------------------------------------ |
+| `GetTransferReceipt` PDF download   | FULLY_FUNCTIONAL | `transfers.go`; raw bytes, 404 = `*NotFoundError` (no receipt yet) |
+| `GetTransferPayoutInfo` (MT103)     | FULLY_FUNCTIONAL | `transfers.go`; `TransferPayoutInfo`, nil `MT103` for non-SWIFT    |
 
 ## Wire format hardening
 

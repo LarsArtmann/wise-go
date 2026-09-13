@@ -2868,7 +2868,7 @@ var _ = Describe("Wise Client", func() {
 				_, err := client.GetTransferReceipt(context.Background(), wise.NewTransferID(987654))
 				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
 				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
-				Expect(nfErr).ToNot(BeNil())
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
 			})
 		})
 
@@ -2881,7 +2881,7 @@ var _ = Describe("Wise Client", func() {
 				_, err := client.GetTransferReceipt(context.Background(), wise.NewTransferID(987654))
 				authErr, ok := errors.AsType[*wise.AuthError](err)
 				Expect(ok).To(BeTrue(), "expected *wise.AuthError, got %T: %v", err, err)
-				Expect(authErr).ToNot(BeNil())
+				Expect(authErr.StatusCode).To(Equal(http.StatusUnauthorized))
 			})
 		})
 
@@ -2897,8 +2897,9 @@ var _ = Describe("Wise Client", func() {
 	Describe("GetTransferPayoutInfo", func() {
 		Context("with a SWIFT payout", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/v1/transfers/987654/invoices/bankingpartner", func(w http.ResponseWriter, r *http.Request) {
-					Expect(r.Method).To(Equal(http.MethodGet))
+				mux.HandleFunc("/v1/transfers/987654/invoices/bankingpartner", func(
+					w http.ResponseWriter, _ *http.Request,
+				) {
 					w.Header().Set("Content-Type", "application/json")
 					_, _ = w.Write([]byte(`{
 						"processorName": "Acme Bank Ltd.",
@@ -2925,7 +2926,9 @@ var _ = Describe("Wise Client", func() {
 
 		Context("with a non-SWIFT corridor", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/v1/transfers/987654/invoices/bankingpartner", func(w http.ResponseWriter, _ *http.Request) {
+				mux.HandleFunc("/v1/transfers/987654/invoices/bankingpartner", func(
+					w http.ResponseWriter, _ *http.Request,
+				) {
 					w.Header().Set("Content-Type", "application/json")
 					_, _ = w.Write([]byte(`{
 						"processorName": "Acme Bank Ltd.",
@@ -2956,7 +2959,7 @@ var _ = Describe("Wise Client", func() {
 				_, err := client.GetTransferPayoutInfo(context.Background(), wise.NewTransferID(987654))
 				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
 				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
-				Expect(nfErr).ToNot(BeNil())
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
 			})
 		})
 
