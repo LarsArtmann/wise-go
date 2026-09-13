@@ -3824,4 +3824,239 @@ var _ = Describe("Wise Client", func() {
 			})
 		})
 	})
+
+	var transferStateChangeEventJSON string
+
+	BeforeEach(func() {
+		transferStateChangeEventJSON = `{
+		"schema_version": "4.0.0",
+		"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+		"event_type": "transfers#state-change",
+		"sent_at": "2020-01-01T12:34:56.123Z",
+		"data": {
+			"resource": {"id": 111, "profile_id": 222, "account_id": 333, "type": "transfer"},
+			"current_state": "processing",
+			"previous_state": "incoming_payment_waiting",
+			"occurred_at": "2020-01-01T12:34:00Z"
+		}
+	}`
+	})
+
+	Describe("ParseWebhookEvent", func() {
+		It("should decode the envelope and keep the data raw", func() {
+			event, err := wise.ParseWebhookEvent([]byte(transferStateChangeEventJSON))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(event.SchemaVersion).To(Equal("4.0.0"))
+			Expect(event.SubscriptionID.Get()).To(Equal("72195556-e5cb-495e-a010-b37a4f2a3043"))
+			Expect(event.EventType).To(Equal(wise.WebhookEventTransfersStateChange))
+			Expect(event.SentAt.Equal(time.Date(2020, 1, 1, 12, 34, 56, 123000000, time.UTC))).To(BeTrue())
+			Expect(string(event.Data)).To(ContainSubstring("incoming_payment_waiting"))
+		})
+
+		It("should accept unknown event types (forward compatibility)", func() {
+			payload := `{
+				"schema_version": "9.0.0",
+				"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+				"event_type": "newevents#something-new",
+				"sent_at": "2026-09-13 10:00:00",
+				"data": {"anything": true}
+			}`
+			event, err := wise.ParseWebhookEvent([]byte(payload))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(event.EventType).To(Equal(wise.WebhookEventType("newevents#something-new")))
+			Expect(event.SentAt.Equal(time.Date(2026, 9, 13, 10, 0, 0, 0, time.UTC))).To(BeTrue())
+		})
+
+		It("should tolerate the zoneless and space-separated timestamp layouts", func() {
+			payload := `{
+				"schema_version": "4.0.0",
+				"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+				"event_type": "balances#credit",
+				"sent_at": "2026-09-13T10:00:00",
+				"data": {}
+			}`
+			event, err := wise.ParseWebhookEvent([]byte(payload))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(event.SentAt.Equal(time.Date(2026, 9, 13, 10, 0, 0, 0, time.UTC))).To(BeTrue())
+		})
+
+		It("should classify undecodable envelopes as corruption", func() {
+			_, err := wise.ParseWebhookEvent([]byte(`{not json`))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("parse webhook event envelope"))
+		})
+
+		It("should classify a missing event type as corruption", func() {
+			payload := `{
+				"schema_version": "4.0.0",
+				"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+				"sent_at": "2020-01-01T12:34:56Z",
+				"data": {}
+			}`
+			_, err := wise.ParseWebhookEvent([]byte(payload))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("event_type is empty"))
+		})
+
+		It("should classify an unparseable sent_at as corruption", func() {
+			payload := `{
+				"schema_version": "4.0.0",
+				"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+				"event_type": "balances#credit",
+				"sent_at": "not-a-timestamp",
+				"data": {}
+			}`
+			_, err := wise.ParseWebhookEvent([]byte(payload))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("parse webhook sent_at"))
+		})
+	})
+
+	Describe("WebhookEvent.TransferStateChange", func() {
+		It("should decode the typed payload", func() {
+			event, err := wise.ParseWebhookEvent([]byte(transferStateChangeEventJSON))
+			Expect(err).ToNot(HaveOccurred())
+
+			data, err := event.TransferStateChange()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(data.Resource.Type).To(Equal("transfer"))
+			Expect(data.Resource.ID).To(Equal(int64(111)))
+			Expect(data.Resource.ProfileID).To(Equal(int64(222)))
+			Expect(data.Resource.AccountID).ToNot(BeNil())
+			Expect(*data.Resource.AccountID).To(Equal(int64(333)))
+			Expect(data.CurrentState).To(Equal(wise.TransferStatus("processing")))
+			Expect(data.PreviousState).To(Equal(wise.TransferStatus("incoming_payment_waiting")))
+			Expect(data.OccurredAt.Equal(time.Date(2020, 1, 1, 12, 34, 0, 0, time.UTC))).To(BeTrue())
+		})
+
+		It("should classify undecodable payloads as corruption", func() {
+			event, err := wise.ParseWebhookEvent([]byte(`{
+				"schema_version": "4.0.0",
+				"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+				"event_type": "transfers#state-change",
+				"sent_at": "2020-01-01T12:34:56Z",
+				"data": {"current_state": ["not", "a", "string"]}
+			}`))
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = event.TransferStateChange()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("decode transfers#state-change payload"))
+		})
+
+		It("should classify an unparseable occurred_at as corruption", func() {
+			event, err := wise.ParseWebhookEvent([]byte(`{
+				"schema_version": "4.0.0",
+				"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+				"event_type": "transfers#state-change",
+				"sent_at": "2020-01-01T12:34:56Z",
+				"data": {
+					"resource": {"id": 1, "profile_id": 2, "type": "transfer"},
+					"current_state": "processing",
+					"previous_state": "incoming_payment_waiting",
+					"occurred_at": "not-a-timestamp"
+				}
+			}`))
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = event.TransferStateChange()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("parse transfers#state-change occurred_at"))
+		})
+	})
+
+	Describe("WebhookEvent.TransferPayoutFailure", func() {
+		It("should decode the typed payload", func() {
+			payload := `{
+				"schema_version": "5.0.0",
+				"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+				"event_type": "transfers#payout-failure",
+				"sent_at": "2023-08-10T10:17:28.123Z",
+				"data": {
+					"transfer_id": 111,
+					"profile_id": 222,
+					"failure_reason_code": "TECHNICAL_ISSUE_RETRYABLE",
+					"failure_description": "Payment failed due to a technical issue, Wise will retry",
+					"occurred_at": "2023-08-10T10:17:23.123Z"
+				}
+			}`
+			event, err := wise.ParseWebhookEvent([]byte(payload))
+			Expect(err).ToNot(HaveOccurred())
+
+			data, err := event.TransferPayoutFailure()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(data.TransferID.Get()).To(Equal(int64(111)))
+			Expect(data.ProfileID.Get()).To(Equal(int64(222)))
+			Expect(data.FailureReasonCode).To(Equal("TECHNICAL_ISSUE_RETRYABLE"))
+			Expect(data.FailureDescription).To(ContainSubstring("Wise will retry"))
+			Expect(data.OccurredAt.Equal(time.Date(2023, 8, 10, 10, 17, 23, 123000000, time.UTC))).To(BeTrue())
+		})
+
+		It("should classify undecodable payloads as corruption", func() {
+			event, err := wise.ParseWebhookEvent([]byte(`{
+				"schema_version": "5.0.0",
+				"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+				"event_type": "transfers#payout-failure",
+				"sent_at": "2023-08-10T10:17:28.123Z",
+				"data": {"transfer_id": "not-a-number"}
+			}`))
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = event.TransferPayoutFailure()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("decode transfers#payout-failure payload"))
+		})
+	})
+
+	Describe("WebhookEvent.BalanceCredit", func() {
+		It("should decode the typed payload with Money conversion", func() {
+			payload := `{
+				"schema_version": "4.0.0",
+				"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+				"event_type": "balances#credit",
+				"sent_at": "2020-01-01T12:34:56.123Z",
+				"data": {
+					"resource": {"id": 555, "profile_id": 222, "type": "balance-account"},
+					"amount": 100.5,
+					"currency": "EUR",
+					"post_transaction_balance_amount": 1100.25,
+					"occurred_at": "2020-01-01T12:34:00Z"
+				}
+			}`
+			event, err := wise.ParseWebhookEvent([]byte(payload))
+			Expect(err).ToNot(HaveOccurred())
+
+			data, err := event.BalanceCredit()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(data.Resource.Type).To(Equal("balance-account"))
+			Expect(data.Resource.ID).To(Equal(int64(555)))
+			Expect(data.Resource.AccountID).To(BeNil())
+			Expect(data.Amount.Cents).To(Equal(int64(10050)))
+			Expect(data.Amount.Currency).To(Equal(wise.Currency("EUR")))
+			Expect(data.PostTransactionBalance.Cents).To(Equal(int64(110025)))
+			Expect(data.OccurredAt.Equal(time.Date(2020, 1, 1, 12, 34, 0, 0, time.UTC))).To(BeTrue())
+		})
+
+		It("should classify an invalid currency as corruption", func() {
+			payload := `{
+				"schema_version": "4.0.0",
+				"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+				"event_type": "balances#credit",
+				"sent_at": "2020-01-01T12:34:56.123Z",
+				"data": {
+					"resource": {"id": 555, "profile_id": 222, "type": "balance-account"},
+					"amount": 100.5,
+					"currency": "not-a-currency",
+					"post_transaction_balance_amount": 1100.25,
+					"occurred_at": "2020-01-01T12:34:00Z"
+				}
+			}`
+			event, err := wise.ParseWebhookEvent([]byte(payload))
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = event.BalanceCredit()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("map balances#credit amount"))
+		})
+	})
 })

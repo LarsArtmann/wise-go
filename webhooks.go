@@ -291,7 +291,7 @@ func toWebhookSubscription(label string, subscription raw.Subscription) (*Webhoo
 func ParseWebhookEvent(payload []byte) (*WebhookEvent, error) {
 	var envelope raw.WebhookEventEnvelope
 
-	if err := json.UnmarshalRead(payload, &envelope); err != nil {
+	if err := json.Unmarshal(payload, &envelope); err != nil {
 		return nil, errorfamily.WrapCorruption(err, "wise.webhook.decode", "parse webhook event envelope")
 	}
 
@@ -321,7 +321,7 @@ func ParseWebhookEvent(payload []byte) (*WebhookEvent, error) {
 func (e *WebhookEvent) TransferStateChange() (*TransferStateChangeData, error) {
 	var payload raw.TransferStateChangeData
 
-	if err := json.UnmarshalRead(e.Data, &payload); err != nil {
+	if err := json.Unmarshal(e.Data, &payload); err != nil {
 		return nil, errorfamily.WrapCorruption(err, "wise.webhook.decode",
 			"decode transfers#state-change payload")
 	}
@@ -346,7 +346,7 @@ func (e *WebhookEvent) TransferStateChange() (*TransferStateChangeData, error) {
 func (e *WebhookEvent) TransferPayoutFailure() (*TransferPayoutFailureData, error) {
 	var payload raw.TransferPayoutFailureData
 
-	if err := json.UnmarshalRead(e.Data, &payload); err != nil {
+	if err := json.Unmarshal(e.Data, &payload); err != nil {
 		return nil, errorfamily.WrapCorruption(err, "wise.webhook.decode",
 			"decode transfers#payout-failure payload")
 	}
@@ -372,7 +372,7 @@ func (e *WebhookEvent) TransferPayoutFailure() (*TransferPayoutFailureData, erro
 func (e *WebhookEvent) BalanceCredit() (*BalanceCreditData, error) {
 	var payload raw.BalanceCreditData
 
-	if err := json.UnmarshalRead(e.Data, &payload); err != nil {
+	if err := json.Unmarshal(e.Data, &payload); err != nil {
 		return nil, errorfamily.WrapCorruption(err, "wise.webhook.decode",
 			"decode balances#credit payload")
 	}

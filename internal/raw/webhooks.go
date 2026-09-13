@@ -1,3 +1,6 @@
+// unlike the camelCase core API
+//
+//nolint:tagliatelle // Wise's webhook wire surface (this entire file) uses snake_case,
 package raw
 
 import "encoding/json/jsontext"
@@ -8,16 +11,13 @@ import "encoding/json/jsontext"
 // unknown fields are ignored by the JSON decoder so Wise can add fields
 // without breaking the SDK.
 type Subscription struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	//nolint:tagliatelle // Wise's webhook wire uses snake_case, unlike the camelCase core API
+	ID        string               `json:"id"`
+	Name      string               `json:"name"`
 	TriggerOn string               `json:"trigger_on"`
 	Delivery  SubscriptionDelivery `json:"delivery"`
-	//nolint:tagliatelle // Wise's webhook wire uses snake_case, unlike the camelCase core API
-	CreatedAt string `json:"created_at"`
-	//nolint:tagliatelle // Wise's webhook wire uses snake_case, unlike the camelCase core API
-	CreatedBy SubscriptionCreator `json:"created_by"`
-	Scope     SubscriptionScope   `json:"scope"`
+	CreatedAt string               `json:"created_at"`
+	CreatedBy SubscriptionCreator  `json:"created_by"`
+	Scope     SubscriptionScope    `json:"scope"`
 }
 
 // SubscriptionDelivery is the delivery block of a Subscription: the HTTPS
@@ -46,15 +46,11 @@ type SubscriptionScope struct {
 // delivery URL. Data stays raw (jsontext.Value): per-event payload decoding
 // is the public layer's job, so unknown event types never break parsing.
 type WebhookEventEnvelope struct {
-	Data jsontext.Value `json:"data"`
-	//nolint:tagliatelle // Wise's webhook wire uses snake_case, unlike the camelCase core API
-	SubscriptionID string `json:"subscription_id"`
-	//nolint:tagliatelle // Wise's webhook wire uses snake_case, unlike the camelCase core API
-	EventType string `json:"event_type"`
-	//nolint:tagliatelle // Wise's webhook wire uses snake_case, unlike the camelCase core API
-	SchemaVersion string `json:"schema_version"`
-	//nolint:tagliatelle // Wise's webhook wire uses snake_case, unlike the camelCase core API
-	SentAt string `json:"sent_at"`
+	Data           jsontext.Value `json:"data"`
+	SubscriptionID string         `json:"subscription_id"`
+	EventType      string         `json:"event_type"`
+	SchemaVersion  string         `json:"schema_version"`
+	SentAt         string         `json:"sent_at"`
 }
 
 // WebhookEventResource is the resource block carried by event payloads
