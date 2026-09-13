@@ -14,6 +14,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Nothing yet.
 
+## [0.10.0] - 2026-09-13
+
+### Added
+
+- `GetTransferReceipt(transferID)` (`GET /v1/transfers/{transferId}/receipt.pdf`):
+  download the branded confirmation receipt for a paid-out transfer as raw
+  PDF bytes. Wise answers 404 until the transfer reached the
+  `outgoing_payment_sent` state, so `*NotFoundError` means "no receipt
+  (yet)", not a hard failure. Not SCA-protected.
+- `GetTransferPayoutInfo(transferID)`
+  (`GET /v1/transfers/{transferId}/invoices/bankingpartner`): banking-partner
+  payout information — processor, delivery mode, partner reference, and the
+  SWIFT MT103 message (`*string`, nil for non-SWIFT corridors) as
+  `*TransferPayoutInfo`. Accounting-grade proof-of-payment retrieval.
+
 ## [0.9.0] - 2026-08-21
 
 > **Behavior changes** — review before upgrading:

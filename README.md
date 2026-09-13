@@ -369,6 +369,26 @@ descriptions. Like the JSON statement, the endpoint is **SCA-protected** for
 UK/EEA profiles — see
 [SCA](#strong-customer-authentication-sca).
 
+### Transfer receipts & MT103
+
+`GetTransferReceipt` downloads the branded confirmation receipt for a
+paid-out transfer as raw PDF bytes. Wise answers 404 until the transfer
+reached `outgoing_payment_sent` — treat `*wise.NotFoundError` as "no receipt
+(yet)", not a hard failure. Unlike statements, the endpoint is **not
+SCA-protected**.
+
+```go
+pdf, err := client.GetTransferReceipt(ctx, transferID)
+```
+
+`GetTransferPayoutInfo` returns the banking-partner proof of payment,
+including the SWIFT MT103 message (`MT103` is `*string`, `nil` for non-SWIFT
+corridors):
+
+```go
+info, err := client.GetTransferPayoutInfo(ctx, transferID)
+```
+
 ### Quotes
 
 ```go
