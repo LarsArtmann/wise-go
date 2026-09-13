@@ -12,11 +12,12 @@ code and CHANGELOG (`fe896a8`, dated 2026-09-13) but the tag does not exist yet
 then tag on approval.
 **BLOCKED: needs the user's explicit approval (tagging is irreversible).**
 
-[ ] Re-run/extend the v1.0 API audit before tagging `v1.0.0` — the audit
-(`docs/reviews/2026-08-21_v1.0-api-audit.md`) covered 31 methods/74 types; the
-surface has since grown to 33 methods (+`RefreshQuoteAccountRequirements`,
-+`GetTransferReceipt`, +`GetTransferPayoutInfo`). Refresh the inventory and
-risk register so the v1.0.0 freeze covers what will actually be frozen.
+[x] Re-run/extend the v1.0 API audit before tagging `v1.0.0` — DONE 2026-09-13:
+the audit doc now carries a re-audit section (33 methods / 92 exported types /
+22 const groups via `go doc -all`, growth lineage, godoc pass over the 3 new
+methods — one stale `ListBalances` claim found and fixed — and risk-register
+items 8–10 for receipt-404 semantics, MT103 nilability, and the two-pass
+requirements flow). Remaining for v1.0.0: only the user-gated tag.
 
 ## P2 — User-gated
 
