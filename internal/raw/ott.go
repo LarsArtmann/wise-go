@@ -13,11 +13,11 @@ type OTTResponse struct {
 // OTTProperties is the status block of an OTT: the challenge list, remaining
 // validity, the action the token authorizes, and the creating user.
 type OTTProperties struct {
-	OneTimeToken string            `json:"oneTimeToken"`
+	OneTimeToken string             `json:"oneTimeToken"`
 	Challenges   []OTTWireChallenge `json:"challenges"`
-	Validity     int64             `json:"validity"`
-	ActionType   string            `json:"actionType"`
-	UserID       int64             `json:"userId"`
+	Validity     int64              `json:"validity"`
+	ActionType   string             `json:"actionType"`
+	UserID       int64              `json:"userId"`
 }
 
 // OTTWireChallenge is one challenge entry: the primary way to satisfy it,

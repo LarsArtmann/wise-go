@@ -2,8 +2,8 @@ package wise
 
 import (
 	"context"
-	"encoding/json/v2"
 	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"fmt"
 	"time"
 
@@ -71,12 +71,12 @@ type OTTChallengeType string
 // JOSE/JWE direct encryption and FACE_MAP/PARTNER_DEVICE_FINGERPRINT have no
 // public API flow.
 const (
-	OTTChallengePIN                        OTTChallengeType = "PIN"
-	OTTChallengeFaceMap                    OTTChallengeType = "FACE_MAP"
-	OTTChallengeSMS                        OTTChallengeType = "SMS"
-	OTTChallengeWhatsApp                   OTTChallengeType = "WHATSAPP"
-	OTTChallengeVoice                      OTTChallengeType = "VOICE"
-	OTTChallengePartnerDeviceFingerprint   OTTChallengeType = "PARTNER_DEVICE_FINGERPRINT"
+	OTTChallengePIN                      OTTChallengeType = "PIN"
+	OTTChallengeFaceMap                  OTTChallengeType = "FACE_MAP"
+	OTTChallengeSMS                      OTTChallengeType = "SMS"
+	OTTChallengeWhatsApp                 OTTChallengeType = "WHATSAPP"
+	OTTChallengeVoice                    OTTChallengeType = "VOICE"
+	OTTChallengePartnerDeviceFingerprint OTTChallengeType = "PARTNER_DEVICE_FINGERPRINT"
 )
 
 // OTTChallengeView is one concrete way to satisfy a challenge: its type plus
