@@ -765,16 +765,41 @@ ctx = wise.WithRequestCorrelationID(ctx, "bank-sync-2026-08-21-001")
 resp, err := client.ListTransactions(ctx, req)
 if err != nil {
     if sca, ok := errors.AsType[*wise.SCAChallengeError](err); ok {
-        // 1. Send the one-time token to the user (push notification, email, ...).
-        token := sca.TwoFAApprovalToken()
+        // 1. The one-time token (OTT) — fetch it explicitly; it never
+        //    appears in error messages.
+        ott := sca.TwoFAApprovalToken()
 
-        // 2. After the user approves the challenge in the Wise app, replay it
-        //    with the same ctx — Wise support can correlate both attempts:
-        scaClient := wise.New("api-key", wise.WithSCAApprovalToken(token))
+        // 2. Clear the challenge over a phone channel: trigger the SMS,
+        //    prompt the user for the code it delivered, verify, repeat
+        //    until every required challenge is passed.
+        status, clearErr := client.ClearSCAChallenge(ctx, ott, wise.OTTChannelSMS,
+            func(ctx context.Context, challenge wise.OTTChallenge, channel wise.OTTChannel, phoneHint string) (string, error) {
+                fmt.Printf("code sent to %s — enter OTP: ", phoneHint)
+                var code string
+                if _, err := fmt.Scanln(&code); err != nil {
+                    return "", err
+                }
+                return code, nil
+            })
+        if clearErr != nil {
+            log.Fatal(clearErr)
+        }
+        fmt.Println("cleared:", status.Cleared())
+
+        // 3. Replay the request — with the same ctx so Wise support can
+        //    correlate both attempts:
+        scaClient := wise.New("api-key", wise.WithSCAApprovalToken(ott))
         resp, err = scaClient.ListTransactions(ctx, req)
     }
 }
 ```
+
+The one-time-token endpoints (`GetOTTStatus`, `TriggerOTT`, `VerifyOTT`,
+`ClearSCAChallenge`) live on the quarterly versioned surface
+(`/2026Q3/one-time-token/...`) and authorize with the same personal API
+token. Challenges that no phone channel can clear (e.g. a PIN-only
+challenge) surface as a Rejection naming the available types — clear those by
+viewing a statement on wise.com instead.
 
 `GET /v1/transfers` (and the other transfer endpoints) are **not** SCA-protected,
 which is why `ListTransfers` is the reliable source for outgoing transfer

@@ -45,6 +45,22 @@ func isPhoneChannel(channel OTTChannel) bool {
 // String returns the channel name.
 func (c OTTChannel) String() string { return string(c) }
 
+// challengeType maps a channel to the challenge type it satisfies: the wire
+// channel paths are lowercase (sms/whatsapp/voice) while challenge types are
+// uppercase (SMS/WHATSAPP/VOICE).
+func (c OTTChannel) challengeType() OTTChallengeType {
+	switch c {
+	case OTTChannelSMS:
+		return OTTChallengeSMS
+	case OTTChannelWhatsApp:
+		return OTTChallengeWhatsApp
+	case OTTChannelVoice:
+		return OTTChallengeVoice
+	default:
+		return OTTChallengeType(c)
+	}
+}
+
 // OTTChallengeType is the type of a challenge Wise presents for an OTT
 // (primaryChallenge.type). It is an open enum: Wise can add types, so unknown
 // values pass through rather than failing to decode.
@@ -85,7 +101,7 @@ type OTTChallenge struct {
 // phone channel: either the primary challenge is that channel's type, or one
 // of the alternatives is.
 func (c OTTChallenge) Supports(channel OTTChannel) bool {
-	channelType := OTTChallengeType(channel)
+	channelType := channel.challengeType()
 	if c.Primary.Type == channelType {
 		return true
 	}
