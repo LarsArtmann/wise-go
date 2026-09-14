@@ -78,14 +78,9 @@ func VerifyWebhookSignature(payload []byte, signatureB64 string, key *rsa.Public
 	return rsa.VerifyPKCS1v15(key, crypto.SHA256, digest[:], signature) == nil
 }
 
-// webhookAPIVersion is the quarterly versioned API surface that hosts the
-// webhook subscription endpoints (/2026Q3/profiles/{profileId}/subscriptions
-// and the application-level equivalents). The subscription endpoints exist
-// only under the versioned surface — unlike the legacy /v1../v4 paths the
-// rest of the SDK uses — per the OpenAPI spec's server URL and the live API
-// reference.
-const webhookAPIVersion = "2026Q3"
-
+// The subscription endpoints live on the quarterly versioned surface
+// (quarterlyAPIVersion in client.go), unlike the legacy /v1../v4 paths the
+// rest of the SDK uses.
 // CreateProfileWebhookSubscription registers a webhook subscription on a
 // profile (POST /2026Q3/profiles/{profileId}/subscriptions): Wise will POST
 // an event envelope to req.Delivery.URL whenever the req.TriggerOn event
@@ -108,7 +103,7 @@ func (c *Client) CreateProfileWebhookSubscription(
 		return nil, err
 	}
 
-	path := fmt.Sprintf("/%s/profiles/%d/subscriptions", webhookAPIVersion, profileID.Get())
+	path := fmt.Sprintf("/%s/profiles/%d/subscriptions", quarterlyAPIVersion, profileID.Get())
 
 	var subscription raw.Subscription
 
@@ -130,7 +125,7 @@ func (c *Client) ListProfileWebhookSubscriptions(
 		return nil, err
 	}
 
-	path := fmt.Sprintf("/%s/profiles/%d/subscriptions", webhookAPIVersion, profileID.Get())
+	path := fmt.Sprintf("/%s/profiles/%d/subscriptions", quarterlyAPIVersion, profileID.Get())
 
 	var subscriptions []raw.Subscription
 

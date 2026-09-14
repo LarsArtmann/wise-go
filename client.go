@@ -21,6 +21,14 @@ const (
 	defaultRetryBackoffCap   = 5 * time.Second
 )
 
+// quarterlyAPIVersion is the quarterly versioned API surface
+// (https://api.wise.com/2026Q3). Some endpoint families exist only there —
+// the webhook subscription CRUD and the SCA one-time-token endpoints — while
+// the rest of the SDK uses the legacy /v1../v4 paths. The OpenAPI spec's
+// server URL is authoritative; when the quarter rolls over, update this one
+// constant after verifying the paths still resolve.
+const quarterlyAPIVersion = "2026Q3"
+
 // Doer is the interface for an HTTP client. *http.Client satisfies this.
 // Inject a custom implementation via WithHTTPClient for testing or middleware
 // (tracing, logging, retries at the transport layer).
@@ -163,6 +171,18 @@ func (c *Client) getWithQueryHeaders(
 
 func (c *Client) post(ctx context.Context, path string, body, target any) error {
 	return c.request(ctx, http.MethodPost, path, nil, body, target, nil)
+}
+
+// postWithHeaders is post plus extra request headers, for endpoints whose
+// contract depends on operation-specific headers (e.g. One-Time-Token on
+// the SCA one-time-token endpoints).
+func (c *Client) postWithHeaders(
+	ctx context.Context,
+	path string,
+	body, target any,
+	extraHeaders map[string]string,
+) error {
+	return c.request(ctx, http.MethodPost, path, nil, body, target, extraHeaders)
 }
 
 func (c *Client) put(ctx context.Context, path string, body, target any) error {
