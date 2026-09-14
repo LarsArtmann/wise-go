@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Nothing yet.
+
+### Changed
+
+- Nothing yet.
+
+### Fixed
+
+- Nothing yet.
+
+## [0.11.0] - 2026-09-14
+
+### Added
+
 - Strong Customer Authentication one-time-token (OTT) endpoints on the
   quarterly versioned surface (`/2026Q3/one-time-token/...`, personal API
   token): `GetOTTStatus` (challenge list, validity, action type), `TriggerOTT`
@@ -59,10 +73,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   offending values; `SCAChallengeError` gained an error context; benchmarks
   for the hot mappers and parsers (`bench_test.go`) and raw wire-format
   round-trip tests (`internal/raw`) lock the serialization contract.
-
-### Fixed
-
-- Nothing yet.
 
 ## [0.10.0] - 2026-09-13
 
