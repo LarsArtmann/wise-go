@@ -243,8 +243,13 @@ func (c *Client) VerifyOTT(
 	}
 
 	if !isPhoneChannel(channel) {
-		return nil, errorfamily.NewRejection("wise.ott.invalid_request",
-			fmt.Sprintf("channel must be one of sms, whatsapp, voice — got %q", channel)) //nolint:erraudit // otpCode is a secret — it must never appear in an error string
+		return nil, errorfamily.NewRejection(
+			"wise.ott.invalid_request",
+			fmt.Sprintf(
+				"channel must be one of sms, whatsapp, voice — got %q",
+				channel,
+			),
+		) //nolint:erraudit // otpCode is a secret — it must never appear in an error string
 	}
 
 	if otpCode == "" {
@@ -259,7 +264,11 @@ func (c *Client) VerifyOTT(
 	if err := c.postWithHeaders(
 		ctx, path, raw.OTTVerifyRequest{OTPCode: otpCode}, &response, ottHeaders(ott),
 	); err != nil {
-		return nil, fmt.Errorf("verify %s challenge: %w", channel, err) //nolint:erraudit // otpCode is a secret — it must never appear in an error string
+		return nil, fmt.Errorf(
+			"verify %s challenge: %w",
+			channel,
+			err,
+		) //nolint:erraudit // otpCode is a secret — it must never appear in an error string
 	}
 
 	return toOTTStatus(response)
@@ -330,6 +339,7 @@ func (c *Client) ClearSCAChallenge(
 // the operator can pick one.
 func rejectionUnsupportedChallenge(challenge OTTChallenge, channel OTTChannel) *errorfamily.Error {
 	types := make([]string, 0, 1+len(challenge.Alternatives))
+
 	types = append(types, string(challenge.Primary.Type))
 	for _, alt := range challenge.Alternatives {
 		types = append(types, string(alt.Type))

@@ -300,13 +300,18 @@ var _ = Describe("OTT (SCA one-time-token endpoints)", func() {
 
 			var seenHint, seenChannel, seenType string
 
-			status, err := client.ClearSCAChallenge(context.Background(), testOTT, wise.OTTChannelSMS,
+			status, err := client.ClearSCAChallenge(
+				context.Background(),
+				testOTT,
+				wise.OTTChannelSMS,
 				func(_ context.Context, challenge wise.OTTChallenge, channel wise.OTTChannel, phoneHint string) (string, error) {
 					seenHint = phoneHint
 					seenChannel = channel.String()
 					seenType = string(challenge.Primary.Type)
+
 					return "111111", nil
-				})
+				},
+			)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(status.Cleared()).To(BeTrue())
 			Expect(statusCalls.Load()).To(Equal(int64(1)), "the verify response is the new status — no re-fetch needed")
@@ -339,14 +344,18 @@ var _ = Describe("OTT (SCA one-time-token endpoints)", func() {
 				w http.ResponseWriter, _ *http.Request,
 			) {
 				round := verifies.Add(1)
+
 				w.Header().Set("Content-Type", "application/json")
+
 				if round == 1 {
 					_, _ = w.Write([]byte(ottStatusJSON(`[
 						{"primaryChallenge": {"type": "SMS"}, "alternatives": [], "required": true, "passed": true},
 						{"primaryChallenge": {"type": "SMS"}, "alternatives": [], "required": true, "passed": false}
 					]`, 3600, "BALANCE__GET_STATEMENT")))
+
 					return
 				}
+
 				_, _ = w.Write([]byte(ottStatusJSON(`[]`, 3600, "")))
 			}))
 
