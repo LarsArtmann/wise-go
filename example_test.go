@@ -512,7 +512,7 @@ func ExampleClient_GetOTTStatus() {
 		To:        time.Date(2026, 9, 14, 0, 0, 0, 0, time.UTC),
 	})
 	if err != nil {
-		if sca, ok := errors.AsType[*wise-go.SCAChallengeError](err); ok {
+		if sca, ok := errors.AsType[*wise.SCAChallengeError](err); ok {
 			status, statusErr := client.GetOTTStatus(context.Background(), sca.TwoFAApprovalToken())
 			if statusErr != nil {
 				log.Fatal(statusErr)
@@ -543,7 +543,7 @@ func ExampleClient_ClearSCAChallenge() {
 		Format:    wise.StatementFormatPDF,
 	})
 	if err != nil {
-		if sca, ok := errors.AsType[*wise-go.SCAChallengeError](err); ok {
+		if sca, ok := errors.AsType[*wise.SCAChallengeError](err); ok {
 			status, clearErr := client.ClearSCAChallenge(
 				context.Background(),
 				sca.TwoFAApprovalToken(),
