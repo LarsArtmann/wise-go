@@ -238,12 +238,12 @@ func (c *Client) VerifyOTT(
 	otpCode string,
 ) (*OTTStatus, error) {
 	if err := requireOTT(ott); err != nil {
-		return nil, err
+		return nil, err //nolint:erraudit // otpCode is a secret — it must never appear in an error string
 	}
 
 	if !isPhoneChannel(channel) {
 		return nil, errorfamily.NewRejection("wise.ott.invalid_request",
-			fmt.Sprintf("channel must be one of sms, whatsapp, voice — got %q", channel))
+			fmt.Sprintf("channel must be one of sms, whatsapp, voice — got %q", channel)) //nolint:erraudit // otpCode is a secret — it must never appear in an error string
 	}
 
 	if otpCode == "" {
@@ -258,7 +258,7 @@ func (c *Client) VerifyOTT(
 	if err := c.postWithHeaders(
 		ctx, path, raw.OTTVerifyRequest{OTPCode: otpCode}, &response, ottHeaders(ott),
 	); err != nil {
-		return nil, fmt.Errorf("verify %s challenge: %w", channel, err)
+		return nil, fmt.Errorf("verify %s challenge: %w", channel, err) //nolint:erraudit // otpCode is a secret — it must never appear in an error string
 	}
 
 	return toOTTStatus(response)

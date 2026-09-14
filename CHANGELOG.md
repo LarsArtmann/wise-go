@@ -8,6 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Strong Customer Authentication one-time-token (OTT) endpoints on the
+  quarterly versioned surface (`/2026Q3/one-time-token/...`, personal API
+  token): `GetOTTStatus` (challenge list, validity, action type), `TriggerOTT`
+  and `VerifyOTT` per phone channel (sms/whatsapp/voice), and the
+  `ClearSCAChallenge` convenience that triggers, asks a code provider for the
+  OTP, verifies, and repeats until every required challenge is passed.
+  Typed `OTTStatus`/`OTTChallenge`/`OTTChallengeView`/`OTTChannel` results;
+  challenge alternatives decode leniently (object or string form) because the
+  OpenAPI spec leaves their item shape untyped. PIN-over-JWE verification is
+  out of scope; a challenge no phone channel can clear surfaces as a
+  Rejection naming the available types.
 - Profile-level webhook subscription management: `CreateProfileWebhookSubscription`,
   `ListProfileWebhookSubscriptions`, `GetProfileWebhookSubscription`, and
   `DeleteProfileWebhookSubscription` (204 delete) against the quarterly
@@ -35,6 +46,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- `SCAChallengeError.Error()` no longer embeds the raw one-time token: error
+  strings are the surface most likely to end up in logs, and the OTT
+  authorizes the challenge. It still reports `approval_result` and whether a
+  token was issued; the value is available via `TwoFAApprovalToken()`. The
+  "approve the challenge in the Wise app" wording (no such screen exists —
+  verified live 2026-09-14) now points at the one-time-token endpoints and
+  viewing a statement on wise.com.
 - Internal, no public API or error-message changes: the shared fetch-by-ID
   helper takes branded IDs directly and routes through `requireID`
   (callers no longer unwrap `.Get()` themselves); mapper errors carry the raw
