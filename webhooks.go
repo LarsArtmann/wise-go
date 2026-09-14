@@ -78,9 +78,6 @@ func VerifyWebhookSignature(payload []byte, signatureB64 string, key *rsa.Public
 	return rsa.VerifyPKCS1v15(key, crypto.SHA256, digest[:], signature) == nil
 }
 
-// The subscription endpoints live on the quarterly versioned surface
-// (quarterlyAPIVersion in client.go), unlike the legacy /v1../v4 paths the
-// rest of the SDK uses.
 // CreateProfileWebhookSubscription registers a webhook subscription on a
 // profile (POST /2026Q3/profiles/{profileId}/subscriptions): Wise will POST
 // an event envelope to req.Delivery.URL whenever the req.TriggerOn event

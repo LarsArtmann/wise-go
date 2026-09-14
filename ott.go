@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json/jsontext"
 	"encoding/json/v2"
+	"errors"
 	"fmt"
 	"time"
 
@@ -384,6 +385,10 @@ func toOTTStatus(response raw.OTTResponse) (*OTTStatus, error) {
 	}, nil
 }
 
+// errOTTAlternativesShape is the sentinel for alternatives payloads that are
+// neither the documented object form nor a bare string array.
+var errOTTAlternativesShape = errors.New("alternatives are neither objects nor strings")
+
 // parseOTTAlternatives decodes a challenge's alternatives leniently: the
 // OpenAPI spec types the items only as "object" with no properties, so both
 // the documented object form ({"type": ...}) and a bare string form are
@@ -415,11 +420,14 @@ func parseOTTAlternatives(value jsontext.Value) ([]OTTChallengeView, error) {
 	if err := json.Unmarshal(value, &stringForm); err == nil {
 		views := make([]OTTChallengeView, 0, len(stringForm))
 		for _, alternative := range stringForm {
-			views = append(views, OTTChallengeView{Type: OTTChallengeType(alternative)})
+			views = append(views, OTTChallengeView{
+				Type:     OTTChallengeType(alternative),
+				ViewData: nil,
+			})
 		}
 
 		return views, nil
 	}
 
-	return nil, fmt.Errorf("alternatives are neither objects nor strings: %s", value.String())
+	return nil, fmt.Errorf("%w: %s", errOTTAlternativesShape, value.String())
 }

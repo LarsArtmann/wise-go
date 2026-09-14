@@ -21,6 +21,10 @@ import (
 // it exists so tests can assert the OTT never leaks into error strings.
 const testOTT = "9f5f5812-2609-4e48-8418-b64437c0c7cd"
 
+// errSCACodeAborted is a static sentinel (err113: never construct dynamic
+// errors) standing in for an operator aborting the OTP prompt.
+var errSCACodeAborted = errors.New("user aborted the prompt")
+
 // ottStatusJSON builds a one-time-token status response body. challengesJSON
 // must be a valid JSON array literal (may be empty).
 func ottStatusJSON(challengesJSON string, validity int64, actionType string) string {
@@ -414,7 +418,7 @@ var _ = Describe("OTT (SCA one-time-token endpoints)", func() {
 				_, _ = w.Write([]byte(`{"obfuscatedPhoneNo":"*********8888"}`))
 			}))
 
-			providerErr := errors.New("user aborted the prompt")
+			providerErr := errSCACodeAborted
 			_, err := client.ClearSCAChallenge(context.Background(), testOTT, wise.OTTChannelSMS,
 				func(context.Context, wise.OTTChallenge, wise.OTTChannel, string) (string, error) {
 					return "", providerErr
