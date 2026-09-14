@@ -495,3 +495,77 @@ MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA... (from the dashboard)
 		w.WriteHeader(http.StatusOK)
 	})
 }
+
+// Inspect a Strong Customer Authentication challenge carried by a statement
+// call: which challenges are pending, over which channels they can be
+// cleared, and how long the one-time token stays valid.
+//
+//nolint:testableexamples // documentation-only; runs against the live API
+func ExampleClient_GetOTTStatus() {
+	client := wise.New("api-key")
+
+	resp, err := client.ListTransactions(context.Background(), wise.ListTransactionsRequest{
+		ProfileID: wise.NewProfileID(12345),
+		BalanceID: wise.NewBalanceID(100),
+		Currency:  wise.Currency("EUR"),
+		From:      time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC),
+		To:        time.Date(2026, 9, 14, 0, 0, 0, 0, time.UTC),
+	})
+	if err != nil {
+		var sca *wise.SCAChallengeError
+		if errors.As(err, &sca) {
+			status, statusErr := client.GetOTTStatus(context.Background(), sca.TwoFAApprovalToken())
+			if statusErr != nil {
+				log.Fatal(statusErr)
+			}
+
+			fmt.Println(status.ActionType, status.Validity, status.Cleared())
+		}
+
+		return
+	}
+
+	fmt.Println(len(resp.Transactions))
+}
+
+// Clear a pending SCA challenge from the terminal: trigger the SMS, prompt
+// the user for the code it delivered, verify, and confirm nothing is left.
+//
+//nolint:testableexamples // documentation-only; runs against the live API
+func ExampleClient_ClearSCAChallenge() {
+	client := wise.New("api-key")
+
+	_, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+		ProfileID: wise.NewProfileID(12345),
+		BalanceID: wise.NewBalanceID(100),
+		Currency:  wise.Currency("EUR"),
+		From:      time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC),
+		To:        time.Date(2026, 9, 14, 0, 0, 0, 0, time.UTC),
+		Format:    wise.StatementFormatPDF,
+	})
+	if err != nil {
+		var sca *wise.SCAChallengeError
+		if errors.As(err, &sca) {
+			status, clearErr := client.ClearSCAChallenge(
+				context.Background(),
+				sca.TwoFAApprovalToken(),
+				wise.OTTChannelSMS,
+				func(_ context.Context, _ wise.OTTChallenge, _ wise.OTTChannel, phoneHint string) (string, error) {
+					fmt.Printf("code sent to %s — enter OTP: ", phoneHint)
+
+					var code string
+					if _, scanErr := fmt.Scanln(&code); scanErr != nil {
+						return "", scanErr
+					}
+
+					return code, nil
+				},
+			)
+			if clearErr != nil {
+				log.Fatal(clearErr)
+			}
+
+			fmt.Println("cleared:", status.Cleared())
+		}
+	}
+}

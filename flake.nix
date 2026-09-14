@@ -54,11 +54,13 @@
         ./transfer_requirements.go
         ./users.go
         ./webhooks.go
+        ./ott.go
         ./account_details.go
         ./currencies.go
         ./internal/raw/types.go
         ./internal/raw/transfers.go
         ./internal/raw/webhooks.go
+        ./internal/raw/ott.go
         ./internal/raw/types_test.go
         ./internal_test.go
         ./errors_test.go
@@ -66,6 +68,7 @@
         ./bench_test.go
         ./example_test.go
         ./wise_test.go
+        ./ott_test.go
         ./sandbox_live_test.go
         ./readme_guard_test.go
         ./README.md

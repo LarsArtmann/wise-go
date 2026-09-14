@@ -111,8 +111,11 @@ func (e *AuthError) ErrorCode() string {
 // SCAChallengeError is returned when the Wise API answers 403 with Wise's
 // two-factor headers instead of a body: Strong Customer Authentication is
 // required for the request. This is not a token permission problem — the same
-// token works on non-SCA endpoints. Clear it by approving the challenge (Wise
-// app / web) and retrying with the one-time token in [HeaderTwoFAApproval].
+// token works on non-SCA endpoints. Clear the challenge by verifying it over
+// the one-time-token endpoints (see [Client.ClearSCAChallenge]) or by viewing
+// a statement on wise.com, then retry with the one-time token in
+// [HeaderTwoFAApproval]. The token value deliberately never appears in the
+// error message — fetch it with [SCAChallengeError.TwoFAApprovalToken].
 type SCAChallengeError struct {
 	APIError
 }
@@ -132,11 +135,12 @@ func (e *SCAChallengeError) ErrorContext() map[string]string {
 func (e *SCAChallengeError) Error() string {
 	return fmt.Sprintf(
 		"wise: sca challenge (%d): strong customer authentication required "+
-			"(x-2fa-approval-result=%q, x-2fa-approval=%q); approve the challenge "+
-			"in the Wise app, then retry with the one-time token in the x-2fa-approval header",
+			"(x-2fa-approval-result=%q, one-time token issued: %t); clear the challenge "+
+			"(verify it via the one-time-token endpoints or view a statement on wise.com), "+
+			"then retry with the token from TwoFAApprovalToken() in the x-2fa-approval header",
 		e.StatusCode,
 		e.Headers.Get(HeaderTwoFAApprovalResult),
-		e.Headers.Get(HeaderTwoFAApproval),
+		e.TwoFAApprovalToken() != "",
 	)
 }
 

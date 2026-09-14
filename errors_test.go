@@ -251,8 +251,11 @@ func TestCheckErrorClassifiesSCAChallenge(t *testing.T) {
 		t.Errorf("Error() should surface the SCA header names, got: %s", sca.Error())
 	}
 
-	if !strings.Contains(sca.Error(), "bb676aeb-7c4d-4930-bb55-ab949fd3fd87") {
-		t.Errorf("Error() should surface the one-time token, got: %s", sca.Error())
+	// The token value must stay OUT of the message: error strings are the
+	// surface most likely to end up in logs, and the OTT authorizes the
+	// challenge. Callers fetch it explicitly via TwoFAApprovalToken().
+	if strings.Contains(sca.Error(), "bb676aeb-7c4d-4930-bb55-ab949fd3fd87") {
+		t.Errorf("Error() must not embed the one-time token, got: %s", sca.Error())
 	}
 }
 

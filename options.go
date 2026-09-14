@@ -144,11 +144,13 @@ func correlationIDFromContext(ctx context.Context) string {
 }
 
 // WithSCAApprovalToken sends the given one-time token (OTT) as the
-// x-2fa-approval header on every request. Configure it after receiving an
-// [SCAChallengeError] and approving the challenge in the Wise app to clear
-// Wise's Strong Customer Authentication (required once per ~90 days for
-// SCA-protected endpoints such as balance statements on UK/EEA profiles).
-// Once the challenge window is satisfied, remove the token again.
+// x-2fa-approval header on every request. Configure it after clearing the
+// challenge an [SCAChallengeError] carried (verify it via the one-time-token
+// endpoints — see [Client.ClearSCAChallenge] — or view a statement on
+// wise.com) to satisfy Wise's Strong Customer Authentication (required once
+// per ~90 days for SCA-protected endpoints such as balance statements on
+// UK/EEA profiles). Once the challenge window is satisfied, remove the token
+// again.
 func WithSCAApprovalToken(token string) Option {
 	return func(c *config) {
 		c.scaApprovalToken = token

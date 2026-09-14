@@ -162,7 +162,7 @@ func (c *Client) GetProfileWebhookSubscription(
 		return nil, err
 	}
 
-	path := fmt.Sprintf("/%s/profiles/%d/subscriptions/%s", webhookAPIVersion, profileID.Get(), subscriptionID.Get())
+	path := fmt.Sprintf("/%s/profiles/%d/subscriptions/%s", quarterlyAPIVersion, profileID.Get(), subscriptionID.Get())
 
 	var subscription raw.Subscription
 
@@ -191,7 +191,7 @@ func (c *Client) DeleteProfileWebhookSubscription(
 		return err
 	}
 
-	path := fmt.Sprintf("/%s/profiles/%d/subscriptions/%s", webhookAPIVersion, profileID.Get(), subscriptionID.Get())
+	path := fmt.Sprintf("/%s/profiles/%d/subscriptions/%s", quarterlyAPIVersion, profileID.Get(), subscriptionID.Get())
 
 	if err := c.delete(ctx, path); err != nil {
 		return fmt.Errorf("delete webhook subscription %s for profile %d: %w",
