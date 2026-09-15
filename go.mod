@@ -9,7 +9,7 @@ go 1.26.7
 require (
 	github.com/failsafe-go/failsafe-go v0.9.7
 	github.com/larsartmann/go-branded-id v0.5.1
-	github.com/larsartmann/go-error-family v0.10.0
+	github.com/larsartmann/go-error-family v0.10.1
 	github.com/onsi/ginkgo/v2 v2.31.0
 	github.com/onsi/gomega v1.42.0
 )
