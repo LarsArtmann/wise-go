@@ -36,8 +36,8 @@ type conformanceExchange struct {
 	method   string
 	rawPath  string
 	query    string
+	reqHeader http.Header
 	reqBody  []byte
-	reqCT    string
 	status   int
 	respBody []byte
 	respCT   string
@@ -89,13 +89,13 @@ func (h *conformanceHarness) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	contentType := captured.header.Get("Content-Type")
 
 	h.exchanges = append(h.exchanges, conformanceExchange{
-		method:   r.Method,
-		rawPath:  r.URL.Path,
+		method:    r.Method,
+		rawPath:   r.URL.Path,
 		query:    r.URL.RawQuery,
-		reqBody:  reqBody,
-		reqCT:    r.Header.Get("Content-Type"),
-		status:   captured.status,
-		respBody: captured.body.Bytes(),
+		reqHeader: r.Header.Clone(),
+		reqBody:   reqBody,
+		status:    captured.status,
+		respBody:  captured.body.Bytes(),
 		respCT:   contentType,
 	})
 }
@@ -196,10 +196,10 @@ func stripVersionedPrefix(path string) string {
 
 // statementVariantPattern covers the statement formats the SDK fetches but
 // the OpenAPI bundle does not document (it only declares statement.json).
-// Wise documents the csv/pdf/xlsx variants in prose only, so they are
-// exempt from operation matching and tallied instead.
+// Wise documents the csv/ofx/pdf/qif/mt940 variants in prose only, so they
+// are exempt from operation matching and tallied instead.
 var statementVariantPattern = regexp.MustCompile(
-	`^/profiles/[^/]+/balance-statements/[^/]+/statement\.(csv|pdf|xlsx)$`,
+	`^/profiles/[^/]+/balance-statements/[^/]+/statement\.(csv|ofx|pdf|qif|xlsx|mt940|mt103)$`,
 )
 
 // validateExchange checks one exchange against the spec and returns one
@@ -280,20 +280,22 @@ func buildConformanceRequest(exchange conformanceExchange, normalizedPath string
 
 	parsed.RawQuery = exchange.query
 
-	header := make(http.Header)
-	if exchange.reqCT != "" {
-		header.Set("Content-Type", exchange.reqCT)
+	header := exchange.reqHeader.Clone()
+	if header == nil {
+		header = make(http.Header)
 	}
+
+	body := exchange.reqBody
 
 	request := &http.Request{
 		Method: exchange.method,
 		URL:    parsed,
 		Header: header,
-		Body:   io.NopCloser(bytes.NewReader(exchange.reqBody)),
+		Body:   io.NopCloser(bytes.NewReader(body)),
 		GetBody: func() (io.ReadCloser, error) {
-			return io.NopCloser(bytes.NewReader(exchange.reqBody)), nil
+			return io.NopCloser(bytes.NewReader(body)), nil
 		},
-		ContentLength: int64(len(exchange.reqBody)),
+		ContentLength: int64(len(body)),
 	}
 
 	return request, nil

@@ -23,10 +23,12 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
 - **215 documented REST operations** across **51 reference categories**, plus
   **29 webhook-event definitions** in the preview sweep (**31** distinct event
   types counting the settlement and Swift events from the webhook-event index).
-- **wise-go ships 43 wire endpoints** through **39 public `*Client` methods**
-  (plus the `Authenticate`/`Health` convenience pair and the `ClearSCAChallenge`
-  loop — all verified by `nix run .#doc-verify` against the compiled surface).
-- **49 operations are PLANNED** (demand-gated, tiers 2–3 of
+- **wise-go ships 41 of those documented operations** through **38 of the 41
+  public `*Client` methods** — the other three are `Authenticate`/`Health`
+  (convenience wrappers) and `ClearSCAChallenge` (a multi-call loop);
+  `TriggerOTT`/`VerifyOTT` each cover three channel paths. The count is
+  gate-checked by `nix run .#doc-verify` against the compiled surface.
+- **51 operations are PLANNED** (demand-gated, tiers 2–3 of
   [the implementation plan](docs/planning/2026-08-19_wise-api-full-implementation-plan.md)).
 - **123 operations are OUT_OF_SCOPE** (cards, KYC/KYB, SCA factors, JOSE,
   simulations, embedded flows, cases, disputes, settlement allocations, …).
@@ -40,7 +42,7 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
 | Bank account details      | 5   | 1       | read shipped; ordering PLANNED                   |
 | Batch groups              | 7   | 0       | PLANNED (tier 3)                                 |
 | Profiles                  | 19  | 2       | reads shipped; writes PLANNED; KYB OUT_OF_SCOPE  |
-| Quotes                    | 4   | 4       | complete except PATCH update (PLANNED)           |
+| Quotes                    | 4   | 3       | complete except PATCH update (PLANNED)           |
 | Recipients                | 8   | 5       | core shipped; compatibility/confirmation PLANNED |
 | Transfers (standard)      | 11  | 8       | core + receipts shipped; 3 ops PLANNED           |
 | Transfers (third-party)   | 2   | 0       | PLANNED (correspondent demand)                   |
