@@ -186,7 +186,7 @@ All code builds, tests, lints, and passes `nix flake check`. No broken state was
 ### Short-term (next sprint)
 
 7. ~~Tag v0.4.0 — the code is ready, migration guide is written~~ done — tagged `v0.4.0`
-8. Make `classifyTransactionType` take `int64` cents instead of `float64` ← still open (TODO_LIST P4, verified 2026-09-13: signature still `float64`)
+8. ~~Make `classifyTransactionType` take `int64` cents instead of `float64` ← still open (TODO_LIST P4, verified 2026-09-13: signature still `float64`)~~ done (done 2026-09-13 — takes totalCents int64 (8b54f7c))
 9. ~~Make `ListTransactionsRequest.Type` a typed enum instead of `string`~~ done — v0.5.0 (`59577d4`)
 10. ~~Add `Money.Add(Money) (Money, error)` with currency mismatch check~~ NOT-DO by design — `Money` is a serialization boundary, no arithmetic (AGENTS.md convention)
 11. ~~Add `Money.Sub(Money) (Money, error)` with currency mismatch check~~ NOT-DO by design (same convention)

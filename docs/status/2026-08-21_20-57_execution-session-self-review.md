@@ -125,8 +125,8 @@
 42. ~~Consider `errors.Join` presentation for `parseWiseTimestamp`'s multi-layout failure (message is noisy today).~~ done at `133b367` (hardening 11.4, readable single-line error).
 43. ~~`FundTransferResult` godoc: cross-link `FundingErrorCodePaymentExists` semantics ("already funded" ≠ error).~~ done at `133b367` (hardening 11.3 doc records the tradeoff).
 44. Repo hygiene: `.buildflow.yml` env and `.golangci.yml` survived untouched — re-verify buildflow didn't touch the curated list (guard held this session; make it a periodic check). (recurring guard, not a task)
-45. Add a `make doc-verify`-style flake app that runs lychee offline + godoc freshness checks for contributors without CI. ← still open (quality long-tail).
-46. Delete or wire the `reports/jscpd-report.json` artifact path (ignored, but stale paths confuse). ← still open (micro).
+45. ~~Add a `make doc-verify`-style flake app that runs lychee offline + godoc freshness checks for contributors without CI. ← still open (quality long-tail).~~ done (done 2026-09-13 — nix run .#doc-verify (lychee + godoc + count claims))
+46. ~~Delete or wire the `reports/jscpd-report.json` artifact path (ignored, but stale paths confuse). ← still open (micro).~~ done (done 2026-09-13 — stale reports/ artifacts trashed)
 47. If typed recipients are declined (Q3), add `DetailsKey*` constants for the top-10 corridors as the compromise layer. ← still gated on the typed-vs-map decision (TODO_LIST P2).
 48. Blog post / design-story update — the README links one; the session's retry-typed-error find is exactly that material. ← still open (authoring, low priority).
 49. ~~Consider a `CHANGELOG` "Unreleased → 0.9.0 vs 1.0.0" split if the user wants the behavioral fixes out before the API lock.~~ done — v0.9.0 cut with the behavioral fixes; v1.0.0 tag remains separate.

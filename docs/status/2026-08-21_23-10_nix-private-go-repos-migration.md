@@ -96,16 +96,16 @@ Nothing is catastrophically broken. The one real risk is that **CI will break im
 
 ## f) Up to 50 Things We Should Get Done Next
 
-1. Pin `go-nix-helpers` flake input to a tag or commit.
-2. Add CI SSH deploy-key setup for `git+ssh://` inputs.
-3. Alternatively, configure CI `GITHUB_TOKEN` + `insteadOf` SSH→HTTPS rewriting.
-4. Update `.github/workflows` to run `nix flake check` with proper auth.
+1. ~~Pin `go-nix-helpers` flake input to a tag or commit.~~ done (done 2026-09-13 — all inputs pinned at exact locked revs via github: URLs)
+2. ~~Add CI SSH deploy-key setup for `git+ssh://` inputs.~~ **Won't implement — superseded 2026-09-13 — the inputs are public; no SSH deploy keys needed.**
+3. ~~Alternatively, configure CI `GITHUB_TOKEN` + `insteadOf` SSH→HTTPS rewriting.~~ **Won't implement — superseded 2026-09-13 — no insteadOf rewriting needed; nix job fetches anonymously.**
+4. ~~Update `.github/workflows` to run `nix flake check` with proper auth.~~ done (done 2026-09-13 — ci.yml nix job refreshed no-auth (14523ae))
 5. Test `nix flake check` on `aarch64-linux`.
 6. Test `nix flake check` on `x86_64-darwin`.
 7. Test `nix flake check` on `aarch64-darwin`.
 8. Add a CI cache (Cachix or similar) to speed up repeated private-dep builds.
-9. Update `AGENTS.md` with the new flake architecture and private-dep notes.
-10. Update `README.md` build/dev instructions if they mention the old flake structure.
+9. ~~Update `AGENTS.md` with the new flake architecture and private-dep notes.~~ done (done 2026-09-13 — AGENTS Build & Dev documents go-standard + mkPreparedSource)
+10. ~~Update `README.md` build/dev instructions if they mention the old flake structure.~~ done (README never described the flake structure)
 11. Add a `CHANGELOG.md` entry for the flake migration.
 12. Resolve whether to keep or revert the unrelated daemon-generated source changes.
 13. Investigate why the daemon modified `account_details.go`, `balances.go`, etc.

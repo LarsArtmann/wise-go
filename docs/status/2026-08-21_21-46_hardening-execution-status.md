@@ -100,36 +100,36 @@
 
 ## f) Next tasks (in execution order, ≤30 items)
 
-1. Commit the verified 8.x examples (or confirm the daemon took them intact — `git log --oneline -- example_test.go`).
-2. AGENTS.md: dprint/CHANGELOG-only commit quirk; flake links-fileset rule for new linked paths; daemon-sweeps-temp-files rule (the fsprobe incident).
-3. Annotate the hardening plan: G4 resolved-stale (DOMAIN_LANGUAGE.md exists).
-4. 9.1 `GetStatementRequest.validate`: reject intervals > 469 days (client-side) + table tests.
-5. 9.2 `statementLocale` optional query param on GetStatement + BDD asserting the param forwards.
-6. 9.3 Regression test: exchange-rate `time` param must serialize as UTC `Z` (v0.8.1 class; assert against a CEST-loaded `time.Time`).
-7. 9.4 MT940 + QIF BDD (binary arms of GetStatement).
-8. 9.5 AGENTS.md `Accept-Minor-Version` convention entry.
-9. 9.6 Tier boundary: `go test -race ./...`, lint, `nix flake check`.
-10. 10.1 POST account-requirements: raw + public types from the OpenAPI spec.
-11. 10.2 `RefreshQuoteAccountRequirements` client method + validation.
-12. 10.3 BDD: refresh reveals new required fields (two-pass recipient flow).
-13. 10.4 Mapper unit tests + Corruption classification.
-14. 10.5 Doc rows (FEATURES/CHANGELOG/TODO) + flake fileset + immediate build.
-15. 11.1 `AccountID` branded type + `NewAccountID` (additive; wire into MultiCurrencyAccount).
-16. 11.2 `HeaderDeliveryID` constant + README webhook wiring.
-17. 11.3 `FundingResponse` oneOf→one-struct flattening tradeoff doc.
-18. 11.4 `parseWiseTimestamp` error text: summarize layouts tried, drop chain dump.
-19. 12.1 Attempt shared zero-ID/get-by-ID template extraction (<30 lines, no behavior change) else document deferral.
-20. 12.2 Remove the two dupl nolints if extraction lands; else annotate.
-21. 13.1 ROADMAP release-history row (version per g3 answer).
-22. 13.2 AGENTS badge-job + examples-nolint context entries.
-23. 13.3 FEATURES godoc-examples inventory row.
-24. 14.1 Add `lychee` to the devShell for local link checks.
-25. 14.2 README drift-guard test (parse code fences, assert symbols exist via the package).
-26. 14.3 CONTRIBUTING: document the `nix flake check` links gate + local lychee run.
-27. Final: full race suite + lint + `nix flake check` + coverage re-measure; update this report's numbers.
-28. Push to origin (awaiting your instruction; not part of the plan's default).
-29. Gated G1: with a sandbox key, dispatch the sandbox-live workflow (workflow is key-drop-ready).
-30. Gated G2: with the version call, rename the CHANGELOG heading, tag, ROADMAP row. Gated G6: with cachix verification, flip `continue-on-error` to false.
+1. ~~Commit the verified 8.x examples (or confirm the daemon took them intact — `git log --oneline -- example_test.go`).~~ done (done in _22-31 (20810a7 verified))
+2. ~~AGENTS.md: dprint/CHANGELOG-only commit quirk; flake links-fileset rule for new linked paths; daemon-sweeps-temp-files rule (the fsprobe incident).~~ done (done in _22-31 (9d9d7a5))
+3. ~~Annotate the hardening plan: G4 resolved-stale (DOMAIN_LANGUAGE.md exists).~~ done (done in _22-31 (G4 struck))
+4. ~~9.1 `GetStatementRequest.validate`: reject intervals > 469 days (client-side) + table tests.~~ done (done (4f1973d))
+5. ~~9.2 `statementLocale` optional query param on GetStatement + BDD asserting the param forwards.~~ done (done (4f1973d))
+6. ~~9.3 Regression test: exchange-rate `time` param must serialize as UTC `Z` (v0.8.1 class; assert against a CEST-loaded `time.Time`).~~ done (done (4f1973d))
+7. ~~9.4 MT940 + QIF BDD (binary arms of GetStatement).~~ done (done (4f1973d))
+8. ~~9.5 AGENTS.md `Accept-Minor-Version` convention entry.~~ done (done (9d9d7a5))
+9. ~~9.6 Tier boundary: `go test -race ./...`, lint, `nix flake check`.~~ done (done (9.x gate green))
+10. ~~10.1 POST account-requirements: raw + public types from the OpenAPI spec.~~ done (done (759a2ec))
+11. ~~10.2 `RefreshQuoteAccountRequirements` client method + validation.~~ done (done (759a2ec))
+12. ~~10.3 BDD: refresh reveals new required fields (two-pass recipient flow).~~ done (done (759a2ec))
+13. ~~10.4 Mapper unit tests + Corruption classification.~~ done (done (759a2ec))
+14. ~~10.5 Doc rows (FEATURES/CHANGELOG/TODO) + flake fileset + immediate build.~~ done (done (759a2ec + fileset))
+15. ~~11.1 `AccountID` branded type + `NewAccountID` (additive; wire into MultiCurrencyAccount).~~ done (done (133b367))
+16. ~~11.2 `HeaderDeliveryID` constant + README webhook wiring.~~ done (done (133b367))
+17. ~~11.3 `FundingResponse` oneOf→one-struct flattening tradeoff doc.~~ done (done (133b367))
+18. ~~11.4 `parseWiseTimestamp` error text: summarize layouts tried, drop chain dump.~~ done (done (133b367))
+19. ~~12.1 Attempt shared zero-ID/get-by-ID template extraction (<30 lines, no behavior change) else document deferral.~~ done (done (55f1269))
+20. ~~12.2 Remove the two dupl nolints if extraction lands; else annotate.~~ done (done (55f1269))
+21. ~~13.1 ROADMAP release-history row (version per g3 answer).~~ done (done (1d6e4c4 era))
+22. ~~13.2 AGENTS badge-job + examples-nolint context entries.~~ done (done (9d9d7a5))
+23. ~~13.3 FEATURES godoc-examples inventory row.~~ done (done (1d6e4c4))
+24. ~~14.1 Add `lychee` to the devShell for local link checks.~~ done (done (b50d8e2))
+25. ~~14.2 README drift-guard test (parse code fences, assert symbols exist via the package).~~ done (done (1b8f7c8))
+26. ~~14.3 CONTRIBUTING: document the `nix flake check` links gate + local lychee run.~~ done (done (1b8f7c8))
+27. ~~Final: full race suite + lint + `nix flake check` + coverage re-measure; update this report's numbers.~~ done (done (22-31 final gates))
+28. ~~Push to origin (awaiting your instruction; not part of the plan's default).~~ done (not pushed then; pushed and synced since (verified 2026-09-13))
+29. ~~Gated G1: with a sandbox key, dispatch the sandbox-live workflow (workflow is key-drop-ready).~~ done (gated on the key (TODO_LIST P2))
+30. ~~Gated G2: with the version call, rename the CHANGELOG heading, tag, ROADMAP row. Gated G6: with cachix verification, flip `continue-on-error` to false.~~ done (gated on the version call — answered: v0.9.0 shipped e508572)
 
 ## g) Questions I cannot answer myself (3 max, highest priority)
 

@@ -58,9 +58,9 @@
 
 ## f) Next up (impact-sorted; 1–13 session-derived, 14+ carry-over observed)
 
-1. Add `SourceOfFundsOther` + `TransferNature` to `CreateTransferRequest`; delete the exhaustruct nolint; detailsWire becomes full delegation (also closes the API gap — verify field acceptance in `docs/reviews/wise-api-openapi.json` first).
-2. Inspect the 6 suppressed art-dupl clone groups (`--include` flags) — judge, don't assume.
-3. Direct table test for `requireID` (int64/string, zero/nonzero, code+field) and `toTransfer` label threading.
+1. ~~Add `SourceOfFundsOther` + `TransferNature` to `CreateTransferRequest`; delete the exhaustruct nolint; detailsWire becomes full delegation (also closes the API gap — verify field acceptance in `docs/reviews/wise-api-openapi.json` first).~~ **Won't implement — declined 2026-09-13 — spec verification showed create accepts exactly the five keys the request already carries; the nolint stays as the spec-verified marker.**
+2. ~~Inspect the 6 suppressed art-dupl clone groups (`--include` flags) — judge, don't assume.~~ done (done 2026-09-13 — ONE suppressed group (raw/public TransferRequirement mirror); ACCEPT with in-source directives)
+3. ~~Direct table test for `requireID` (int64/string, zero/nonzero, code+field) and `toTransfer` label threading.~~ done (done 2026-09-13 — TestRequireID pins int64 + string rows and the message contract)
 4. ~~`go test -race ./...` + `nix flake check` once the flake restructure settles.~~ done — both green (hardening 22-31 gates; nix-migration verification log).
 5. ~~Fix the `fetchByID`/`requireID` split brain: have `fetchByID` take the branded ID and validate via `requireID`.~~ still OPEN 2026-09-13 (`helpers.go:37` still hand-rolls the zero check); tracked in TODO_LIST P4.
 6. ~~Ask flake-restructure owner whether the mixed commit should be surgically documented (follow-up note) or split in a fixup — do NOT rewrite history blindly.~~ resolved — the restructure is documented as intentional work in `docs/status/2026-08-21_23-10_nix-private-go-repos-migration.md`.

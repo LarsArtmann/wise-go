@@ -54,31 +54,31 @@ Session scope: user asked "How is our Webhooks support?" — researched, verifie
 
 ### Webhook subscriptions CRUD (Tier-4 #49)
 
-1. `internal/raw` wire types for `WebhookSubscription` (id, name, url, channel, event types, headers, created_at).
-2. Public `WebhookSubscription` result type + branded `WebhookSubscriptionID` (`id.ID[WebhookSubscriptionBrand, int64]` — verify int64 vs UUID in spec first).
-3. `CreateProfileWebhookSubscription(ctx, ProfileID, req)` + request type.
-4. `ListProfileWebhookSubscriptions(ctx, ProfileID)`.
-5. `GetProfileWebhookSubscription(ctx, ProfileID, WebhookSubscriptionID)`.
-6. `DeleteProfileWebhookSubscription(ctx, ProfileID, WebhookSubscriptionID)` (204 handling).
-7. App-level variants taking `clientKey` + client-credentials token story (see question 2).
-8. `TestWebhookSubscription` — `POST .../test-notifications` (app level only per spec).
-9. BDD tests per method (happy + 401/404 + validation).
-10. Godoc examples + README "Webhook subscriptions" section + TOC entry.
-11. Add new `.go` files to `flake.nix` fileset unions (Go + links checks).
-12. CHANGELOG entry + version bump + release.
-13. Correct plan item #49 "8" → 9 operations (or annotate).
+1. ~~`internal/raw` wire types for `WebhookSubscription` (id, name, url, channel, event types, headers, created_at).~~ done (done at 5a6448c (v0.11.0 raw.WebhookSubscription wire types))
+2. ~~Public `WebhookSubscription` result type + branded `WebhookSubscriptionID` (`id.ID[WebhookSubscriptionBrand, int64]` — verify int64 vs UUID in spec first).~~ done (done at 5a6448c (UUID string brand, spec-verified))
+3. ~~`CreateProfileWebhookSubscription(ctx, ProfileID, req)` + request type.~~ done (done at 5a6448c)
+4. ~~`ListProfileWebhookSubscriptions(ctx, ProfileID)`.~~ done (done at 5a6448c)
+5. ~~`GetProfileWebhookSubscription(ctx, ProfileID, WebhookSubscriptionID)`.~~ done (done at 5a6448c)
+6. ~~`DeleteProfileWebhookSubscription(ctx, ProfileID, WebhookSubscriptionID)` (204 handling).~~ done (done at 5a6448c (204 delete))
+7. ~~App-level variants taking `clientKey` + client-credentials token story (see question 2).~~ done (DEFERRED 2026-09-13 — app-level scope needs the client-credentials decision (ROADMAP))
+8. ~~`TestWebhookSubscription` — `POST .../test-notifications` (app level only per spec).~~ done (DEFERRED with app-level scope (ROADMAP))
+9. ~~BDD tests per method (happy + 401/404 + validation).~~ done (done at 5a6448c (BDD happy/400/401/404/204/validation))
+10. ~~Godoc examples + README "Webhook subscriptions" section + TOC entry.~~ done (done at 5a6448c (godoc examples + README sections + TOC))
+11. ~~Add new `.go` files to `flake.nix` fileset unions (Go + links checks).~~ done (done at 5a6448c (flake fileset))
+12. ~~CHANGELOG entry + version bump + release.~~ done (done at 5a6448c (v0.11.0 release))
+13. ~~Correct plan item #49 "8" → 9 operations (or annotate).~~ done (done 2026-09-13 (plan item #49 corrected inline))
 
 ### Typed webhook event decoding
 
-14. `WebhookEvent` envelope: `data`, `subscription_id`, `event_type`, `schema_version`, `sent_at`.
-15. `WebhookEventType` typed enum + constants (`WebhookEventTransfersStateChange`, `WebhookEventBalancesCredit`, …).
-16. `ParseWebhookEvent(payload []byte) (WebhookEvent, error)` — decode-then-dispatch, tolerant timestamps via existing `parseWiseTimestamp`.
-17. Enumerate the full `webhook-event` schema list from the spec (my 6-page extraction was incomplete).
-18. Payload structs: transfers#state-change (resource + currentStatus), balances#credit, deposits#completed, deposits#top-up-failed as the high-value first four.
-19. Decide: strict per-version schemas vs tolerant envelope + `json.RawMessage` data (design conversation).
-20. Tests: fixtures per event type + unknown-event-type forward compatibility.
-21. README: replace "decode the event JSON and process it" hand-wave with `ParseWebhookEvent` usage.
-22. Optional: `wise.VerifyAndParseWebhookEvent(body, sig, key)` one-call helper (design decision — composition vs convenience).
+14. ~~`WebhookEvent` envelope: `data`, `subscription_id`, `event_type`, `schema_version`, `sent_at`.~~ done (done at 5a6448c (WebhookEvent envelope))
+15. ~~`WebhookEventType` typed enum + constants (`WebhookEventTransfersStateChange`, `WebhookEventBalancesCredit`, …).~~ done (done at 5a6448c (open enum, 33 constants))
+16. ~~`ParseWebhookEvent(payload []byte) (WebhookEvent, error)` — decode-then-dispatch, tolerant timestamps via existing `parseWiseTimestamp`.~~ done (done at 5a6448c (ParseWebhookEvent))
+17. ~~Enumerate the full `webhook-event` schema list from the spec (my 6-page extraction was incomplete).~~ done (done at 5a6448c (spec + live webhook-event reference union))
+18. ~~Payload structs: transfers#state-change (resource + currentStatus), balances#credit, deposits#completed, deposits#top-up-failed as the high-value first four.~~ done (done at 5a6448c — deposits#* events undocumented, substituted with transfers#payout-failure + balances#credit after live verification)
+19. ~~Decide: strict per-version schemas vs tolerant envelope + `json.RawMessage` data (design conversation).~~ done (decided at 5a6448c — tolerant envelope + jsontext.Value raw data)
+20. ~~Tests: fixtures per event type + unknown-event-type forward compatibility.~~ done (done at 5a6448c (per-type fixtures + unknown-event passthrough))
+21. ~~README: replace "decode the event JSON and process it" hand-wave with `ParseWebhookEvent` usage.~~ done (done at 5a6448c (README Typed event decoding section))
+22. ~~Optional: `wise.VerifyAndParseWebhookEvent(body, sig, key)` one-call helper (design decision — composition vs convenience).~~ done (decided against at 5a6448c — composition over helper; documented in ParseWebhookEvent godoc)
 
 ### Docs/hygiene (session-found)
 

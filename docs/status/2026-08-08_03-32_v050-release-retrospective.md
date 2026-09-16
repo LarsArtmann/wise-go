@@ -145,12 +145,12 @@ I reduced TODO_LIST from ~10 items across P1-P5 to just 2 items (P1: v1.0 lock, 
 
 ### Immediate (this release cycle)
 
-1. **Push v0.5.0 tag to remote** — `git push origin v0.5.0`
-2. **Run `nix flake check`** — verify the hermetic build passes with `example_test.go` in the fileset
+1. ~~**Push v0.5.0 tag to remote** — `git push origin v0.5.0`~~ done (all tags pushed; v0.10.0/v0.11.0 on origin)
+2. ~~**Run `nix flake check`** — verify the hermetic build passes with `example_test.go` in the fileset~~ done (nix flake check green through v0.11.0)
 3. **Fix the pre-commit hook** — add `dprint` to `flake.nix` devShells or exclude markdown-format from `.buildflow.yml`
 4. **Pin gofumpt version in CI** — change `@latest` to a specific version
 5. **Update README coverage badge** — 92.4%, not 94.8%
-6. **Update CONTRIBUTING.md file tree** — add `internal/raw/` to the ASCII diagram
+6. ~~**Update CONTRIBUTING.md file tree** — add `internal/raw/` to the ASCII diagram~~ done (fixed in v0.5.0)
 7. **Add Cachix binary cache to CI** — without it, `nix flake check` job will take 15+ min
 
 ### v1.0 release (API lock)
@@ -159,42 +159,42 @@ I reduced TODO_LIST from ~10 items across P1-P5 to just 2 items (P1: v1.0 lock, 
 9. **Godoc review pass** — every exported symbol has a doc comment starting with its name
 10. **Lock the API** — tag `v1.0.0`
 11. **Add `wise.Version` constant** — embed the version string at build time
-12. **Add breaking-change detection in CI** — `gorelease` or similar
+12. ~~**Add breaking-change detection in CI** — `gorelease` or similar~~ done (gorelease runs locally via nix run .#apidiff (CI job gated on CI re-enable))
 
 ### Test coverage
 
-13. **Test `ErrorContext()` methods** — two methods at 0%
-14. **Test `mapTransaction` error branches** — bad fees currency, bad exchange details currency
-15. **Test `mapExchange` with invalid currencies** — from/to amount currency validation
-16. **Test `mapBalance` error branches** — bad amount/reserved currency (currently 75%)
-17. **Test `isRetryable` with network errors** — currently 66.7%
-18. **Add concurrent-usage test** — verify `*wise.Client` is goroutine-safe
-19. **Add `internal/raw/types_test.go`** — test `Cents()` in its own package for accurate coverage
+13. ~~**Test `ErrorContext()` methods** — two methods at 0%~~ done (TestErrorContexts (errors_test.go))
+14. ~~**Test `mapTransaction` error branches** — bad fees currency, bad exchange details currency~~ done (mapper edge tests (helpers_test.go))
+15. ~~**Test `mapExchange` with invalid currencies** — from/to amount currency validation~~ done (mapExchange invalid-currency tests)
+16. ~~**Test `mapBalance` error branches** — bad amount/reserved currency (currently 75%)~~ done (mapBalance branch tests)
+17. ~~**Test `isRetryable` with network errors** — currently 66.7%~~ done (retry suite covers network-error classification)
+18. ~~**Add concurrent-usage test** — verify `*wise.Client` is goroutine-safe~~ done (Concurrency Describe, wise_test.go:246 (2026-09-13))
+19. ~~**Add `internal/raw/types_test.go`** — test `Cents()` in its own package for accurate coverage~~ done (internal/raw/types_test.go round-trips (2026-09-13))
 
 ### Features (ROADMAP Axis 1: Completeness)
 
-20. **Write-operation HTTP helpers** — `post`, `patch`, `delete` in `client.go`
-21. **Quotes API** — `ListQuotes`, `CreateQuote`
-22. **Recipients API** — `ListRecipients`, `CreateRecipient`
-23. **Transfers API** — `CreateTransfer` (depends on quotes + recipients)
-24. **Webhook signature verification** — `VerifyWebhookSignature`
-25. **Statements (CSV/PDF)** — `GetStatement` with format parameter
+20. ~~**Write-operation HTTP helpers** — `post`, `patch`, `delete` in `client.go`~~ done (post/put/delete helpers shipped)
+21. ~~**Quotes API** — `ListQuotes`, `CreateQuote`~~ done (v0.8.0)
+22. ~~**Recipients API** — `ListRecipients`, `CreateRecipient`~~ done (v0.8.0)
+23. ~~**Transfers API** — `CreateTransfer` (depends on quotes + recipients)~~ done (v0.8.0)
+24. ~~**Webhook signature verification** — `VerifyWebhookSignature`~~ done (v0.9.0)
+25. ~~**Statements (CSV/PDF)** — `GetStatement` with format parameter~~ done (v0.9.0 six formats)
 
 ### Observability (ROADMAP Axis 3)
 
-26. **`WithLogger` option** — structured request/response logging
-27. **`X-Request-ID` header injection** — for distributed tracing
-28. **Context-aware retry** — respect `ctx.Done()` during retry backoff
+26. ~~**`WithLogger` option** — structured request/response logging~~ done (v0.9.0)
+27. ~~**`X-Request-ID` header injection** — for distributed tracing~~ done (WithCorrelationID + per-request override v0.9.0)
+28. ~~**Context-aware retry** — respect `ctx.Done()` during retry backoff~~ done (v0.9.0)
 29. **`WithMetrics` option** — counters/histograms for Prometheus/OTel
-30. **mTLS documentation** — dedicated README section
+30. ~~**mTLS documentation** — dedicated README section~~ done (v0.9.0 README section)
 
 ### CI/Tooling
 
-31. **Pin all GitHub Actions to SHA** — security hardening (9 actions currently use tag pins)
+31. ~~**Pin all GitHub Actions to SHA** — security hardening (9 actions currently use tag pins)~~ done (all GitHub Actions SHA-pinned (07-23 session))
 32. **Add `gorelease` CI check** — detect breaking changes before merge
 33. **Fix go.mod direct/indirect require mixing** — buildflow warning
-34. **Add coverage threshold gate** — fail CI if coverage drops below 90%
-35. **Add `govulncheck` to nix flake check** — currently only in GitHub Actions
+34. ~~**Add coverage threshold gate** — fail CI if coverage drops below 90%~~ done (ci.yml 90% coverage gate (2026-09-13))
+35. ~~**Add `govulncheck` to nix flake check** — currently only in GitHub Actions~~ done (govulncheck job in ci.yml)
 36. **Extract `vendorHash` to separate file** — cleaner diffs (buildflow recommendation)
 37. **Add `codespell` to devShell** — currently missing, buildflow can't run it
 

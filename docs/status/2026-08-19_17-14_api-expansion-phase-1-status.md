@@ -114,30 +114,30 @@ Nothing is broken or shipped in a dangerous state. Honest missteps:
 1. ~~`CancelTransfer`~~ **done at `05ee22a` (2026-08-19)**
 2. ~~`GetDeliveryEstimate`~~ **done at `5ef7302` (2026-08-19)**
 3. ~~`ValidateTransferRequirements`~~ **done at `97c6379` (2026-08-19)**
-4. `FundTransfer` (balance funding)
+4. ~~`FundTransfer` (balance funding)~~ done (done at e508572 (v0.9.0))
 5. ~~Expand `Quote` with `paymentOptions`, fees, and notices~~ **done at `607f17d` (2026-08-19)**
 6. ~~Add README example for quote → recipient → transfer~~ **done at `dcd1194` (2026-08-19)**
-7. Add error-response BDD tests for POST endpoints
-8. Add validation edge-case unit tests
-9. Add `GetTransfer` error tests (404, auth, SCA)
-10. Add `CreateQuote` validation tests
+7. ~~Add error-response BDD tests for POST endpoints~~ done (done at e508572 (400/401/404/409/SCA/429 matrix))
+8. ~~Add validation edge-case unit tests~~ done (done at e508572 (three validate() matrices))
+9. ~~Add `GetTransfer` error tests (404, auth, SCA)~~ done (done at e508572)
+10. ~~Add `CreateQuote` validation tests~~ done (done at e508572)
 
 ### Near-term (high value, self-contained)
 
-11. `GetMe` / `GetUser`
-12. `GetStatement` with format parameter (CSV/PDF/XLSX)
-13. Webhook signature verification helper
-14. `CreateBalance`
-15. Direct `GetBalance` by ID (new endpoint)
-16. `GetTotalFunds`
-17. `GetBankAccountDetails`
-18. `GetMultiCurrencyAccount`
-19. `ListCurrencies`
-20. Per-request correlation ID override
+11. ~~`GetMe` / `GetUser`~~ done (done at e508572)
+12. ~~`GetStatement` with format parameter (CSV/PDF/XLSX)~~ done (done at e508572 (six formats))
+13. ~~Webhook signature verification helper~~ done (done at e508572)
+14. ~~`CreateBalance`~~ done (done at e508572)
+15. ~~Direct `GetBalance` by ID (new endpoint)~~ done (done at e508572)
+16. ~~`GetTotalFunds`~~ done (done at e508572)
+17. ~~`GetBankAccountDetails`~~ done (done at e508572)
+18. ~~`GetMultiCurrencyAccount`~~ done (done at e508572)
+19. ~~`ListCurrencies`~~ done (done at e508572)
+20. ~~Per-request correlation ID override~~ done (done at e508572)
 
 ### Medium-term (completeness)
 
-21. `GetQuoteAccountRequirements`
+21. ~~`GetQuoteAccountRequirements`~~ done (done at e508572)
 22. `GetAccountRequirements` (recipient-first flow)
 23. `CreateRecipient` with refund and email recipient support
 24. `CheckAccountQuoteCompatibility`
@@ -150,16 +150,16 @@ Nothing is broken or shipped in a dangerous state. Honest missteps:
 
 ### Observability & quality
 
-31. Sandbox integration tests workflow
-32. Request/response logging hook (`WithLogger`)
+31. ~~Sandbox integration tests workflow~~ done (workflow + key-gated tests shipped (ecdc738); live run needs the key)
+32. ~~Request/response logging hook (`WithLogger`)~~ done (done at e508572)
 33. Metrics hook (`WithMetrics`)
-34. mTLS documentation / `WithMTLS` option
-35. Context-aware retry cancellation
-36. Add godoc examples for new public types
-37. API audit for exported symbols ahead of v1.0
+34. ~~mTLS documentation / `WithMTLS` option~~ done (v0.9.0 README mTLS section)
+35. ~~Context-aware retry cancellation~~ done (done at e508572)
+36. ~~Add godoc examples for new public types~~ done (done at 20810a7)
+37. ~~API audit for exported symbols ahead of v1.0~~ done (done 2026-08-21 (docs/reviews/2026-08-21_v1.0-api-audit.md))
 38. Full OpenAPI-derived type review
 39. Add property-based tests for Money/Quote/Transfer mapping
-40. CI speed: add Cachix binary cache
+40. ~~CI speed: add Cachix binary cache~~ done (wired (ad2ddac); token user-gated)
 
 ### Long-term / specialized
 

@@ -60,56 +60,56 @@
 
 ## f) Up to 50 things we should get done next (impact-ordered; ⏳ = user-gated; most are already routed in TODO_LIST.md)
 
-1. ⏳ **Tag `v0.10.0`** — code+docs shipped, tag missing (TODO P1).
-2. **Re-run the v1.0 audit** over the 33-method surface; refresh the risk register (TODO P1).
+1. ~~⏳ **Tag `v0.10.0`** — code+docs shipped, tag missing (TODO P1).~~ done (tag exists (fe896a8); only the GitHub Release object remains (TODO_LIST P1))
+2. ~~**Re-run the v1.0 audit** over the 33-method surface; refresh the risk register (TODO P1).~~ done (done 2026-09-13 — re-audit section in the audit doc)
 3. ⏳ **Sandbox API key → first live run** + CHANGELOG entry (TODO P2).
 4. ⏳ **Tag `v1.0.0`** after 1–3 (TODO P2).
 5. ⏳ **Typed recipient `Details` decision** (typed structs vs map + `DetailsKey*` constants) — five reports old (TODO P2).
 6. ⏳ **Set `CACHIX_AUTH_TOKEN`** + confirm the `larsartmann` cache (TODO P2).
 7. **CI re-enable path**: SSH deploy key or `GITHUB_TOKEN`+`insteadOf` for the `git+ssh` flake inputs, verify `nix flake check` in CI, flip the workflow on (TODO P4) — unfreezes the coverage badge (f.16).
-8. **Re-run `govulncheck` on go1.26.7** — the 4 stdlib findings should now be zero (TODO P4).
-9. **`requireID` direct table test** + pin its error contract in `internal_test.go` (TODO P4).
-10. **Route `fetchByID` through `requireID`** — kills the two-idiom split brain (`helpers.go:37`) (TODO P4).
-11. **Add `SourceOfFundsOther`/`TransferNature` to `CreateTransferRequest`**, delete the `//nolint:exhaustruct` (`transfers.go:205`); verify field acceptance in the OpenAPI spec first (TODO P4).
-12. **Webhook subscription CRUD** — profile-level first; app-level needs the client-credentials token story (TODO P3).
-13. **Typed webhook event decoding** — envelope + `ParseWebhookEvent` + fixtures (TODO P3).
-14. **Correct plan item #49 "8" → 9 operations** in `docs/planning/2026-08-19_wise-api-full-implementation-plan.md` (noted in TODO; the plan doc itself still says 8).
-15. **Migrate `exhaustruct` → `exhaustruct_v5`** (golangci v2.13 deprecation warning, seen this session) (TODO P4).
+8. ~~**Re-run `govulncheck` on go1.26.7** — the 4 stdlib findings should now be zero (TODO P4).~~ done (done 2026-09-13 — zero findings on go1.26.7)
+9. ~~**`requireID` direct table test** + pin its error contract in `internal_test.go` (TODO P4).~~ done (done 2026-09-13 — TestRequireID)
+10. ~~**Route `fetchByID` through `requireID`** — kills the two-idiom split brain (`helpers.go:37`) (TODO P4).~~ done (done 2026-09-13 — fetchByID routes through requireID)
+11. ~~**Add `SourceOfFundsOther`/`TransferNature` to `CreateTransferRequest`**, delete the `//nolint:exhaustruct` (`transfers.go:205`); verify field acceptance in the OpenAPI spec first (TODO P4).~~ **Won't implement — declined 2026-09-13 — spec-verified: create accepts exactly the five existing keys.**
+12. ~~**Webhook subscription CRUD** — profile-level first; app-level needs the client-credentials token story (TODO P3).~~ done (done at 5a6448c (v0.11.0))
+13. ~~**Typed webhook event decoding** — envelope + `ParseWebhookEvent` + fixtures (TODO P3).~~ done (done at 5a6448c)
+14. ~~**Correct plan item #49 "8" → 9 operations** in `docs/planning/2026-08-19_wise-api-full-implementation-plan.md` (noted in TODO; the plan doc itself still says 8).~~ done (done 2026-09-13 — plan item #49 corrected)
+15. ~~**Migrate `exhaustruct` → `exhaustruct_v5`** (golangci v2.13 deprecation warning, seen this session) (TODO P4).~~ done (done 2026-09-13 — exhaustruct_v5 + lint pin v2.13)
 16. Coverage badge unfreeze — consequence of f.7.
-17. **`body, _ := readBody(resp)` error capture** (`client.go:382`) (TODO P4).
-18. **Raw-input values in `map*` error contexts** (TODO P4).
-19. **`ErrorContext`/`IsRetryable` on `AuthError`/`NotFoundError`** (TODO P4).
-20. **AGENTS.md error-context convention** entry (TODO P4).
+17. ~~**`body, _ := readBody(resp)` error capture** (`client.go:382`) (TODO P4).~~ done (done 2026-09-13 — checkError surfaces unreadable bodies)
+18. ~~**Raw-input values in `map*` error contexts** (TODO P4).~~ done (done 2026-09-13 — map* errors carry raw wire values)
+19. ~~**`ErrorContext`/`IsRetryable` on `AuthError`/`NotFoundError`** (TODO P4).~~ done (decided 2026-09-13 — promoted contexts pinned by TestErrorContexts; only RateLimit/Server implement IsRetryable)
+20. ~~**AGENTS.md error-context convention** entry (TODO P4).~~ done (done 2026-09-13 — AGENTS error-context convention)
 21. **Curated erraudit config + CI gate** (TODO P4).
 22. ⏳ **samber/oops adopt-or-decline** (user) (TODO P4).
-23. **`classifyTransactionType` float64 → cents** (`transactions.go:178`) (TODO P4).
-24. **`wiseDateFormat` constant** (`users.go:139`) (TODO P4).
-25. **`WithUserAgent` option** (TODO P4).
+23. ~~**`classifyTransactionType` float64 → cents** (`transactions.go:178`) (TODO P4).~~ done (done 2026-09-13 (8b54f7c))
+24. ~~**`wiseDateFormat` constant** (`users.go:139`) (TODO P4).~~ done (done 2026-09-13 (8b54f7c))
+25. ~~**`WithUserAgent` option** (TODO P4).~~ done (done 2026-09-13 (0fab6f5))
 26. **`fmt.Stringer` for public enums** (TODO P4).
 27. **`errorfamily.RegisterClassification` call** (TODO P4).
-28. **Surface `Profile.UserID`/`PublicID`** (TODO P4).
+28. ~~**Surface `Profile.UserID`/`PublicID`** (TODO P4).~~ done (done 2026-09-13 (8b54f7c))
 29. **Pin the gofumpt action version** (`ci.yml` uses `@latest`) (TODO P4).
-30. **Benchmarks** for hot paths (TODO P4).
-31. **Fuzz tests** for date/money parsing (TODO P4).
-32. **Split the `wise_test.go` monolith** (TODO P4).
-33. **Concurrent-safety test** (v050 retrospective item) (TODO P4).
-34. **`internal/raw` test file** (TODO P4).
+30. ~~**Benchmarks** for hot paths (TODO P4).~~ done (done 2026-09-13 (dbab2e4))
+31. ~~**Fuzz tests** for date/money parsing (TODO P4).~~ done (done 2026-09-13 — FuzzParseWiseTimestamp + FuzzNewCurrency)
+32. ~~**Split the `wise_test.go` monolith** (TODO P4).~~ done (done 2026-09-13 (5f632e7))
+33. ~~**Concurrent-safety test** (v050 retrospective item) (TODO P4).~~ done (done 2026-09-13 — Concurrency Describe (wise_test.go:246))
+34. ~~**`internal/raw` test file** (TODO P4).~~ done (done 2026-09-13 — internal/raw/types_test.go)
 35. **`wise.Version` constant** (TODO P4).
-36. **gorelease breaking-change CI check** (TODO P4).
-37. **Coverage-threshold gate** (badge colors today, never fails) (TODO P4).
-38. **README Date-Handling section** (TODO P4).
-39. **Issue/PR templates** (TODO P4).
-40. **ADR directory** for the big decisions (Money, flat package, go-retry) (TODO P4).
-41. **`doc-verify` flake app** (lychee + godoc freshness for contributors) (TODO P4).
-42. **`reports/jscpd-report.json` stale path cleanup** (TODO P4).
+36. ~~**gorelease breaking-change CI check** (TODO P4).~~ done (done 2026-09-13 — nix run .#apidiff)
+37. ~~**Coverage-threshold gate** (badge colors today, never fails) (TODO P4).~~ done (done 2026-09-13 — 90% gate in ci.yml (flake parity tracked in TODO_LIST P3))
+38. ~~**README Date-Handling section** (TODO P4).~~ done (done — README carries the UTC date-handling notes)
+39. ~~**Issue/PR templates** (TODO P4).~~ done (done 2026-09-13 — bug/feature/PR templates)
+40. ~~**ADR directory** for the big decisions (Money, flat package, go-retry) (TODO P4).~~ done (done 2026-09-13 — ADR 001/002/003)
+41. ~~**`doc-verify` flake app** (lychee + godoc freshness for contributors) (TODO P4).~~ done (done 2026-09-13 — nix run .#doc-verify)
+42. ~~**`reports/jscpd-report.json` stale path cleanup** (TODO P4).~~ done (done 2026-09-13 — reports/ trashed)
 43. **`GetStatement` PDF/XLSX content-type assertions** (TODO P4).
 44. **`VerifyWebhookSignature` test against Wise's documented example signature** (TODO P4).
-45. **Decide `Authenticate()`'s future** now that `GetMe` exists (TODO P4).
+45. ~~**Decide `Authenticate()`'s future** now that `GetMe` exists (TODO P4).~~ done (done 2026-09-13 — same as f.41)
 46. ⏳ **direnv/home-manager GOEXPERIMENT pin** (user machine) (TODO P4).
 47. **`nix flake check --all-systems`** (aarch64/darwin never checked — warning visible this session).
-48. **One-line archive-policy note for HTML/D2 artifacts** (this session's e.5).
+48. ~~**One-line archive-policy note for HTML/D2 artifacts** (this session's e.5).~~ done (done 2026-09-16 — archive-policy line added to AGENTS.md)
 49. **Design-story blog update** — the retry-typed-error find is the material (low priority).
-50. **HARVEST this report's f-list into TODO_LIST** — mostly pre-routed; f.14 (plan-doc 8→9 correction) is the one new item to fold in.
+50. ~~**HARVEST this report's f-list into TODO_LIST** — mostly pre-routed; f.14 (plan-doc 8→9 correction) is the one new item to fold in.~~ done (done 2026-09-16 — this docs-health run harvested the list)
 
 ## g) Three questions I cannot answer myself
 

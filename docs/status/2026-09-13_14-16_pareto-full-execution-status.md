@@ -304,28 +304,28 @@
 
 ## f) Next things (up to 50, sorted by impact)
 
-1. **Refresh the living-doc counts** — 37 methods / 15 resources
-   (AGENTS.md:58), 22 examples (FEATURES.md:115), + the audit doc delta
-   note. (Drift introduced this session; ~20 min.)
-2. **Add the micro-batch items to CHANGELOG `[Unreleased]`** (WithUserAgent,
-   Profile.UserID/PublicID, classifier cents signature, fetchByID refactor).
-3. **Update `docs/DOMAIN_LANGUAGE.md`** with the webhook vocabulary
-   (subscription, envelope, event type, 2026Q3 surface).
-4. **23.5 — client concurrent-safety test** (shared client, parallel
-   requests under `-race`).
-5. **24.1–24.2 — split `errors_test.go` / `helpers_test.go`** out of
-   `internal_test.go`; then 24.5 full gates.
-6. **24.3 — coverage-threshold CI step** (fail under N%; badge keeps
-   working).
-7. **24.4 — gorelease/apidiff breaking-change check** (CI job or flake app).
-8. **25.1–25.2 — issue + PR templates.**
-9. **25.3–25.5 — ADR 001/002/003** (Money, flat package, go-retry).
-10. **25.6 — `doc-verify` flake app** (lychee + godoc freshness) + jscpd
-    report cleanup.
+1. ~~**Refresh the living-doc counts** — 37 methods / 15 resources~~ done (done — counts refreshed through the 41-method v0.11.0 surface (2026-09-16 pass))
+   ~~(AGENTS.md:58), 22 examples (FEATURES.md:115), + the audit doc delta~~
+   ~~note. (Drift introduced this session; ~20 min.)~~
+2. ~~**Add the micro-batch items to CHANGELOG `[Unreleased]`** (WithUserAgent,~~ done (done — the Unreleased batch shipped as v0.11.0 (5a6448c))
+   ~~Profile.UserID/PublicID, classifier cents signature, fetchByID refactor).~~
+3. ~~**Update `docs/DOMAIN_LANGUAGE.md`** with the webhook vocabulary~~ done (done 2026-09-13 (15-41 session) — webhook vocabulary in DOMAIN_LANGUAGE.md)
+   ~~(subscription, envelope, event type, 2026Q3 surface).~~
+4. ~~**23.5 — client concurrent-safety test** (shared client, parallel~~ done (done 2026-09-13 (15-41, Concurrency Describe))
+   ~~requests under `-race`).~~
+5. ~~**24.1–24.2 — split `errors_test.go` / `helpers_test.go`** out of~~ done (done 2026-09-13 (15-41, errors_test/helpers_test split))
+   ~~`internal_test.go`; then 24.5 full gates.~~
+6. ~~**24.3 — coverage-threshold CI step** (fail under N%; badge keeps~~ done (done 2026-09-13 (15-41, ci.yml 90% gate))
+   ~~working).~~
+7. ~~**24.4 — gorelease/apidiff breaking-change check** (CI job or flake app).~~ done (done 2026-09-13 (15-41, nix run .#apidiff))
+8. ~~**25.1–25.2 — issue + PR templates.**~~ done (done 2026-09-13 (15-41))
+9. ~~**25.3–25.5 — ADR 001/002/003** (Money, flat package, go-retry).~~ done (done 2026-09-13 (15-41, ADR 001-003))
+10. ~~**25.6 — `doc-verify` flake app** (lychee + godoc freshness) + jscpd~~ done (done 2026-09-13 (15-41, doc-verify + reports cleanup))
+    ~~report cleanup.~~
 11. **4.1–4.3 — push, enable CI, watch the first run green**, confirm the
     badge job unfreezes (needs user approval to push/enable).
-12. **2.3–2.4 — tag `v0.10.0`, push, proxy `@v/list` + clean-dir
-    `go get`, `gh release create` with the drafted notes** (user-gated).
+12. ~~**2.3–2.4 — tag `v0.10.0`, push, proxy `@v/list` + clean-dir~~ done (tag exists (fe896a8); GitHub Release object pending (TODO_LIST P1))
+    ~~`go get`, `gh release create` with the drafted notes** (user-gated).~~
 13. **Pin `gofumpt` in `ci.yml`** (`go install mvdan.cc/gofumpt@latest` —
     missed micro-batch item).
 14. **Pin `govulncheck` in `ci.yml`** (`go install ...@latest` today).
@@ -342,8 +342,8 @@
     links check included).
 21. **Fuzz smoke job in CI** (short `-fuzztime 30s` for the two fuzz
     targets) — optional.
-22. **art-dupl baseline + CI check step** — clone regression guard beyond
-    the in-source directives.
+22. ~~**art-dupl baseline + CI check step** — clone regression guard beyond~~ **Won't implement — declined 2026-09-13 — the in-source art-dupl:accept directives ARE the suppression config.**
+    ~~the in-source directives.~~
 23. **Fast-path RFC3339 in `parseWiseTimestamp`** if webhook latency ever
     matters (benchmark shows it dominates `ParseWebhookEvent`).
 24. **Typed payloads for more event types on demand** (cards#*,
@@ -351,12 +351,12 @@
     spec-verified constants already exist).
 25. **Godoc example for `ListProfileWebhookSubscriptions`** (only create has
     one today).
-26. **Verify `FEATURES.md` webhook rows' line numbers** after further
-    `webhooks.go` edits (line-cited evidence goes stale fast).
+26. ~~**Verify `FEATURES.md` webhook rows' line numbers** after further~~ done (done 2026-09-16 — webhook row line refs re-derived (webhooks.go:33,64,90,117,149,178,283))
+    ~~`webhooks.go` edits (line-cited evidence goes stale fast).~~
 27. **`docs/DOMAIN_LANGUAGE.md` enum audit** — 33 webhook event constants
     deserve a one-line mention under terms.
-28. **README "Project Status" section refresh** if it carries method
-    counts (same drift class as f1).
+28. ~~**README "Project Status" section refresh** if it carries method~~ done (verified — README carries no method counts)
+    ~~counts (same drift class as f1).~~
 29. **Consider `nix flake check --all-systems` in CI** (aarch64-darwin
     coverage for the consumer fleet).
 30. **Sandbox test growth**: quote → recipient → transfer credentialed
@@ -374,30 +374,30 @@
     question (gated).
 39. **Cross-check `wise-api-core-schemas.json` against the webhook
     schemas** — the small spec predates the webhook work.
-40. **Re-verify the re-audit's "const groups stable at 22"** after the
-    webhook enums (33 event constants + 2 creator + 2 scope values may have
-    added const GROUPS — count drift to confirm).
+40. ~~**Re-verify the re-audit's "const groups stable at 22"** after the~~ done (verified 2026-09-16 — const/type counts re-derived via go doc -all (114 exported types))
+    ~~webhook enums (33 event constants + 2 creator + 2 scope values may have~~
+    ~~added const GROUPS — count drift to confirm).~~
 41. **Sweep for remaining `@latest` installs in CI** beyond gofumpt/
     govulncheck.
 42. **Add `TestWebhookSubscription`** only if f15 pulls app-level in scope.
-43. **Consider a `VerifyAndParseWebhookEvent` helper** — decided against
-    (composition); revisit only with real user demand.
+43. ~~**Consider a `VerifyAndParseWebhookEvent` helper** — decided against~~ **Won't implement — decided 2026-09-13 — composition over VerifyAndParse helper; recorded in godoc.**
+    ~~(composition); revisit only with real user demand.~~
 44. **benchmark baselines**: store a first benchstat baseline for future
     comparisons (bench file documents the workflow).
-45. **TODO_LIST: add the f1–f10 items as actionable rows** (docs-health
-    HARVEST) so this report's section (f) does not get entombed.
-46. **AGENTS: note the jsontext.Value choice** for raw webhook data (v2-native
-    raw type; RawMessage avoided) — hard to rediscover.
-47. **Check `sandbox_live.yml` still aligns** with the renamed workflow
-    state after any CI changes.
+45. ~~**TODO_LIST: add the f1–f10 items as actionable rows** (docs-health~~ done (done 2026-09-16 — this run harvested f1-f14/f19/f35/f46 into TODO_LIST)
+    ~~HARVEST) so this report's section (f) does not get entombed.~~
+46. ~~**AGENTS: note the jsontext.Value choice** for raw webhook data (v2-native~~ done (done 2026-09-16 — jsontext.Value note added to the AGENTS webhook gotcha)
+    ~~raw type; RawMessage avoided) — hard to rediscover.~~
+47. ~~**Check `sandbox_live.yml` still aligns** with the renamed workflow~~ done (verified 2026-09-16 — sandbox-live.yml consistent with the current workflow set)
+    ~~state after any CI changes.~~
 48. **Consider naming the 2026Q3 constant upgrade path** — when Wise moves
     the surface (2026Q4), `webhookAPIVersion` is the single lever; document
     the expected bump ritual in AGENTS.
 49. **Review daemon commits for the session** — verify each auto-commit
     contains what the session intended (spot-checks done; full sweep
     pending).
-50. **Close out the todos tool** — mark 23.x partial state and 24/25 as
-    pending so the next session inherits an accurate list.
+50. ~~**Close out the todos tool** — mark 23.x partial state and 24/25 as~~ done (done 2026-09-16)
+    ~~pending so the next session inherits an accurate list.~~
 
 ## g) Questions I cannot figure out myself (top 3)
 

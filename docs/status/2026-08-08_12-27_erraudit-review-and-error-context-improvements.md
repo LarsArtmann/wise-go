@@ -169,13 +169,13 @@ The tool generates significant noise for idiomatic Go codebases. I should have b
 
 ### High Priority (Error Quality)
 
-1. Run `nix flake check` to verify no formatting/build issues from this session's changes
-2. Update AGENTS.md with erraudit findings and the fullURL error context convention
-3. Improve `body, _ := readBody(resp)` in `checkError` to capture read errors
-4. Add raw input values to map* function error messages (transaction ID, raw amount, raw currency)
-5. Write tests for `getWithQuery` error paths (request creation, request failure, checkError, decode)
-6. Run `nix fmt` to verify formatting compliance
-7. Commit the remaining uncommitted `client.go` change (WrapCorruption formatting fix)
+1. ~~Run `nix flake check` to verify no formatting/build issues from this session's changes~~ done (nix flake check green through v0.11.0)
+2. ~~Update AGENTS.md with erraudit findings and the fullURL error context convention~~ done (AGENTS error-context convention entry (2026-09-13))
+3. ~~Improve `body, _ := readBody(resp)` in `checkError` to capture read errors~~ done (checkError surfaces unreadable bodies (2026-09-13))
+4. ~~Add raw input values to map* function error messages (transaction ID, raw amount, raw currency)~~ done (map* errors carry raw wire values (2026-09-13))
+5. ~~Write tests for `getWithQuery` error paths (request creation, request failure, checkError, decode)~~ done (transport/decode error-path arms tested (errors_test.go + internal_test.go))
+6. ~~Run `nix fmt` to verify formatting compliance~~ done (nix fmt is the format gate; treefmt clean)
+7. ~~Commit the remaining uncommitted `client.go` change (WrapCorruption formatting fix)~~ done (landed with af21084 lineage)
 
 ### Medium Priority (Error Architecture)
 
@@ -189,14 +189,14 @@ The tool generates significant noise for idiomatic Go codebases. I should have b
 
 ### Medium Priority (Testing)
 
-15. Add BDD/Ginkgo tests for ListBalances error scenarios
-16. Add BDD/Ginkgo tests for ListTransactions error scenarios
-17. Add BDD/Ginkgo tests for GetBalance not-found scenario
-18. Add table-driven tests for checkError with various status codes
-19. Add test for response body decode failure (WrapCorruption path)
-20. Add test for Retry-After header parsing edge cases
-21. Add test for X-Rate-Limited-By header capture
-22. Add test for correlation ID header in requests
+15. ~~Add BDD/Ginkgo tests for ListBalances error scenarios~~ done (ListBalances error BDD (wise_test.go))
+16. ~~Add BDD/Ginkgo tests for ListTransactions error scenarios~~ done (ListTransactions error BDD (wise_test.go))
+17. ~~Add BDD/Ginkgo tests for GetBalance not-found scenario~~ done (GetBalance 404 BDD (wise_test.go))
+18. ~~Add table-driven tests for checkError with various status codes~~ done (checkError table tests (errors_test.go))
+19. ~~Add test for response body decode failure (WrapCorruption path)~~ done (WrapCorruption decode-failure tests)
+20. ~~Add test for Retry-After header parsing edge cases~~ done (Retry-After parsing table (errors_test.go))
+21. ~~Add test for X-Rate-Limited-By header capture~~ done (X-Rate-Limited-By capture tests)
+22. ~~Add test for correlation ID header in requests~~ done (correlation-ID forwarding tested (concurrency + observability suites))
 23. Add test for sandbox vs production URL configuration
 
 ### Medium Priority (Context Loss — Legitimate Cases)

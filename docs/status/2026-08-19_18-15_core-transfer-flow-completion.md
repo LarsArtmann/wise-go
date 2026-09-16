@@ -123,28 +123,28 @@ Nothing is broken or shipped dangerously. Honest missteps this session:
 
 ### Immediate (close out the transfer flow)
 
-1. `FundTransfer` (`POST /v1/profiles/{id}/transfers/{id}/payments`) — balance funding completes the E2E.
-2. Error-path BDD tests for POST/PUT endpoints (400 validation, 409 cancellation, 404, SCA, 429 with Retry-After for write ops).
-3. Validation edge-case unit tests: `CreateTransferRequest.validate`, `ValidateTransferRequirementsRequest.validate`, quote amount/currency matrix.
-4. `GetTransfer` error tests (404, auth, SCA).
-5. Wire requirements→transfer-details feedback (helper or documented pattern).
-6. Extract `vendorHash.nix` from flake.nix.
-7. Godoc examples for the four new APIs.
+1. ~~`FundTransfer` (`POST /v1/profiles/{id}/transfers/{id}/payments`) — balance funding completes the E2E.~~ done (done at e508572 (v0.9.0))
+2. ~~Error-path BDD tests for POST/PUT endpoints (400 validation, 409 cancellation, 404, SCA, 429 with Retry-After for write ops).~~ done (done at e508572)
+3. ~~Validation edge-case unit tests: `CreateTransferRequest.validate`, `ValidateTransferRequirementsRequest.validate`, quote amount/currency matrix.~~ done (done at e508572)
+4. ~~`GetTransfer` error tests (404, auth, SCA).~~ done (done at e508572)
+5. ~~Wire requirements→transfer-details feedback (helper or documented pattern).~~ done (done at e508572 (MissingTransferDetails))
+6. ~~Extract `vendorHash.nix` from flake.nix.~~ done (done (execution session 8.x))
+7. ~~Godoc examples for the four new APIs.~~ done (done at 20810a7)
 8. ~~Update README coverage badge (94.8% is stale; measure after new tests).~~ done (badge re-measured at 84.2%, 2026-08-21 docs-health pass)
 
 ### Near-term (high value, self-contained)
 
-9. `GetQuoteAccountRequirements` (last tier-1 row).
-10. `GetMe` / `GetUser`.
-11. `GetStatement` with format parameter (CSV/PDF/XLSX).
-12. Webhook signature verification helper.
-13. `CreateBalance`.
-14. Direct `GetBalance` by ID (new v4 endpoint).
-15. `GetTotalFunds`.
-16. `GetBankAccountDetails`.
-17. `GetMultiCurrencyAccount`.
-18. `ListCurrencies`.
-19. Per-request correlation ID override (`WithRequestCorrelationID` via context).
+9. ~~`GetQuoteAccountRequirements` (last tier-1 row).~~ done (done at e508572)
+10. ~~`GetMe` / `GetUser`.~~ done (done at e508572)
+11. ~~`GetStatement` with format parameter (CSV/PDF/XLSX).~~ done (done at e508572)
+12. ~~Webhook signature verification helper.~~ done (done at e508572)
+13. ~~`CreateBalance`.~~ done (done at e508572)
+14. ~~Direct `GetBalance` by ID (new v4 endpoint).~~ done (done at e508572)
+15. ~~`GetTotalFunds`.~~ done (done at e508572)
+16. ~~`GetBankAccountDetails`.~~ done (done at e508572)
+17. ~~`GetMultiCurrencyAccount`.~~ done (done at e508572)
+18. ~~`ListCurrencies`.~~ done (done at e508572)
+19. ~~Per-request correlation ID override (`WithRequestCorrelationID` via context).~~ done (done at e508572)
 
 ### Sandbox & integration
 
@@ -163,14 +163,14 @@ Nothing is broken or shipped dangerously. Honest missteps this session:
 
 ### Observability & quality
 
-29. `WithLogger` request/response logging hook.
+29. ~~`WithLogger` request/response logging hook.~~ done (done at e508572)
 30. `WithMetrics` hook.
-31. mTLS docs / `WithMTLS` option (`api-mtls.wise.com`).
-32. Context-aware retry cancellation.
-33. API audit for exported symbols ahead of v1.0.
-34. `govulncheck` findings triage.
+31. ~~mTLS docs / `WithMTLS` option (`api-mtls.wise.com`).~~ done (v0.9.0 README section)
+32. ~~Context-aware retry cancellation.~~ done (done at e508572)
+33. ~~API audit for exported symbols ahead of v1.0.~~ done (done 2026-08-21 (v1.0 audit))
+34. ~~`govulncheck` findings triage.~~ done (done 2026-09-13 — zero findings on go1.26.7)
 35. CI: Cachix binary cache for `nix flake check`.
-36. Coverage badge automation (CI upload).
+36. ~~Coverage badge automation (CI upload).~~ done (done (CI coverage-badge job + .github/badges/coverage.json))
 
 ### Medium-term (completeness)
 
