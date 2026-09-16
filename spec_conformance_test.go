@@ -408,6 +408,7 @@ func recordExemptLegacyAccountsList() {
 	defer coverageMu.Unlock()
 
 	exemptAccountsLists++
+	println("DEBUG accountsExempt now:", exemptAccountsLists)
 }
 
 func conformanceCoverageSnapshot() (templates []string, exemptPaths []string, exchanges, exemptAccountsLists int) {
