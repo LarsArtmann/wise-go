@@ -1,12 +1,13 @@
 # Status Report: nix-private-go-repos Migration
 
-> **Resolution (2026-09-13 docs-health pass):** b.3/c.6 (docs updates) are done —
-> AGENTS.md Build & Dev now documents the `go-standard` module, `mkPreparedSource`
-> and the git+ssh inputs. c.7 resolved (the "unrelated" changes were the
-> `requireID` dedup refactor, committed as `630894d`). b.1/c.2 (CI SSH auth for
-> git+ssh inputs) remain OPEN — consolidated into the CI-re-enable item in
-> `TODO_LIST.md` P4 (confirmed 2026-09-13: CI is still `disabled_manually`, last
-> run 2026-07-05, and no workflow carries SSH auth yet).
+> **Resolution (2026-09-13 docs-health pass, re-verdicted 2026-09-16):** b.3/c.6
+> (docs updates) are done — AGENTS.md Build & Dev documents the `go-standard`
+> module and `mkPreparedSource`. c.7 resolved (the "unrelated" changes were the
+> `requireID` dedup refactor, committed as `630894d`). **b.1/c.2 (CI SSH auth)
+> are RESOLVED 2026-09-13** — all three `git+ssh` inputs turned out to be PUBLIC
+> repos and moved to rev-pinned `github:` URLs, so the CI nix job fetches
+> anonymously; what remains for CI is only push + `gh workflow enable ci`
+> (user-gated, TODO_LIST P2).
 
 **Date:** 2026-08-21 23:10 CEST\
 **Session:** Application of `nix-private-go-repos` skill to `wise-go`\

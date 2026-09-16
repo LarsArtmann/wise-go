@@ -73,7 +73,7 @@
 ### Webhooks
 
 - ~~Signature verification helper~~ done at `e508572` (v0.9.0)
-- Subscription CRUD ← still open (TODO_LIST P3, 2026-09-13)
+- ~~Subscription CRUD~~ done at `5a6448c` (v0.11.0, 2026-09-14 — profile-level; app-level deferred, ROADMAP)
 
 ### Batch groups, direct debit, bulk settlement
 

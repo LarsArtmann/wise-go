@@ -1,10 +1,11 @@
 # Status: Webhooks Support Review + Self-Review — 2026-08-28 08:37
 
-> **Resolution (2026-09-13 docs-health pass):** hygiene items f.23–f.27 are
-> resolved — the FEATURES split brain is fixed, the two PLANNED webhook rows are
-> harvested into `TODO_LIST.md` P3, and the build-cache mount is healthy again.
-> The webhook subscription/typed-event work (f.1–22) remains open, tracked in
-> `TODO_LIST.md` P3. Details inline.
+> **Resolution (2026-09-13 docs-health pass, re-verdicted 2026-09-16):** hygiene
+> items f.23–f.27 are resolved, and the webhook subscription/typed-event work
+> (f.1–22) **shipped in v0.11.0 (`5a6448c`, 2026-09-14)** — profile-level CRUD,
+> `ParseWebhookEvent` with typed payloads, README sections, godoc examples;
+> app-level scope (`test-notifications`, client-credentials token) stays
+> deferred (ROADMAP). Details inline.
 
 Session scope: user asked "How is our Webhooks support?" — researched, verified, fixed one docs gap, reported. Then this self-review. **No other work was touched.**
 
@@ -32,10 +33,10 @@ Session scope: user asked "How is our Webhooks support?" — researched, verifie
 
 ## c) NOT STARTED
 
-1. **Subscription management CRUD** (all 9 operations) — no raw types, no result types, no branded `WebhookSubscriptionID`, no client methods, no tests.
-2. **Typed webhook event decoding** — no `WebhookEvent` envelope struct, no per-event payloads, no `ParseWebhookEvent`.
-3. **`test-notifications` trigger support** (send dummy delivery to an existing subscription).
-4. **README/API-reference + CHANGELOG entries for any of the above** (nothing to write yet).
+1. ~~**Subscription management CRUD** (all 9 operations) — no raw types, no result types, no branded `WebhookSubscriptionID`, no client methods, no tests.~~ done at `5a6448c` (v0.11.0) — profile-level 4 ops shipped; app-level deferred (ROADMAP).
+2. ~~**Typed webhook event decoding** — no `WebhookEvent` envelope struct, no per-event payloads, no `ParseWebhookEvent`.~~ done at `5a6448c` (v0.11.0).
+3. **`test-notifications` trigger support** (send dummy delivery to an existing subscription). — deferred with app-level scope (ROADMAP; spec: app-level only).
+4. ~~**README/API-reference + CHANGELOG entries for any of the above** (nothing to write yet).~~ done at `5a6448c` — README "Webhook subscriptions" + "Typed event decoding" sections, CHANGELOG `[0.11.0]`.
 
 ## d) TOTALLY FUCKED UP (honest accounting — nothing broke, but three real misses)
 
