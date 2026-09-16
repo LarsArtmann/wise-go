@@ -8,6 +8,7 @@ go 1.26.7
 
 require (
 	github.com/failsafe-go/failsafe-go v0.9.7
+	github.com/getkin/kin-openapi v0.149.0
 	github.com/larsartmann/go-branded-id v0.5.1
 	github.com/larsartmann/go-error-family v0.10.1
 	github.com/onsi/ginkgo/v2 v2.31.0
@@ -18,9 +19,14 @@ require (
 	github.com/Masterminds/semver/v3 v3.5.0 // indirect
 	github.com/bits-and-blooms/bitset v1.25.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
+	github.com/go-openapi/jsonpointer v0.22.5 // indirect
+	github.com/go-openapi/swag/jsonname v0.25.5 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/pprof v0.0.0-20260604005048-7023385849c0 // indirect
+	github.com/oasdiff/yaml v0.1.1 // indirect
+	github.com/oasdiff/yaml3 v0.0.14 // indirect
+	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/mod v0.37.0 // indirect
 	golang.org/x/net v0.56.0 // indirect

@@ -162,13 +162,15 @@ var _ = Describe("Wise Client", func() {
 	var (
 		server           *httptest.Server
 		mux              *http.ServeMux
+		conformance      *conformanceHarness
 		client           *wise.Client
 		defaultListTxReq wise.ListTransactionsRequest
 	)
 
 	BeforeEach(func() {
 		mux = http.NewServeMux()
-		server = httptest.NewServer(mux)
+		conformance = attachConformance(mux)
+		server = httptest.NewServer(conformance)
 		client = wise.New("test-api-key", wise.WithBaseURL(server.URL))
 		defaultListTxReq = wise.ListTransactionsRequest{
 			ProfileID: wise.NewProfileID(12345),
@@ -181,6 +183,7 @@ var _ = Describe("Wise Client", func() {
 
 	AfterEach(func() {
 		server.Close()
+		conformance.finish(func(msg string) { Fail(msg) })
 	})
 
 	Describe("New", func() {

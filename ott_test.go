@@ -82,19 +82,22 @@ const ottPINWithSMSAlternativeJSON = `[
 
 var _ = Describe("OTT (SCA one-time-token endpoints)", func() {
 	var (
-		server *httptest.Server
-		mux    *http.ServeMux
-		client *wise.Client
+		server      *httptest.Server
+		mux         *http.ServeMux
+		conformance *conformanceHarness
+		client      *wise.Client
 	)
 
 	BeforeEach(func() {
 		mux = http.NewServeMux()
-		server = httptest.NewServer(mux)
+		conformance = attachConformance(mux)
+		server = httptest.NewServer(conformance)
 		client = wise.New("test-api-key", wise.WithBaseURL(server.URL))
 	})
 
 	AfterEach(func() {
 		server.Close()
+		conformance.finish(func(msg string) { Fail(msg) })
 	})
 
 	Describe("GetOTTStatus", func() {
