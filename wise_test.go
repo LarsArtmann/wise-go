@@ -71,6 +71,17 @@ func errorHandler(status int, headers map[string]string, code, message string) h
 	}
 }
 
+// plainErrorHandler serves the text/plain error bodies the spec declares for
+// the transfer funding endpoint (POST .../payments); Wise does not answer
+// funding conflicts with the JSON error envelope other endpoints use.
+func plainErrorHandler(status int, message string) http.HandlerFunc {
+	return func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(status)
+		_, _ = w.Write([]byte(message))
+	}
+}
+
 // scaChallengeHandler serves Wise's header-only SCA rejection: 403 with an
 // empty body, the verdict in x-2fa-approval-result and the one-time token in
 // x-2fa-approval.
@@ -451,7 +462,7 @@ var _ = Describe("Wise Client", func() {
 
 		Context("with unknown profile type", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {
+				mux.HandleFunc("/v2/profiles", exemptResponseSchema(func(w http.ResponseWriter, _ *http.Request) {
 					profiles := []raw.Profile{
 						{ID: 1, Type: "UNKNOWN_TYPE", CreatedAt: "2023-01-15T10:30:00Z"},
 					}
@@ -660,6 +671,8 @@ var _ = Describe("Wise Client", func() {
 					Expect(body["currency"]).To(Equal("EUR"))
 					Expect(body["type"]).To(Equal("SAVINGS"))
 					Expect(body["name"]).To(Equal("Vacation fund"))
+					Expect(r.Header.Get("X-Idempotence-Uuid")).ToNot(BeEmpty(),
+						"Wise requires X-idempotence-uuid on balance creation")
 
 					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusCreated)
@@ -795,7 +808,7 @@ var _ = Describe("Wise Client", func() {
 									},
 									ReferenceNumber: "REF-001",
 									Details: raw.TransactionDetails{
-										Type:         "CARD_PAYMENT",
+										Type:         "CARD",
 										Description:  "Coffee Shop",
 										Category:     "food",
 										MerchantName: "Starbucks",
@@ -896,10 +909,10 @@ var _ = Describe("Wise Client", func() {
 					func(w http.ResponseWriter, _ *http.Request) {
 						response := raw.StatementResponse{
 							Transactions: []raw.StatementTransaction{
-								testTx("tx-refund", "CARD_REFUND", 25.00),
+								testTx("tx-refund", "CARD_CASHBACK", 25.00),
 								testTx("tx-exchange", "CONVERSION", -100.00),
-								testTx("tx-fee", "FEE", -0.50),
-								testTx("tx-payment", "PAYMENT", -200.00),
+								testTx("tx-interest", "BALANCE_INTEREST", -0.50),
+								testTx("tx-payment", "ACQUIRING_PAYMENT", -200.00),
 							},
 							EndOfStatementBalance: raw.BalanceAmount{Value: 0, Currency: "EUR"},
 						}
@@ -910,7 +923,7 @@ var _ = Describe("Wise Client", func() {
 				)
 			})
 
-			It("should classify CARD_REFUND with positive amount as refund", func() {
+			It("should classify CARD_CASHBACK with positive amount as refund", func() {
 				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(resp.Transactions[0].Type).To(Equal(wise.TransactionTypeRefund))
@@ -922,13 +935,13 @@ var _ = Describe("Wise Client", func() {
 				Expect(resp.Transactions[1].Type).To(Equal(wise.TransactionTypeExchange))
 			})
 
-			It("should classify FEE as fee", func() {
+			It("should classify BALANCE_INTEREST by amount sign as debit", func() {
 				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(resp.Transactions[2].Type).To(Equal(wise.TransactionTypeFee))
+				Expect(resp.Transactions[2].Type).To(Equal(wise.TransactionTypeDebit))
 			})
 
-			It("should classify PAYMENT as payment", func() {
+			It("should classify ACQUIRING_PAYMENT as payment", func() {
 				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(resp.Transactions[3].Type).To(Equal(wise.TransactionTypePayment))
@@ -1031,7 +1044,7 @@ var _ = Describe("Wise Client", func() {
 										Value: 200.00, Currency: "USD",
 									},
 									ReferenceNumber: "REF-USD",
-									Details:         raw.TransactionDetails{Type: "CARD_PAYMENT"},
+									Details:         raw.TransactionDetails{Type: "CARD"},
 								},
 							},
 							EndOfStatementBalance: raw.BalanceAmount{Value: 200, Currency: "USD"},
@@ -1091,7 +1104,7 @@ var _ = Describe("Wise Client", func() {
 						capturedRequest = r
 						response := raw.StatementResponse{
 							Transactions: []raw.StatementTransaction{
-								testTx("tx-filtered", "CARD_PAYMENT", -10.00),
+								testTx("tx-filtered", "CARD", -10.00),
 							},
 							EndOfStatementBalance: raw.BalanceAmount{Value: 0, Currency: "EUR"},
 						}
@@ -1334,12 +1347,12 @@ var _ = Describe("Wise Client", func() {
 
 		Context("with an unparseable created timestamp", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/v1/transfers", func(w http.ResponseWriter, _ *http.Request) {
+				mux.HandleFunc("/v1/transfers", exemptResponseSchema(func(w http.ResponseWriter, _ *http.Request) {
 					response := []raw.Transfer{transferFixture(1, "delivered", "not-a-timestamp")}
 
 					w.Header().Set("Content-Type", "application/json")
 					_ = json.MarshalWrite(w, response)
-				})
+				}))
 			})
 
 			It("returns a corruption error naming the transfer", func() {
@@ -1538,10 +1551,11 @@ var _ = Describe("Wise Client", func() {
 						SourceAmount:   10,
 						TargetAmount:   10.86,
 						PayOut:         "BANK_TRANSFER",
-						Rate:           1.0857,
+						Rate:              1.0857,
+						ProvidedAmountType: "SOURCE",
+						Status:            "ACCEPTED",
 						CreatedTime:    "2023-01-15T10:30:00Z",
 						ExpirationTime: "2023-01-15T11:00:00Z",
-						Status:         "ACTIVE",
 					})
 				})
 			})
@@ -1681,7 +1695,9 @@ var _ = Describe("Wise Client", func() {
 						TargetCurrency: "USD",
 						SourceAmount:   10,
 						TargetAmount:   10.86,
-						Rate:           1.086,
+						Rate:             1.086,
+						ProvidedAmountType: "SOURCE",
+						Status:           "ACCEPTED",
 						CreatedTime:    "2023-01-15T10:27:22Z",
 						ExpirationTime: "2023-01-15T10:57:22Z",
 					})
@@ -1942,10 +1958,10 @@ var _ = Describe("Wise Client", func() {
 		Context("with a corrupt response body", func() {
 			BeforeEach(func() {
 				mux.HandleFunc("/v1/quotes/11144c35-9fe8-4c32-b7fd-d05c2a7734bf/account-requirements",
-					func(w http.ResponseWriter, _ *http.Request) {
+					exemptResponseSchema(func(w http.ResponseWriter, _ *http.Request) {
 						w.Header().Set("Content-Type", "application/json")
 						_, _ = w.Write([]byte(`{"not":"an array"}`))
-					})
+					}))
 			})
 
 			It("should classify the decode failure as corruption", func() {
@@ -2436,9 +2452,8 @@ var _ = Describe("Wise Client", func() {
 
 		Context("with 409 payment already exists", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/v1/profiles/12345/transfers/16521634/payments", errorHandler(
-					http.StatusConflict, nil,
-					"PaymentAlreadyExistsError", "Transfer is already funded",
+				mux.HandleFunc("/v1/profiles/12345/transfers/16521634/payments", plainErrorHandler(
+					http.StatusConflict, "Transfer is already funded",
 				))
 			})
 
@@ -3784,7 +3799,7 @@ var _ = Describe("Wise Client", func() {
 
 		Context("with a corrupt created_at timestamp", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/2026Q3/profiles/12345/subscriptions", func(w http.ResponseWriter, _ *http.Request) {
+				mux.HandleFunc("/2026Q3/profiles/12345/subscriptions", exemptResponseSchema(func(w http.ResponseWriter, _ *http.Request) {
 					w.Header().Set("Content-Type", "application/json")
 					_, _ = w.Write([]byte(`[{
 						"id": "72195556-e5cb-495e-a010-b37a4f2a3043",
@@ -3795,7 +3810,7 @@ var _ = Describe("Wise Client", func() {
 						"created_by": {"id": "api-key-123", "type": "user"},
 						"scope": {"domain": "profile", "id": "12345"}
 					}]`))
-				})
+			}))
 			})
 
 			It("should classify the mapper failure as corruption", func() {

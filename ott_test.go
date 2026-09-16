@@ -131,14 +131,14 @@ var _ = Describe("OTT (SCA one-time-token endpoints)", func() {
 		})
 
 		It("should decode string-form alternatives leniently", func() {
-			mux.HandleFunc("/2026Q3/one-time-token/status", ottHandler(http.MethodGet, func(
+			mux.HandleFunc("/2026Q3/one-time-token/status", ottHandler(http.MethodGet, exemptResponseSchema(func(
 				w http.ResponseWriter, _ *http.Request,
 			) {
 				w.Header().Set("Content-Type", "application/json")
 				_, _ = w.Write([]byte(ottStatusJSON(`[
 					{"primaryChallenge": {"type": "PIN"}, "alternatives": ["SMS", "VOICE"], "required": true, "passed": false}
 				]`, 60, "BALANCE__GET_STATEMENT")))
-			}))
+			})))
 
 			status, err := client.GetOTTStatus(context.Background(), testOTT)
 			Expect(err).ToNot(HaveOccurred())
@@ -184,12 +184,12 @@ var _ = Describe("OTT (SCA one-time-token endpoints)", func() {
 		})
 
 		It("should classify a malformed response as corruption", func() {
-			mux.HandleFunc("/2026Q3/one-time-token/status", ottHandler(http.MethodGet, func(
+			mux.HandleFunc("/2026Q3/one-time-token/status", ottHandler(http.MethodGet, exemptResponseSchema(func(
 				w http.ResponseWriter, _ *http.Request,
 			) {
 				w.Header().Set("Content-Type", "application/json")
 				_, _ = w.Write([]byte(`{"oneTimeTokenProperties":{"challenges":`))
-			}))
+			})))
 
 			_, err := client.GetOTTStatus(context.Background(), testOTT)
 			Expect(err).To(HaveOccurred())
