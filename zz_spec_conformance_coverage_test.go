@@ -17,7 +17,7 @@ const (
 )
 
 func TestSpecConformanceCoverage(t *testing.T) {
-	templates, exemptPaths, exchanges := conformanceCoverageSnapshot()
+	templates, exemptPaths, exchanges, exemptAccountsLists := conformanceCoverageSnapshot()
 
 	if _, err := loadConformanceSpec(); err != nil {
 		t.Fatalf("load spec snapshot %s: %v", specSnapshotPath, err)
@@ -53,7 +53,7 @@ func TestSpecConformanceCoverage(t *testing.T) {
 	}
 
 	t.Logf(
-		"spec conformance: %d exchanges validated across %d distinct spec operations; %d exempt statement variants",
-		exchanges, len(templates), len(exemptPaths),
+		"spec conformance: %d exchanges validated across %d distinct spec operations; %d exempt statement variants; %d exempt legacy recipient lists",
+		exchanges, len(templates), len(exemptPaths), exemptAccountsLists,
 	)
 }

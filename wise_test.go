@@ -469,7 +469,7 @@ var _ = Describe("Wise Client", func() {
 
 					w.Header().Set("Content-Type", "application/json")
 					_ = json.MarshalWrite(w, profiles)
-				})
+				}))
 			})
 
 			It("should return an error", func() {
