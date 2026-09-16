@@ -163,7 +163,16 @@ func loadConformanceSpec() (*conformanceSpecContext, error) {
 			doc.Info.Version = "wise-snapshot"
 		}
 
-		router, routeErr := legacyrouter.NewRouter(doc, openapi3.DisableExamplesValidation())
+		// Formats are disabled: Wise's live responses deliberately use looser
+		// timestamp shapes than RFC3339 (space-separated statement dates,
+		// millisecond+numeric-zone delivery estimates, zoneless createdAt —
+		// see AGENTS.md), which the spec idealizes as date-time. Required,
+		// type, enum, and shape checks stay enabled.
+		router, routeErr := legacyrouter.NewRouter(
+			doc,
+			openapi3.DisableExamplesValidation(),
+			openapi3.DisableSchemaFormatValidation(),
+		)
 		if routeErr != nil {
 			conformanceErr = routeErr
 			return
