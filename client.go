@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json/v2"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"time"
 
-	"github.com/failsafe-go/failsafe-go"
-	"github.com/failsafe-go/failsafe-go/retrypolicy"
 	errorfamily "github.com/larsartmann/go-error-family"
+	"github.com/larsartmann/go-retry"
 )
 
 const (
@@ -45,7 +45,7 @@ type Client struct {
 	scaApprovalToken string
 	httpClient       Doer
 	logger           Logger
-	executor         failsafe.Executor[*http.Response]
+	retryConfig      retry.Config
 }
 
 // New creates a new Wise API client with the given API key and options.
@@ -88,11 +88,24 @@ func New(apiKey string, opts ...Option) *Client {
 		}
 	}
 
-	retry := retrypolicy.NewBuilder[*http.Response]().
-		WithMaxRetries(retryMax).
-		WithBackoff(retryMin, retryMaxDelay).
-		HandleIf(isRetryable).
-		Build()
+	// go-retry counts total attempts; WithRetry's maxRetries counts retries
+	// after the initial request, hence the +1. DelayFunc honors Wise's
+	// Retry-After, capped at the configured inter-attempt ceiling so a server
+	// hint can never exceed the caller's WithRetry budget (a 0 return falls
+	// through to exponential backoff).
+	retryCfg := retry.DefaultConfig()
+	retryCfg.MaxAttempts = retryMax + 1
+	retryCfg.InitialDelay = retryMin
+	retryCfg.MaxDelay = retryMaxDelay
+	retryCfg.IsRetryable = isRetryableError
+	retryCfg.DelayFunc = func(attempt int, err error) time.Duration {
+		rle, ok := errors.AsType[*RateLimitError](err)
+		if !ok || rle.RetryAfter <= 0 {
+			return 0
+		}
+
+		return min(rle.RetryAfter, retryMaxDelay)
+	}
 
 	return &Client{
 		apiKey:           apiKey,
@@ -100,20 +113,44 @@ func New(apiKey string, opts ...Option) *Client {
 		userAgent:        cfg.userAgent,
 		correlationID:    cfg.correlationID,
 		scaApprovalToken: cfg.scaApprovalToken,
-		executor:         failsafe.With(retry),
+		retryConfig:      retryCfg,
 		httpClient:       httpClient,
 		logger:           cfg.logger,
 	}
 }
 
-// isRetryable determines if an HTTP response should be retried.
-func isRetryable(resp *http.Response, err error) bool {
-	if err != nil {
+// isRetryableError decides whether a failed attempt triggers a retry. It
+// enumerates every type newAPIError produces: rate limits (429) and server
+// errors (5xx) retry; auth, not-found, SCA-challenge, and other client
+// errors are terminal. Untyped errors (network failures, request
+// construction) retry, matching the transport-error handling this
+// classification had before go-retry.
+func isRetryableError(err error) bool {
+	if _, ok := errors.AsType[*RateLimitError](err); ok {
 		return true
 	}
 
-	// Retry on 429 (rate limit) and 5xx (server errors)
-	return resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500
+	if _, ok := errors.AsType[*ServerError](err); ok {
+		return true
+	}
+
+	if _, ok := errors.AsType[*AuthError](err); ok {
+		return false
+	}
+
+	if _, ok := errors.AsType[*NotFoundError](err); ok {
+		return false
+	}
+
+	if _, ok := errors.AsType[*SCAChallengeError](err); ok {
+		return false
+	}
+
+	if _, ok := errors.AsType[*APIError](err); ok {
+		return false
+	}
+
+	return true
 }
 
 // Authenticate validates the API key by calling ListProfiles.
@@ -272,9 +309,8 @@ func (c *Client) doRequest(
 	body any,
 	extraHeaders map[string]string,
 ) (*http.Response, error) {
-	resp, err := c.executor.WithContext(ctx).
-		//nolint:contextcheck
-		GetWithExecution(func(exec failsafe.Execution[*http.Response]) (*http.Response, error) {
+	resp, err := retry.DoWithValue(ctx, c.retryConfig,
+		func(ctx context.Context, attempt int) (*http.Response, error) {
 			var bodyReader io.Reader
 
 			if body != nil {
@@ -286,12 +322,12 @@ func (c *Client) doRequest(
 				bodyReader = bytes.NewReader(b)
 			}
 
-			req, reqErr := http.NewRequestWithContext(exec.Context(), method, fullURL, bodyReader)
+			req, reqErr := http.NewRequestWithContext(ctx, method, fullURL, bodyReader)
 			if reqErr != nil {
 				return nil, fmt.Errorf("create request for %s %s: %w", method, fullURL, reqErr)
 			}
 
-			c.setHeaders(exec.Context(), req)
+			c.setHeaders(ctx, req)
 
 			for name, value := range extraHeaders {
 				req.Header.Set(name, value)
@@ -301,27 +337,27 @@ func (c *Client) doRequest(
 				req.Header.Set("Content-Type", "application/json")
 			}
 
-			return c.executeWithLogging(exec, method, fullURL, req)
+			return c.executeWithLogging(method, fullURL, req, attempt)
 		})
 	if err != nil {
-		if classified := c.classifyExhaustedRetries(method, fullURL, err); classified != nil {
-			return nil, classified
-		}
-
+		// On exhaustion the chain wraps the final attempt's typed error
+		// (RateLimitError, ServerError), so errors.AsType still reaches it —
+		// no unwrap bridge needed.
 		return nil, fmt.Errorf("execute %s %s: %w", method, fullURL, err)
 	}
 
 	return resp, nil
 }
 
-// executeWithLogging performs one HTTP attempt and reports it to the
-// configured Logger (if any) with method, URL, status, duration, and the
-// 1-based attempt number.
+// executeWithLogging performs one HTTP attempt, classifies non-2xx responses
+// into the typed errors that drive the retry decision, and reports the
+// attempt to the configured Logger (if any) with method, URL, status,
+// duration, and the 1-based attempt number.
 func (c *Client) executeWithLogging(
-	exec failsafe.Execution[*http.Response],
 	method string,
 	fullURL string,
 	req *http.Request,
+	attempt int,
 ) (*http.Response, error) {
 	start := time.Now()
 
@@ -332,7 +368,7 @@ func (c *Client) executeWithLogging(
 			Method:   method,
 			URL:      fullURL,
 			Duration: time.Since(start),
-			Attempt:  exec.Attempts(),
+			Attempt:  attempt,
 			Error:    err,
 		}
 		if resp != nil {
@@ -343,39 +379,19 @@ func (c *Client) executeWithLogging(
 	}
 
 	if err != nil {
-		return resp, fmt.Errorf("do %s %s: %w", method, fullURL, err)
+		return nil, fmt.Errorf("do %s %s: %w", method, fullURL, err)
+	}
+
+	apiErr := c.checkError(resp)
+	if apiErr != nil {
+		if resp.Body != nil {
+			_ = resp.Body.Close()
+		}
+
+		return nil, apiErr
 	}
 
 	return resp, nil
-}
-
-// classifyExhaustedRetries unwraps failsafe's retries-exceeded error and// classifies its final response, so exhausted retries still surface the typed
-// error the last attempt produced (RateLimitError with Retry-After,
-// ServerError) instead of an opaque wrapper that carries no classification.
-// Returns nil when err is not a retries-exceeded error or holds no response.
-func (c *Client) classifyExhaustedRetries(method, fullURL string, err error) error {
-	exceeded := retrypolicy.AsExceededError(err)
-	if exceeded == nil {
-		return nil
-	}
-
-	lastResp, ok := exceeded.LastResult.(*http.Response)
-	if !ok || lastResp == nil {
-		return nil
-	}
-
-	if lastResp.Body != nil {
-		defer func() {
-			_ = lastResp.Body.Close()
-		}()
-	}
-
-	apiErr := c.checkError(lastResp)
-	if apiErr == nil {
-		return nil
-	}
-
-	return fmt.Errorf("execute %s %s after retries: %w", method, fullURL, apiErr)
 }
 
 func (c *Client) setHeaders(ctx context.Context, req *http.Request) {
