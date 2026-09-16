@@ -155,8 +155,20 @@ func mapExchange(ed *raw.ExchangeDetails) (*TransactionExchange, error) {
 	}, nil
 }
 
+// StatementType represents the layout variants of the balance statement
+// endpoints' type query parameter. The wire contract accepts COMPACT and
+// FLAT only (docs/reviews/wise-api-openapi.json); the DetailType values are
+// response-classification values, not statement filters.
+type StatementType string
+
+const (
+	StatementTypeCompact StatementType = "COMPACT"
+	StatementTypeFlat    StatementType = "FLAT"
+)
+
 // DetailType represents Wise's wire-format values for details.type.
-// Use the DetailType* constants as ListTransactionsRequest.Type filter values.
+// They classify transaction details in responses; statement request
+// filtering uses the StatementType* constants instead.
 type DetailType string
 
 // DetailType constants are Wise's wire-format values for details.type.
@@ -260,7 +272,7 @@ type GetStatementRequest struct {
 	Currency  Currency
 	From      time.Time
 	To        time.Time
-	Type      DetailType // Optional transaction-type filter.
+	Type      StatementType // Optional statement layout filter; see StatementType* constants.
 	Format    StatementFormat
 
 	// Locale optionally localizes the statement (2-character language code,

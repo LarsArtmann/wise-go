@@ -315,7 +315,7 @@ resp, err := client.ListTransactions(ctx, wise.ListTransactionsRequest{
     Currency:  wise.Currency("EUR"),
     From:      time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
     To:        time.Date(2025, 1, 31, 23, 59, 59, 0, time.UTC),
-    Type:      wise.DetailTypeCardPayment, // optional filter
+    Type:      wise.StatementTypeFlat, // optional statement layout (COMPACT or FLAT)
 })
 // resp.Transactions → []Transaction
 ```
@@ -362,7 +362,7 @@ pdf, err := client.GetStatement(ctx, wise.GetStatementRequest{
     Currency:  wise.Currency("EUR"),
     From:      intervalStart, // UTC
     To:        intervalEnd,   // UTC
-    Type:      wise.DetailTypeCardPayment, // optional transaction-type filter
+    Type:      wise.StatementTypeFlat,  // optional statement layout (COMPACT or FLAT)
     Locale:    "de",                      // optional 2-char statement language
     Format:    wise.StatementFormatPDF,
 })

@@ -1104,12 +1104,12 @@ var _ = Describe("Wise Client", func() {
 
 			It("should forward the type filter in the query string", func() {
 				req := defaultListTxReq
-				req.Type = wise.DetailTypeCardPayment
+				req.Type = wise.StatementTypeFlat
 
 				_, err := client.ListTransactions(context.Background(), req)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(capturedRequest).ToNot(BeNil())
-				Expect(capturedRequest.URL.Query().Get("type")).To(Equal("CARD_PAYMENT"))
+				Expect(capturedRequest.URL.Query().Get("type")).To(Equal("FLAT"))
 			})
 
 			It("should omit the type filter when unset", func() {

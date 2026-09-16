@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	minConformingTemplates = 25
+	minConformingTemplates     = 25
 	minExemptStatementVariants = 3
-	minValidatedExchanges = 60
+	minValidatedExchanges      = 60
 )
 
 func TestSpecConformanceCoverage(t *testing.T) {

@@ -33,14 +33,14 @@ const specSnapshotPath = "docs/reviews/wise-api-openapi.json"
 // conformanceExchange is one recorded request/response pair served by a mock
 // harness.
 type conformanceExchange struct {
-	method   string
-	rawPath  string
-	query    string
+	method    string
+	rawPath   string
+	query     string
 	reqHeader http.Header
-	reqBody  []byte
-	status   int
-	respBody []byte
-	respCT   string
+	reqBody   []byte
+	status    int
+	respBody  []byte
+	respCT    string
 }
 
 // conformanceHarness wraps a mock handler, records every exchange, and
@@ -91,12 +91,12 @@ func (h *conformanceHarness) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.exchanges = append(h.exchanges, conformanceExchange{
 		method:    r.Method,
 		rawPath:   r.URL.Path,
-		query:    r.URL.RawQuery,
+		query:     r.URL.RawQuery,
 		reqHeader: r.Header.Clone(),
 		reqBody:   reqBody,
 		status:    captured.status,
 		respBody:  captured.body.Bytes(),
-		respCT:   contentType,
+		respCT:    contentType,
 	})
 }
 
@@ -196,10 +196,10 @@ func stripVersionedPrefix(path string) string {
 
 // statementVariantPattern covers the statement formats the SDK fetches but
 // the OpenAPI bundle does not document (it only declares statement.json).
-// Wise documents the csv/ofx/pdf/qif/mt940 variants in prose only, so they
-// are exempt from operation matching and tallied instead.
+// The file formats (csv, pdf, xlsx, camt xml, mt940, qif) are documented in
+// prose only, so they are exempt from operation matching and tallied instead.
 var statementVariantPattern = regexp.MustCompile(
-	`^/profiles/[^/]+/balance-statements/[^/]+/statement\.(csv|ofx|pdf|qif|xlsx|mt940|mt103)$`,
+	`^/profiles/[^/]+/balance-statements/[^/]+/statement\.(csv|pdf|qif|xlsx|xml|mt940)$`,
 )
 
 // validateExchange checks one exchange against the spec and returns one
@@ -331,9 +331,9 @@ func (c *captureResponseWriter) WriteHeader(status int) {
 // a vacuous pass.
 
 var (
-	coverageMu            sync.Mutex
-	conformingTemplates   = map[string]int{}
-	exemptStatementPaths  = map[string]int{}
+	coverageMu              sync.Mutex
+	conformingTemplates     = map[string]int{}
+	exemptStatementPaths    = map[string]int{}
 	totalValidatedExchanges int
 )
 
