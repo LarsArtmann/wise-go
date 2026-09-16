@@ -229,6 +229,24 @@ structs"); documented in README.
 - **Domain-core / infrastructure split** — one HTTP backend, one retry library.
   The seam would be unused.
 
+## Raw ideas (harvested from status reports, 2026-09-16)
+
+Routed here from `docs/status/2026-05-17`, `2026-05-23`, `2026-08-21_20-57`,
+and the `2026-09-13` reports — demand-gated raw ideas, not scheduled work:
+
+- **Typed `BadRequestError`** for 400 responses (design idea; today 400s are `*APIError`).
+- **Circuit breaker** — failsafe-go supports it; wire only with a consumer demand signal.
+- **`WithMetrics` hook** — Prometheus/OTel counters and histograms (Axis 3 medium-term).
+- **GoReleaser-style release automation** — tags are manual + annotated today.
+- **Webhook end-to-end README quickstart** — subscribe → verify → parse in one runnable block.
+- **`ParseWebhookEvent` RFC3339 fast path** — the bench shows the multi-layout timestamp trial loop dominates (34µs); one-line win if webhook volume ever matters.
+- **benchstat baseline file** committed so benchmark runs have a comparison point.
+- **gopls/LSP config-skew fix** — inject `GOEXPERIMENT`/lint config so tool-result warnings stop diverging from the CLI.
+- **`nix flake check --all-systems`** — aarch64/darwin coverage for the consumer fleet.
+- **Decide `Authenticate()`'s future** now that `GetMe` exists (cheaper key check).
+- **2026Q4 bump ritual** — document the `webhookAPIVersion`/`quarterlyAPIVersion` upgrade path for when Wise moves the quarterly surface.
+- Wishlist-era leftovers (Postman collection, currency-conversion helpers, batch APIs, mock server): only with a real consumer ask. Response caching stays a non-goal (the SDK is stateless by design).
+
 ## Release strategy
 
 - **v0.x** — breaking changes accepted but coordinated. Each breaking release gets

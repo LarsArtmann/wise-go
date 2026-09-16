@@ -1,15 +1,15 @@
 # wise-go Session Status Report
 
-> **Resolution (2026-09-13 docs-health pass):** of the f-list, tiers 1–2 shipped
-> through v0.9.0/v0.10.0 (quotes, recipients, transfers incl. receipts + MT103
-> payout info, funding, rates, statements, users, MCA/bank details, currencies,
-> webhook signature verification, observability). Still open, routed: webhook
-> subscription CRUD + typed events (TODO_LIST P3); addresses, balance-capacity,
-> `Profile.currentState`/`externalCustomerId`, OAuth token endpoint, 2026Q4
-> version header, simulation endpoints, batch payments (plan tier 3/4 →
-> ROADMAP); `WithMetrics` (ROADMAP); open-banking doc's stale V1 URL fixed
-> 2026-09-13. The companion review `docs/reviews/2026-08-08_api-docs-study.md`
-> remains the canonical gap map.
+> **Resolution (2026-09-13 docs-health pass, re-verdicted 2026-09-16):** of the
+> f-list, tiers 1–2 shipped through v0.11.0 (quotes, recipients, transfers incl.
+> receipts + MT103 payout info, funding, rates, statements, users, MCA/bank
+> details, currencies, webhook signature verification, observability, and —
+> since v0.11.0 `5a6448c` — webhook subscription CRUD + typed event decoding).
+> Still open, routed: addresses, balance-capacity, `Profile.currentState`/
+> `externalCustomerId`, OAuth token endpoint, 2026Q4 version header, simulation
+> endpoints, batch payments (plan tier 3/4 → ROADMAP); `WithMetrics` (ROADMAP);
+> open-banking doc's stale V1 URL fixed 2026-09-13. The companion review
+> `docs/reviews/2026-08-08_api-docs-study.md` remains the canonical gap map.
 
 **Snapshot:** 2026-08-08 12:16 CEST
 **Scope:** This session only — Wise API docs study (changelog + API reference) and resulting code/doc changes.

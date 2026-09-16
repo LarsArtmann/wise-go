@@ -1,5 +1,12 @@
 # Status Report — Pareto Tail Resume: 23.5/24.x/25.x + Ops Tooling Batch
 
+> **Resolution (2026-09-16 docs-health pass):** the f-table below is
+> re-verdicted inline — v0.11.0 shipped (`5a6448c`), the HARVEST ran (this
+> pass), the two AGENTS lessons landed in the global memory file, and the
+> remaining opens are user-gated or routed to `TODO_LIST.md` (Release objects,
+> CI pins, coverage-floor parity, SECURITY.md, doc-verify hardening,
+> CONTRIBUTING notes) or `ROADMAP.md` (long-tail ideas). Fully harvested.
+
 **Generated:** 2026-09-13 15:41 CEST
 **Scope:** this resumption session only (resumed after the 14:16 full-execution report; the user said "Execute and Verify them one step at the time … Keep going until everything works").
 **Report format:** `.md` per explicit user instruction (the status-report skill's canonical format is HTML; one-off override, not propagated into the skill).

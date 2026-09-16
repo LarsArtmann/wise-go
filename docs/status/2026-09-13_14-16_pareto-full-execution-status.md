@@ -1,5 +1,12 @@
 # Status: Pareto Full-Execution Run — v0.10 Release Prep, Webhooks, Quality Debt — 2026-09-13 14:16 CEST
 
+> **Resolution (2026-09-16 docs-health pass):** the f-list below is re-verdicted
+> inline — items 1–10 shipped via the 15:41 resume session, v0.11.0 released
+> (`5a6448c`, 2026-09-14) covering the webhook + micro-batch work, declined
+> items recorded (art-dupl baseline, VerifyAndParse helper), and the remaining
+> opens are user-gated or tracked in `TODO_LIST.md` (CI pins, erraudit gate,
+> SECURITY.md, coverage-floor parity, micro quality batch). Fully harvested.
+
 > Session scope: the user approved **Full Execution Mode** on the Pareto plan
 > (`docs/planning/2026-09-13_12-32_pareto-plan-v0.10-release-webhooks-and-quality-debt.md`,
 > 106 fine-grained tasks in 3 tiers). This report covers exactly that run —

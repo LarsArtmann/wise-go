@@ -1,15 +1,18 @@
 # Status Report — wise-go
 
-> **Resolution (2026-09-13 docs-health pass):** sections A and the C/D
-> wishlist-era items are largely superseded by shipped reality — the transfer
-> flow (quotes, recipients, transfers, funding, cancel) shipped v0.8.0–v0.9.0;
-> webhook verification v0.9.0; MCA/bank-details/currencies v0.9.0; request
-> logging (`WithLogger`) v0.9.0; pagination in `ListTransfers` v0.7.0;
-> sandbox live-test workflow shipped (`ecdc738`, key-gated). Still open, routed:
-> `BadRequestError` type, `errorfamily.RegisterClassification` call, response
-> caching, circuit breaker, benchmarks, GoReleaser, OTel/metrics (TODO_LIST P4
-> micro-batch / ROADMAP). A reader should treat section C/E/F as a wishlist that
-> mostly shipped — check FEATURES.md for current truth.
+> **Resolution (2026-09-13 docs-health pass, re-verdicted 2026-09-16):** the
+> C/D wishlist-era items are largely superseded by shipped reality — the
+> transfer flow (quotes, recipients, transfers, funding, cancel) shipped
+> v0.8.0–v0.9.0; webhook verification v0.9.0 + subscriptions/typed events
+> v0.11.0; MCA/bank-details/currencies v0.9.0; request logging (`WithLogger`)
+> v0.9.0; pagination in `ListTransfers` v0.7.0; sandbox live-test workflow
+> shipped (`ecdc738`, key-gated). Routed: `BadRequestError` type, response
+> caching (a ROADMAP non-goal — declined), circuit breaker, GoReleaser-style
+> release automation, OTel/metrics → ROADMAP raw ideas (2026-09-16);
+> `RegisterClassification` declined 2026-09-13 (owned errors implement the
+> Classified interface directly); benchmarks done 2026-09-13 (`dbab2e4`). A
+> reader should treat section C/E/F as a wishlist that mostly shipped — check
+> FEATURES.md for current truth.
 
 **Date:** 2026-05-17 18:48
 **Branch:** master

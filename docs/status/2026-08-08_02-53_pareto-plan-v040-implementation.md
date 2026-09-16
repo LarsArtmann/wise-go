@@ -1,19 +1,21 @@
 # Status Report — 2026-08-08 02:53
 
-> **Resolution (2026-09-13 docs-health pass):** v0.4.0 shipped (`4902dc3`),
-> v0.5.0 followed (`59577d4`). Leftover verdicts: items 3–6 done (`4902dc3`
-> era), 8 still open (TODO_LIST P4 micro-batch), 9 done (v0.5.0 `DetailType`),
-> 10–14 **NOT-DO by design** (AGENTS.md: `Money` is a serialization boundary
-> with no arithmetic methods), 15 done (`20810a7`), 16–18 done (v0.8.0), 19
-> split — signature verification done (v0.9.0), typed events/subscription CRUD
-> still open (TODO_LIST P3), 20 done (v0.9.0, six formats), 21–22 gated
-> (ROADMAP), 23 done (`e508572` ctx cancellation), 24 done (`e508572`
-> `WithLogger`), 25 open (ROADMAP), 26 superseded by `X-External-Correlation-Id`,
-> 27 done (README mTLS), 28 done (`WithHTTPClient(Doer)`), 29 open (ROADMAP),
-> 30–31 done, 32–34 open (ADRs), 36 done, 37 open, 38 done, 39–40 open
-> (templates), 41–43 done/one open (43 internal/raw tests, P4), 44 done, 45 open
-> (coverage threshold), 46 done, 47 done, 48 open, 49 open, 50 open (release
-> automation), v1.0.0 tag user-gated (TODO_LIST P1), toMoney decision open (P4).
+> **Resolution (2026-09-13 docs-health pass, re-verdicted 2026-09-16):** v0.4.0
+> shipped (`4902dc3`), v0.5.0 followed (`59577d4`). Leftover verdicts: items
+> 3–6 done (`4902dc3` era), ~~8~~ done 2026-09-13 (`8b54f7c`, cents signature),
+> 9 done (v0.5.0 `DetailType`), 10–14 **NOT-DO by design** (AGENTS.md: `Money`
+> is a serialization boundary with no arithmetic methods), 15 done (`20810a7`),
+> 16–18 done (v0.8.0), 19 **fully done** — verification AND typed events +
+> subscription CRUD shipped in v0.11.0 (`5a6448c`), 20 done (v0.9.0, six
+> formats), 21–22 gated (ROADMAP), 23 done (`e508572` ctx cancellation), 24
+> done (`e508572` `WithLogger`), 25 open (ROADMAP), 26 superseded by
+> `X-External-Correlation-Id`, 27 done (README mTLS), 28 done
+> (`WithHTTPClient(Doer)`), 29 open (ROADMAP), 32–34 done (ADR 001–003,
+> 2026-09-13), 36 done, 37 open, 38 done, 39–40 done (templates, 2026-09-13),
+> 41–43 done (43 `internal/raw` tests, 2026-09-13), 44 done, 45 done (90% CI
+> gate 2026-09-13; flake parity in TODO_LIST P3), 46 done, 47 done, 48 open,
+> 49 open, 50 open (release automation), v1.0.0 tag user-gated (TODO_LIST P2),
+> toMoney decision open (P4).
 
 ## Session: Pareto Execution Plan Implementation
 

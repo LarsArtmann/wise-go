@@ -1,5 +1,13 @@
 # Status: Docs-Health Full Audit (BUILD + HARVEST + VERIFY + ANNOTATE + ARCHIVE) — 2026-09-13 12:29 CEST
 
+> **Resolution (2026-09-16 docs-health pass):** the c-list and f-list below have
+> been re-verdicted inline — v0.10.0/v0.11.0 shipped (tags `fe896a8`/`5a6448c`),
+> the v1.0 re-audit landed, webhooks + OTT endpoints shipped, and every
+> engineering micro-batch is done or declined with rationale. What remains open
+> is user-gated or tracked in `TODO_LIST.md` (P1 Release objects + CI pins,
+> P2 gated items, P3 quality/tooling). This report is fully harvested; nothing
+> actionable is lost here.
+
 **Session scope:** user ordered "View ALL `**/2026-0*` files! Execute the docs-health SKILL! PROPERLY! FUCKING SUPERBLY!" with all seven living docs required superb and fully-done reports archived. This report covers ONLY that run. **No Go source was modified.**
 **Format note:** written as `.md` per explicit user instruction (skill default is HTML).
 **End state:** `go build` ✅ · `go test ./...` ✅ (README drift guard incl.) · `golangci-lint` 0 issues · coverage **91.3%** · `nix flake check` **all checks passed** · branch in sync with origin/master · daemon committed everything as `16f389d` (27 files, 8 renames verified R95–R100).

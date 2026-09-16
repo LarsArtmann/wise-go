@@ -1,14 +1,14 @@
 # wise-go Status Report
 
-> **Resolution (2026-09-13 docs-health pass):** the "top 25" wishlist is
-> majority-shipped — branded IDs (v0.1.0 era, complete), 33 endpoint methods
-> across 14 resources (v0.10.0), webhook verification v0.9.0, idempotency via
+> **Resolution (2026-09-13 docs-health pass, re-verdicted 2026-09-16):** the
+> "top 25" wishlist is majority-shipped — branded IDs (v0.1.0 era, complete),
+> 41 `*Client` methods across 16 resources (v0.11.0), webhook verification
+> v0.9.0 + subscriptions/typed events v0.11.0, idempotency via
 > `customerTransactionId` v0.8.0, context propagation + retry hooks v0.9.0,
-> pooling via `WithHTTPClient`, CI + coverage badge. Still open, routed:
-> benchmarks, OTel/metrics (`WithMetrics`), response caching, currency-conversion
-> helpers, mock-server, Postman collection, batch APIs, circuit breaker
-> (TODO_LIST P4 micro-batch / ROADMAP long-tail). Check FEATURES.md for current
-> truth.
+> pooling via `WithHTTPClient`, CI + coverage badge, benchmarks (`dbab2e4`).
+> Routed to ROADMAP raw ideas (2026-09-16): OTel/metrics (`WithMetrics`),
+> currency-conversion helpers, mock-server, Postman collection, batch APIs,
+> circuit breaker. Check FEATURES.md for current truth.
 
 **Generated:** 2026-05-23 00:49\
 **Project:** wise-go (Wise/TransferWise API Go Client)\
