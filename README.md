@@ -926,6 +926,18 @@ GOEXPERIMENT=jsonv2 go test ./...
 
 Tests use `net/http/httptest` to mock the Wise API — no network access required. The `GOEXPERIMENT=jsonv2` prefix is mandatory (see [Installation](#installation)).
 
+### Spec conformance
+
+Every mock exchange is also validated against Wise's machine-readable
+OpenAPI contract, vendored at `docs/reviews/wise-api-openapi.json`: the
+suite fails when a request path, required parameter, or response payload
+no longer matches what Wise documents. Deliberate divergences (Wise's
+loose live timestamp shapes, legacy wire surfaces the spec bundle does
+not describe) are exempted explicitly in `spec_conformance_test.go` with
+the reasoning inline. Refresh the snapshot from
+`https://docs.wise.com/_bundle/api-reference/@preview/index.yaml?download`
+to pick up contract changes.
+
 ### Sandbox verification
 
 A small live-test suite (`sandbox_live_test.go`) exercises the real sandbox at
