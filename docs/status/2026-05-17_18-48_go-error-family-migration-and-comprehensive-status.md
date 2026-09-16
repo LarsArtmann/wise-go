@@ -193,11 +193,11 @@ The most recent work replaced `cockroachdb/errors` with `go-error-family`, addin
 
 | #  | Priority | Task                                                         | Impact | Effort |
 | -- | -------- | ------------------------------------------------------------ | ------ | ------ |
-| 1  | P0       | Update AGENTS.md (stale references)                          | High   | 5min   |
-| 2  | P0       | Fix README.md (remove cockroachdb/errors mention)            | High   | 2min   |
-| 3  | P0       | Remove unused `now` param from `mapTransaction`              | Medium | 5min   |
-| 4  | P1       | Add error classification tests (go-error-family integration) | High   | 30min  |
-| 5  | P1       | Parse `Retry-After` header from 429 responses                | Medium | 15min  |
+| ~~1~~  | ~~P0~~ done — fixed same session (commit 290d07b) | ~~Update AGENTS.md (stale references)~~ | ~~High~~ | ~~5min~~ |
+| ~~2~~  | ~~P0~~ done — fixed same session (commit 290d07b) | ~~Fix README.md (remove cockroachdb/errors mention)~~ | ~~High~~ | ~~2min~~ |
+| ~~3~~  | ~~P0~~ done — removed in the 07-05 session (entire dead now chain) | ~~Remove unused `now` param from `mapTransaction`~~ | ~~Medium~~ | ~~5min~~ |
+| ~~4~~  | ~~P1~~ done — TestErrorContexts + errors_test.go pin the classification matrix | ~~Add error classification tests (go-error-family integration)~~ | ~~High~~ | ~~30min~~ |
+| ~~5~~  | ~~P1~~ done — parseRetryAfter handles delta-seconds and HTTP-date (07-05) | ~~Parse `Retry-After` header from 429 responses~~ | ~~Medium~~ | ~~15min~~ |
 | 6  | P1       | Add `BadRequestError` for 400 responses                      | Medium | 20min  |
 | 7  | P1       | Add CI/CD (GitHub Actions)                                   | High   | 30min  |
 | 8  | P1       | Consistent error wrapping strategy (errorfamily everywhere?) | Medium | 30min  |

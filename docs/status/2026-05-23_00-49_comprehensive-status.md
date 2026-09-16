@@ -122,16 +122,16 @@ The wise-go project is a well-structured, production-ready Go SDK for the Wise A
 
 ## Top 25 Things To Get Done Next
 
-1. Run comprehensive code quality scan (golangci-lint, dupl)
+1. ~~Run comprehensive code quality scan (golangci-lint, dupl)~~ done (golangci-lint 0 issues since v0.4.0)
 2. Resolve LSP diagnostic staleness issue
-3. Implement clock injection OR remove dead `now` parameter
-4. Add missing Wise API endpoints (transfers, quotes)
-5. Implement proper rate limit header handling
-6. Create benchmark suite
-7. Add GitHub Actions CI/CD
+3. ~~Implement clock injection OR remove dead `now` parameter~~ done (dead now parameter removed (07-05 session))
+4. ~~Add missing Wise API endpoints (transfers, quotes)~~ done (transfers/quotes/recipients shipped v0.8.0)
+5. ~~Implement proper rate limit header handling~~ done (Retry-After + X-Rate-Limited-By parsed (v0.8.0-era))
+6. ~~Create benchmark suite~~ done (bench_test.go shipped 2026-09-13)
+7. ~~Add GitHub Actions CI/CD~~ done (ci.yml exists (workflow disabled on GitHub))
 8. Build documentation website
-9. Add integration tests with testcontainers
-10. Implement request hooks/callbacks
+9. ~~Add integration tests with testcontainers~~ done (superseded by key-gated sandbox_live_test.go + sandbox-live.yml (ecdc738))
+10. ~~Implement request hooks/callbacks~~ done (WithLogger + WithRequestCorrelationID shipped v0.9.0)
 11. Add OpenTelemetry tracing
 12. Create migration guide for v1→v2 API
 13. Add bulk operations support
