@@ -425,7 +425,7 @@ func conformanceCoverageSnapshot() ([]string, []string, int, int) {
 
 	sort.Strings(templates)
 
-	exemptPaths = make([]string, 0, len(exemptStatementPaths))
+	exemptPaths := make([]string, 0, len(exemptStatementPaths))
 	for path := range exemptStatementPaths {
 		exemptPaths = append(exemptPaths, path)
 	}

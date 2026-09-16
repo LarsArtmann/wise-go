@@ -4,4 +4,4 @@
 # instead of touching (and reformatting) the whole flake. Update with:
 #   nix run nixpkgs#nix-update -- wise-go-test
 # or set vendorHash = lib.fakeHash, run `nix build`, and paste the got: hash.
-"sha256-tYexCngHQn3GD4h4mAWjC1pEa+N+dWUTM9REUcgdMhk="
+"sha256-00KOIeAVzfZsXJ5IZID2tgjM9YDkJN9HvY9643pjo+8="
