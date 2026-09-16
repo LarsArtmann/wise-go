@@ -1,6 +1,9 @@
 package wise
 
 import (
+	"crypto/rand"
+	"fmt"
+
 	id "github.com/larsartmann/go-branded-id"
 	errorfamily "github.com/larsartmann/go-error-family"
 )
@@ -136,4 +139,21 @@ func requireID[B any, V comparable](identifier id.ID[B, V], code, field string) 
 	}
 
 	return nil
+}
+
+// newRequestUUID generates a random RFC 4122 version-4 UUID for the
+// X-idempotence-uuid request header (required by Wise on balance creation).
+// Callers can pass their own key for cross-retry deduplication where the API
+// accepts one.
+func newRequestUUID() (string, error) {
+	var uuid [16]byte
+	if _, err := rand.Read(uuid[:]); err != nil {
+		return "", fmt.Errorf("generate request UUID: %w", err)
+	}
+
+	uuid[6] = (uuid[6] & 0x0f) | 0x40
+	uuid[8] = (uuid[8] & 0x3f) | 0x80
+
+	return fmt.Sprintf("%x-%x-%x-%x-%x",
+		uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:16]), nil
 }

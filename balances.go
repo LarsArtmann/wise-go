@@ -88,19 +88,35 @@ func (c *Client) GetBalance(
 }
 
 // CreateBalanceRequest opens a new balance for a profile. Name is required
-// for SAVINGS balances.
+// for SAVINGS balances. IdempotencyKey optionally carries the caller's
+// X-idempotence-uuid value (required by Wise); when empty the SDK generates
+// a fresh UUID per call, so retries across process restarts that must not
+// create duplicate balances should pass an explicit key.
 type CreateBalanceRequest struct {
-	ProfileID ProfileID
-	Currency  Currency
-	Type      BalanceType // BalanceTypeStandard or BalanceTypeSavings.
-	Name      string
+	ProfileID      ProfileID
+	Currency       Currency
+	Type           BalanceType // BalanceTypeStandard or BalanceTypeSavings.
+	Name           string
+	IdempotencyKey string
 }
 
 // CreateBalance opens a new balance for a profile
-// (POST /v4/profiles/{profileId}/balances) and returns it.
+// (POST /v4/profiles/{profileId}/balances) and returns it. Wise requires the
+// X-idempotence-uuid header on this endpoint.
 func (c *Client) CreateBalance(ctx context.Context, req CreateBalanceRequest) (*Balance, error) {
 	if err := req.validate(); err != nil {
 		return nil, err
+	}
+
+	idempotencyKey := req.IdempotencyKey
+	if idempotencyKey == "" {
+		generated, err := newRequestUUID()
+		if err != nil {
+			return nil, fmt.Errorf("create %s balance for profile %d: %w",
+				req.Currency, req.ProfileID.Get(), err)
+		}
+
+		idempotencyKey = generated
 	}
 
 	body := map[string]any{
@@ -114,7 +130,15 @@ func (c *Client) CreateBalance(ctx context.Context, req CreateBalanceRequest) (*
 
 	var balance raw.Balance
 
-	if err := c.post(ctx, fmt.Sprintf("/v4/profiles/%d/balances", req.ProfileID.Get()), body, &balance); err != nil {
+	headers := map[string]string{"X-Idempotence-Uuid": idempotencyKey}
+
+	if err := c.postWithHeaders(
+		ctx,
+		fmt.Sprintf("/v4/profiles/%d/balances", req.ProfileID.Get()),
+		body,
+		&balance,
+		headers,
+	); err != nil {
 		return nil, fmt.Errorf("create %s balance for profile %d: %w", req.Currency, req.ProfileID.Get(), err)
 	}
 

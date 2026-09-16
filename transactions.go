@@ -171,8 +171,18 @@ const (
 // filtering uses the StatementType* constants instead.
 type DetailType string
 
-// DetailType constants are Wise's wire-format values for details.type.
+// DetailType constants are Wise's wire-format values for details.type. The
+// first block reflects the balance-statement contract in
+// docs/reviews/wise-api-openapi.json; the second block carries the legacy
+// values from the earlier prose docs, kept mapped for compatibility.
 const (
+	DetailTypeCard             DetailType = "CARD"
+	DetailTypeDeposit          DetailType = "DEPOSIT"
+	DetailTypeMoneyAdded       DetailType = "MONEY_ADDED"
+	DetailTypeDirectDebit      DetailType = "DIRECT_DEBIT"
+	DetailTypeAcquiringPayment DetailType = "ACQUIRING_PAYMENT"
+	DetailTypeCardCashback     DetailType = "CARD_CASHBACK"
+
 	DetailTypeCardPayment DetailType = "CARD_PAYMENT"
 	DetailTypeCardRefund  DetailType = "CARD_REFUND"
 	DetailTypeTransfer    DetailType = "TRANSFER"
@@ -183,15 +193,16 @@ const (
 )
 
 // classifyTransactionType maps Wise detail types to SDK transaction types.
-// CARD_PAYMENT is always a card transaction (typically a debit, but the type
-// does not change with sign). CARD_REFUND is amount-dependent: positive amounts
-// are classified as refunds, non-positive fall back to card. See README for the
-// full contract.
+// Card values are always card transactions (typically debits, but the type
+// does not change with sign); CARD_CASHBACK and CARD_REFUND are
+// amount-dependent: positive amounts are classified as refunds, non-positive
+// fall back to card. Unmapped values default to a sign-based credit/debit.
+// See README for the full contract.
 func classifyTransactionType(wiseType DetailType, totalCents int64) TransactionType {
 	switch wiseType {
-	case DetailTypeCardPayment:
+	case DetailTypeCardPayment, DetailTypeCard:
 		return TransactionTypeCard
-	case DetailTypeCardRefund:
+	case DetailTypeCardRefund, DetailTypeCardCashback:
 		if totalCents > 0 {
 			return TransactionTypeRefund
 		}
@@ -199,7 +210,7 @@ func classifyTransactionType(wiseType DetailType, totalCents int64) TransactionT
 		return TransactionTypeCard
 	case DetailTypeTransfer:
 		return TransactionTypeTransfer
-	case DetailTypePayment:
+	case DetailTypePayment, DetailTypeAcquiringPayment, DetailTypeDirectDebit:
 		return TransactionTypePayment
 	case DetailTypeConversion, DetailTypeExchange:
 		return TransactionTypeExchange

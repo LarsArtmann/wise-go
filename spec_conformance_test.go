@@ -32,21 +32,20 @@ const specSnapshotPath = "docs/reviews/wise-api-openapi.json"
 
 // conformanceExchange is one recorded request/response pair served by a mock
 // harness.
-// statementVariantPattern covers the statement formats the SDK fetches but
-	method    string
-	rawPath   string
-	query     string
-	reqHeader http.Header
-	reqBody   []byte
-	status    int
-	respBody  []byte
-	respCT    string
+type conformanceExchange struct {
+	method             string
+	rawPath            string
+	query             string
+	reqHeader         http.Header
+	reqBody            []byte
+	status             int
+	respBody           []byte
+	respCT             string
+	skipResponseSchema bool
 }
 
 // conformanceHarness wraps a mock handler, records every exchange, and
-// validates the recorded set against the vendored spec on finish. Exchanges
-// that arrive while no validation is in flight (none today) are still
-// recorded; finish consumes and clears the buffer.
+// validates the recorded set against the vendored spec on finish.
 type conformanceHarness struct {
 	inner     http.Handler
 	mu        sync.Mutex
@@ -56,11 +55,11 @@ type conformanceHarness struct {
 // attachConformance wraps inner so every served request is recorded for spec
 // conformance. Use the returned value as the httptest.Server handler.
 func attachConformance(inner http.Handler) *conformanceHarness {
-	h := &conformanceHarness{inner: inner}
-	return h
+	return &conformanceHarness{inner: inner}
 }
 
-// URL is the handler to serve from the httptest.Server.
+// ServeHTTP records the exchange, forwards it to the wrapped handler, and
+// relays the captured response to the real test client.
 func (h *conformanceHarness) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var reqBody []byte
 
@@ -86,17 +85,16 @@ func (h *conformanceHarness) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	contentType := captured.header.Get("Content-Type")
-
 	h.exchanges = append(h.exchanges, conformanceExchange{
-		method:    r.Method,
-		rawPath:   r.URL.Path,
-		query:     r.URL.RawQuery,
-		reqHeader: r.Header.Clone(),
-		reqBody:   reqBody,
-		status:    captured.status,
-		respBody:  captured.body.Bytes(),
-		respCT:    contentType,
+		method:             r.Method,
+		rawPath:             r.URL.Path,
+		query:               r.URL.RawQuery,
+		reqHeader:           r.Header.Clone(),
+		reqBody:             reqBody,
+		status:              captured.status,
+		respBody:            captured.body.Bytes(),
+		respCT:              captured.header.Get("Content-Type"),
+		skipResponseSchema: r.Header.Get(skipResponseSchemaHeader) == "1",
 	})
 }
 
@@ -163,16 +161,7 @@ func loadConformanceSpec() (*conformanceSpecContext, error) {
 			doc.Info.Version = "wise-snapshot"
 		}
 
-		// Formats are disabled: Wise's live responses deliberately use looser
-		// timestamp shapes than RFC3339 (space-separated statement dates,
-		// millisecond+numeric-zone delivery estimates, zoneless createdAt —
-		// see AGENTS.md), which the spec idealizes as date-time. Required,
-		// type, enum, and shape checks stay enabled.
-		router, routeErr := legacyrouter.NewRouter(
-			doc,
-			openapi3.DisableExamplesValidation(),
-			openapi3.DisableSchemaFormatValidation(),
-		)
+		router, routeErr := legacyrouter.NewRouter(doc, openapi3.DisableExamplesValidation())
 		if routeErr != nil {
 			conformanceErr = routeErr
 			return
@@ -182,6 +171,46 @@ func loadConformanceSpec() (*conformanceSpecContext, error) {
 	})
 
 	return conformanceLoaded, conformanceErr
+}
+
+// permissiveDateTimeFormat accepts any date-time-shaped value. Wise's live
+// responses deliberately use looser timestamp shapes than RFC3339
+// (space-separated statement dates, millisecond+numeric-zone delivery
+// estimates, zoneless createdAt — see AGENTS.md), which the spec idealizes
+// as date-time; the fixtures mirror live output, so the format assertion is
+// relaxed while required, type, enum, and shape checks stay enabled.
+type permissiveDateTimeFormat struct{}
+
+func (permissiveDateTimeFormat) Validate(string) error { return nil }
+
+var conformanceValidationOptions = []openapi3.SchemaValidationOption{
+	openapi3.WithStringFormatValidator("date-time", permissiveDateTimeFormat{}),
+}
+
+// conformanceOptions builds the shared request/response validation options.
+// Multi errors report every violated schema constraint at once.
+func conformanceOptions() *openapi3filter.Options {
+	return &openapi3filter.Options{
+		MultiError:              true,
+		AuthenticationFunc:      openapi3filter.NoopAuthenticationFunc,
+		SchemaValidationOptions: conformanceValidationOptions,
+	}
+}
+
+// skipResponseSchemaHeader marks a fixture response as intentionally
+// non-conformant (corruption and leniency tests feed malformed bodies on
+// purpose); only response-body validation is skipped for those exchanges.
+const skipResponseSchemaHeader = "X-Conformance-Skip-Response-Schema"
+
+// exemptResponseSchema wraps a fixture handler whose response body
+// intentionally violates the spec so the harness skips response-body
+// validation for those exchanges. Path, method, query, and request
+// validation still apply.
+func exemptResponseSchema(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		r.Header.Set(skipResponseSchemaHeader, "1")
+		next(w, r)
+	}
 }
 
 // versionedSegment matches the leading version segments the SDK puts into
@@ -203,51 +232,21 @@ func stripVersionedPrefix(path string) string {
 	return "/" + strings.Join(segments[index:], "/")
 }
 
-// Formats: Wise's live responses deliberately use looser timestamp shapes
-// than RFC3339 (space-separated statement dates, millisecond+numeric-zone
-// delivery estimates, zoneless createdAt — see AGENTS.md), which the spec
-// idealizes as date-time. The conformance validator therefore registers a
-// permissive date-time format validator; required, type, enum, and shape
-// checks stay enabled.
-type permissiveDateTimeFormat struct{}
-
-func (permissiveDateTimeFormat) Validate(string) error { return nil }
-
-var conformanceValidationOptions = []openapi3.SchemaValidationOption{
-	openapi3.WithStringFormatValidator("date-time", permissiveDateTimeFormat{}),
-}
-
-// conformanceOptions are shared request/response validation options. Multi
-// errors report every violated schema constraint at once.
-func conformanceOptions() *openapi3filter.Options {
-	return &openapi3filter.Options{
-		MultiError:              true,
-		AuthenticationFunc:      openapi3filter.NoopAuthenticationFunc,
-		SchemaValidationOptions: conformanceValidationOptions,
-	}
-}
-
-// skipResponseSchemaHeader marks a fixture response as intentionally
-// non-conformant (corruption/leniency tests feed malformed bodies on
-// purpose); only response-body validation is skipped for them.
-const skipResponseSchemaHeader = "X-Conformance-Skip-Response-Schema"
-
-// exemptResponseSchema wraps a fixture handler whose response body
-// intentionally violates the spec so the harness skips response-body
-// validation for those exchanges. Path, method, query, and request
-// validation still apply.
-func exemptResponseSchema(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		r.Header.Set(skipResponseSchemaHeader, "1")
-		next(w, r)
-	}
-}
+// statementVariantPattern covers the statement formats the SDK fetches but
 // the OpenAPI bundle does not document (it only declares statement.json).
 // The file formats (csv, pdf, xlsx, camt xml, mt940, qif) are documented in
 // prose only, so they are exempt from operation matching and tallied instead.
 var statementVariantPattern = regexp.MustCompile(
 	`^/profiles/[^/]+/balance-statements/[^/]+/statement\.(csv|pdf|qif|xlsx|xml|mt940)$`,
 )
+
+// accountsListPath is the normalized template of the legacy recipient list.
+// The bundled spec documents only the NEW paginated /accounts surface
+// (a {content, seekPositionForNext, seekPositionForCurrent} envelope), while
+// the legacy /v2/accounts wire this SDK targets returns a bare array.
+// Response-body validation is skipped for it; the migration to the paginated
+// surface is tracked in ROADMAP.md.
+const accountsListPath = "/accounts"
 
 // validateExchange checks one exchange against the spec and returns one
 // message per violation (empty slice means conforming).
@@ -266,30 +265,28 @@ func validateExchange(specCtx *conformanceSpecContext, exchange conformanceExcha
 
 	route, pathParams, findErr := specCtx.router.FindRoute(specRequest)
 	if findErr != nil {
-		return []string{fmt.Sprintf("no operation matches the request (check for client/spec drift or a stale snapshot): %v", findErr)}
+		return []string{fmt.Sprintf(
+			"no operation matches the request (check for client/spec drift or a stale snapshot): %v",
+			findErr,
+		)}
 	}
 
 	recordConformingTemplate(exchange.method, route.Path)
 
 	var problems []string
 
-	options := &openapi3filter.Options{
-		MultiError:         true,
-		AuthenticationFunc: openapi3filter.NoopAuthenticationFunc,
-	}
-
 	requestInput := &openapi3filter.RequestValidationInput{
 		Request:    specRequest,
 		PathParams: pathParams,
 		Route:      route,
-		Options:    options,
+		Options:    conformanceOptions(),
 	}
 
 	if validateErr := openapi3filter.ValidateRequest(context.Background(), requestInput); validateErr != nil {
 		problems = append(problems, fmt.Sprintf("request: %v", validateErr))
 	}
 
-	if len(exchange.respBody) == 0 {
+	if len(exchange.respBody) == 0 || exchange.skipResponseSchema {
 		return problems
 	}
 
@@ -299,6 +296,11 @@ func validateExchange(specCtx *conformanceSpecContext, exchange conformanceExcha
 	}
 
 	if !strings.Contains(responseCT, "json") {
+		return problems
+	}
+
+	if normalized == accountsListPath && exchange.method == http.MethodGet {
+		recordExemptLegacyAccountsList()
 		return problems
 	}
 
@@ -317,8 +319,8 @@ func validateExchange(specCtx *conformanceSpecContext, exchange conformanceExcha
 }
 
 // buildConformanceRequest reconstructs the exchange as an *http.Request the
-// validator can route and decode. The host is a placeholder; the relative
-// spec server URL makes it irrelevant.
+// validator can route and decode. The URL stays path-relative so the
+// relative spec server URL matches it.
 func buildConformanceRequest(exchange conformanceExchange, normalizedPath string) (*http.Request, error) {
 	parsed, err := url.Parse(normalizedPath)
 	if err != nil {
@@ -327,22 +329,21 @@ func buildConformanceRequest(exchange conformanceExchange, normalizedPath string
 
 	parsed.RawQuery = exchange.query
 
-	header := exchange.reqHeader.Clone()
-	if header == nil {
-		header = make(http.Header)
-	}
-
 	body := exchange.reqBody
 
 	request := &http.Request{
 		Method: exchange.method,
 		URL:    parsed,
-		Header: header,
+		Header: exchange.reqHeader.Clone(),
 		Body:   io.NopCloser(bytes.NewReader(body)),
 		GetBody: func() (io.ReadCloser, error) {
 			return io.NopCloser(bytes.NewReader(body)), nil
 		},
 		ContentLength: int64(len(body)),
+	}
+
+	if request.Header == nil {
+		request.Header = make(http.Header)
 	}
 
 	return request, nil
@@ -359,13 +360,13 @@ type captureResponseWriter struct {
 
 func (c *captureResponseWriter) Header() http.Header { return c.header }
 
-func (c *captureResponseWriter) Write(bytes []byte) (int, error) {
+func (c *captureResponseWriter) Write(data []byte) (int, error) {
 	if !c.wroteField {
 		c.status = http.StatusOK
 		c.wroteField = true
 	}
 
-	return c.body.Write(bytes)
+	return c.body.Write(data)
 }
 
 func (c *captureResponseWriter) WriteHeader(status int) {
@@ -379,8 +380,9 @@ func (c *captureResponseWriter) WriteHeader(status int) {
 
 var (
 	coverageMu              sync.Mutex
-	conformingTemplates     = map[string]int{}
-	exemptStatementPaths    = map[string]int{}
+	conformingTemplates   = map[string]int{}
+	exemptStatementPaths  = map[string]int{}
+	exemptAccountsLists    int
 	totalValidatedExchanges int
 )
 
@@ -399,7 +401,14 @@ func recordExemptStatementVariant(rawPath string) {
 	exemptStatementPaths[rawPath]++
 }
 
-func conformanceCoverageSnapshot() (templates []string, exemptPaths []string, exchanges int) {
+func recordExemptLegacyAccountsList() {
+	coverageMu.Lock()
+	defer coverageMu.Unlock()
+
+	exemptAccountsLists++
+}
+
+func conformanceCoverageSnapshot() (templates []string, exemptPaths []string, exchanges, exemptAccountsLists int) {
 	coverageMu.Lock()
 	defer coverageMu.Unlock()
 
@@ -415,5 +424,5 @@ func conformanceCoverageSnapshot() (templates []string, exemptPaths []string, ex
 	}
 	sort.Strings(exemptPaths)
 
-	return templates, exemptPaths, totalValidatedExchanges
+	return templates, exemptPaths, totalValidatedExchanges, exemptAccountsLists
 }
