@@ -32,7 +32,7 @@ const specSnapshotPath = "docs/reviews/wise-api-openapi.json"
 
 // conformanceExchange is one recorded request/response pair served by a mock
 // harness.
-type conformanceExchange struct {
+// statementVariantPattern covers the statement formats the SDK fetches but
 	method    string
 	rawPath   string
 	query     string
@@ -203,7 +203,45 @@ func stripVersionedPrefix(path string) string {
 	return "/" + strings.Join(segments[index:], "/")
 }
 
-// statementVariantPattern covers the statement formats the SDK fetches but
+// Formats: Wise's live responses deliberately use looser timestamp shapes
+// than RFC3339 (space-separated statement dates, millisecond+numeric-zone
+// delivery estimates, zoneless createdAt — see AGENTS.md), which the spec
+// idealizes as date-time. The conformance validator therefore registers a
+// permissive date-time format validator; required, type, enum, and shape
+// checks stay enabled.
+type permissiveDateTimeFormat struct{}
+
+func (permissiveDateTimeFormat) Validate(string) error { return nil }
+
+var conformanceValidationOptions = []openapi3.SchemaValidationOption{
+	openapi3.WithStringFormatValidator("date-time", permissiveDateTimeFormat{}),
+}
+
+// conformanceOptions are shared request/response validation options. Multi
+// errors report every violated schema constraint at once.
+func conformanceOptions() *openapi3filter.Options {
+	return &openapi3filter.Options{
+		MultiError:              true,
+		AuthenticationFunc:      openapi3filter.NoopAuthenticationFunc,
+		SchemaValidationOptions: conformanceValidationOptions,
+	}
+}
+
+// skipResponseSchemaHeader marks a fixture response as intentionally
+// non-conformant (corruption/leniency tests feed malformed bodies on
+// purpose); only response-body validation is skipped for them.
+const skipResponseSchemaHeader = "X-Conformance-Skip-Response-Schema"
+
+// exemptResponseSchema wraps a fixture handler whose response body
+// intentionally violates the spec so the harness skips response-body
+// validation for those exchanges. Path, method, query, and request
+// validation still apply.
+func exemptResponseSchema(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		r.Header.Set(skipResponseSchemaHeader, "1")
+		next(w, r)
+	}
+}
 // the OpenAPI bundle does not document (it only declares statement.json).
 // The file formats (csv, pdf, xlsx, camt xml, mt940, qif) are documented in
 // prose only, so they are exempt from operation matching and tallied instead.
