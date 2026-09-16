@@ -14,15 +14,16 @@ The unofficial Go SDK for the [Wise](https://wise.com) (TransferWise) API.
 
 Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise's wire types directly — `float64` for money, untyped string IDs, inconsistent date formats. **wise-go fills that gap** with hand-written types that make invalid states hard to reach: monetary amounts as `int64` cents (never `float64`), branded IDs that prevent mixing `ProfileID` with `BalanceID` at compile time, and behavioral error classification so you can retry on intent rather than string-matching status codes.
 
-> **Status: active development (v0.10.0).** The core transfer flow is implemented
+> **Status: active development (v0.11.0).** The core transfer flow is implemented
 > end-to-end — profiles, users, balances, transactions and statement file downloads
 > (CSV/PDF/XLSX/CAMT.053/MT940/QIF), exchange rates, quotes (with `paymentOptions`
->
-> - fees), recipients, transfers (create / get / list / cancel / **fund** /
->   receipt / MT103 payout info), delivery estimates, and transfer-requirements
->   validation — plus webhook signature verification, observability hooks, and
->   balance lifecycle management. See [FEATURES.md](FEATURES.md) for the honest
->   inventory and [ROADMAP.md](ROADMAP.md) for what's next.
+> fees), recipients, transfers (create / get / list / cancel / **fund** /
+> receipt / MT103 payout info), delivery estimates, and transfer-requirements
+> validation — plus webhook subscriptions with typed event decoding, webhook
+> signature verification, programmatic SCA challenge clearing (one-time-token
+> endpoints), observability hooks, and balance lifecycle management. See
+> [FEATURES.md](FEATURES.md) for the honest inventory and [ROADMAP.md](ROADMAP.md)
+> for what's next.
 
 > **Design story:** [I needed a Go SDK for Wise. Nobody built one.](https://larsartmann.com/blog/when-the-api-has-no-spec-your-types-are-the-spec)
 

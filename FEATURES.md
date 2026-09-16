@@ -27,6 +27,8 @@ claim here can be verified against the implementation.
 | Retry with backoff (429, 5xx, network)  | FULLY_FUNCTIONAL | `client.go:100` `isRetryable`; verified by wise_test.go retry suite       |
 | `Authenticate(ctx)`                     | FULLY_FUNCTIONAL | `client.go:110`; delegates to `ListProfiles`                              |
 | `Health(ctx)`                           | FULLY_FUNCTIONAL | `client.go:120`; delegates to `Authenticate`                              |
+| `WithUserAgent` option (v0.11.0)        | FULLY_FUNCTIONAL | `options.go:81`; custom `User-Agent` on every request, default preserved (BDD) |
+| Shared-client concurrency (v0.11.0)     | FULLY_FUNCTIONAL | `wise_test.go:246`; 16 parallel requests, per-request correlation-ID isolation, `-race` |
 
 ## Profiles
 
@@ -36,6 +38,7 @@ claim here can be verified against the implementation.
 | `GetProfile(ctx, id)`  | FULLY_FUNCTIONAL | `profiles.go:13`; BDD-tested                             |
 | `GetMe(ctx)`           | FULLY_FUNCTIONAL | `users.go`; typed `UserID`, 401 + nil-details BDD-tested |
 | `GetUser(ctx, id)`     | FULLY_FUNCTIONAL | `users.go`; 404, plain-403, zero-ID BDD-tested           |
+| `Profile.UserID` / `Profile.PublicID` (v0.11.0) | FULLY_FUNCTIONAL | `types.go:87-91`; owning user ID + opaque public identifier surfaced from the wire |
 | Personal-profile parse | FULLY_FUNCTIONAL | `profiles.go:31` name construction                       |
 | Business-profile parse | FULLY_FUNCTIONAL | `profiles.go:31` BusinessName branch                     |
 
@@ -154,15 +157,25 @@ claim here can be verified against the implementation.
 
 | Feature                                                                                                         | Status           | Evidence                                                                                                        |
 | --------------------------------------------------------------------------------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------- |
-| `ParseWebhookPublicKey` (PKIX + PKCS#1 PEM, RSA-only)                                                           | FULLY_FUNCTIONAL | `webhooks.go:27`; garbage/non-RSA input rejected with clear errors                                              |
-| `VerifyWebhookSignature` (RSA-SHA256 over raw body)                                                             | FULLY_FUNCTIONAL | `webhooks.go:58`; valid/tampered/wrong-key/malformed/empty/5 MiB tested                                         |
-| `HeaderWebhookSignature` / `HeaderDeliveryID` constants                                                         | FULLY_FUNCTIONAL | `webhooks.go:16,22`; delivery-dedup guidance in README Webhooks section                                         |
-| Profile webhook subscription CRUD (`Create`/`List`/`Get`/`Delete`)                                              | FULLY_FUNCTIONAL | `webhooks.go:98,125,157,186`; BDD-tested (happy/400/401/404/204/validation); app-level scope deferred (ROADMAP) |
+| `ParseWebhookPublicKey` (PKIX + PKCS#1 PEM, RSA-only)                                                           | FULLY_FUNCTIONAL | `webhooks.go:33`; garbage/non-RSA input rejected with clear errors                                              |
+| `VerifyWebhookSignature` (RSA-SHA256 over raw body)                                                             | FULLY_FUNCTIONAL | `webhooks.go:64`; valid/tampered/wrong-key/malformed/empty/5 MiB tested                                         |
+| `HeaderWebhookSignature` / `HeaderDeliveryID` constants                                                         | FULLY_FUNCTIONAL | `webhooks.go:22,24`; delivery-dedup guidance in README Webhooks section                                         |
+| Profile webhook subscription CRUD (`Create`/`List`/`Get`/`Delete`, v0.11.0)                                     | FULLY_FUNCTIONAL | `webhooks.go:90,117,149,178`; BDD-tested (happy/400/401/404/204/validation); app-level scope deferred (ROADMAP) |
 | `WebhookEventType` open enum (33 documented event constants)                                                    | FULLY_FUNCTIONAL | `types.go`; unknown event types pass through by design                                                          |
-| `ParseWebhookEvent` envelope + typed payloads (`TransferStateChange`, `TransferPayoutFailure`, `BalanceCredit`) | FULLY_FUNCTIONAL | `webhooks.go:291+`; unknown-event passthrough + corruption-classified malformed-envelope tests                  |
+| `ParseWebhookEvent` envelope + typed payloads (`TransferStateChange`, `TransferPayoutFailure`, `BalanceCredit`) | FULLY_FUNCTIONAL | `webhooks.go:283+`; unknown-event passthrough + corruption-classified malformed-envelope tests                  |
+
+## SCA one-time tokens (v0.11.0)
+
+| Feature                                                        | Status           | Evidence                                                                                     |
+| -------------------------------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------- |
+| `GetOTTStatus` (challenge list, validity, action type)         | FULLY_FUNCTIONAL | `ott.go:188`; `/2026Q3/one-time-token` surface, personal API token                           |
+| `TriggerOTT` / `VerifyOTT` per phone channel                   | FULLY_FUNCTIONAL | `ott.go:209,235`; sms/whatsapp/voice channels, UPPERCASE challenge types mapped once         |
+| `ClearSCAChallenge` convenience loop                           | FULLY_FUNCTIONAL | `ott.go:284`; triggers, prompts via callback, verifies, repeats until every challenge passed |
+| `OTTChannel` typed channel enum                                | FULLY_FUNCTIONAL | `ott.go:24`; single lowercase-wire → UPPERCASE-challenge-type mapping                        |
+| OTT secrecy: token never in error strings                      | FULLY_FUNCTIONAL | `SCAChallengeError.Error()` reports `token issued: true/false` only; value via `TwoFAApprovalToken()` |
 
 ## Deferred (demand-gated, not started)
 
 | Feature                      | Status  | Notes                                          |
 | ---------------------------- | ------- | ---------------------------------------------- |
-| Service-client sub-structure | PLANNED | Trigger reached: 15 resources (see ROADMAP.md) |
+| Service-client sub-structure | PLANNED | Trigger reached: 16 resources (see ROADMAP.md) |
