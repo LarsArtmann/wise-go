@@ -32,7 +32,8 @@ func TestSpecConformanceCoverage(t *testing.T) {
 
 	if exchanges < minValidatedExchanges {
 		t.Fatalf(
-			"spec conformance validated only %d exchanges (floor %d); the recorder hook must be broken",
+			"spec conformance validated only %d exchanges (floor %d); the recorder hook must be broken "+
+				"(note: running this test via -run in isolation records nothing; run the whole package)",
 			exchanges, minValidatedExchanges,
 		)
 	}

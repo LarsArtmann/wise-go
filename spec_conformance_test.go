@@ -299,6 +299,7 @@ func validateExchange(specCtx *conformanceSpecContext, exchange conformanceExcha
 		return problems
 	}
 
+	println("DEBUG validate:", exchange.method, normalized, "ct:", responseCT)
 	if normalized == accountsListPath && exchange.method == http.MethodGet {
 		recordExemptLegacyAccountsList()
 		return problems
