@@ -1,8 +1,9 @@
 # ADR 003: Retry executor — `go-retry` override of the failsafe-go mandate
 
-**Status:** Proposed (migration pending — see TODO_LIST P4 "Adopt go-retry")
+**Status:** Proposed (migration pending — see TODO_LIST P2 "Adopt go-retry")
 **Deciders:** Lars Artmann
 **Context date:** 2026-09-13
+**Re-verified:** 2026-09-16 against go-retry v0.6.0 (go-doc API diff + runnable probe)
 
 ## Context
 
@@ -23,11 +24,22 @@ Two policy-legal friction points exist with failsafe-go for THIS repo:
    (`classifyExhaustedRetries`). The matching is by value (AGENTS.md gotcha),
    which is easy to get wrong in tests.
 
-`github.com/larsartmann/go-retry` (in-house, v0.4.0) addresses both: its
+`github.com/larsartmann/go-retry` (in-house, v0.6.0) addresses both: its
 exhaustion error carries the final typed error via `WithCause` (probed
-2026-08-21: `errors.Is`/`errors.AsType` traverse to it, so
-`classifyExhaustedRetries` deletes entirely), and `Config.DelayFunc` accepts
-Wise's `Retry-After` directly.
+2026-08-21 on v0.4.0, re-probed 2026-09-16 on v0.6.0:
+`errors.Is`/`errors.AsType` traverse `ErrExhausted` to the final attempt's
+error, so `classifyExhaustedRetries` deletes entirely), and `Config.DelayFunc`
+accepts Wise's `Retry-After` directly (a >0 return overrides the backoff for
+that attempt; 0 falls through to exponential backoff — probe-confirmed on
+v0.6.0).
+
+The v0.4.0 → v0.6.0 delta is purely additive (go-doc API diff, 2026-09-16):
+v0.5.0 adds `DoWithValue[T]`/`ResultFunc[T]`, v0.6.0 is test/CI hardening.
+`DoWithValue` is a direct fit for `doRequest`'s `(*http.Response, error)` — it
+removes the closure-plus-variable dance failsafe's `GetWithExecution` requires.
+Context end during a backoff delay returns an error wrapping
+`ErrCanceled`/`ErrDeadlineExceeded` that unwraps to the stdlib sentinel and
+keeps the last attempt error in the chain.
 
 ## Decision (proposed)
 

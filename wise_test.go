@@ -267,7 +267,7 @@ var _ = Describe("Wise Client", func() {
 					seen   = map[string]bool{}
 				)
 
-				mux.HandleFunc("/v1/rates", func(w http.ResponseWriter, r *http.Request) {
+				mux.HandleFunc("/v1/rates", exemptResponseSchema(func(w http.ResponseWriter, r *http.Request) {
 					corr := r.Header.Get("X-External-Correlation-Id")
 
 					seenMu.Lock()
@@ -282,7 +282,7 @@ var _ = Describe("Wise Client", func() {
 					_, _ = fmt.Fprintf(w,
 						`{"source":"EUR","target":"USD","rate":%d,"time":"2023-01-01T00:00:00Z"}`,
 						1000+idx)
-				})
+				}))
 
 				type rateResult struct {
 					rate float64
@@ -1399,8 +1399,8 @@ var _ = Describe("Wise Client", func() {
 					Expect(r.URL.Query().Get("target")).To(Equal("USD"))
 
 					w.Header().Set("Content-Type", "application/json")
-					_ = json.MarshalWrite(w, raw.ExchangeRate{
-						Source: "EUR", Target: "USD", Rate: 1.0857, Time: "2023-01-15T10:30:00Z",
+					_ = json.MarshalWrite(w, []raw.ExchangeRate{
+						{Source: "EUR", Target: "USD", Rate: 1.0857, Time: "2023-01-15T10:30:00Z"},
 					})
 				})
 			})
@@ -1422,15 +1422,17 @@ var _ = Describe("Wise Client", func() {
 
 		Context("with a historical time in a non-UTC zone", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/v1/rates", func(w http.ResponseWriter, r *http.Request) {
+				mux.HandleFunc("/v1/rates", exemptResponseSchema(func(w http.ResponseWriter, r *http.Request) {
 					Expect(r.URL.Query().Get("time")).To(Equal("2023-06-15T10:30:00Z"),
 						"rate time parameter must serialize as UTC with a Z suffix")
 
+					// Single-object shape: not what the spec declares today, but
+					// the client tolerates it without a second request.
 					w.Header().Set("Content-Type", "application/json")
 					_ = json.MarshalWrite(w, raw.ExchangeRate{
 						Source: "EUR", Target: "USD", Rate: 1.0857, Time: "2023-06-15T10:30:00Z",
 					})
-				})
+				}))
 			})
 
 			It("should serialize the time parameter as UTC Z", func() {

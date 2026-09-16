@@ -2,6 +2,9 @@ package wise
 
 import (
 	"context"
+	"encoding/json/v2"
+	"encoding/json/jsontext"
+	"errors"
 	"fmt"
 	"net/url"
 	"time"
@@ -51,14 +54,45 @@ func (c *Client) GetExchangeRate(
 		return v.Encode()
 	}
 
-	var rate raw.ExchangeRate
+	// The spec contract is an array of rate objects; capture the raw body so
+	// the legacy single-object shape some Wise surfaces served stays
+	// decodable without a second request (same tolerance doctrine as
+	// parseWiseTimestamp).
+	var payload jsontext.Value
 
-	err := c.getWithQuery(ctx, "/v1/rates", query, &rate)
+	err := c.getWithQuery(ctx, "/v1/rates", query, &payload)
 	if err != nil {
 		return nil, fmt.Errorf("get exchange rate %s-%s: %w", source, target, err)
 	}
 
-	result, mapErr := mapExchangeRate(rate)
+	var rates []raw.ExchangeRate
+	if unmarshalErr := json.Unmarshal(payload, &rates); unmarshalErr != nil {
+		var single raw.ExchangeRate
+		if singleErr := json.Unmarshal(payload, &single); singleErr != nil {
+			return nil, fmt.Errorf("decode exchange rate %s-%s: %w", source, target, unmarshalErr)
+		}
+
+		rates = []raw.ExchangeRate{single}
+	}
+
+	if len(rates) == 0 {
+		return nil, errorfamily.WrapCorruption(
+			errors.New("empty rate list"),
+			"wise.rates.empty_response",
+			fmt.Sprintf("no rates for %s-%s", source, target),
+		)
+	}
+
+	chosen := rates[0]
+	for _, rate := range rates {
+		if rate.Source == string(source) && rate.Target == string(target) {
+			chosen = rate
+
+			break
+		}
+	}
+
+	result, mapErr := mapExchangeRate(chosen)
 	if mapErr != nil {
 		return nil, fmt.Errorf("map exchange rate %s-%s: %w", source, target, mapErr)
 	}
