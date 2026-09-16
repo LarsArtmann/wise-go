@@ -290,12 +290,12 @@ type TransferRequirementField struct {
 	Type                        string                     `json:"type"`
 	RefreshRequirementsOnChange bool                       `json:"refreshRequirementsOnChange"`
 	Required                    bool                       `json:"required"`
-	DisplayFormat               *string                    `json:"displayFormat"`
-	Example                     *string                    `json:"example"`
-	MinLength                   *int32                     `json:"minLength"`
-	MaxLength                   *int32                     `json:"maxLength"`
-	ValidationRegexp            *string                    `json:"validationRegexp"`
-	ValuesAllowed               []TransferRequirementValue `json:"valuesAllowed"`
+	DisplayFormat               *string                    `json:"displayFormat,omitzero"`
+	Example                     *string                    `json:"example,omitzero"`
+	MinLength                   *int32                     `json:"minLength,omitzero"`
+	MaxLength                   *int32                     `json:"maxLength,omitzero"`
+	ValidationRegexp            *string                    `json:"validationRegexp,omitzero"`
+	ValuesAllowed               []TransferRequirementValue `json:"valuesAllowed,omitzero"`
 }
 
 // TransferRequirementValue is one allowed value of a select field.

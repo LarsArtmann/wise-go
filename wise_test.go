@@ -1552,6 +1552,7 @@ var _ = Describe("Wise Client", func() {
 						TargetAmount:   10.86,
 						PayOut:         "BANK_TRANSFER",
 						Rate:              1.0857,
+						RateType:          "FIXED",
 						ProvidedAmountType: "SOURCE",
 						Status:            "ACCEPTED",
 						CreatedTime:    "2023-01-15T10:30:00Z",
@@ -1696,6 +1697,7 @@ var _ = Describe("Wise Client", func() {
 						SourceAmount:   10,
 						TargetAmount:   10.86,
 						Rate:             1.086,
+						RateType:         "FIXED",
 						ProvidedAmountType: "SOURCE",
 						Status:           "ACCEPTED",
 						CreatedTime:    "2023-01-15T10:27:22Z",
@@ -1741,10 +1743,12 @@ var _ = Describe("Wise Client", func() {
 							SourceAmount:   10,
 							TargetAmount:   10.86,
 							PayOut:         "BANK_TRANSFER",
-							Rate:           1.0857,
+							Rate:            1.0857,
+							RateType:        "FIXED",
+							ProvidedAmountType: "SOURCE",
+							Status:          "ACCEPTED",
 							CreatedTime:    "2023-01-15T10:30:00Z",
 							ExpirationTime: "2023-01-15T11:00:00Z",
-							Status:         "ACTIVE",
 						})
 					})
 			})

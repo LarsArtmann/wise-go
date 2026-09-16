@@ -56,12 +56,12 @@ the workflow server-side (`gh workflow enable ci`), and watch the first run.
 Until then the coverage badge stays frozen at its last CI-measured value.
 **BLOCKED: needs the user's approval to push and enable.**
 
-[ ] Adopt `go-retry` v0.4.0 in place of the failsafe-go executor — BLOCKED on
+[ ] Adopt `go-retry` v0.6.0 in place of the failsafe-go executor — BLOCKED on
 accepting ADR 003 (`docs/adr/003-retry-executor-go-retry-override.md`,
 Proposed). Then: swap the `failsafe-go` retry executor in `client.go` for
 `github.com/larsartmann/go-retry` `retry.Do`; delete `classifyExhaustedRetries`
 (go-retry's exhaustion error carries the final typed error via `WithCause`,
-verified by probe 2026-08-21); feed Wise's `Retry-After`
+re-verified by probe 2026-09-16 against v0.6.0); feed Wise's `Retry-After`
 (`RateLimitError.RetryAfter`, including the HTTP-date form) through
 `Config.DelayFunc`, which failsafe-go's policy cannot express.
 **BLOCKED: needs the user's acceptance of ADR 003.**
