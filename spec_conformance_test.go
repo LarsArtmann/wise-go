@@ -308,6 +308,7 @@ func validateExchange(specCtx *conformanceSpecContext, exchange conformanceExcha
 		RequestValidationInput: requestInput,
 		Status:                 exchange.status,
 		Header:                 http.Header{"Content-Type": []string{responseCT}},
+		Options:                conformanceOptions(),
 	}
 	responseInput.SetBodyBytes(exchange.respBody)
 
