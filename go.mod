@@ -4,20 +4,19 @@ module github.com/larsartmann/wise-go
 // fixes (balance listing types param, Corruption classification). Use v0.6.1+.
 retract v0.6.0
 
-go 1.27.1
+go 1.26.7
 
 require (
-	github.com/failsafe-go/failsafe-go v0.9.7
 	github.com/getkin/kin-openapi v0.149.0
 	github.com/larsartmann/go-branded-id v0.5.1
 	github.com/larsartmann/go-error-family v0.10.1
+	github.com/larsartmann/go-retry v0.6.0
 	github.com/onsi/ginkgo/v2 v2.31.0
 	github.com/onsi/gomega v1.42.0
 )
 
 require (
 	github.com/Masterminds/semver/v3 v3.5.0 // indirect
-	github.com/bits-and-blooms/bitset v1.25.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-openapi/jsonpointer v0.22.5 // indirect
 	github.com/go-openapi/swag/jsonname v0.25.5 // indirect
@@ -27,6 +26,7 @@ require (
 	github.com/oasdiff/yaml v0.1.1 // indirect
 	github.com/oasdiff/yaml3 v0.0.14 // indirect
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3 // indirect
+	github.com/stretchr/testify v1.11.1 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/mod v0.37.0 // indirect
 	golang.org/x/net v0.56.0 // indirect
@@ -34,6 +34,5 @@ require (
 	golang.org/x/sys v0.46.0 // indirect
 	golang.org/x/text v0.38.0 // indirect
 	golang.org/x/tools v0.46.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260511170946-3700d4141b60 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 )

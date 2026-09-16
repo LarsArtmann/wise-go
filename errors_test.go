@@ -5,12 +5,10 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/failsafe-go/failsafe-go/retrypolicy"
 	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go/internal/raw"
 )
@@ -561,83 +559,6 @@ func TestMapFundTransferResultParseErrorsAreCorruption(t *testing.T) {
 				t.Errorf("Classify() = %v, want Corruption (error: %v)", family, err)
 			}
 		})
-	}
-}
-
-// TestClassifyExhaustedRetriesGuardClaauses covers the unwrap arms directly:
-// the guard clauses (non-exceeded error, nil / non-response LastResult) must
-// return nil so doRequest keeps its original error.
-func TestClassifyExhaustedRetriesGuardClauses(t *testing.T) {
-	t.Parallel()
-
-	client := New("test-api-key")
-
-	t.Run("non-exceeded error returns nil", func(t *testing.T) {
-		t.Parallel()
-
-		got := client.classifyExhaustedRetries("GET", "http://x", errTestPlain)
-		if got != nil {
-			t.Errorf("classifyExhaustedRetries(plain error) = %v, want nil", got)
-		}
-	})
-
-	t.Run("exceeded with nil LastResult returns nil", func(t *testing.T) {
-		t.Parallel()
-
-		exceeded := retrypolicy.ExceededError{LastResult: nil, LastError: errTestBoom}
-
-		got := client.classifyExhaustedRetries("GET", "http://x", exceeded)
-		if got != nil {
-			t.Errorf("classifyExhaustedRetries(nil LastResult) = %v, want nil", got)
-		}
-	})
-
-	t.Run("exceeded with non-response LastResult returns nil", func(t *testing.T) {
-		t.Parallel()
-
-		exceeded := retrypolicy.ExceededError{LastResult: "a string, not a response"}
-
-		got := client.classifyExhaustedRetries("GET", "http://x", exceeded)
-		if got != nil {
-			t.Errorf("classifyExhaustedRetries(string LastResult) = %v, want nil", got)
-		}
-	})
-}
-
-// TestClassifyExhaustedRetriesRateLimit pins the payoff: a retries-exceeded
-// error carrying a 429 response surfaces as *RateLimitError with Retry-After
-// and the rate-limit scope.
-func TestClassifyExhaustedRetriesRateLimit(t *testing.T) {
-	t.Parallel()
-
-	client := New("test-api-key")
-
-	resp := httptest.NewRecorder()
-	resp.Header().Set("Retry-After", "7")
-	resp.Header().Set("X-Rate-Limited-By", "profile")
-	resp.WriteHeader(http.StatusTooManyRequests)
-
-	exceeded := retrypolicy.ExceededError{
-		LastResult: resp.Result(),
-		LastError:  errTestRateLimits,
-	}
-
-	got := client.classifyExhaustedRetries("GET", "http://x", exceeded)
-	if got == nil {
-		t.Fatal("classifyExhaustedRetries(429) = nil, want wrapped RateLimitError")
-	}
-
-	rateLimitErr, ok := errors.AsType[*RateLimitError](got)
-	if !ok {
-		t.Fatalf("got %T, want *RateLimitError: %v", got, got)
-	}
-
-	if rateLimitErr.RetryAfter != 7*time.Second {
-		t.Errorf("RetryAfter = %v, want 7s", rateLimitErr.RetryAfter)
-	}
-
-	if rateLimitErr.RateLimitedBy != "profile" {
-		t.Errorf("RateLimitedBy = %q, want %q", rateLimitErr.RateLimitedBy, "profile")
 	}
 }
 

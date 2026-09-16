@@ -1,7 +1,6 @@
 package wise
 
 import (
-	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -426,14 +425,6 @@ func TestParseWiseDate(t *testing.T) {
 		}
 	})
 }
-
-// errTestPlain and friends are static sentinel errors for tests (err113:
-// never construct dynamic errors).
-var (
-	errTestPlain      = errors.New("plain")
-	errTestBoom       = errors.New("boom")
-	errTestRateLimits = errors.New("rate limited")
-)
 
 // FuzzParseWiseTimestamp pins the tolerant parser's invariants: it never
 // panics, accepts every layout it documents (an RFC3339 input must parse,
