@@ -210,6 +210,13 @@ func classifyTransactionType(wiseType DetailType, totalCents int64) TransactionT
 		return TransactionTypeCard
 	case DetailTypeTransfer:
 		return TransactionTypeTransfer
+	case DetailTypeDeposit, DetailTypeMoneyAdded:
+		// Money-in categories classify by amount sign like the default.
+		if totalCents > 0 {
+			return TransactionTypeCredit
+		}
+
+		return TransactionTypeDebit
 	case DetailTypePayment, DetailTypeAcquiringPayment, DetailTypeDirectDebit:
 		return TransactionTypePayment
 	case DetailTypeConversion, DetailTypeExchange:

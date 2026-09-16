@@ -141,6 +141,15 @@ func requireID[B any, V comparable](identifier id.ID[B, V], code, field string) 
 	return nil
 }
 
+// RFC 4122 version-4 bit layout: the version nibble and the two
+// variant bits, plus their clear masks.
+const (
+	uuidVersion4    = 0x40
+	uuidVariantRFC  = 0x80
+	uuidVersionMask = 0x0f
+	uuidVariantMask = 0x3f
+)
+
 // newRequestUUID generates a random RFC 4122 version-4 UUID for the
 // X-idempotence-uuid request header (required by Wise on balance creation).
 // Callers can pass their own key for cross-retry deduplication where the API
@@ -151,8 +160,8 @@ func newRequestUUID() (string, error) {
 		return "", fmt.Errorf("generate request UUID: %w", err)
 	}
 
-	uuid[6] = (uuid[6] & 0x0f) | 0x40
-	uuid[8] = (uuid[8] & 0x3f) | 0x80
+	uuid[6] = (uuid[6] & uuidVersionMask) | uuidVersion4
+	uuid[8] = (uuid[8] & uuidVariantMask) | uuidVariantRFC
 
 	return fmt.Sprintf("%x-%x-%x-%x-%x",
 		uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:16]), nil

@@ -65,31 +65,9 @@ func (c *Client) GetExchangeRate(
 		return nil, fmt.Errorf("get exchange rate %s-%s: %w", source, target, err)
 	}
 
-	var rates []raw.ExchangeRate
-	if unmarshalErr := json.Unmarshal(payload, &rates); unmarshalErr != nil {
-		var single raw.ExchangeRate
-		if singleErr := json.Unmarshal(payload, &single); singleErr != nil {
-			return nil, fmt.Errorf("decode exchange rate %s-%s: %w", source, target, unmarshalErr)
-		}
-
-		rates = []raw.ExchangeRate{single}
-	}
-
-	if len(rates) == 0 {
-		return nil, errorfamily.WrapCorruption(
-			errors.New("empty rate list"),
-			"wise.rates.empty_response",
-			fmt.Sprintf("no rates for %s-%s", source, target),
-		)
-	}
-
-	chosen := rates[0]
-	for _, rate := range rates {
-		if rate.Source == string(source) && rate.Target == string(target) {
-			chosen = rate
-
-			break
-		}
+	chosen, decodeErr := decodeExchangeRates(payload, source, target)
+	if decodeErr != nil {
+		return nil, decodeErr
 	}
 
 	result, mapErr := mapExchangeRate(chosen)
@@ -98,6 +76,45 @@ func (c *Client) GetExchangeRate(
 	}
 
 	return result, nil
+}
+
+// errEmptyRateList reports a rates payload that decoded to zero entries.
+var errEmptyRateList = errors.New("empty rate list")
+
+// decodeExchangeRates decodes the rates payload (spec array, legacy
+// single-object tolerated) and picks the entry for the requested pair.
+func decodeExchangeRates(
+	payload jsontext.Value,
+	source, target Currency,
+) (raw.ExchangeRate, error) {
+	var rates []raw.ExchangeRate
+	if unmarshalErr := json.Unmarshal(payload, &rates); unmarshalErr != nil {
+		var single raw.ExchangeRate
+		if singleErr := json.Unmarshal(payload, &single); singleErr != nil {
+			return raw.ExchangeRate{}, fmt.Errorf(
+				"decode exchange rate %s-%s: %w", source, target, unmarshalErr,
+			)
+		}
+
+		rates = []raw.ExchangeRate{single}
+	}
+
+	if len(rates) == 0 {
+		return raw.ExchangeRate{}, errorfamily.WrapCorruption(
+			errEmptyRateList,
+			"wise.rates.empty_response",
+			fmt.Sprintf("no rates for %s-%s", source, target),
+		)
+	}
+
+	chosen := rates[0]
+	for _, rate := range rates {
+		if rate.Source == string(source) && rate.Target == string(target) {
+			return rate, nil
+		}
+	}
+
+	return chosen, nil
 }
 
 func mapExchangeRate(r raw.ExchangeRate) (*ExchangeRate, error) {

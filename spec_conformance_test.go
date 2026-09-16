@@ -138,7 +138,7 @@ type conformanceSpecContext struct {
 var (
 	conformanceOnce   sync.Once
 	conformanceLoaded *conformanceSpecContext
-	conformanceErr    error
+	errConformance    error
 )
 
 func loadConformanceSpec() (*conformanceSpecContext, error) {
@@ -147,7 +147,7 @@ func loadConformanceSpec() (*conformanceSpecContext, error) {
 
 		doc, loadErr := loader.LoadFromFile(specSnapshotPath)
 		if loadErr != nil {
-			conformanceErr = loadErr
+			errConformance = loadErr
 
 			return
 		}
@@ -165,7 +165,7 @@ func loadConformanceSpec() (*conformanceSpecContext, error) {
 
 		router, routeErr := legacyrouter.NewRouter(doc, openapi3.DisableExamplesValidation())
 		if routeErr != nil {
-			conformanceErr = routeErr
+			errConformance = routeErr
 
 			return
 		}
@@ -173,7 +173,7 @@ func loadConformanceSpec() (*conformanceSpecContext, error) {
 		conformanceLoaded = &conformanceSpecContext{doc: doc, router: router}
 	})
 
-	return conformanceLoaded, conformanceErr
+	return conformanceLoaded, errConformance
 }
 
 // permissiveDateTimeFormat accepts any date-time-shaped value. Wise's live
@@ -414,11 +414,11 @@ func recordExemptLegacyAccountsList() {
 	exemptAccountsLists++
 }
 
-func conformanceCoverageSnapshot() (templates []string, exemptPaths []string, exchanges, exemptAccountsListCount int) {
+func conformanceCoverageSnapshot() ([]string, []string, int, int) {
 	coverageMu.Lock()
 	defer coverageMu.Unlock()
 
-	templates = make([]string, 0, len(conformingTemplates))
+	templates := make([]string, 0, len(conformingTemplates))
 	for template := range conformingTemplates {
 		templates = append(templates, template)
 	}
