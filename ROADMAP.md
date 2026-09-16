@@ -11,17 +11,19 @@ library that is obviously correct, obviously typed, and obviously safe to depend
 Every monetary amount is `Money` (cents paired with `Currency`). Every entity ID is
 branded. Every error is typed and classifiable. Every API call retries intelligently.
 
-As of 2026-09-13, the type-safety redesign is complete, the core transfer flow is
-live END TO END (quotes, recipients, transfers, funding, delivery estimates,
+As of 2026-09-14 (v0.11.0), the type-safety redesign is complete, the core transfer
+flow is live END TO END (quotes, recipients, transfers, funding, delivery estimates,
 transfer-requirements and account-requirements validation, exchange rates),
 the tier-2 surface shipped: users, statement files in all six formats, webhook
 signature verification, balance lifecycle (create/direct-get/total-funds),
-Multi-Currency Account + bank details, and currency reference data — 33
-endpoint methods, plus observability (WithLogger, per-request correlation IDs)
-and write helpers under the existing retry/error architecture. v0.9.0 and
-v0.10.0 (transfer receipts + MT103 payout info) have shipped; the v1.0 audit
-(`docs/reviews/2026-08-21_v1.0-api-audit.md`) found nothing blocking the tag
-(re-audit pending for the two v0.10.0 methods). The roadmap expands the surface
+Multi-Currency Account + bank details, and currency reference data — 41
+`*Client` methods across 16 resources, plus webhook subscriptions with typed
+event decoding, programmatic SCA challenge clearing (one-time-token endpoints),
+observability (WithLogger, per-request correlation IDs) and write helpers under
+the existing retry/error architecture. v0.9.0, v0.10.0, and v0.11.0 have
+shipped; the v1.0 audit (`docs/reviews/2026-08-21_v1.0-api-audit.md`) found
+nothing blocking the tag (re-audited 2026-09-13; the v0.11.0 OTT additions are
+covered by the audit's growth-lineage note). The roadmap expands the surface
 along four axes — completeness, type-safety, observability, and scale — while
 preserving the architectural decisions that make the codebase maintainable.
 
@@ -29,11 +31,12 @@ preserving the architectural decisions that make the codebase maintainable.
 
 Today: tiers 1 and 2 of
 `docs/planning/2026-08-19_wise-api-full-implementation-plan.md` are complete —
-37 endpoint methods across 15 resources. The core transfer flow is live end to end:
+41 `*Client` methods across 16 resources. The core transfer flow is live end to end:
 quotes (including account requirements and the two-pass refresh), recipients,
 transfers (including receipts and MT103 payout info), funding, delivery estimates,
 exchange rates, transfer-requirements validation — plus webhook subscription CRUD
-and typed event parsing on the 2026Q3 surface.
+and typed event parsing on the 2026Q3 surface, and SCA one-time-token endpoints
+that clear challenges programmatically.
 
 ### Shipped 2026-08-21 (previously near-term)
 
@@ -54,19 +57,30 @@ and typed event parsing on the 2026Q3 surface.
   MT940, QIF) via the raw-response path; 469-day interval enforced client-side,
   `Locale` localizes the export.
 
-**Shipped v0.10.0 (2026-09-13, tag pending):**
+**Shipped v0.10.0 (2026-09-13) and v0.11.0 (2026-09-14):**
 
 - **`GetTransferReceipt`** — branded PDF confirmation receipt for paid-out
   transfers (404 = not yet paid out).
 - **`GetTransferPayoutInfo`** — banking-partner proof of payment with the
   SWIFT MT103 message (`*string`, nil for non-SWIFT corridors).
+- **Profile webhook subscription CRUD** — create/list/get/delete against
+  `/2026Q3/profiles/{profileId}/subscriptions` (app-level scope deferred, see
+  below).
+- **Typed webhook event decoding** — `ParseWebhookEvent` envelope plus typed
+  payloads for `transfers#state-change`, `transfers#payout-failure`, and
+  `balances#credit`; unknown event types pass through.
+- **SCA one-time-token endpoints** — `GetOTTStatus`, `TriggerOTT`, `VerifyOTT`,
+  and the `ClearSCAChallenge` convenience loop (`/2026Q3/one-time-token/...`).
+- **`WithUserAgent`** + `Profile.UserID`/`PublicID` + client concurrency pinned
+  by test.
 
-**Release state:** shipped as **v0.9.0** (2026-08-21) and **v0.10.0**
-(2026-09-13, code + CHANGELOG complete, tag pending approval). The v1.0 audit is
+**Release state:** shipped as **v0.9.0** (2026-08-21), **v0.10.0**
+(2026-09-13), and **v0.11.0** (2026-09-14, tags on origin and served by the
+module proxy; GitHub Release objects pending user approval). The v1.0 audit is
 green and re-audited 2026-09-13 at the 33-method surface
 (`docs/reviews/2026-08-21_v1.0-api-audit.md` — refreshed inventory, godoc pass,
-risk-register items 8–10); the v1.0.0 tag remains gated on the maintainer's
-explicit approval.
+risk-register items 8–10, growth lineage through 41 methods); the v1.0.0 tag
+remains gated on the maintainer's explicit approval.
 
 ### Medium-term
 
@@ -178,10 +192,11 @@ is clear.
 
 ### Trigger: resource count crosses ~6–8 — REACHED
 
-The SDK now has 15 resources (profiles, users, balances, multi-currency account,
+The SDK now has 16 resources (profiles, users, balances, multi-currency account,
 bank details, transactions/statements, transfers/receipts, funding, quotes,
 recipients, exchange rates, delivery estimates, transfer requirements,
-currencies, webhooks) and 37 endpoint methods on the flat `client.X` surface — the core
+currencies, webhooks, SCA one-time tokens) and 41 `*Client` methods on the flat
+`client.X` surface — the core
 flow including `FundTransfer` is complete (2026-08-21). The threshold documented
 here
 has been crossed; the open question is WHEN to pay the refactor cost. The
@@ -220,7 +235,9 @@ structs"); documented in README.
   a migration table in CHANGELOG.md. v0.4.0 shipped the Money/Currency redesign;
   v0.5.0 added the `DetailType` typed enum; v0.6.x SCA support; v0.7.0 transfers
   read; v0.8.0 the full core transfer flow (quotes, recipients, transfers write,
-  rates); v0.8.1 the outgoing-timestamp wire fix.
+  rates); v0.8.1 the outgoing-timestamp wire fix; v0.9.0 funding + tier-2 reads +
+  observability; v0.10.0 receipts + MT103; v0.11.0 webhook subscriptions, typed
+  events, and SCA one-time-token endpoints.
 - **v1.0** — public API freeze. After v1.0, breaking changes require v2 and a
   deliberate migration path.
 
