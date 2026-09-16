@@ -169,33 +169,33 @@ Every commit attempt triggers `golangci-lint-auto-configure` which overwrites th
 
 ## F) Top 25 Things We Should Get Done Next
 
-| #  | Task                                                                   | Impact      | Effort | Category     |
-| -- | ---------------------------------------------------------------------- | ----------- | ------ | ------------ |
-| ~~1~~  | ~~Create `flake.nix` for build/task automation~~ done — flake.nix shipped 2026-07-18, canonical | ~~🔴 Critical~~ | ~~2h~~ | ~~Build~~ |
-| ~~2~~  | ~~Add CI pipeline (GitHub Actions: test, vet, lint)~~ done — ci.yml exists (workflow disabled on GitHub) | ~~🔴 Critical~~ | ~~1h~~ | ~~CI/CD~~ |
+| #      | Task                                                                                                                                                   | Impact          | Effort    | Category         |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------- | --------- | ---------------- |
+| ~~1~~  | ~~Create `flake.nix` for build/task automation~~ done — flake.nix shipped 2026-07-18, canonical                                                        | ~~🔴 Critical~~ | ~~2h~~    | ~~Build~~        |
+| ~~2~~  | ~~Add CI pipeline (GitHub Actions: test, vet, lint)~~ done — ci.yml exists (workflow disabled on GitHub)                                               | ~~🔴 Critical~~ | ~~1h~~    | ~~CI/CD~~        |
 | ~~3~~  | ~~Resolve go-structure-linter blocking — decide on `pkg/` vs root layout~~ **Won't implement — declined — flat root package is deliberate (ADR 002).** | ~~🔴 Critical~~ | ~~30min~~ | ~~Architecture~~ |
-| ~~4~~  | ~~Curate `.golangci.yml` — reduce from 60+ to ~20 intentional linters~~ done — curated .golangci.yml restored and guarded (07-23 session) | ~~🟠 High~~ | ~~30min~~ | ~~Quality~~ |
-| 5  | Add coverage threshold enforcement in CI                               | 🟠 High     | 15min  | CI/CD        |
-| 6  | Add consistent error context to `balances.go` and `profiles.go`        | 🟠 High     | 30min  | Code         |
-| 7  | Update `CHANGELOG.md` with this session's work                         | 🟡 Medium   | 15min  | Docs         |
-| 8  | Update `AGENTS.md` with test helper conventions                        | 🟡 Medium   | 10min  | Docs         |
-| 9  | Add GoDoc to all exported types and functions                          | 🟡 Medium   | 1h     | Docs         |
-| 10 | Table-driven test for transaction type classifications                 | 🟡 Medium   | 30min  | Tests        |
-| 11 | Add `Example*` test functions for GoDoc                                | 🟡 Medium   | 1h     | Tests        |
-| 12 | Add edge case tests for amount parsing (0, negative, very large)       | 🟡 Medium   | 30min  | Tests        |
-| 13 | Add edge case tests for date parsing (timezone, leap year)             | 🟡 Medium   | 30min  | Tests        |
-| 14 | Add fuzz tests for `parseWiseDate` and `parseRFC3339`                  | 🟡 Medium   | 1h     | Tests        |
-| 15 | Extract error context into structured fields (not just strings)        | 🟡 Medium   | 2h     | Code         |
-| 16 | Split `wise_test.go` into per-domain test files                        | 🟡 Medium   | 30min  | Code         |
-| 17 | Add configurable retry/backoff strategy                                | 🟢 Low      | 1h     | Feature      |
-| 18 | Add request/response logging option                                    | 🟢 Low      | 1h     | Feature      |
-| 19 | Add context timeout enforcement per-request                            | 🟢 Low      | 30min  | Feature      |
-| 20 | Add dependabot config for Go dependencies                              | 🟢 Low      | 15min  | CI/CD        |
-| ~~21~~ | ~~Remove or implement dead `now` parameter in `mapTransaction`~~ done — dead now chain removed (07-05 session) | ~~🟢 Low~~ | ~~15min~~ | ~~Code~~ |
-| 22 | Add integration test skeleton (with `--live` flag)                     | 🟢 Low      | 1h     | Tests        |
-| 23 | Add version constant/flag to the package                               | 🟢 Low      | 10min  | Code         |
-| 24 | Audit `BalanceAmount.Cents()` for floating-point precision             | 🟢 Low      | 30min  | Code         |
-| ~~25~~ | ~~Add contributing guidelines (`CONTRIBUTING.md`)~~ done — CONTRIBUTING.md exists and is current | ~~🟢 Low~~ | ~~30min~~ | ~~Docs~~ |
+| ~~4~~  | ~~Curate `.golangci.yml` — reduce from 60+ to ~20 intentional linters~~ done — curated .golangci.yml restored and guarded (07-23 session)              | ~~🟠 High~~     | ~~30min~~ | ~~Quality~~      |
+| 5      | Add coverage threshold enforcement in CI                                                                                                               | 🟠 High         | 15min     | CI/CD            |
+| 6      | Add consistent error context to `balances.go` and `profiles.go`                                                                                        | 🟠 High         | 30min     | Code             |
+| 7      | Update `CHANGELOG.md` with this session's work                                                                                                         | 🟡 Medium       | 15min     | Docs             |
+| 8      | Update `AGENTS.md` with test helper conventions                                                                                                        | 🟡 Medium       | 10min     | Docs             |
+| 9      | Add GoDoc to all exported types and functions                                                                                                          | 🟡 Medium       | 1h        | Docs             |
+| 10     | Table-driven test for transaction type classifications                                                                                                 | 🟡 Medium       | 30min     | Tests            |
+| 11     | Add `Example*` test functions for GoDoc                                                                                                                | 🟡 Medium       | 1h        | Tests            |
+| 12     | Add edge case tests for amount parsing (0, negative, very large)                                                                                       | 🟡 Medium       | 30min     | Tests            |
+| 13     | Add edge case tests for date parsing (timezone, leap year)                                                                                             | 🟡 Medium       | 30min     | Tests            |
+| 14     | Add fuzz tests for `parseWiseDate` and `parseRFC3339`                                                                                                  | 🟡 Medium       | 1h        | Tests            |
+| 15     | Extract error context into structured fields (not just strings)                                                                                        | 🟡 Medium       | 2h        | Code             |
+| 16     | Split `wise_test.go` into per-domain test files                                                                                                        | 🟡 Medium       | 30min     | Code             |
+| 17     | Add configurable retry/backoff strategy                                                                                                                | 🟢 Low          | 1h        | Feature          |
+| 18     | Add request/response logging option                                                                                                                    | 🟢 Low          | 1h        | Feature          |
+| 19     | Add context timeout enforcement per-request                                                                                                            | 🟢 Low          | 30min     | Feature          |
+| 20     | Add dependabot config for Go dependencies                                                                                                              | 🟢 Low          | 15min     | CI/CD            |
+| ~~21~~ | ~~Remove or implement dead `now` parameter in `mapTransaction`~~ done — dead now chain removed (07-05 session)                                         | ~~🟢 Low~~      | ~~15min~~ | ~~Code~~         |
+| 22     | Add integration test skeleton (with `--live` flag)                                                                                                     | 🟢 Low          | 1h        | Tests            |
+| 23     | Add version constant/flag to the package                                                                                                               | 🟢 Low          | 10min     | Code             |
+| 24     | Audit `BalanceAmount.Cents()` for floating-point precision                                                                                             | 🟢 Low          | 30min     | Code             |
+| ~~25~~ | ~~Add contributing guidelines (`CONTRIBUTING.md`)~~ done — CONTRIBUTING.md exists and is current                                                       | ~~🟢 Low~~      | ~~30min~~ | ~~Docs~~         |
 
 ---
 

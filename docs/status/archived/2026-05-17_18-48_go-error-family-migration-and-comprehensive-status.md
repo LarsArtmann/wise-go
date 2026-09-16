@@ -194,33 +194,33 @@ The most recent work replaced `cockroachdb/errors` with `go-error-family`, addin
 
 ## F) TOP 25 THINGS TO DO NEXT
 
-| #  | Priority | Task                                                         | Impact | Effort |
-| -- | -------- | ------------------------------------------------------------ | ------ | ------ |
-| ~~1~~  | ~~P0~~ done — fixed same session (commit 290d07b) | ~~Update AGENTS.md (stale references)~~ | ~~High~~ | ~~5min~~ |
-| ~~2~~  | ~~P0~~ done — fixed same session (commit 290d07b) | ~~Fix README.md (remove cockroachdb/errors mention)~~ | ~~High~~ | ~~2min~~ |
-| ~~3~~  | ~~P0~~ done — removed in the 07-05 session (entire dead now chain) | ~~Remove unused `now` param from `mapTransaction`~~ | ~~Medium~~ | ~~5min~~ |
-| ~~4~~  | ~~P1~~ done — TestErrorContexts + errors_test.go pin the classification matrix | ~~Add error classification tests (go-error-family integration)~~ | ~~High~~ | ~~30min~~ |
-| ~~5~~  | ~~P1~~ done — parseRetryAfter handles delta-seconds and HTTP-date (07-05) | ~~Parse `Retry-After` header from 429 responses~~ | ~~Medium~~ | ~~15min~~ |
-| 6  | P1       | Add `BadRequestError` for 400 responses                      | Medium | 20min  |
-| 7  | P1       | Add CI/CD (GitHub Actions)                                   | High   | 30min  |
-| 8  | P1       | Consistent error wrapping strategy (errorfamily everywhere?) | Medium | 30min  |
-| 9  | P2       | Add GoReleaser config                                        | Medium | 20min  |
-| 10 | P2       | Wire up failsafe-go circuit breaker                          | Medium | 30min  |
-| 11 | P2       | Add request/response logging hook (Option)                   | Medium | 45min  |
-| 12 | P2       | Examples directory with runnable programs                    | Medium | 1hr    |
-| 13 | P2       | Add `GetProfile(ctx, id)` endpoint                           | Low    | 20min  |
-| 14 | P2       | Add `ListTransfers` endpoint                                 | High   | 2hr    |
-| 15 | P2       | Add `GetTransfer` endpoint                                   | Medium | 30min  |
-| 16 | P2       | Add `CreateQuote` endpoint                                   | High   | 2hr    |
-| 17 | P2       | Add `CreateRecipient` endpoint                               | High   | 2hr    |
-| 18 | P3       | Add `CreateTransfer` endpoint                                | High   | 3hr    |
-| 19 | P3       | Add webhook validation and parsing                           | High   | 3hr    |
-| 20 | P3       | Integration tests against Wise sandbox                       | High   | 2hr    |
-| 21 | P3       | Race condition tests (`go test -race`)                       | Medium | 30min  |
-| 22 | P3       | Benchmarks for SDK overhead                                  | Low    | 1hr    |
-| 23 | P3       | Context timeout propagation to failsafe-go                   | Medium | 30min  |
-| 24 | P4       | golangci.yml project-specific config                         | Low    | 20min  |
-| 25 | P4       | Go doc examples for go.dev                                   | Low    | 1hr    |
+| #     | Priority                                                                       | Task                                                             | Impact     | Effort    |
+| ----- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------- | ---------- | --------- |
+| ~~1~~ | ~~P0~~ done — fixed same session (commit 290d07b)                              | ~~Update AGENTS.md (stale references)~~                          | ~~High~~   | ~~5min~~  |
+| ~~2~~ | ~~P0~~ done — fixed same session (commit 290d07b)                              | ~~Fix README.md (remove cockroachdb/errors mention)~~            | ~~High~~   | ~~2min~~  |
+| ~~3~~ | ~~P0~~ done — removed in the 07-05 session (entire dead now chain)             | ~~Remove unused `now` param from `mapTransaction`~~              | ~~Medium~~ | ~~5min~~  |
+| ~~4~~ | ~~P1~~ done — TestErrorContexts + errors_test.go pin the classification matrix | ~~Add error classification tests (go-error-family integration)~~ | ~~High~~   | ~~30min~~ |
+| ~~5~~ | ~~P1~~ done — parseRetryAfter handles delta-seconds and HTTP-date (07-05)      | ~~Parse `Retry-After` header from 429 responses~~                | ~~Medium~~ | ~~15min~~ |
+| 6     | P1                                                                             | Add `BadRequestError` for 400 responses                          | Medium     | 20min     |
+| 7     | P1                                                                             | Add CI/CD (GitHub Actions)                                       | High       | 30min     |
+| 8     | P1                                                                             | Consistent error wrapping strategy (errorfamily everywhere?)     | Medium     | 30min     |
+| 9     | P2                                                                             | Add GoReleaser config                                            | Medium     | 20min     |
+| 10    | P2                                                                             | Wire up failsafe-go circuit breaker                              | Medium     | 30min     |
+| 11    | P2                                                                             | Add request/response logging hook (Option)                       | Medium     | 45min     |
+| 12    | P2                                                                             | Examples directory with runnable programs                        | Medium     | 1hr       |
+| 13    | P2                                                                             | Add `GetProfile(ctx, id)` endpoint                               | Low        | 20min     |
+| 14    | P2                                                                             | Add `ListTransfers` endpoint                                     | High       | 2hr       |
+| 15    | P2                                                                             | Add `GetTransfer` endpoint                                       | Medium     | 30min     |
+| 16    | P2                                                                             | Add `CreateQuote` endpoint                                       | High       | 2hr       |
+| 17    | P2                                                                             | Add `CreateRecipient` endpoint                                   | High       | 2hr       |
+| 18    | P3                                                                             | Add `CreateTransfer` endpoint                                    | High       | 3hr       |
+| 19    | P3                                                                             | Add webhook validation and parsing                               | High       | 3hr       |
+| 20    | P3                                                                             | Integration tests against Wise sandbox                           | High       | 2hr       |
+| 21    | P3                                                                             | Race condition tests (`go test -race`)                           | Medium     | 30min     |
+| 22    | P3                                                                             | Benchmarks for SDK overhead                                      | Low        | 1hr       |
+| 23    | P3                                                                             | Context timeout propagation to failsafe-go                       | Medium     | 30min     |
+| 24    | P4                                                                             | golangci.yml project-specific config                             | Low        | 20min     |
+| 25    | P4                                                                             | Go doc examples for go.dev                                       | Low        | 1hr       |
 
 ---
 

@@ -1547,18 +1547,18 @@ var _ = Describe("Wise Client", func() {
 
 					w.Header().Set("Content-Type", "application/json")
 					_ = json.MarshalWrite(w, raw.Quote{
-						ID:             "11144c35-9fe8-4c32-b7fd-d05c2a7734bf",
-						SourceCurrency: "EUR",
-						TargetCurrency: "USD",
-						SourceAmount:   10,
-						TargetAmount:   10.86,
-						PayOut:         "BANK_TRANSFER",
-						Rate:              1.0857,
-						RateType:          "FIXED",
+						ID:                 "11144c35-9fe8-4c32-b7fd-d05c2a7734bf",
+						SourceCurrency:     "EUR",
+						TargetCurrency:     "USD",
+						SourceAmount:       10,
+						TargetAmount:       10.86,
+						PayOut:             "BANK_TRANSFER",
+						Rate:               1.0857,
+						RateType:           "FIXED",
 						ProvidedAmountType: "SOURCE",
-						Status:            "ACCEPTED",
-						CreatedTime:    "2023-01-15T10:30:00Z",
-						ExpirationTime: "2023-01-15T11:00:00Z",
+						Status:             "ACCEPTED",
+						CreatedTime:        "2023-01-15T10:30:00Z",
+						ExpirationTime:     "2023-01-15T11:00:00Z",
 					})
 				})
 			})
@@ -1693,17 +1693,17 @@ var _ = Describe("Wise Client", func() {
 
 					w.Header().Set("Content-Type", "application/json")
 					_ = json.MarshalWrite(w, raw.Quote{
-						ID:             "11144c35-9fe8-4c32-b7fd-d05c2a7734bf",
-						SourceCurrency: "EUR",
-						TargetCurrency: "USD",
-						SourceAmount:   10,
-						TargetAmount:   10.86,
-						Rate:             1.086,
-						RateType:         "FIXED",
+						ID:                 "11144c35-9fe8-4c32-b7fd-d05c2a7734bf",
+						SourceCurrency:     "EUR",
+						TargetCurrency:     "USD",
+						SourceAmount:       10,
+						TargetAmount:       10.86,
+						Rate:               1.086,
+						RateType:           "FIXED",
 						ProvidedAmountType: "SOURCE",
-						Status:           "ACCEPTED",
-						CreatedTime:    "2023-01-15T10:27:22Z",
-						ExpirationTime: "2023-01-15T10:57:22Z",
+						Status:             "ACCEPTED",
+						CreatedTime:        "2023-01-15T10:27:22Z",
+						ExpirationTime:     "2023-01-15T10:57:22Z",
 					})
 				})
 			})
@@ -1739,18 +1739,18 @@ var _ = Describe("Wise Client", func() {
 					func(w http.ResponseWriter, _ *http.Request) {
 						w.Header().Set("Content-Type", "application/json")
 						_ = json.MarshalWrite(w, raw.Quote{
-							ID:             "11144c35-9fe8-4c32-b7fd-d05c2a7734bf",
-							SourceCurrency: "EUR",
-							TargetCurrency: "USD",
-							SourceAmount:   10,
-							TargetAmount:   10.86,
-							PayOut:         "BANK_TRANSFER",
-							Rate:            1.0857,
-							RateType:        "FIXED",
+							ID:                 "11144c35-9fe8-4c32-b7fd-d05c2a7734bf",
+							SourceCurrency:     "EUR",
+							TargetCurrency:     "USD",
+							SourceAmount:       10,
+							TargetAmount:       10.86,
+							PayOut:             "BANK_TRANSFER",
+							Rate:               1.0857,
+							RateType:           "FIXED",
 							ProvidedAmountType: "SOURCE",
-							Status:          "ACCEPTED",
-							CreatedTime:    "2023-01-15T10:30:00Z",
-							ExpirationTime: "2023-01-15T11:00:00Z",
+							Status:             "ACCEPTED",
+							CreatedTime:        "2023-01-15T10:30:00Z",
+							ExpirationTime:     "2023-01-15T11:00:00Z",
 						})
 					})
 			})
@@ -3805,9 +3805,11 @@ var _ = Describe("Wise Client", func() {
 
 		Context("with a corrupt created_at timestamp", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/2026Q3/profiles/12345/subscriptions", exemptResponseSchema(func(w http.ResponseWriter, _ *http.Request) {
-					w.Header().Set("Content-Type", "application/json")
-					_, _ = w.Write([]byte(`[{
+				mux.HandleFunc(
+					"/2026Q3/profiles/12345/subscriptions",
+					exemptResponseSchema(func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						_, _ = w.Write([]byte(`[{
 						"id": "72195556-e5cb-495e-a010-b37a4f2a3043",
 						"name": "Payout watcher",
 						"trigger_on": "transfers#state-change",
@@ -3816,7 +3818,8 @@ var _ = Describe("Wise Client", func() {
 						"created_by": {"id": "api-key-123", "type": "user"},
 						"scope": {"domain": "profile", "id": "12345"}
 					}]`))
-			}))
+					}),
+				)
 			})
 
 			It("should classify the mapper failure as corruption", func() {

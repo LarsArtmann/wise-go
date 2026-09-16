@@ -134,12 +134,12 @@ When I first ran `buildflow -s go-fix` (without `--fix`), I got "no executable n
 
 ### P0 — Commit and finalize this session's work
 
-| # | Task                                                                 | Effort |
-| - | -------------------------------------------------------------------- | ------ |
+| #     | Task                                                                                      | Effort    |
+| ----- | ----------------------------------------------------------------------------------------- | --------- |
 | ~~1~~ | ~~Commit `.buildflow.yml` env key + AGENTS.md updates~~ done — landed in the same session | ~~2 min~~ |
-| 2 | Decide on `.gitattributes` (`* text=auto eol=lf`) — commit or revert | 1 min  |
-| 3 | Decide on `flake.lock` nixpkgs bump — commit or revert               | 1 min  |
-| 4 | Run `direnv allow` to fix interactive shell GOEXPERIMENT             | 1 min  |
+| 2     | Decide on `.gitattributes` (`* text=auto eol=lf`) — commit or revert                      | 1 min     |
+| 3     | Decide on `flake.lock` nixpkgs bump — commit or revert                                    | 1 min     |
+| 4     | Run `direnv allow` to fix interactive shell GOEXPERIMENT                                  | 1 min     |
 
 ### P1 — Fix the root cause for interactive shells
 
@@ -151,11 +151,11 @@ When I first ran `buildflow -s go-fix` (without `--fix`), I got "no executable n
 
 ### P2 — Pre-existing buildflow findings (structural)
 
-| #  | Task                                                                                     | Effort |
-| -- | ---------------------------------------------------------------------------------------- | ------ |
-| 8  | Suppress `root-package-files` finding for this library (Go files in root is intentional) | 5 min  |
-| ~~9~~  | ~~Pin GitHub Actions to SHA hashes (actions/checkout@v4 → @<sha>)~~ done — all GitHub Actions SHA-pinned (verified 2026-09-13) | ~~15 min~~ |
-| 10 | Address `assets-directory` and `internal-directory` warnings (or suppress)               | 5 min  |
+| #     | Task                                                                                                                           | Effort     |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------ | ---------- |
+| 8     | Suppress `root-package-files` finding for this library (Go files in root is intentional)                                       | 5 min      |
+| ~~9~~ | ~~Pin GitHub Actions to SHA hashes (actions/checkout@v4 → @<sha>)~~ done — all GitHub Actions SHA-pinned (verified 2026-09-13) | ~~15 min~~ |
+| 10    | Address `assets-directory` and `internal-directory` warnings (or suppress)                                                     | 5 min      |
 
 ### P3 — Documentation accuracy
 

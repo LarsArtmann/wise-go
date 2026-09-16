@@ -55,6 +55,9 @@ func TestSpecConformanceCoverage(t *testing.T) {
 
 	t.Logf(
 		"spec conformance: %d exchanges validated across %d distinct spec operations; %d exempt statement variants; %d exempt legacy recipient lists",
-		exchanges, len(templates), len(exemptPaths), exemptAccountsLists,
+		exchanges,
+		len(templates),
+		len(exemptPaths),
+		exemptAccountsLists,
 	)
 }

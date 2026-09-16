@@ -36,12 +36,13 @@ v0.11.0 surface); remaining: tag `v1.0.0`.
 **BLOCKED: needs the user's explicit approval (tagging is irreversible).**
 
 [ ] Typed recipient `Details` — typed per-corridor structs vs `map[string]string`
-+ key constants. Carried unanswered through six status reports
-(2026-08-19_17-14 g.2, 18-15 g.2, 09-50 g.3, 20-57 f.5, 22-31 d.1 — all in
-`docs/status/archived/`). The v1.0
-audit confirms the map is the only shape consumers depend on today, so v1.0 can
-freeze the map and add typed accessors later.
-**BLOCKED: needs the user's design decision.**
+
+- key constants. Carried unanswered through six status reports
+  (2026-08-19_17-14 g.2, 18-15 g.2, 09-50 g.3, 20-57 f.5, 22-31 d.1 — all in
+  `docs/status/archived/`). The v1.0
+  audit confirms the map is the only shape consumers depend on today, so v1.0 can
+  freeze the map and add typed accessors later.
+  **BLOCKED: needs the user's design decision.**
 
 [ ] Set the `CACHIX_AUTH_TOKEN` secret (and confirm the `larsartmann` cache
 exists) — the CI cachix step (pinned to verified v15 commit `ad2ddac`) is

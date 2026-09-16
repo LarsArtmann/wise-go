@@ -35,8 +35,8 @@ const specSnapshotPath = "docs/reviews/wise-api-openapi.json"
 type conformanceExchange struct {
 	method             string
 	rawPath            string
-	query             string
-	reqHeader         http.Header
+	query              string
+	reqHeader          http.Header
 	reqBody            []byte
 	status             int
 	respBody           []byte
@@ -87,13 +87,13 @@ func (h *conformanceHarness) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	h.exchanges = append(h.exchanges, conformanceExchange{
 		method:             r.Method,
-		rawPath:             r.URL.Path,
-		query:               r.URL.RawQuery,
-		reqHeader:           r.Header.Clone(),
-		reqBody:             reqBody,
-		status:              captured.status,
-		respBody:            captured.body.Bytes(),
-		respCT:              captured.header.Get("Content-Type"),
+		rawPath:            r.URL.Path,
+		query:              r.URL.RawQuery,
+		reqHeader:          r.Header.Clone(),
+		reqBody:            reqBody,
+		status:             captured.status,
+		respBody:           captured.body.Bytes(),
+		respCT:             captured.header.Get("Content-Type"),
 		skipResponseSchema: r.Header.Get(skipResponseSchemaHeader) == "1",
 	})
 }
@@ -114,6 +114,7 @@ func (h *conformanceHarness) finish(fail func(msg string)) {
 	specCtx, err := loadConformanceSpec()
 	if err != nil {
 		fail(fmt.Sprintf("load spec snapshot %s: %v", specSnapshotPath, err))
+
 		return
 	}
 
@@ -147,6 +148,7 @@ func loadConformanceSpec() (*conformanceSpecContext, error) {
 		doc, loadErr := loader.LoadFromFile(specSnapshotPath)
 		if loadErr != nil {
 			conformanceErr = loadErr
+
 			return
 		}
 
@@ -164,6 +166,7 @@ func loadConformanceSpec() (*conformanceSpecContext, error) {
 		router, routeErr := legacyrouter.NewRouter(doc, openapi3.DisableExamplesValidation())
 		if routeErr != nil {
 			conformanceErr = routeErr
+
 			return
 		}
 
@@ -255,6 +258,7 @@ func validateExchange(specCtx *conformanceSpecContext, exchange conformanceExcha
 
 	if statementVariantPattern.MatchString(normalized) {
 		recordExemptStatementVariant(exchange.rawPath)
+
 		return nil
 	}
 
@@ -301,6 +305,7 @@ func validateExchange(specCtx *conformanceSpecContext, exchange conformanceExcha
 
 	if normalized == accountsListPath && exchange.method == http.MethodGet {
 		recordExemptLegacyAccountsList()
+
 		return problems
 	}
 
@@ -381,9 +386,9 @@ func (c *captureResponseWriter) WriteHeader(status int) {
 
 var (
 	coverageMu              sync.Mutex
-	conformingTemplates   = map[string]int{}
-	exemptStatementPaths  = map[string]int{}
-	exemptAccountsLists    int
+	conformingTemplates     = map[string]int{}
+	exemptStatementPaths    = map[string]int{}
+	exemptAccountsLists     int
 	totalValidatedExchanges int
 )
 
@@ -413,17 +418,18 @@ func conformanceCoverageSnapshot() (templates []string, exemptPaths []string, ex
 	coverageMu.Lock()
 	defer coverageMu.Unlock()
 
-
 	templates = make([]string, 0, len(conformingTemplates))
 	for template := range conformingTemplates {
 		templates = append(templates, template)
 	}
+
 	sort.Strings(templates)
 
 	exemptPaths = make([]string, 0, len(exemptStatementPaths))
 	for path := range exemptStatementPaths {
 		exemptPaths = append(exemptPaths, path)
 	}
+
 	sort.Strings(exemptPaths)
 
 	return templates, exemptPaths, totalValidatedExchanges, exemptAccountsLists

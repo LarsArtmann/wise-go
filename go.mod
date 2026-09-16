@@ -4,7 +4,7 @@ module github.com/larsartmann/wise-go
 // fixes (balance listing types param, Corruption classification). Use v0.6.1+.
 retract v0.6.0
 
-go 1.26.7
+go 1.26.5
 
 require (
 	github.com/failsafe-go/failsafe-go v0.9.7
