@@ -1,6 +1,6 @@
 # ADR 003: Retry executor — `go-retry` override of the failsafe-go mandate
 
-**Status:** Proposed (migration pending — see TODO_LIST P2 "Adopt go-retry")
+**Status:** Accepted (accepted and executed 2026-09-16 — executor swapped, `classifyExhaustedRetries` deleted, `Retry-After` honored via `Config.DelayFunc` capped at the `WithRetry` max delay)
 **Deciders:** Lars Artmann
 **Context date:** 2026-09-13
 **Re-verified:** 2026-09-16 against go-retry v0.6.0 (go-doc API diff + runnable probe)

@@ -66,7 +66,7 @@ Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise'
 
 - **Money is never `float64`** — Every amount is `int64` minor units (cents). No IEEE-754 representation error, ever.
 - **Branded IDs prevent entity-mixing bugs** — `ProfileID`, `BalanceID`, `TransactionID`, `TransferID`, `RecipientID`, and `QuoteID` are distinct types; passing one where another belongs is a compile error.
-- **Automatic retries with backoff** — Exponential backoff on 429 (rate limit), 5xx, and network errors via [failsafe-go](https://github.com/failsafe-go/failsafe-go). Auth, not-found, and client errors fail immediately.
+- **Automatic retries with backoff** — Exponential backoff with jitter on 429 (rate limit), 5xx, and network errors via [go-retry](https://github.com/larsartmann/go-retry), honoring Wise's `Retry-After` (capped at the configured max delay). Auth, not-found, and client errors fail immediately.
 - **Typed, classifiable errors** — `AuthError`, `RateLimitError` (with parsed `Retry-After`), `NotFoundError`, `ServerError`. Each carries its Wise API detail and implements `ErrorCode()` / `ErrorFamily()` / `IsRetryable()` from [go-error-family](https://github.com/larsartmann/go-error-family).
 - **Two-layer type system** — Raw wire types live in `internal/raw`; result types expose clean Go with `Money` value objects and branded `Currency`. The mapping is the only bridge.
 - **Write operations** — create quotes (authenticated and unauthenticated), recipients, and transfers; fund transfers from a balance; cancel transfers; validate transfer requirements; fetch delivery estimates.
@@ -76,7 +76,7 @@ Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise'
 - **Identify your integration** — `WithUserAgent` replaces Go's default client agent with your own (`bank-sync/1.0`), as Wise recommends.
 - **Tolerant timestamp handling** — Wise emits four different timestamp formats. One parser accepts them all (zoneless = UTC), and outgoing query timestamps are normalized to UTC `Z` (Wise rejects zone offsets with 422).
 - **Sandbox support** — One-line switch to the Wise sandbox environment.
-- **Minimal dependencies** — Three focused production deps: `failsafe-go`, `go-branded-id`, `go-error-family`.
+- **Minimal dependencies** — Three focused production deps: `go-retry`, `go-branded-id`, `go-error-family`.
 
 ## Installation
 
@@ -914,7 +914,7 @@ broken sender is distinguishable from a routing mistake.
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Monetary amounts as `int64` cents | `float64` causes precision loss (e.g., `0.1 + 0.2 ≠ 0.3`). Cents are safe for arithmetic and storage.                                                  |
 | Two-layer type system             | Raw wire types in `internal/raw` mirror JSON exactly. Result types expose clean Go with `Money` value objects. Mapping functions convert between them. |
-| `failsafe-go` for retries         | Purpose-built HTTP retry with backoff, not a generic CQRS middleware.                                                                                  |
+| `go-retry` for retries            | In-house, zero-dependency retry with backoff and jitter; the only executor that expresses Wise's `Retry-After` as first-class policy (ADR 003).         |
 | Flat package structure            | Single `package wise`; wire types hidden in `internal/raw`. The import path is the API.                                                                |
 | BDD tests with Ginkgo             | `httptest.Server` mock API responses. Tests verify both happy paths and error classification.                                                          |
 
