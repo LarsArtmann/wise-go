@@ -236,7 +236,7 @@ Routed here from `docs/status/archived/2026-05-17_18-48`,
 demand-gated raw ideas, not scheduled work:
 
 - **Typed `BadRequestError`** for 400 responses (design idea; today 400s are `*APIError`).
-- **Circuit breaker** — failsafe-go supports it; wire only with a consumer demand signal.
+- **Circuit breaker** — go-retry does not provide one; wiring one is new in-house code (or go-cqrs-lite middleware). Only with a consumer demand signal.
 - **`WithMetrics` hook** — Prometheus/OTel counters and histograms (Axis 3 medium-term).
 - **GoReleaser-style release automation** — tags are manual + annotated today.
 - **Webhook end-to-end README quickstart** — subscribe → verify → parse in one runnable block.
@@ -263,8 +263,9 @@ demand-gated raw ideas, not scheduled work:
 ## Non-goals
 
 - **Supporting non-Go languages** — out of scope; this is a Go SDK.
-- **Re-implementing retries / circuit breakers** — `failsafe-go` does this well.
-  Do not replace it without cause.
+- **Re-implementing retries** — `go-retry` is the in-house home for retry logic
+  (ADR 003); extend it there, not per-consumer. Do not re-introduce a
+  third-party executor without cause.
 - **Auto-generation from OpenAPI** — Wise publishes an OpenAPI spec (downloaded to
   `docs/reviews/wise-api-openapi.json`); use it as the authoritative reference when
   hand-authoring types (it caught the UUID `QuoteID` mismatch). Auto-generating the

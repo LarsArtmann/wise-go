@@ -30,6 +30,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   belong to response classification and were rejected by the API.
   Replace `Type: wise.DetailTypeX` with `Type: wise.StatementTypeFlat`
   (or `StatementTypeCompact`).
+- The retry executor is now [go-retry](https://github.com/larsartmann/go-retry)
+  v0.6.0 (in-house, zero-dependency) instead of `failsafe-go`. Retry
+  classification is unchanged (429/5xx/network retry; auth, not-found, SCA,
+  and other client errors fail immediately), and exhausted retries still
+  surface the final typed error — `errors.AsType` reaches `*RateLimitError` /
+  `*ServerError` through go-retry's `ErrExhausted` chain. New: Wise's
+  `Retry-After` hint (delta-seconds or HTTP-date) is honored as the retry
+  delay, capped at the `WithRetry` max delay. `WithRetry(maxRetries, min, max)`
+  keeps its semantics.
 
 ### Fixed
 

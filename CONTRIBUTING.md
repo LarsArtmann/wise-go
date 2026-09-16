@@ -122,7 +122,7 @@ Before contributing, read [AGENTS.md](AGENTS.md) — it documents the non-obviou
 - **Behavioral errors** — domain error types implement `go-error-family` interfaces (`ErrorCode()`, `ErrorFamily()`, `IsRetryable()`). Never construct `AuthError` / `NotFoundError` etc. directly outside `newAPIError()` in `errors.go`.
 - **Two-layer types** — raw wire structs (`raw.Profile`, `raw.Balance`, `raw.StatementTransaction` in `internal/raw`) match Wise's JSON exactly with primitives. Result types (`Profile`, `Balance`, `Transaction`) expose strong Go types (`Money`, branded IDs, enums). Mapping functions are the only bridge. Do not brand the JSON-decode layer.
 - **Error wrapping at call sites** uses `fmt.Errorf("context: %w", err)`; the inner error carries the classification.
-- **Retries** via `failsafe-go` — only 429, 5xx, and network errors are retried.
+- **Retries** via `go-retry` — only 429, 5xx, and network errors are retried; Wise's `Retry-After` hint is honored as the delay, capped at `WithRetry`'s max delay.
 
 ---
 

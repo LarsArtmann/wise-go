@@ -67,15 +67,12 @@ the workflow server-side (`gh workflow enable ci`), and watch the first run.
 Until then the coverage badge stays frozen at its last CI-measured value.
 **BLOCKED: needs the user's approval to push and enable.**
 
-[ ] Adopt `go-retry` v0.6.0 in place of the failsafe-go executor — BLOCKED on
-accepting ADR 003 (`docs/adr/003-retry-executor-go-retry-override.md`,
-Proposed). Then: swap the `failsafe-go` retry executor in `client.go` for
-`github.com/larsartmann/go-retry` `retry.Do`; delete `classifyExhaustedRetries`
-(go-retry's exhaustion error carries the final typed error via `WithCause`,
-re-verified by probe 2026-09-16 against v0.6.0); feed Wise's `Retry-After`
-(`RateLimitError.RetryAfter`, including the HTTP-date form) through
-`Config.DelayFunc`, which failsafe-go's policy cannot express.
-**BLOCKED: needs the user's acceptance of ADR 003.**
+[x] Adopt `go-retry` v0.6.0 in place of the failsafe-go executor — DONE
+2026-09-16: ADR 003 accepted and executed. `client.go` runs
+`retry.DoWithValue`; `classifyExhaustedRetries` is deleted (the `ErrExhausted`
+chain carries the final typed error via `WithCause`); Wise's `Retry-After`
+feeds `Config.DelayFunc`, capped at `WithRetry`'s max delay. Gates green:
+`go test -race ./...`, `golangci-lint run`, `nix flake check`.
 
 [ ] GOEXPERIMENT ergonomics — pin direnv/home-manager setup so `jsonv2` is set
 without relying on `.buildflow.yml` env injection (user-machine work; the
