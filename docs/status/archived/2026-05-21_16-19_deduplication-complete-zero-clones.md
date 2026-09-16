@@ -120,11 +120,11 @@ transactions.go:68:2: [gopls unusedparams][unusedparams] unused parameter: now
 
 | #  | Task                                                                   | Impact      | Effort | Category     |
 | -- | ---------------------------------------------------------------------- | ----------- | ------ | ------------ |
-| 1  | Fix golines formatting on wise_test.go:84                              | 🔴 Critical | 5min   | Quality      |
-| 2  | Create CI pipeline (GitHub Actions: test, vet, lint)                   | 🔴 Critical | 1h     | CI/CD        |
-| 3  | Create `flake.nix` for build/task automation                           | 🔴 Critical | 2h     | Build        |
-| 4  | Resolve go-structure-linter blocking — decide on `pkg/` vs root layout | 🔴 Critical | 30min  | Architecture |
-| 5  | Implement or remove dead `now` parameter in mapTransaction             | 🟠 High     | 15min  | Code         |
+| ~~1~~  | ~~Fix golines formatting on wise_test.go:84~~ done — golines clean under the format gate | ~~🔴 Critical~~ | ~~5min~~ | ~~Quality~~ |
+| ~~2~~  | ~~Create CI pipeline (GitHub Actions: test, vet, lint)~~ done — ci.yml exists (workflow disabled on GitHub) | ~~🔴 Critical~~ | ~~1h~~ | ~~CI/CD~~ |
+| ~~3~~  | ~~Create `flake.nix` for build/task automation~~ done — flake.nix shipped 2026-07-18, canonical | ~~🔴 Critical~~ | ~~2h~~ | ~~Build~~ |
+| ~~4~~  | ~~Resolve go-structure-linter blocking — decide on `pkg/` vs root layout~~ **Won't implement — declined — flat root package is deliberate (ADR 002).** | ~~🔴 Critical~~ | ~~30min~~ | ~~Architecture~~ |
+| ~~5~~  | ~~Implement or remove dead `now` parameter in mapTransaction~~ done — dead now chain removed (07-05 session) | ~~🟠 High~~ | ~~15min~~ | ~~Code~~ |
 | 6  | Add consistent error context to `balances.go` and `profiles.go`        | 🟠 High     | 30min  | Code         |
 | 7  | Curate `.golangci.yml` — reduce from ~130 to ~30 lines                 | 🟠 High     | 30min  | Quality      |
 | 8  | Add GoDoc to all exported types and functions                          | 🟠 High     | 1h     | Docs         |
@@ -144,7 +144,7 @@ transactions.go:68:2: [gopls unusedparams][unusedparams] unused parameter: now
 | 22 | Add integration test skeleton (with `--live` flag)                     | 🟢 Low      | 1h     | Tests        |
 | 23 | Add version constant/flag to the package                               | 🟢 Low      | 10min  | Code         |
 | 24 | Audit `BalanceAmount.Cents()` for floating-point precision             | 🟢 Low      | 30min  | Code         |
-| 25 | Add contributing guidelines (`CONTRIBUTING.md`)                        | 🟢 Low      | 30min  | Docs         |
+| ~~25~~ | ~~Add contributing guidelines (`CONTRIBUTING.md`)~~ done — CONTRIBUTING.md exists and is current | ~~🟢 Low~~ | ~~30min~~ | ~~Docs~~ |
 
 ---
 

@@ -101,8 +101,8 @@ Nothing broken. All tests pass, no vet issues, no compile errors. Clean state.
 
 | #  | Task                                                                  | Impact      | Effort |
 | -- | --------------------------------------------------------------------- | ----------- | ------ |
-| 1  | Add CI pipeline (GitHub Actions: test, vet, lint)                     | 🔴 Critical | 1h     |
-| 2  | Add `flake.nix` for build/task automation                             | 🔴 Critical | 2h     |
+| ~~1~~  | ~~Add CI pipeline (GitHub Actions: test, vet, lint)~~ done — ci.yml shipped (workflow disabled on GitHub — see FEATURES.md) | ~~🔴 Critical~~ | ~~1h~~ |
+| ~~2~~  | ~~Add `flake.nix` for build/task automation~~ done — flake.nix shipped 2026-07-18, canonical | ~~🔴 Critical~~ | ~~2h~~ |
 | 3  | Establish test coverage baseline (`go test -cover`)                   | 🟠 High     | 30min  |
 | 4  | Add consistent error context to `balances.go` and `profiles.go`       | 🟠 High     | 30min  |
 | 5  | Add GoDoc to all exported types and functions                         | 🟠 High     | 1h     |
@@ -112,20 +112,20 @@ Nothing broken. All tests pass, no vet issues, no compile errors. Clean state.
 | 9  | Add `Example*` test functions for GoDoc                               | 🟡 Medium   | 1h     |
 | 10 | Add edge case tests for amount parsing (0, negative, very large)      | 🟡 Medium   | 30min  |
 | 11 | Add edge case tests for date parsing (timezone, leap year)            | 🟡 Medium   | 30min  |
-| 12 | Add fuzz tests for `parseWiseDate` and `parseRFC3339`                 | 🟡 Medium   | 1h     |
+| ~~12~~ | ~~Add fuzz tests for `parseWiseDate` and `parseRFC3339`~~ done — FuzzParseWiseTimestamp + FuzzNewCurrency (2026-09-13) | ~~🟡 Medium~~ | ~~1h~~ |
 | 13 | Extract error context into structured fields (not just strings)       | 🟡 Medium   | 2h     |
 | 14 | Add configurable retry/backoff strategy                               | 🟢 Low      | 1h     |
 | 15 | Add request/response logging option                                   | 🟢 Low      | 1h     |
 | 16 | Add context timeout enforcement per-request                           | 🟢 Low      | 30min  |
 | 17 | Add `go mod tidy` + dependabot config                                 | 🟢 Low      | 15min  |
 | 18 | Add `.golangci.yml` lint config                                       | 🟢 Low      | 30min  |
-| 19 | Remove dead `now` parameter in `mapTransaction` (AGENTS.md notes it)  | 🟢 Low      | 15min  |
+| ~~19~~ | ~~Remove dead `now` parameter in `mapTransaction` (AGENTS.md notes it)~~ done — dead now chain removed (07-05 session) | ~~🟢 Low~~ | ~~15min~~ |
 | 20 | Add integration test skeleton (with `--live` flag)                    | 🟢 Low      | 1h     |
 | 21 | Add `//go:build` tags for separating unit/integration tests           | 🟢 Low      | 15min  |
 | 22 | Add README section on testing conventions                             | 🟢 Low      | 15min  |
 | 23 | Audit `BalanceAmount.Cents()` for floating-point precision edge cases | 🟢 Low      | 30min  |
 | 24 | Add version constant/flag to the package                              | 🟢 Low      | 10min  |
-| 25 | Add contributing guidelines (CONTRIBUTING.md)                         | 🟢 Low      | 30min  |
+| ~~25~~ | ~~Add contributing guidelines (CONTRIBUTING.md)~~ done — CONTRIBUTING.md exists and is current | ~~🟢 Low~~ | ~~30min~~ |
 
 ---
 

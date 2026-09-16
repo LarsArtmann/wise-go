@@ -50,6 +50,8 @@ Immutable objects defined by attributes.
 | Delivery     | A single webhook POST from Wise to the subscription's URL                              | Signed (`X-Signature-SHA256`); dedup on `X-Delivery-Id` (unique per attempt)         |
 | Envelope     | The JSON wrapper of every delivery (`data`, `event_type`, `schema_version`, `sent_at`) | Parsed by `ParseWebhookEvent`; unknown event types pass through with the payload raw |
 | SCA          | Strong Customer Authentication (3-D Secure-like challenge)                             | HTTP 403 with empty body; one-time token in response headers                         |
+| OTT          | One-Time Token authorizing an SCA challenge                                            | Carried in the `x-2fa-approval` header; cleared programmatically via the `/2026Q3/one-time-token` endpoints; never logged or embedded in error strings |
+| Challenge channel | The phone channel that delivers the OTP (sms, whatsapp, voice)                    | `OTTChannel` enum; wire paths are lowercase, Wise's challenge types are UPPERCASE    |
 
 ## Raw vs Result Types
 

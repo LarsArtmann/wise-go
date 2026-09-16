@@ -231,8 +231,9 @@ structs"); documented in README.
 
 ## Raw ideas (harvested from status reports, 2026-09-16)
 
-Routed here from `docs/status/2026-05-17`, `2026-05-23`, `2026-08-21_20-57`,
-and the `2026-09-13` reports — demand-gated raw ideas, not scheduled work:
+Routed here from `docs/status/archived/2026-05-17_18-48`,
+`2026-05-23_00-49`, `2026-08-21_20-57`, and the `2026-09-13` reports —
+demand-gated raw ideas, not scheduled work:
 
 - **Typed `BadRequestError`** for 400 responses (design idea; today 400s are `*APIError`).
 - **Circuit breaker** — failsafe-go supports it; wire only with a consumer demand signal.

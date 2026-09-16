@@ -119,18 +119,18 @@ All 13 skills from the prior session are committed and pushed: code-quality-scan
 
 | # | Task                                                                         | Effort |
 | - | ---------------------------------------------------------------------------- | ------ |
-| 1 | Add `env: GOEXPERIMENT: jsonv2` to `.github/workflows/ci.yml` all three jobs | 5 min  |
+| ~~1~~ | ~~Add `env: GOEXPERIMENT: jsonv2` to `.github/workflows/ci.yml` all three jobs~~ done — GOEXPERIMENT wired into ci.yml env (v0.3.0 era) | ~~5 min~~ |
 | 2 | Verify CI passes after the fix                                               | 10 min |
 
 ### P1 — High urgency (this session's unfinished work)
 
 | # | Task                                                                  | Effort |
 | - | --------------------------------------------------------------------- | ------ |
-| 3 | Add `nix` job to ci.yml (cachix/install-nix-action + nix flake check) | 30 min |
-| 4 | Add README "Mocking the client" section                               | 10 min |
-| 5 | Add README "Request middleware via WithHTTPClient" section            | 10 min |
+| ~~3~~ | ~~Add `nix` job to ci.yml (cachix/install-nix-action + nix flake check)~~ done — nix job added to ci.yml | ~~30 min~~ |
+| ~~4~~ | ~~Add README "Mocking the client" section~~ done — README Mocking the Client section | ~~10 min~~ |
+| ~~5~~ | ~~Add README "Request middleware via WithHTTPClient" section~~ done — README Request Middleware section | ~~10 min~~ |
 | 6 | Review `CONTRIBUTING.md` for drift                                    | 15 min |
-| 7 | Expose `EndOfStatementBalance` on `ListTransactionsResponse`          | 30 min |
+| ~~7~~ | ~~Expose `EndOfStatementBalance` on `ListTransactionsResponse`~~ done — EndOfStatementBalance exposed (v0.4.0, 4902dc3) | ~~30 min~~ |
 
 ### P2 — Medium (from the Pareto plan Phase 3)
 
@@ -164,25 +164,25 @@ All 13 skills from the prior session are committed and pushed: code-quality-scan
 
 | #  | Task                                                           | Effort |
 | -- | -------------------------------------------------------------- | ------ |
-| 26 | Introduce `Money` value object                                 | 4 hr   |
-| 27 | Introduce `Currency` branded type                              | 2 hr   |
-| 28 | Migrate Transaction/TransactionExchange/BalanceResult to Money | 3 hr   |
-| 29 | Normalize enum casing                                          | 1 hr   |
-| 30 | Reconcile `TransactionTypeUnknown`                             | 15 min |
-| 31 | Drop `Result` suffix or move raw to internal/raw               | 2 hr   |
+| ~~26~~ | ~~Introduce `Money` value object~~ done — Money value object (v0.4.0, 4902dc3) | ~~4 hr~~ |
+| ~~27~~ | ~~Introduce `Currency` branded type~~ done — Currency branded type (v0.4.0) | ~~2 hr~~ |
+| ~~28~~ | ~~Migrate Transaction/TransactionExchange/BalanceResult to Money~~ done — Money migration (v0.4.0) | ~~3 hr~~ |
+| ~~29~~ | ~~Normalize enum casing~~ done — enum casing normalized (v0.4.0) | ~~1 hr~~ |
+| ~~30~~ | ~~Reconcile `TransactionTypeUnknown`~~ done — TransactionTypeUnknown removed (v0.4.0) | ~~15 min~~ |
+| ~~31~~ | ~~Drop `Result` suffix or move raw to internal/raw~~ done — raw types to internal/raw (v0.4.0) | ~~2 hr~~ |
 
 ### P5 — v1.0+
 
 | #  | Task                                         | Effort |
 | -- | -------------------------------------------- | ------ |
-| 32 | Remove `HasMore`; return `[]Transaction`     | 1 hr   |
-| 33 | Move raw types to `internal/raw`             | 2 hr   |
+| ~~32~~ | ~~Remove `HasMore`; return `[]Transaction`~~ done — HasMore removed (v0.4.0) | ~~1 hr~~ |
+| ~~33~~ | ~~Move raw types to `internal/raw`~~ done — raw types to internal/raw (v0.4.0) | ~~2 hr~~ |
 | 34 | Lock public API                              | 2 hr   |
 | 35 | Write operations (POST/PATCH/DELETE helpers) | 2 hr   |
 | 36 | Transfers resource                           | 1 day  |
 | 37 | Recipients resource                          | 1 day  |
 | 38 | Quotes resource                              | 1 day  |
-| 39 | Webhook signature verification               | 1 day  |
+| ~~39~~ | ~~Webhook signature verification~~ done — webhook signature verification (v0.9.0, e508572) | ~~1 day~~ |
 
 ### P6 — Tooling
 

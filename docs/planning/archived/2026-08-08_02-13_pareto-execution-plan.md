@@ -6,9 +6,11 @@
 > Generated 2026-08-08 02:13 · Pareto-driven · Source: TODO_LIST.md + ROADMAP.md + live codebase audit
 >
 > **Status: EXECUTED.** All tiers (M1–M15) were completed in the 2026-08-08 session.
-> See `docs/status/2026-08-08_02-53_pareto-plan-v040-implementation.md` for the full
-> execution record. M16 (v1.0 API lock) is partially done — breaking changes shipped
-> but the v1.0 tag is deferred. Success criteria resolved at the bottom of this file.
+> See `docs/status/archived/2026-08-08_02-53_pareto-plan-v040-implementation.md` for the full
+> execution record. ~~M16 (v1.0 API lock) is partially done — breaking changes shipped
+> but the v1.0 tag is deferred.~~ M16's audit is green (re-audited 2026-09-13 through the
+> 41-method v0.11.0 surface); the v1.0.0 tag alone remains user-gated (TODO_LIST P2).
+> Success criteria resolved at the bottom of this file.
 
 ## Context
 
