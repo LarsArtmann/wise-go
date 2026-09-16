@@ -299,7 +299,6 @@ func validateExchange(specCtx *conformanceSpecContext, exchange conformanceExcha
 		return problems
 	}
 
-	println("DEBUG validate:", exchange.method, normalized, "ct:", responseCT)
 	if normalized == accountsListPath && exchange.method == http.MethodGet {
 		recordExemptLegacyAccountsList()
 		return problems
@@ -408,12 +407,12 @@ func recordExemptLegacyAccountsList() {
 	defer coverageMu.Unlock()
 
 	exemptAccountsLists++
-	println("DEBUG accountsExempt now:", exemptAccountsLists)
 }
 
-func conformanceCoverageSnapshot() (templates []string, exemptPaths []string, exchanges, exemptAccountsLists int) {
+func conformanceCoverageSnapshot() (templates []string, exemptPaths []string, exchanges, exemptAccountsListCount int) {
 	coverageMu.Lock()
 	defer coverageMu.Unlock()
+
 
 	templates = make([]string, 0, len(conformingTemplates))
 	for template := range conformingTemplates {
