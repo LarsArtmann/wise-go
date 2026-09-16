@@ -28,6 +28,11 @@
       url = "github:LarsArtmann/go-error-family?rev=8ec5aeb6d3f6f45a8315436d934f1a761a07f4f8";
       flake = false;
     };
+
+    go-retry = {
+      url = "github:LarsArtmann/go-retry?rev=61058487ec4705c723e0888e5bd32544b73ec40c";
+      flake = false;
+    };
   };
 
   outputs =
@@ -96,6 +101,7 @@
         deps = {
           "github.com/larsartmann/go-branded-id" = inputs.go-branded-id;
           "github.com/larsartmann/go-error-family" = inputs.go-error-family;
+          "github.com/larsartmann/go-retry" = inputs.go-retry;
         };
 
         # Library: run tests in the dedicated checks.test derivation instead of

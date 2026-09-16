@@ -136,6 +136,23 @@
         "type": "github"
       }
     },
+    "go-retry": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1789318239,
+        "narHash": "sha256-YP1p0Pls1YQNKcOaqUJqyQpGDFs20vspeqXqEcokDko=",
+        "owner": "LarsArtmann",
+        "repo": "go-retry",
+        "rev": "61058487ec4705c723e0888e5bd32544b73ec40c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "LarsArtmann",
+        "repo": "go-retry",
+        "rev": "61058487ec4705c723e0888e5bd32544b73ec40c",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1789426278,
@@ -159,6 +176,7 @@
         "go-branded-id": "go-branded-id",
         "go-error-family": "go-error-family",
         "go-nix-helpers": "go-nix-helpers",
+        "go-retry": "go-retry",
         "nixpkgs": "nixpkgs"
       }
     },
