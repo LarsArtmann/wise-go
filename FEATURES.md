@@ -5,12 +5,17 @@ claim here can be verified against the implementation.
 
 ## Status vocabulary
 
+Eight labels answering one question: does working code exist — and if not, why not?
+
 | Status               | When it applies                                                                                                                                                                                        |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | FULLY_FUNCTIONAL     | Code present AND working (tests pass or exercised).                                                                                                                                                    |
 | PARTIALLY_FUNCTIONAL | Ships but has known gaps, edge-case bugs, or missing pieces.                                                                                                                                           |
-| BROKEN               | Code exists but does not work / is disabled / fails.                                                                                                                                                   |
-| PLANNED              | Documented but **no code exists yet**; demand-gated per the implementation plan.                                                                                                                       |
+| BROKEN               | Code exists but fails. Intentionally unused right now — zero BROKEN rows is itself information; the failure state must stay nameable.                                                                  |
+| DISABLED             | Code exists and is correct, but execution is externally switched off (server-side disable, missing credentials). Unblock it and the row becomes FULLY_FUNCTIONAL.                                      |
+| PLANNED              | No code yet; **completes an already-shipped resource family** — next on the build path (implementation-plan tiers 1–3).                                                                                |
+| DEMAND_GATED         | No code yet; the **whole family is unshipped** and gets built only on a real consumer demand signal (plan tier 3 / ROADMAP.md Axis 1).                                                                 |
+| ON_HOLD              | No code yet; a **pending scope/design decision** — not demand — blocks it.                                                                                                                             |
 | OUT_OF_SCOPE         | Wise surface wise-go intentionally does not target: specialised, partner-only (client credentials / restricted access), or sandbox-only. Revisit only on a real demand signal (see ROADMAP.md Axis 1). |
 
 ## Wise API endpoint coverage
@@ -28,8 +33,11 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
   (convenience wrappers) and `ClearSCAChallenge` (a multi-call loop);
   `TriggerOTT`/`VerifyOTT` each cover three channel paths. The count is
   gate-checked by `nix run .#doc-verify` against the compiled surface.
-- **51 operations are PLANNED** (demand-gated, tiers 2–3 of
-  [the implementation plan](docs/planning/2026-08-19_wise-api-full-implementation-plan.md)).
+- **51 operations have no code yet**, split by why: **20 PLANNED** (complete
+  already-shipped families), **26 DEMAND_GATED** (whole families awaiting a
+  consumer demand signal — plan tier 3), **5 ON_HOLD** (app-level webhook
+  scope decision). Tiers per
+  [the implementation plan](docs/planning/2026-08-19_wise-api-full-implementation-plan.md).
 - **123 operations are OUT_OF_SCOPE** (cards, KYC/KYB, SCA factors, JOSE,
   simulations, embedded flows, cases, disputes, settlement allocations, …).
 
@@ -37,31 +45,31 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
 
 | Category                                                                                                | Ops | Shipped | State                                            |
 | ------------------------------------------------------------------------------------------------------- | --- | ------- | ------------------------------------------------ |
-| Balances                                                                                                | 10  | 4       | core shipped; lifecycle ops PLANNED              |
+| Balances                                                                                                | 10  | 4       | core shipped; delete/movements PLANNED; regulatory ops DEMAND_GATED |
 | Balance statements                                                                                      | 1   | 1       | all 7 formats shipped                            |
-| Bank account details                                                                                    | 5   | 1       | read shipped; ordering PLANNED                   |
-| Batch groups                                                                                            | 7   | 0       | PLANNED (tier 3)                                 |
+| Bank account details                                                                                    | 5   | 1       | read shipped; ordering PLANNED; returns DEMAND_GATED |
+| Batch groups                                                                                            | 7   | 0       | DEMAND_GATED (tier 3)                            |
 | Profiles                                                                                                | 19  | 2       | reads shipped; writes PLANNED; KYB OUT_OF_SCOPE  |
 | Quotes                                                                                                  | 4   | 3       | complete except PATCH update (PLANNED)           |
-| Recipients                                                                                              | 8   | 5       | core shipped; compatibility/confirmation PLANNED |
+| Recipients                                                                                              | 8   | 5       | core shipped; deactivate/compat/confirmations PLANNED |
 | Transfers (standard)                                                                                    | 11  | 8       | core + receipts shipped; 3 ops PLANNED           |
-| Transfers (third-party)                                                                                 | 2   | 0       | PLANNED (correspondent demand)                   |
+| Transfers (third-party)                                                                                 | 2   | 0       | DEMAND_GATED (correspondent demand)              |
 | Users                                                                                                   | 6   | 2       | reads shipped; writes OUT_OF_SCOPE               |
 | Multi-currency account                                                                                  | 4   | 1       | MCA read shipped; configuration PLANNED          |
-| Webhook subscriptions                                                                                   | 9   | 4       | profile-level shipped; app-level decision open   |
+| Webhook subscriptions                                                                                   | 9   | 4       | profile-level shipped; app-level ON_HOLD         |
 | SCA one-time tokens                                                                                     | 1   | 1       | shipped (v0.11.0)                                |
 | SCA OTP channels                                                                                        | 8   | 6       | trigger/verify shipped; enrollment OUT_OF_SCOPE  |
 | Currencies                                                                                              | 1   | 1       | shipped                                          |
 | Exchange rates                                                                                          | 1   | 1       | shipped                                          |
 | Delivery estimates                                                                                      | 1   | 1       | shipped                                          |
-| Comparison                                                                                              | 1   | 0       | PLANNED                                          |
-| Activity                                                                                                | 1   | 0       | PLANNED                                          |
-| Contacts                                                                                                | 1   | 0       | PLANNED                                          |
-| Addresses                                                                                               | 5   | 0       | PLANNED                                          |
-| Payin deposit details                                                                                   | 1   | 0       | PLANNED                                          |
-| Direct debit accounts                                                                                   | 2   | 0       | PLANNED                                          |
-| Bulk settlement                                                                                         | 1   | 0       | PLANNED (needs client credentials)               |
-| GPI tracking                                                                                            | 1   | 0       | PLANNED                                          |
+| Comparison                                                                                              | 1   | 0       | PLANNED (tier 2 leftover)                        |
+| Activity                                                                                                | 1   | 0       | DEMAND_GATED                                     |
+| Contacts                                                                                                | 1   | 0       | DEMAND_GATED                                     |
+| Addresses                                                                                               | 5   | 0       | DEMAND_GATED                                     |
+| Payin deposit details                                                                                   | 1   | 0       | DEMAND_GATED                                     |
+| Direct debit accounts                                                                                   | 2   | 0       | DEMAND_GATED                                     |
+| Bulk settlement                                                                                         | 1   | 0       | DEMAND_GATED (needs client credentials)          |
+| GPI tracking                                                                                            | 1   | 0       | DEMAND_GATED                                     |
 | OAuth token                                                                                             | 1   | 0       | OUT_OF_SCOPE                                     |
 | Claims, cases, KYC, SCA factors, cards, disputes, spend, JOSE, simulation, settlement, incoming, payins | 122 | 0       | OUT_OF_SCOPE                                     |
 
@@ -75,10 +83,10 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
 | GET    | `/v4/profiles/{id}/total-funds/{currency}`          | FULLY_FUNCTIONAL | `GetTotalFunds` (`balances.go:170`)   |
 | DELETE | `/v4/profiles/{id}/balances/{id}`                   | PLANNED          | close balance (zero balance required) |
 | POST   | `/v4/profiles/{id}/balance-movements`               | PLANNED          | convert/move between balances         |
-| GET    | `/v4/profiles/{id}/balance-capacity`                | PLANNED          | regulatory deposit limit              |
-| POST   | `/v4/profiles/{id}/excess-money-account`            | PLANNED          | excess-funds sweep target             |
-| GET    | `/v4/profiles/{id}/balances/hold-limit-breach`      | PLANNED          | hold-limit breaches (SG/MY)           |
-| POST   | `/v4/profiles/{id}/balances/hold-limit-breach/{id}` | PLANNED          | close breach via one-time refund      |
+| GET    | `/v4/profiles/{id}/balance-capacity`                | DEMAND_GATED     | regulatory deposit limit (hold-limit regions)  |
+| POST   | `/v4/profiles/{id}/excess-money-account`            | DEMAND_GATED     | excess-funds sweep target                      |
+| GET    | `/v4/profiles/{id}/balances/hold-limit-breach`      | DEMAND_GATED     | hold-limit breaches (SG/MY)                    |
+| POST   | `/v4/profiles/{id}/balances/hold-limit-breach/{id}` | DEMAND_GATED     | close breach via one-time refund               |
 
 ### Balance statements (1 operation, 7 formats)
 
@@ -94,7 +102,7 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
 | POST   | `/v1/profiles/{id}/bank-details`                          | PLANNED          | issue local+international details                  |
 | POST   | `/v1/profiles/{id}/account-details-orders`                | PLANNED          | order account details                              |
 | GET    | `/v1/profiles/{id}/account-details-orders`                | PLANNED          | list orders                                        |
-| POST   | `/v1/profiles/{id}/account-details/payments/{id}/returns` | PLANNED          | return a received payment                          |
+| POST   | `/v1/profiles/{id}/account-details/payments/{id}/returns` | DEMAND_GATED     | return a received payment                   |
 
 ### Multi-currency account (4 operations)
 
@@ -191,8 +199,8 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
 
 | Method | Path                                           | Status  | wise-go                                       |
 | ------ | ---------------------------------------------- | ------- | --------------------------------------------- |
-| POST   | `/v2/profiles/{id}/third-party-transfers`      | PLANNED | originator transfers (correspondent partners) |
-| GET    | `/v2/profiles/{id}/third-party-transfers/{id}` | PLANNED | third-party transfer status                   |
+| POST   | `/v2/profiles/{id}/third-party-transfers`      | DEMAND_GATED | originator transfers (correspondent partners) |
+| GET    | `/v2/profiles/{id}/third-party-transfers/{id}` | DEMAND_GATED | third-party transfer status                   |
 
 ### Webhook subscriptions (9 operations)
 
@@ -202,11 +210,11 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
 | GET    | `/2026Q3/profiles/{id}/subscriptions`                             | FULLY_FUNCTIONAL | `ListProfileWebhookSubscriptions` (`webhooks.go:117`)  |
 | GET    | `/2026Q3/profiles/{id}/subscriptions/{id}`                        | FULLY_FUNCTIONAL | `GetProfileWebhookSubscription` (`webhooks.go:149`)    |
 | DELETE | `/2026Q3/profiles/{id}/subscriptions/{id}`                        | FULLY_FUNCTIONAL | `DeleteProfileWebhookSubscription` (`webhooks.go:178`) |
-| POST   | `/applications/{clientKey}/subscriptions`                         | PLANNED          | app-level scope decision pending (ROADMAP.md Axis 1)   |
-| GET    | `/applications/{clientKey}/subscriptions`                         | PLANNED          | app-level scope decision pending                       |
-| GET    | `/applications/{clientKey}/subscriptions/{id}`                    | PLANNED          | app-level scope decision pending                       |
-| DELETE | `/applications/{clientKey}/subscriptions/{id}`                    | PLANNED          | app-level scope decision pending                       |
-| POST   | `/applications/{clientKey}/subscriptions/{id}/test-notifications` | PLANNED          | app-level scope decision pending                       |
+| POST   | `/applications/{clientKey}/subscriptions`                         | ON_HOLD          | app-level scope decision pending (ROADMAP.md Axis 1)   |
+| GET    | `/applications/{clientKey}/subscriptions`                         | ON_HOLD          | app-level scope decision pending                       |
+| GET    | `/applications/{clientKey}/subscriptions/{id}`                    | ON_HOLD          | app-level scope decision pending                       |
+| DELETE | `/applications/{clientKey}/subscriptions/{id}`                    | ON_HOLD          | app-level scope decision pending                       |
+| POST   | `/applications/{clientKey}/subscriptions/{id}/test-notifications` | ON_HOLD          | app-level scope decision pending                       |
 
 ### SCA one-time tokens and OTP channels (9 operations)
 
@@ -222,23 +230,23 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
 | POST   | `/application/users/{id}/phone-numbers`      | OUT_OF_SCOPE     | restricted access (client credentials + Wise approval) |
 | DELETE | `/application/users/{id}/phone-numbers/{id}` | OUT_OF_SCOPE     | restricted access (client credentials + Wise approval) |
 
-### Batch groups (7 operations) — PLANNED
+### Batch groups (7 operations) — DEMAND_GATED
 
 Create/get/complete-or-cancel a group, add transfers, fund from balance,
-direct-debit payment initiation create/get. All seven PLANNED (tier 3 of the
-plan; bulk payments demand-gated).
+direct-debit payment initiation create/get. All seven DEMAND_GATED (tier 3 of
+the plan; bulk payments only on a consumer demand signal).
 
-### Remaining single-operation categories (PLANNED, demand-gated)
+### Remaining single-operation categories (DEMAND_GATED)
 
 | Category              | Method + Path                                                                                            | Status  | wise-go                    |
 | --------------------- | -------------------------------------------------------------------------------------------------------- | ------- | -------------------------- |
-| Activity              | GET `/v1/profiles/{id}/activities`                                                                       | PLANNED | account activity feed      |
-| Contacts              | POST `/v1/profiles/{id}/contacts`                                                                        | PLANNED | Wisetag/email/phone lookup |
-| Addresses             | POST `/v1/addresses`, GET `/v1/addresses`, GET `/v1/addresses/{id}`, GET/POST `/v1/address-requirements` | PLANNED | address book (5 ops)       |
-| Payin deposit details | GET `/v1/profiles/{id}/transfers/{id}/deposit-details/bank-transfer`                                     | PLANNED | bank-transfer pay-in info  |
-| Direct debit accounts | POST/GET `/v1/profiles/{id}/direct-debit-accounts`                                                       | PLANNED | ACH/EFT funding accounts   |
-| Bulk settlement       | POST `/settlements`                                                                                      | PLANNED | needs client credentials   |
-| GPI tracking          | POST `/v1/gpi-tracking`                                                                                  | PLANNED | SWIFT gpi lookup           |
+| Activity              | GET `/v1/profiles/{id}/activities`                                                                       | DEMAND_GATED | account activity feed      |
+| Contacts              | POST `/v1/profiles/{id}/contacts`                                                                        | DEMAND_GATED | Wisetag/email/phone lookup |
+| Addresses             | POST `/v1/addresses`, GET `/v1/addresses`, GET `/v1/addresses/{id}`, GET/POST `/v1/address-requirements` | DEMAND_GATED | address book (5 ops)       |
+| Payin deposit details | GET `/v1/profiles/{id}/transfers/{id}/deposit-details/bank-transfer`                                     | DEMAND_GATED | bank-transfer pay-in info  |
+| Direct debit accounts | POST/GET `/v1/profiles/{id}/direct-debit-accounts`                                                       | DEMAND_GATED | ACH/EFT funding accounts   |
+| Bulk settlement       | POST `/settlements`                                                                                      | DEMAND_GATED | needs client credentials   |
+| GPI tracking          | POST `/v1/gpi-tracking`                                                                                  | DEMAND_GATED | SWIFT gpi lookup           |
 
 ### Out-of-scope categories (123 operations, OUT_OF_SCOPE)
 
@@ -374,8 +382,9 @@ plan; bulk payments demand-gated).
 | ------------------------------------------------------ | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `go test ./...`                                        | FULLY_FUNCTIONAL     | httptest mocks; no network required                                                                                                                                                      |
 | `golangci-lint run`                                    | FULLY_FUNCTIONAL     | 0 issues                                                                                                                                                                                 |
-| `.github/workflows/ci.yml` (build/test/lint/vulncheck) | PARTIALLY_FUNCTIONAL | Workflow file maintained (refreshed 2026-09-12, commit `14523ae`) but still `disabled_manually` on GitHub since 2026-07-05; no runs since. `sandbox-live.yml` is active (dispatch-gated) |
-| `nix flake check`                                      | FULLY_FUNCTIONAL     | Format + sandboxed test via the `go-standard` module (`checks.test` race + coverage)                                                                                                     |
+| `.github/workflows/ci.yml` (build/test/lint/vulncheck) | DISABLED             | Workflow file is maintained and correct (refreshed 2026-09-12, commit `14523ae`) but `disabled_manually` on GitHub since 2026-07-05. Unblock: push + `gh workflow enable ci`. |
+| Credentialed sandbox integration tests                 | DISABLED             | `sandbox-live.yml` active but dispatch-gated; `sandbox_live_test.go` skeleton key-drop-ready. Unblock: set `WISE_SANDBOX_API_KEY` (TODO_LIST.md).                             |
+| `nix flake check`                                      | FULLY_FUNCTIONAL     | Format + sandboxed test via the `go-standard` module (`checks.test` race + coverage)                                                                                          |
 | `nix fmt` (gofumpt + goimports + nixfmt)               | FULLY_FUNCTIONAL     | `flake.nix` treefmt config                                                                                                                                                               |
 | BDD tests via Ginkgo + httptest                        | FULLY_FUNCTIONAL     | `wise_test.go`                                                                                                                                                                           |
 | `nix run .#doc-verify` (links + godoc + count claims)  | FULLY_FUNCTIONAL     | `flake.nix` app; gates the count claims in AGENTS.md/FEATURES.md against the compiled surface                                                                                            |
@@ -387,7 +396,7 @@ plan; bulk payments demand-gated).
 | Godoc examples for the public API | FULLY_FUNCTIONAL | `example_test.go`; 24 `Example*` funcs (compile-only doc examples + 3 runnable) covering every resource group |
 | README API reference              | FULLY_FUNCTIONAL | All 16 resources documented with runnable snippets + TOC                                                      |
 
-## Deferred (demand-gated, not started)
+## Deferred architecture
 
 | Feature                      | Status  | Notes                                          |
 | ---------------------------- | ------- | ---------------------------------------------- |
