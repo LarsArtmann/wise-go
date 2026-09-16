@@ -914,7 +914,7 @@ broken sender is distinguishable from a routing mistake.
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Monetary amounts as `int64` cents | `float64` causes precision loss (e.g., `0.1 + 0.2 ≠ 0.3`). Cents are safe for arithmetic and storage.                                                  |
 | Two-layer type system             | Raw wire types in `internal/raw` mirror JSON exactly. Result types expose clean Go with `Money` value objects. Mapping functions convert between them. |
-| `go-retry` for retries            | In-house, zero-dependency retry with backoff and jitter; the only executor that expresses Wise's `Retry-After` as first-class policy (ADR 003).         |
+| `go-retry` for retries            | In-house, zero-dependency retry with backoff and jitter; the only executor that expresses Wise's `Retry-After` as first-class policy (ADR 003).        |
 | Flat package structure            | Single `package wise`; wire types hidden in `internal/raw`. The import path is the API.                                                                |
 | BDD tests with Ginkgo             | `httptest.Server` mock API responses. Tests verify both happy paths and error classification.                                                          |
 
