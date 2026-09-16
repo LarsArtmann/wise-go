@@ -7,6 +7,16 @@ Completed work lives in [CHANGELOG.md](CHANGELOG.md), never here.
 
 ## P1 — Release readiness
 
+[ ] Run the sandbox live-verification pass (`WISE_SANDBOX_API_KEY`) against the
+five spec-vs-live assumptions settled by the conformance work: statement
+`type` COMPACT/FLAT, `X-idempotence-uuid` on balance creation, statement
+`details.type` enum, `/v1/rates` array shape, text/plain funding errors.
+Source: docs/planning/2026-09-16_16-54_pareto-plan-openapi-conformance-green.md, 2026-09-16.
+
+[ ] Decide and execute the `quarterlyAPIVersion` 2026Q3 → 2026Q4 rollover as
+its own verified change (live spec already publishes 2026Q4 server URLs;
+webhook/OTT paths must be live-rechecked after the flip). 2026-09-16.
+
 [ ] Publish the GitHub Release objects for **v0.10.0 and v0.11.0** — both tags
 exist on origin and are served by the module proxy, but `gh release list` still
 shows v0.9.0 as Latest. v0.10.0 notes are drafted at

@@ -8,15 +8,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- Nothing yet.
+- `StatementType` (COMPACT / FLAT) with `StatementTypeCompact` and
+  `StatementTypeFlat` constants for the balance-statement `type` query
+  parameter, plus spec-native `DetailType` constants (CARD, DEPOSIT,
+  MONEY_ADDED, DIRECT_DEBIT, ACQUIRING_PAYMENT, CARD_CASHBACK).
+- `CreateBalanceRequest.IdempotencyKey`: optional caller-supplied
+  `X-idempotence-uuid` value. The header is required by Wise on balance
+  creation; when the field is empty the SDK generates a fresh v4 UUID
+  per call.
+- An automated OpenAPI spec-conformance gate: every mock exchange in the
+  test suite is validated against the vendored Wise OpenAPI 3.1 snapshot
+  (`docs/reviews/wise-api-openapi.json`) for route, parameter, header,
+  and response-schema conformance.
 
 ### Changed
 
-- Nothing yet.
+- **Breaking:** `ListTransactionsRequest.Type` and
+  `GetStatementRequest.Type` are now `StatementType` instead of
+  `DetailType`. The wire contract accepts only COMPACT/FLAT on the
+  statement endpoints; transaction-type values (CARD_PAYMENT etc.)
+  belong to response classification and were rejected by the API.
+  Replace `Type: wise.DetailTypeX` with `Type: wise.StatementTypeFlat`
+  (or `StatementTypeCompact`).
 
 ### Fixed
 
-- Nothing yet.
+- `GetExchangeRate` now parses the documented array response shape.
+  The legacy single-object shape is still tolerated without a second
+  request, and the entry matching the requested currency pair wins.
+  Empty rate lists surface as corruption instead of a zero-valued rate.
+- `CreateBalance` sends the required `X-idempotence-uuid` header; calls
+  without an explicit key previously failed against the live API with a
+  missing-parameter error.
 
 ## [0.11.0] - 2026-09-14
 

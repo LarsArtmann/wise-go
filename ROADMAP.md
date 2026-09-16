@@ -275,3 +275,18 @@ demand-gated raw ideas, not scheduled work:
   at the serialization boundary. It is deliberately not a financial math library
   (`Add`/`Sub`/`IsNegative`/`Equal` etc. are out of scope). Arithmetic is the
   consumer's domain logic; the SDK is an anti-corruption layer, not a domain model.
+
+## From the OpenAPI conformance work (2026-09-16)
+
+- **Paginated recipient surface** — the bundled OpenAPI spec documents only
+  the NEW `/accounts` list shape (envelope with `content`,
+  `seekPositionForNext`, `seekPositionForCurrent`); the SDK targets the
+  legacy bare-array `/v2/accounts`. Migrate with pagination support once the
+  new surface is live-equivalent.
+- **Spec snapshot refresh tooling** — a documented command/app to re-download
+  the Wise OpenAPI bundle (docs.wise.com `index.yaml`), convert to JSON, and
+  diff paths/schemas against `docs/reviews/wise-api-openapi.json` so contract
+  drift is reviewed, not discovered.
+- **Raw-type field-coverage gate** — assert every spec-required response
+  field exists in the matching raw struct (second conformance axis beyond
+  wire-traffic validation).

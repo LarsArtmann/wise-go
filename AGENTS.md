@@ -22,6 +22,13 @@
 - **flake.nix must be git-tracked for buildflow** — The buildflow pre-commit hook runs `nix fmt .` which requires `flake.nix` to be in the git index. If you create or modify `flake.nix`, `git add` it before committing or the pre-commit hook fails.
 - **GOEXPERIMENT=jsonv2 required** — As of go-branded-id v0.5.1 and go-error-family v0.10.0, both deps import `encoding/json/v2` which requires `GOEXPERIMENT=jsonv2` to build. The flake devShells, the go-standard check phase, and .golangci.yml build-tags are all configured for this. For buildflow: `.buildflow.yml` has an `env:` key that injects `GOEXPERIMENT: jsonv2` into all tool subprocesses (go-fix, test-race, govalid-generate, golangci-lint). `go env -w GOEXPERIMENT=jsonv2` does NOT work here — Nix home-manager symlinks `~/.config/go/env` into the read-only store.
 - **Transaction.Date is UTC** — Wise statement dates (`"2006-01-02 15:04:05"`) carry no timezone. `parseWiseDate` interprets them as UTC via `time.Parse`. Callers comparing to local-time values must convert explicitly to avoid off-by-one-day errors at boundaries.
+- **go-structure-linter "errors" are known false positives** — buildflow's
+go-structure-linter reports ~20 error-severity findings that are deliberate
+non-fixes for this repo: `root-package-files` (the SDK is a root-package
+library by design, not /internal or /pkg) and `go-version` (the repo pins
+go 1.26 while newer toolchains exist). Do NOT restructure or bulk-bump to
+satisfy them. Real golangci findings in touched code are fixed on sight.
+
 - **buildflow auto-configure is dangerous** — `buildflow --fix` can add 40+ linters (including irrelevant ones like `arangolint`, `clickhouselint`, `depguard`) that produce false positives. If buildflow modifies `.golangci.yml`, review the diff carefully. The project's curated linter list is intentional; do not let buildflow replace it with a generic "enable everything" config.
 - **Money + Currency value objects** — All monetary amounts are `Money{Cents int64, Currency Currency}`. `Currency` is a typed string with `NewCurrency(s)` validation (3-letter uppercase ASCII). `ListTransactionsRequest.Currency` is `Currency` (not `string`). Use `wise.Currency("EUR")` for direct construction or `NewCurrency("EUR")` for validated. The `toMoney` helper in `helpers.go` converts `raw.BalanceAmount` to `Money` with currency validation.
 - **flake.nix fileset must list all Go files** — The `buildGoModule` check uses an explicit `lib.fileset.unions` list. When adding a new `.go` file (e.g. `internal/raw/types.go`), add it to the fileset in `flake.nix` or the Nix build will fail with "undefined" errors.
@@ -56,12 +63,40 @@
 - **`setHeaders` (renamed from `setAuth`)** — Sets `Authorization`, `X-External-Correlation-Id` (client-wide + per-request override from the context via `WithRequestCorrelationID`; ctx wins), and the SCA approval token. When adding new headers, extend `setHeaders` in `client.go`, not the individual endpoint methods. Endpoint-specific negotiation headers (e.g. `Accept-Minor-Version: 1` on account-requirements) go through the `extraHeaders` hook in `request`/`getWithQueryHeaders`; raw (non-JSON) responses go through `getRaw`.
 - **Retry exhaustion preserves typed errors** — when failsafe-go's retry policy is exhausted, `doRequest` unwraps the `ExceededError`, classifies its final response via `checkError`, and returns the typed error (`*RateLimitError` with Retry-After, `*ServerError`) instead of the opaque "retries exceeded" wrapper. Locked in by the 429 BDD tests; do not regress.
 - **Go 1.26 `x509.MarshalPKIXPublicKey` returns `([]byte, error)`** — the two-value signature tripped the build once; same for test helpers.
+- **Spec-conformance gate** — `spec_conformance_test.go` records every HTTP
+exchange the mock harnesses serve and validates it against the vendored
+OpenAPI 3.1 snapshot (`docs/reviews/wise-api-openapi.json`, kin-openapi
+legacy router). Version-prefix stripping maps SDK wire paths
+(`/v4/profiles/...`, `/2026Q3/one-time-token/...`) onto unversioned spec
+templates. Documented exemptions: statement file formats (spec only
+declares `.json`), the legacy bare-array `/v2/accounts` list (spec only
+documents the new paginated envelope), and per-exchange
+`exemptResponseSchema` wrappers for intentionally-corrupt fixtures.
+Response/request validation shares `conformanceOptions()` — pass it to
+BOTH inputs. The `date-time` format is deliberately permissive (Wise's
+live timestamp shapes are looser than RFC3339; see above). The coverage
+guard (`zz_spec_conformance_coverage_test.go`, runs last) fails on
+vacuous passes; floors: 25 templates / 60 exchanges / 3 statement
+variants (actuals 2026-09-16: 37 / 177 / 5). Statement `type` is
+COMPACT|FLAT per the machine contract — `StatementType`, NOT DetailType.
+`CreateBalance` must send `X-idempotence-uuid` (auto-generated v4 unless
+`CreateBalanceRequest.IdempotencyKey` is set). Funding errors
+(`POST .../payments` non-2xx) are `text/plain` per spec, not the JSON
+error envelope. Go named-return parameters SHADOW package variables of
+the same name — the coverage counters hit this; avoid same-named returns.
+
 - **API docs study** — Full changelog + API reference analysis at `docs/reviews/2026-08-08_api-docs-study.md`. The Wise API has ~215 documented REST operations across 51 reference categories (re-audited 2026-09-16 against the live `docs.wise.com/api-reference/preview`; per-endpoint coverage matrix — 41 shipped / 51 demand-gated / 123 out-of-scope — is THE source for endpoint inventory and lives in `FEATURES.md`). The SDK covers 41 endpoint methods across 16 resources (core transfer flow complete + tier-2 reads + transfer receipts/MT103 payout info + webhook subscription CRUD + SCA one-time-token endpoints, v0.11.0; see the v1.0 audit at `docs/reviews/2026-08-21_v1.0-api-audit.md` — re-audited 2026-09-13 at the 33-method surface, grown to 37 by same-day webhook CRUD, then to 41 by the v0.11.0 OTT endpoints; count is gate-checked by `nix run .#doc-verify`). The full expansion plan with Pareto tiers lives at `docs/planning/2026-08-19_wise-api-full-implementation-plan.md`. When adding endpoints, start from the machine-readable OpenAPI spec (`docs/reviews/wise-api-openapi.json`, 1.86 MB, authoritative for field types, optionality, and ID formats — it caught `QuoteID` being UUID, not int64; 2026-08-08 era, so cross-check NEW endpoints against the live preview reference). Each preview category page is fetchable as `<category>.md` (e.g. `docs.wise.com/api-reference/preview/balance.md`); Mintlify also serves `llms.txt` and a sitemap. A second, smaller spec exists at `docs/reviews/wise-api-core-schemas.json` (46 KB, core schemas only) — cross-check it when the main spec is ambiguous.
 
 ## Dependencies
 
 - **`go-branded-id v0.5.1`** — branded/phantom types for strongly-typed IDs (ProfileID, BalanceID, TransactionID) that prevent mixing different entity IDs at compile time. v0.5.1 imports `encoding/json/v2` (requires `GOEXPERIMENT=jsonv2`).
 - **`go-error-family v0.10.0`** — behavioral error classification with retry decisions, exit codes, and CLI boundary handling. All domain errors implement its interfaces. v0.10.0 imports `encoding/json/v2` (requires `GOEXPERIMENT=jsonv2`).
+- **`kin-openapi v0.149.0`** — test-only OpenAPI 3.1 loader/router/validator
+powering the spec-conformance gate. Transitive deps include gorilla/mux and
+go-openapi helpers (indirect, NOT imported by this repo — the legacy router
+is used, not the gorillamux one). Adding it initially bumped the go
+directive to 1.27.1 via `go get`; the repo deliberately pins `go 1.26`
+(nixpkgs toolchain 1.26.7, GOTOOLCHAIN=local) — keep the directive at 1.26.
 - **`failsafe-go v0.9.7`** — retry with exponential backoff. `isRetryable` func decides what gets retried (429, 5xx, network errors).
 
 ## Build & Dev

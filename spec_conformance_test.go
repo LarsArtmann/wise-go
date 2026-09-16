@@ -19,6 +19,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"testing"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
@@ -433,4 +434,37 @@ func conformanceCoverageSnapshot() ([]string, []string, int, int) {
 	sort.Strings(exemptPaths)
 
 	return templates, exemptPaths, totalValidatedExchanges, exemptAccountsLists
+}
+
+// TestSpecConformanceValidatorCanFail guards the gate against silent rot:
+// the validator must reject a request to an operation the spec does not
+// define, and must accept a spec-shaped exchange, otherwise a broken spec
+// load or a misconfigured validator would pass every fixture vacuously.
+func TestSpecConformanceValidatorCanFail(t *testing.T) {
+	specCtx, err := loadConformanceSpec()
+	if err != nil {
+		t.Fatalf("load spec snapshot %s: %v", specSnapshotPath, err)
+	}
+
+	unknown := validateExchange(specCtx, conformanceExchange{
+		method:   http.MethodGet,
+		rawPath:  "/v99/definitely-not-a-wise-operation",
+		respBody: []byte(`{}`),
+		respCT:   "application/json",
+	})
+	if len(unknown) == 0 {
+		t.Fatal("validator accepted an operation the spec does not define")
+	}
+
+	known := validateExchange(specCtx, conformanceExchange{
+		method:   http.MethodGet,
+		rawPath:  "/v1/currencies",
+		respBody: []byte(`["EUR","USD"]`),
+		respCT:   "application/json",
+	})
+	for _, problem := range known {
+		if !strings.Contains(problem, "request") {
+			t.Fatalf("validator rejected a spec-conforming currencies list: %s", problem)
+		}
+	}
 }
