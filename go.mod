@@ -11,8 +11,8 @@ require (
 	github.com/larsartmann/go-branded-id v0.5.1
 	github.com/larsartmann/go-error-family v0.10.1
 	github.com/larsartmann/go-retry v0.6.0
-	github.com/onsi/ginkgo/v2 v2.31.0
-	github.com/onsi/gomega v1.42.0
+	github.com/onsi/ginkgo/v2 v2.32.2
+	github.com/onsi/gomega v1.43.0
 )
 
 require (
