@@ -100,21 +100,8 @@ func (c *Client) GetQuoteAccountRequirements(
 		return nil, err
 	}
 
-	query := accountRequirementsQuery(req.OriginatorLegalEntityType)
-
-	path := fmt.Sprintf("/v1/quotes/%s/account-requirements", req.QuoteID.Get())
-
-	var requirements []raw.AccountRequirement
-
-	err := c.getWithQueryHeaders(ctx, path, query,
-		map[string]string{"Accept-Minor-Version": "1"}, &requirements)
-	if err != nil {
-		return nil, fmt.Errorf("get account requirements for quote %s: %w", req.QuoteID.Get(), err)
-	}
-
-	result := mapAccountRequirements(requirements)
-
-	return result, nil
+	return c.quoteAccountRequirements(ctx, req.QuoteID, req.OriginatorLegalEntityType,
+		http.MethodGet, nil, "get")
 }
 
 // accountRequirementsQuery lazily renders the optional
@@ -147,8 +134,8 @@ func mapAccountRequirement(requirement raw.AccountRequirement) AccountRequiremen
 	}
 }
 
-// mapAccountRequirements maps every raw account requirement; shared by the
-// GET and POST account-requirements endpoints.
+// mapAccountRequirements maps every raw account requirement; used by the
+// shared account-requirements call for the GET and POST endpoints.
 func mapAccountRequirements(requirements []raw.AccountRequirement) []AccountRequirement {
 	result := make([]AccountRequirement, 0, len(requirements))
 	for _, requirement := range requirements {
@@ -176,16 +163,32 @@ func (c *Client) RefreshQuoteAccountRequirements(
 		return nil, err
 	}
 
-	query := accountRequirementsQuery(req.OriginatorLegalEntityType)
+	return c.quoteAccountRequirements(ctx, req.QuoteID, req.OriginatorLegalEntityType,
+		http.MethodPost, req.toWire(), "refresh")
+}
 
-	path := fmt.Sprintf("/v1/quotes/%s/account-requirements", req.QuoteID.Get())
+// quoteAccountRequirements performs the account-requirements call shared by
+// the GET and refresh (POST) endpoints: the same path, originator query, and
+// Accept-Minor-Version negotiation. method and wireBody select the variant;
+// verb labels the wrapped error ("get" or "refresh").
+func (c *Client) quoteAccountRequirements(
+	ctx context.Context,
+	quoteID QuoteID,
+	originatorLegalEntityType string,
+	method string,
+	wireBody any,
+	verb string,
+) ([]AccountRequirement, error) {
+	query := accountRequirementsQuery(originatorLegalEntityType)
+
+	path := fmt.Sprintf("/v1/quotes/%s/account-requirements", quoteID.Get())
 
 	var requirements []raw.AccountRequirement
 
-	err := c.request(ctx, http.MethodPost, path, query, req.toWire(), &requirements,
+	err := c.request(ctx, method, path, query, wireBody, &requirements,
 		map[string]string{"Accept-Minor-Version": "1"})
 	if err != nil {
-		return nil, fmt.Errorf("refresh account requirements for quote %s: %w", req.QuoteID.Get(), err)
+		return nil, fmt.Errorf("%s account requirements for quote %s: %w", verb, quoteID.Get(), err)
 	}
 
 	return mapAccountRequirements(requirements), nil

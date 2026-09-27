@@ -91,3 +91,11 @@ type BalanceCreditData struct {
 	PostTransactionBalanceAmount float64              `json:"post_transaction_balance_amount"`
 	OccurredAt                   string               `json:"occurred_at"`
 }
+
+// Every timed payload exposes its occurred_at to the shared webhook event
+// decoder via this accessor.
+func (d TransferStateChangeData) webhookOccurredAt() string { return d.OccurredAt }
+
+func (d TransferPayoutFailureData) webhookOccurredAt() string { return d.OccurredAt }
+
+func (d BalanceCreditData) webhookOccurredAt() string { return d.OccurredAt }
