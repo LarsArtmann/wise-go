@@ -92,8 +92,9 @@ type BalanceCreditData struct {
 	OccurredAt                   string               `json:"occurred_at"`
 }
 
-// Every timed payload exposes its occurred_at to the shared webhook event
-// decoder via this accessor; OccurredAtCarrier seals it to this package.
+// OccurredAtCarrier is satisfied by every timed payload: it exposes the
+// payload's occurred_at to the shared webhook event decoder. Carrier status
+// is sealed to this package by the unexported method.
 type OccurredAtCarrier interface {
 	webhookOccurredAt() string
 }
