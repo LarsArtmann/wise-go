@@ -93,9 +93,20 @@ type BalanceCreditData struct {
 }
 
 // Every timed payload exposes its occurred_at to the shared webhook event
-// decoder via this accessor.
+// decoder via this accessor; OccurredAtCarrier seals it to this package.
+type OccurredAtCarrier interface {
+	webhookOccurredAt() string
+}
+
 func (d TransferStateChangeData) webhookOccurredAt() string { return d.OccurredAt }
 
 func (d TransferPayoutFailureData) webhookOccurredAt() string { return d.OccurredAt }
 
 func (d BalanceCreditData) webhookOccurredAt() string { return d.OccurredAt }
+
+// WebhookOccurredAt reads a timed payload's occurred_at for the shared
+// decoder; the unexported accessor keeps carrier status sealed to this
+// package.
+func WebhookOccurredAt[T OccurredAtCarrier](payload T) string {
+	return payload.webhookOccurredAt()
+}

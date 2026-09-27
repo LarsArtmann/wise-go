@@ -337,10 +337,9 @@ func parseWebhookOccurredAt(value string, eventType string) (time.Time, error) {
 }
 
 // occurredAtPayload is a raw webhook payload carrying the occurred_at
-// timestamp every timed event includes.
-type occurredAtPayload interface {
-	webhookOccurredAt() string
-}
+// timestamp every timed event includes; carrier status is sealed inside
+// internal/raw.
+type occurredAtPayload = raw.OccurredAtCarrier
 
 // decodeWebhookEvent decodes a timed event's payload and parses its
 // occurred_at in one step; both failures are corruption-classified under the
@@ -351,7 +350,7 @@ func decodeWebhookEvent[T occurredAtPayload](e *WebhookEvent, eventType string) 
 		return nil, time.Time{}, err
 	}
 
-	occurredAt, err := parseWebhookOccurredAt(payload.webhookOccurredAt(), eventType)
+	occurredAt, err := parseWebhookOccurredAt(raw.WebhookOccurredAt(*payload), eventType)
 	if err != nil {
 		return nil, time.Time{}, err
 	}
@@ -414,11 +413,6 @@ func (e *WebhookEvent) BalanceCredit() (*BalanceCreditData, error) {
 	})
 	if err != nil {
 		return nil, fmt.Errorf("map balances#credit post-transaction balance: %w", err)
-	}
-
-	occurredAt, err := parseWebhookOccurredAt(payload.OccurredAt, "balances#credit")
-	if err != nil {
-		return nil, err
 	}
 
 	return &BalanceCreditData{
