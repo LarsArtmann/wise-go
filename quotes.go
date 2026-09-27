@@ -58,6 +58,8 @@ func (c *Client) CreateQuote(
 }
 
 // GetQuote returns an existing authenticated quote by ID.
+//
+// art-dupl:accept paired requireID guards and the per-endpoint path literal are the deliberate two-idiom validation convention; an abstraction would take more parameters than it saves lines
 func (c *Client) GetQuote(
 	ctx context.Context,
 	profileID ProfileID,
@@ -99,13 +101,7 @@ func (c *Client) GetQuoteAccountRequirements(
 		return nil, err
 	}
 
-	query := func() string {
-		if req.OriginatorLegalEntityType == "" {
-			return ""
-		}
-
-		return url.Values{"originatorLegalEntityType": []string{req.OriginatorLegalEntityType}}.Encode()
-	}
+	query := accountRequirementsQuery(req.OriginatorLegalEntityType)
 
 	path := fmt.Sprintf("/v1/quotes/%s/account-requirements", req.QuoteID.Get())
 
@@ -120,6 +116,19 @@ func (c *Client) GetQuoteAccountRequirements(
 	result := mapAccountRequirements(requirements)
 
 	return result, nil
+}
+
+// accountRequirementsQuery lazily renders the optional
+// originatorLegalEntityType query shared by the GET and refresh (POST)
+// account-requirements endpoints; an empty entity type sends no query.
+func accountRequirementsQuery(originatorLegalEntityType string) func() string {
+	return func() string {
+		if originatorLegalEntityType == "" {
+			return ""
+		}
+
+		return url.Values{"originatorLegalEntityType": []string{originatorLegalEntityType}}.Encode()
+	}
 }
 
 // mapAccountRequirement converts a raw account requirement into the parsed
@@ -168,13 +177,7 @@ func (c *Client) RefreshQuoteAccountRequirements(
 		return nil, err
 	}
 
-	query := func() string {
-		if req.OriginatorLegalEntityType == "" {
-			return ""
-		}
-
-		return url.Values{"originatorLegalEntityType": []string{req.OriginatorLegalEntityType}}.Encode()
-	}
+	query := accountRequirementsQuery(req.OriginatorLegalEntityType)
 
 	path := fmt.Sprintf("/v1/quotes/%s/account-requirements", req.QuoteID.Get())
 

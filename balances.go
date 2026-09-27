@@ -58,6 +58,8 @@ func (c *Client) ListBalances(ctx context.Context, profileID ProfileID) ([]Balan
 // GetBalance returns a specific balance by ID within a profile via the
 // direct per-balance endpoint. Unlike ListBalances, it does not filter:
 // hidden and invested balances are retrievable individually.
+//
+// art-dupl:accept paired requireID guards and the per-endpoint path literal are the deliberate two-idiom validation convention; an abstraction would take more parameters than it saves lines
 func (c *Client) GetBalance(
 	ctx context.Context,
 	profileID ProfileID,

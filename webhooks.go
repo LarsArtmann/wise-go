@@ -7,11 +7,13 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/json/jsontext"
 	"encoding/json/v2"
 	"encoding/pem"
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go/internal/raw"
@@ -307,21 +309,45 @@ func ParseWebhookEvent(payload []byte) (*WebhookEvent, error) {
 	}, nil
 }
 
+// decodeWebhookPayload unmarshals an event's data payload into T, wrapping
+// decode failures as corruption: the sender's bytes cannot be trusted. The
+// eventType labels the error context with the wire event name
+// (e.g. "transfers#state-change").
+func decodeWebhookPayload[T any](data jsontext.Value, eventType string) (*T, error) {
+	var payload T
+
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return nil, errorfamily.WrapCorruption(err, "wise.webhook.decode",
+			"decode "+eventType+" payload")
+	}
+
+	return &payload, nil
+}
+
+// parseWebhookOccurredAt parses an event payload's occurred_at timestamp,
+// wrapping failures as corruption under the same code as payload decoding.
+func parseWebhookOccurredAt(value string, eventType string) (time.Time, error) {
+	occurredAt, err := parseWiseTimestamp(value)
+	if err != nil {
+		return time.Time{}, errorfamily.WrapCorruption(err, "wise.webhook.decode",
+			"parse "+eventType+" occurred_at")
+	}
+
+	return occurredAt, nil
+}
+
 // TransferStateChange decodes the data payload of a transfers#state-change
 // event. Calling it on an envelope of a different event type fails with a
 // corruption-classified error.
 func (e *WebhookEvent) TransferStateChange() (*TransferStateChangeData, error) {
-	var payload raw.TransferStateChangeData
-
-	if err := json.Unmarshal(e.Data, &payload); err != nil {
-		return nil, errorfamily.WrapCorruption(err, "wise.webhook.decode",
-			"decode transfers#state-change payload")
+	payload, err := decodeWebhookPayload[raw.TransferStateChangeData](e.Data, "transfers#state-change")
+	if err != nil {
+		return nil, err
 	}
 
-	occurredAt, err := parseWiseTimestamp(payload.OccurredAt)
+	occurredAt, err := parseWebhookOccurredAt(payload.OccurredAt, "transfers#state-change")
 	if err != nil {
-		return nil, errorfamily.WrapCorruption(err, "wise.webhook.decode",
-			"parse transfers#state-change occurred_at")
+		return nil, err
 	}
 
 	return &TransferStateChangeData{
@@ -336,17 +362,14 @@ func (e *WebhookEvent) TransferStateChange() (*TransferStateChangeData, error) {
 // event. Calling it on an envelope of a different event type fails with a
 // corruption-classified error.
 func (e *WebhookEvent) TransferPayoutFailure() (*TransferPayoutFailureData, error) {
-	var payload raw.TransferPayoutFailureData
-
-	if err := json.Unmarshal(e.Data, &payload); err != nil {
-		return nil, errorfamily.WrapCorruption(err, "wise.webhook.decode",
-			"decode transfers#payout-failure payload")
+	payload, err := decodeWebhookPayload[raw.TransferPayoutFailureData](e.Data, "transfers#payout-failure")
+	if err != nil {
+		return nil, err
 	}
 
-	occurredAt, err := parseWiseTimestamp(payload.OccurredAt)
+	occurredAt, err := parseWebhookOccurredAt(payload.OccurredAt, "transfers#payout-failure")
 	if err != nil {
-		return nil, errorfamily.WrapCorruption(err, "wise.webhook.decode",
-			"parse transfers#payout-failure occurred_at")
+		return nil, err
 	}
 
 	return &TransferPayoutFailureData{
@@ -362,11 +385,9 @@ func (e *WebhookEvent) TransferPayoutFailure() (*TransferPayoutFailureData, erro
 // it on an envelope of a different event type fails with a
 // corruption-classified error.
 func (e *WebhookEvent) BalanceCredit() (*BalanceCreditData, error) {
-	var payload raw.BalanceCreditData
-
-	if err := json.Unmarshal(e.Data, &payload); err != nil {
-		return nil, errorfamily.WrapCorruption(err, "wise.webhook.decode",
-			"decode balances#credit payload")
+	payload, err := decodeWebhookPayload[raw.BalanceCreditData](e.Data, "balances#credit")
+	if err != nil {
+		return nil, err
 	}
 
 	amount, err := toMoney(raw.BalanceAmount{Value: payload.Amount, Currency: payload.Currency})
@@ -382,10 +403,9 @@ func (e *WebhookEvent) BalanceCredit() (*BalanceCreditData, error) {
 		return nil, fmt.Errorf("map balances#credit post-transaction balance: %w", err)
 	}
 
-	occurredAt, err := parseWiseTimestamp(payload.OccurredAt)
+	occurredAt, err := parseWebhookOccurredAt(payload.OccurredAt, "balances#credit")
 	if err != nil {
-		return nil, errorfamily.WrapCorruption(err, "wise.webhook.decode",
-			"parse balances#credit occurred_at")
+		return nil, err
 	}
 
 	return &BalanceCreditData{

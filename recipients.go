@@ -164,6 +164,7 @@ func (r CreateRecipientRequest) validate() error {
 	return nil
 }
 
+// art-dupl:accept ownedByCustomer is a two-line optional wire field per request type; each body builder owns its own field set
 func (r CreateRecipientRequest) toWire() map[string]any {
 	body := map[string]any{
 		"profile":           r.ProfileID.Get(),

@@ -34,6 +34,8 @@ const (
 
 // isPhoneChannel reports whether channel is one of the OTP delivery channels
 // the SDK can trigger and verify.
+//
+// art-dupl:accept idiomatic exhaustive-switch membership predicate; no shared domain concept with the statement-format check
 func isPhoneChannel(channel OTTChannel) bool {
 	switch channel {
 	case OTTChannelSMS, OTTChannelWhatsApp, OTTChannelVoice:

@@ -212,11 +212,7 @@ func classifyTransactionType(wiseType DetailType, totalCents int64) TransactionT
 		return TransactionTypeTransfer
 	case DetailTypeDeposit, DetailTypeMoneyAdded:
 		// Money-in categories classify by amount sign like the default.
-		if totalCents > 0 {
-			return TransactionTypeCredit
-		}
-
-		return TransactionTypeDebit
+		return creditOrDebit(totalCents)
 	case DetailTypePayment, DetailTypeAcquiringPayment, DetailTypeDirectDebit:
 		return TransactionTypePayment
 	case DetailTypeConversion, DetailTypeExchange:
@@ -224,12 +220,19 @@ func classifyTransactionType(wiseType DetailType, totalCents int64) TransactionT
 	case DetailTypeFee:
 		return TransactionTypeFee
 	default:
-		if totalCents > 0 {
-			return TransactionTypeCredit
-		}
-
-		return TransactionTypeDebit
+		return creditOrDebit(totalCents)
 	}
+}
+
+// creditOrDebit classifies by amount sign: a positive total is a credit,
+// anything else (negative or zero) is a debit. Shared by the money-in
+// detail types and the unmapped default, per the README contract.
+func creditOrDebit(totalCents int64) TransactionType {
+	if totalCents > 0 {
+		return TransactionTypeCredit
+	}
+
+	return TransactionTypeDebit
 }
 
 const invalidRequestCode = "wise.transactions.invalid_request"
@@ -268,6 +271,8 @@ const (
 // isKnownStatementFormat reports whether format is one the SDK can request
 // (kept in sync with the StatementFormat constants so an unknown format is
 // rejected client-side instead of 404ing server-side).
+//
+// art-dupl:accept idiomatic exhaustive-switch membership predicate; no shared domain concept with the OTT channel check
 func isKnownStatementFormat(format StatementFormat) bool {
 	switch format {
 	case StatementFormatCSV, StatementFormatPDF, StatementFormatXLSX,
