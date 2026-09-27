@@ -7,6 +7,7 @@ package wise_test
 // the inventory lives in the client code and FEATURES.md.
 
 import (
+	"flag"
 	"testing"
 )
 
@@ -28,6 +29,11 @@ func TestSpecConformanceCoverage(t *testing.T) {
 			"spec snapshot %s looks wrong (openapi=%q paths=%d); the conformance results are not trustworthy",
 			specSnapshotPath, doc.OpenAPI, len(doc.Paths.Map()),
 		)
+	}
+
+	if exchanges == 0 && shuffled(t) {
+		t.Skip("test shuffle placed this guard before the Ginkgo suite recorded any exchange; " +
+			"the ordering assertion is meaningless in this order, rerun without shuffle for the strict check")
 	}
 
 	if exchanges < minValidatedExchanges {
@@ -60,4 +66,14 @@ func TestSpecConformanceCoverage(t *testing.T) {
 		len(exemptPaths),
 		exemptAccountsLists,
 	)
+}
+
+// shuffled reports whether `go test -shuffle` is active: it can place this
+// guard before the Ginkgo suite despite the zz_ file name.
+func shuffled(t *testing.T) bool {
+	t.Helper()
+
+	f := flag.Lookup("test.shuffle")
+
+	return f != nil && f.Value.String() != "off"
 }
