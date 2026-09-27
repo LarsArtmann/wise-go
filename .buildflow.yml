@@ -13,5 +13,10 @@ env:
 # `go 1.26` satisfies the pinned toolchain.
 skip_steps:
   - go-version-auto-configure
+  # go-structure-linter's repair auto-bumps go.mod ("rule=go-version") while
+  # "fixing" its go-version finding — one of the ~22 findings AGENTS.md
+  # documents as deliberate non-fixes for this repo (root-package-files,
+  # go-version). Its repair corrupts the toolchain pin; skip the whole step.
+  - go-structure-linter
 
 max_file_size: 700
