@@ -283,13 +283,12 @@ func (c *Client) CancelTransfer(ctx context.Context, transferID TransferID) (*Tr
 //
 // The endpoint is SCA-protected for profiles registered in the UK/EEA: without
 // approval it fails with *SCAChallengeError (see WithSCAApprovalToken).
-//
-// art-dupl:accept paired requireID guards and the per-endpoint path literal are the deliberate two-idiom validation convention; an abstraction would take more parameters than it saves lines
 func (c *Client) FundTransfer(
 	ctx context.Context,
 	profileID ProfileID,
 	transferID TransferID,
 ) (*FundTransferResult, error) {
+	// art-dupl:accept paired requireID guards and the per-endpoint path literal are the deliberate two-idiom validation convention; an abstraction would take more parameters than it saves lines
 	if err := requireID(profileID, "wise.transfer.invalid_request", "profileID"); err != nil {
 		return nil, err
 	}

@@ -58,13 +58,12 @@ func (c *Client) CreateQuote(
 }
 
 // GetQuote returns an existing authenticated quote by ID.
-//
-// art-dupl:accept paired requireID guards and the per-endpoint path literal are the deliberate two-idiom validation convention; an abstraction would take more parameters than it saves lines
 func (c *Client) GetQuote(
 	ctx context.Context,
 	profileID ProfileID,
 	quoteID QuoteID,
 ) (*Quote, error) {
+	// art-dupl:accept paired requireID guards and the per-endpoint path literal are the deliberate two-idiom validation convention; an abstraction would take more parameters than it saves lines
 	if err := requireID(profileID, "wise.quote.invalid_request", "profileID"); err != nil {
 		return nil, err
 	}
