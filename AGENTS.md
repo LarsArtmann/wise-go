@@ -13,7 +13,7 @@
 - **Retry-After + X-Rate-Limited-By headers (Apr 2026)** — 429 responses include `X-Rate-Limited-By` identifying the rate-limit scope (e.g., "ip", "profile") and `Retry-After`. `RateLimitError.RetryAfter` is parsed from the HTTP `Retry-After` header (delta-seconds or HTTP-date), falling back to 1 second; `RateLimitError.RateLimitedBy` captures the scope.
 - **`//nolint:bodyclose`** — `getWithQuery` intentionally defers body close via `responseCloser`: the response outlives the helper, so the caller closes it. Don't remove it.
 - **Two-layer type design** — Raw API structs (`raw.Profile`, `raw.Balance`, `raw.StatementTransaction`, `raw.Transfer`, `raw.Quote`, `raw.Recipient`, `raw.ExchangeRate` in `internal/raw/types.go`) intentionally use primitives (`int64`/`string`/`float64`) to match Wise's JSON wire format. The parsed result types (`Profile`, `Balance`, `Transaction`, `Transfer`, `Quote`, `Recipient`, `ExchangeRate` in `types.go`) convert these into strong types (branded IDs, enums, `time.Time`, `Money`). Raw types are in `internal/raw` and invisible to consumers. The raw/public `TransferRequirement` mirror pair (suppressed via `// art-dupl:accept` directives at both sites, verified 2026-09-13) is the accepted price of tag-free public types — do NOT merge via type aliases (aliases would leak Wise's wire JSON tags into the public serialization surface).
-- **art-dupl suppression is in-source directives** — `// art-dupl:accept <rationale>` comments ARE the suppression config (no baseline file, declined 2026-09-13). As of 2026-09-27 a `-t 2 --type-aware` run reports 0 actionable; remaining accepted clones: the requireID-guards+path idiom trio (GetBalance/GetQuote/FundTransfer), the ownedByCustomer wire-field tails, and two exhaustive-switch bool predicates. **Placement gotcha: body-interior clones are only suppressed when the directive sits INSIDE the cloned line range** (directly above the duplicated lines); a directive on the enclosing function's doc comment suppresses nothing — doc-comment placement only works for declaration-level clones like the struct mirror pair.
+- **art-dupl suppression is in-source directives** — `// art-dupl:accept <rationale>` comments ARE the suppression config (no baseline file, declined 2026-09-13). As of 2026-09-27 (second pass) a `-t 2 --type-aware` run reports 0 actionable; remaining accepted clones: the requireID-guards+path idiom trio (GetBalance/GetQuote/FundTransfer), the ownedByCustomer wire-field tails, and two exhaustive-switch bool predicates. **Placement gotcha: body-interior clones are only suppressed when the directive sits INSIDE the cloned line range** (directly above the duplicated lines); a directive on the enclosing function's doc comment suppresses nothing — doc-comment placement only works for declaration-level clones like the struct mirror pair. The trio's directives live IN-BODY for exactly this reason (an earlier pass put them on doc comments and the trio resurfaced actionable). The account-requirements GET/refresh pair shares `quoteAccountRequirements` (quotes.go), and webhook payload decoders share `decodeWebhookEvent[T]` + `raw.OccurredAtCarrier`/`raw.WebhookOccurredAt` — extend those instead of re-duplicating.
 - **Quote IDs are UUID strings** — Unlike profile/balance/transfer/recipient IDs, which are `int64`, Wise quote IDs are UUIDs (`string`). `QuoteID` is therefore `id.ID[QuoteBrand, string]` and constructed with `NewQuoteID("...")`.
 - **Recipient `details` is polymorphic** — The required fields depend on currency and route (e.g. `sortCode`+`accountNumber` for GBP, `iban` for many EUR corridors). The SDK exposes `Recipient.Details` and `CreateRecipientRequest.Details` as `map[string]string`; callers must use the account-requirements endpoints to discover the exact fields for their corridor.
 - **Transfer creation requires `customerTransactionId`** — This UUID is mandatory for idempotency. Reusing the same `customerTransactionId` with the same `quoteUuid` and `targetAccount` returns the existing transfer instead of creating a duplicate.
@@ -75,8 +75,11 @@
   Response/request validation shares `conformanceOptions()` — pass it to
   BOTH inputs. The `date-time` format is deliberately permissive (Wise's
   live timestamp shapes are looser than RFC3339; see above). The coverage
-  guard (`zz_spec_conformance_coverage_test.go`, runs last) fails on
-  vacuous passes; floors: 25 templates / 60 exchanges / 3 statement
+  guard (`zz_spec_conformance_coverage_test.go`, runs last alphabetically)
+  fails on vacuous passes; under `go test -shuffle` (buildflow's
+  test-coverage step shuffles) it may run before the recorder and then SKIPs
+  — the strict floor applies only when it runs after the suite; floors: 25
+  templates / 60 exchanges / 3 statement
   variants (actuals 2026-09-16: 37 / 177 / 5). Statement `type` is
   COMPACT|FLAT per the machine contract — `StatementType`, NOT DetailType.
   `CreateBalance` must send `X-idempotence-uuid` (auto-generated v4 unless
@@ -97,10 +100,16 @@
   is used, not the gorillamux one). Adding it initially bumped the go
   directive to 1.27.1 via `go get`; the repo deliberately pins `go 1.26.7`
   (nixpkgs toolchain 1.26.7, GOTOOLCHAIN=local) — keep the directive there.
-  This bump has recurred: the auto-git daemon swept a `go 1.27.1` directive
-  into the ADR-003 commit (2026-09-16), which broke ALL local builds (toolchain
-  refuses go.mod > toolchain); restored 2026-09-27. After any `go get`, check
-  `grep '^go ' go.mod` before committing.
+  This bump has recurred THREE ways: the auto-git daemon swept a `go 1.27.1`
+  directive into the ADR-003 commit (2026-09-16), breaking ALL local builds
+  (toolchain refuses go.mod > toolchain); and on 2026-09-27 buildflow's
+  gomod tooling re-bumped it during runs (buildflow preflight itself reports
+  a fleet go-version flipflop — "go line changed 16 times in the last 20
+  commits" — an upstream BuildFlow disposition fight, not a repo bug).
+  Restoring works but is only half the fix: the nix gates (nix-hash-fix,
+  nix-build-verify) build the COMMITTED tree, so they stay red until the
+  daemon commits the restored directive. After any `go get` or buildflow
+  run, check `grep '^go ' go.mod` before committing.
 - **`go-retry v0.6.0`** — in-house retry loop with exponential backoff + jitter; replaced failsafe-go per ADR 003 (executed 2026-09-16, zero-dependency). `isRetryableError` decides what gets retried (429, 5xx, network errors); `Config.DelayFunc` feeds Wise's `Retry-After` into the delay, capped at `WithRetry`'s max delay.
 
 ## Build & Dev

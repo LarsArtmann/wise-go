@@ -4,6 +4,8 @@
 **Scope:** This session only (per instruction: no unrelated research). Session = art-dupl triage → 3 extractions → 8 accept directives → incidental discovery and fix of an 11-day broken build → AGENTS.md updates → full verification battery.
 **Honesty note:** This report doubles as the brutal self-review. Sections (d) and (e) include failures from THIS session, not just the repo's history.
 
+> **Update 2026-09-27 ~23:00 (second pass, same day):** the "0 actionable" snapshot above did not hold. The requireID-trio directives were placed on the enclosing functions' doc comments, which suppresses nothing for body-interior clones (the report's own gotcha in (a)#7) — the trio resurfaced actionable in the next run, and the quotes account-requirements and webhook decode/parse call-site blocks were still duplicated at the call sites. Second pass: moved the trio directives in-body (verified suppressing), extracted `quoteAccountRequirements` (quotes.go) and `decodeWebhookEvent[T]` + `raw.OccurredAtCarrier`/`raw.WebhookOccurredAt` (webhooks.go, internal/raw/webhooks.go) to eliminate groups #2/#3 for real. The go.mod bump also recurred via buildflow's gomod tooling (fleet go-version flipflop, 16 changes in 20 commits per buildflow preflight) and was re-restored to 1.26.7. `TestSpecConformanceCoverage` additionally proved shuffle-unsafe (buildflow coverage runs shuffle; the zz_ guard can execute before the recorder) and now skips only in that degenerate order. Verified twice: art-dupl 0 actionable / 14 suppressed; full suite green in canonical and shuffled order.
+
 ---
 
 ## Verification Snapshot (end of session, all green)
