@@ -240,6 +240,7 @@ func (r RefreshQuoteAccountRequirementsRequest) toWire() map[string]any {
 		body["accountHolderName"] = r.Recipient.AccountHolderName
 	}
 
+	// art-dupl:accept ownedByCustomer is a two-line optional wire field per request type; each body builder owns its own field set
 	if r.Recipient.OwnedByCustomer {
 		body["ownedByCustomer"] = true
 	}
