@@ -5,4 +5,13 @@
 env:
   GOEXPERIMENT: jsonv2
 
+# go-version-auto-configure rewrites the go directive to the newest toolchain
+# line (1.27), which the repo's pinned nixpkgs toolchain (1.26.7,
+# GOTOOLCHAIN=local) refuses — every subsequent go step then fails to load
+# the module. Fleet go-version flipflop: go-mod-normalize pins down (1.26),
+# go-version-auto-configure bumps up (1.27). Skip the upward disposition;
+# `go 1.26` satisfies the pinned toolchain.
+skip_steps:
+  - go-version-auto-configure
+
 max_file_size: 700
