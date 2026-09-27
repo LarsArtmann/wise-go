@@ -98,18 +98,18 @@
   powering the spec-conformance gate. Transitive deps include gorilla/mux and
   go-openapi helpers (indirect, NOT imported by this repo — the legacy router
   is used, not the gorillamux one). Adding it initially bumped the go
-  directive to 1.27.1 via `go get`; the repo deliberately pins `go 1.26.7`
-  (nixpkgs toolchain 1.26.7, GOTOOLCHAIN=local) — keep the directive there.
-  This bump has recurred THREE ways: the auto-git daemon swept a `go 1.27.1`
-  directive into the ADR-003 commit (2026-09-16), breaking ALL local builds
-  (toolchain refuses go.mod > toolchain); and on 2026-09-27 buildflow's
-  gomod tooling re-bumped it during runs (buildflow preflight itself reports
-  a fleet go-version flipflop — "go line changed 16 times in the last 20
-  commits" — an upstream BuildFlow disposition fight, not a repo bug).
-  Restoring works but is only half the fix: the nix gates (nix-hash-fix,
-  nix-build-verify) build the COMMITTED tree, so they stay red until the
-  daemon commits the restored directive. After any `go get` or buildflow
-  run, check `grep '^go ' go.mod` before committing.
+  directive to 1.27.1 via `go get`; the repo pins the go directive to the
+  nixpkgs toolchain line (1.26.7 toolchain, GOTOOLCHAIN=local) — the
+  invariant that matters is directive ≤ 1.26.x. The 1.27 bump recurred three
+  ways (2026-09-16 daemon sweep → broken builds; 2026-09-27 buildflow runs):
+  root causes identified 2026-09-27 are buildflow's `go-structure-linter`
+  repair (rule=go-version auto-bump) and `go-version-auto-configure`, both
+  fighting `go-mod-normalize` (which deliberately rewrites patch-pins
+  1.26.7 → 1.26). Mitigated project-side via `skip_steps` in
+  `.buildflow.yml`; steady state is `go 1.26` (normalize's canonical form,
+  toolchain-compatible). Don't restore `go 1.26.7` — normalize will only
+  rewrite it again. After any `go get` or buildflow run, check
+  `grep '^go ' go.mod` before committing.
 - **`go-retry v0.6.0`** — in-house retry loop with exponential backoff + jitter; replaced failsafe-go per ADR 003 (executed 2026-09-16, zero-dependency). `isRetryableError` decides what gets retried (429, 5xx, network errors); `Config.DelayFunc` feeds Wise's `Retry-After` into the delay, capped at `WithRetry`'s max delay.
 
 ## Build & Dev
