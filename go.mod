@@ -9,7 +9,7 @@ go 1.26
 require (
 	github.com/getkin/kin-openapi v0.149.0
 	github.com/larsartmann/go-branded-id v0.6.0
-	github.com/larsartmann/go-error-family v0.10.2
+	github.com/larsartmann/go-error-family v0.11.0
 	github.com/larsartmann/go-retry v0.7.1
 	github.com/onsi/ginkgo/v2 v2.31.0
 	github.com/onsi/gomega v1.42.0
