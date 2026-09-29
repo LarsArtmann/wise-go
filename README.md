@@ -813,30 +813,35 @@ RSA-SHA256 signature of the raw request body, verifiable with the per-subscripti
 public key Wise shows in the dashboard. Verify every delivery before trusting it:
 
 ```go
-// Parse the key once at startup; a bad key should fail loudly there.
-webhookKey, err := wise.ParseWebhookPublicKey([]byte(subscriptionPublicKeyPEM))
-if err != nil {
-    log.Fatal(err)
-}
-
-func handleWebhook(w http.ResponseWriter, r *http.Request) {
-    body, err := io.ReadAll(r.Body)
+// Parse the key once when the handler is constructed; a bad key should fail
+// loudly there, not on the first delivery. Register the handler once:
+//
+//	http.HandleFunc("/webhooks/wise", newWebhookHandler(subscriptionPublicKeyPEM))
+func newWebhookHandler(subscriptionPublicKeyPEM string) http.HandlerFunc {
+    webhookKey, err := wise.ParseWebhookPublicKey([]byte(subscriptionPublicKeyPEM))
     if err != nil {
-        http.Error(w, "read body", http.StatusBadRequest)
-
-        return
+        log.Fatal(err)
     }
 
-    // Verify the raw bytes exactly as received — before any re-marshalling,
-    // which would change the signed input.
-    if !wise.VerifyWebhookSignature(body, r.Header.Get(wise.HeaderWebhookSignature), webhookKey) {
-        http.Error(w, "invalid signature", http.StatusUnauthorized)
+    return func(w http.ResponseWriter, r *http.Request) {
+        body, err := io.ReadAll(r.Body)
+        if err != nil {
+            http.Error(w, "read body", http.StatusBadRequest)
 
-        return
+            return
+        }
+
+        // Verify the raw bytes exactly as received — before any re-marshalling,
+        // which would change the signed input.
+        if !wise.VerifyWebhookSignature(body, r.Header.Get(wise.HeaderWebhookSignature), webhookKey) {
+            http.Error(w, "invalid signature", http.StatusUnauthorized)
+
+            return
+        }
+
+        // Trustworthy delivery: parse the envelope and its typed payload —
+        // see [Typed event decoding](#typed-event-decoding) below.
     }
-
-    // Trustworthy delivery: parse the envelope and its typed payload —
-    // see [Typed event decoding](#typed-event-decoding) below.
 }
 ```
 
