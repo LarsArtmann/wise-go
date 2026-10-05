@@ -140,8 +140,8 @@ func (r ValidateTransferRequirementsRequest) toWire() map[string]any {
 		"quoteUuid":     r.QuoteID.Get(),
 	}
 
-	if r.CustomerTransactionID != "" {
-		body["customerTransactionId"] = r.CustomerTransactionID
+	if !r.CustomerTransactionID.IsZero() {
+		body["customerTransactionId"] = r.CustomerTransactionID.Get()
 	}
 
 	if r.OriginatorLegalEntityType != "" {

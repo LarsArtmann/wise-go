@@ -113,7 +113,7 @@ var _ = Describe("OTT (SCA one-time-token endpoints)", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(status.ActionType).To(Equal("BALANCE__GET_STATEMENT"))
-			Expect(status.UserID).To(Equal(int64(6146956)))
+			Expect(status.UserID).To(Equal(wise.NewUserID(6146956)))
 			Expect(status.Validity).To(Equal(time.Hour))
 
 			Expect(status.Challenges).To(HaveLen(1))

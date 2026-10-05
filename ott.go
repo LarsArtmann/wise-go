@@ -128,7 +128,7 @@ type OTTStatus struct {
 	// ActionType names the action the token authorizes, e.g.
 	// "BALANCE__GET_STATEMENT" for a balance statement download.
 	ActionType string
-	UserID     int64
+	UserID     UserID
 }
 
 // PendingRequired returns the challenges that must still be passed to clear
@@ -393,7 +393,7 @@ func toOTTStatus(response raw.OTTResponse) (*OTTStatus, error) {
 		Challenges: challenges,
 		Validity:   time.Duration(properties.Validity) * time.Second,
 		ActionType: properties.ActionType,
-		UserID:     properties.UserID,
+		UserID:     NewUserID(properties.UserID),
 	}, nil
 }
 

@@ -58,6 +58,11 @@ type WebhookSubscriptionBrand struct{}
 
 func (WebhookSubscriptionBrand) Name() string { return "WebhookSubscription" }
 
+// CustomerTransactionIDBrand is a phantom type for CustomerTransactionID.
+type CustomerTransactionIDBrand struct{}
+
+func (CustomerTransactionIDBrand) Name() string { return "CustomerTransaction" }
+
 // ProfileID is a strongly-typed identifier for Wise profiles.
 type ProfileID = id.ID[ProfileBrand, int64]
 
@@ -96,6 +101,11 @@ type QuoteID = id.ID[QuoteBrand, string]
 // subscriptions. Like QuoteID it is a UUID string on the wire (spec:
 // "UUID that uniquely identifies the subscription"), not an int64.
 type WebhookSubscriptionID = id.ID[WebhookSubscriptionBrand, string]
+
+// CustomerTransactionID is the caller-supplied idempotency key of a Wise
+// transfer (wire "customerTransactionId", a UUID). Wise deduplicates create
+// attempts by it and echoes it back on the created transfer.
+type CustomerTransactionID = id.ID[CustomerTransactionIDBrand, string]
 
 // NewProfileID creates a new ProfileID from an int64 value.
 func NewProfileID(v int64) ProfileID {
@@ -147,6 +157,12 @@ func NewQuoteID(v string) QuoteID {
 // UUID value.
 func NewWebhookSubscriptionID(v string) WebhookSubscriptionID {
 	return id.NewID[WebhookSubscriptionBrand](v)
+}
+
+// NewCustomerTransactionID creates a new CustomerTransactionID from a string
+// UUID value.
+func NewCustomerTransactionID(v string) CustomerTransactionID {
+	return id.NewID[CustomerTransactionIDBrand](v)
 }
 
 // requireID turns a zero branded ID into a Rejection carrying the endpoint

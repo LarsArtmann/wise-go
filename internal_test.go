@@ -116,7 +116,7 @@ func TestCreateTransferRequestValidate(t *testing.T) {
 	valid := CreateTransferRequest{
 		QuoteID:               NewQuoteID(quoteID),
 		TargetAccount:         NewRecipientID(accountID),
-		CustomerTransactionID: txID,
+		CustomerTransactionID: NewCustomerTransactionID(txID),
 	}
 
 	tests := []struct {
@@ -136,7 +136,7 @@ func TestCreateTransferRequestValidate(t *testing.T) {
 		},
 		{
 			name:      "missing customerTransactionId",
-			mutate:    func(r *CreateTransferRequest) { r.CustomerTransactionID = "" },
+			mutate:    func(r *CreateTransferRequest) { r.CustomerTransactionID = CustomerTransactionID{} },
 			wantSubst: "customerTransactionId is required",
 		},
 	}

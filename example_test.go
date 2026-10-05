@@ -90,7 +90,7 @@ func ExampleClient_ValidateTransferRequirements() {
 	transferReq := wise.CreateTransferRequest{
 		QuoteID:               wise.NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
 		TargetAccount:         wise.NewRecipientID(98765432),
-		CustomerTransactionID: "22244c35-9fe8-4c32-b7fd-d05c2a7734bf",
+		CustomerTransactionID: wise.NewCustomerTransactionID("22244c35-9fe8-4c32-b7fd-d05c2a7734bf"),
 	}
 
 	if missing := wise.MissingTransferDetails(requirements, transferReq); len(missing) > 0 {

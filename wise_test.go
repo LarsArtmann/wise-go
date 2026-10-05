@@ -106,7 +106,7 @@ func validCreateTransferRequest() wise.CreateTransferRequest {
 	return wise.CreateTransferRequest{
 		QuoteID:               wise.NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
 		TargetAccount:         wise.NewRecipientID(98765432),
-		CustomerTransactionID: "22244c35-9fe8-4c32-b7fd-d05c2a7734bf",
+		CustomerTransactionID: wise.NewCustomerTransactionID("22244c35-9fe8-4c32-b7fd-d05c2a7734bf"),
 	}
 }
 
@@ -1250,7 +1250,7 @@ var _ = Describe("Wise Client", func() {
 					time.Date(2023, 11, 24, 10, 47, 49, 0, time.UTC),
 				))
 				Expect(first.Reference).To(Equal("Rent November"))
-				Expect(first.CustomerTransactionID).To(Equal("54a6bc09-cef9-49a8-9041-f1f0c654cd88"))
+				Expect(first.CustomerTransactionID.Get()).To(Equal("54a6bc09-cef9-49a8-9041-f1f0c654cd88"))
 				Expect(first.HasActiveIssues).To(BeFalse())
 			})
 
@@ -2200,7 +2200,7 @@ var _ = Describe("Wise Client", func() {
 				transfer, err := client.CreateTransfer(context.Background(), wise.CreateTransferRequest{
 					QuoteID:               wise.NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
 					TargetAccount:         wise.NewRecipientID(98765432),
-					CustomerTransactionID: "22244c35-9fe8-4c32-b7fd-d05c2a7734bf",
+					CustomerTransactionID: wise.NewCustomerTransactionID("22244c35-9fe8-4c32-b7fd-d05c2a7734bf"),
 				})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(transfer).ToNot(BeNil())
@@ -4062,7 +4062,7 @@ var _ = Describe("Wise Client", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(data.Resource.Type).To(Equal("transfer"))
 			Expect(data.Resource.ID).To(Equal(int64(111)))
-			Expect(data.Resource.ProfileID).To(Equal(int64(222)))
+			Expect(data.Resource.ProfileID).To(Equal(wise.NewProfileID(222)))
 			Expect(data.Resource.AccountID).ToNot(BeNil())
 			Expect(*data.Resource.AccountID).To(Equal(int64(333)))
 			Expect(data.CurrentState).To(Equal(wise.TransferStatus("processing")))

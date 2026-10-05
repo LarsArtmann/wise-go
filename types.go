@@ -229,7 +229,7 @@ type Transfer struct {
 	Target                Money
 	Created               time.Time
 	Reference             string
-	CustomerTransactionID string
+	CustomerTransactionID CustomerTransactionID
 	HasActiveIssues       bool
 }
 
@@ -512,7 +512,7 @@ type CreateTransferRequest struct {
 	QuoteID                           QuoteID
 	TargetAccount                     RecipientID
 	SourceAccount                     RecipientID // Optional refund recipient account.
-	CustomerTransactionID             string
+	CustomerTransactionID             CustomerTransactionID
 	Reference                         string
 	SourceOfFunds                     string
 	TransferPurpose                   string
@@ -532,7 +532,7 @@ type CreateTransferRequest struct {
 type ValidateTransferRequirementsRequest struct {
 	TargetAccount             RecipientID
 	QuoteID                   QuoteID
-	CustomerTransactionID     string
+	CustomerTransactionID     CustomerTransactionID
 	OriginatorLegalEntityType string
 	Details                   TransferRequirementsDetails // Optional; populated from the response.
 }
@@ -758,9 +758,9 @@ type WebhookEvent struct {
 // credited). AccountID is only present for transfer events.
 type WebhookResource struct {
 	Type      string
-	ID        int64
-	ProfileID int64
-	AccountID *int64
+	ID        int64 // ID space varies by event type: a transfer ID on transfer events, a balance ID on account-details events.
+	ProfileID ProfileID
+	AccountID *int64 // ID space varies by event type: a recipient account ID on transfer events, a balance ID on swift-in credit events.
 }
 
 // TransferStateChangeData is the typed payload of transfers#state-change

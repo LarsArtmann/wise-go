@@ -188,11 +188,8 @@ func (r CreateTransferRequest) validate() error {
 		return err
 	}
 
-	if r.CustomerTransactionID == "" {
-		return errorfamily.NewRejection(
-			"wise.transfer.invalid_request",
-			"customerTransactionId is required",
-		)
+	if err := requireID(r.CustomerTransactionID, "wise.transfer.invalid_request", "customerTransactionId"); err != nil {
+		return err
 	}
 
 	return nil
@@ -229,7 +226,7 @@ func (c *Client) CreateTransfer(
 	body := map[string]any{
 		"targetAccount":         req.TargetAccount.Get(),
 		"quoteUuid":             req.QuoteID.Get(),
-		"customerTransactionId": req.CustomerTransactionID,
+		"customerTransactionId": req.CustomerTransactionID.Get(),
 	}
 
 	if req.SourceAccount.Get() != 0 {
@@ -412,7 +409,7 @@ func mapTransfer(t raw.Transfer) (Transfer, error) {
 		Target:                target,
 		Created:               created,
 		Reference:             reference,
-		CustomerTransactionID: t.CustomerTransactionID,
+		CustomerTransactionID: NewCustomerTransactionID(t.CustomerTransactionID),
 		HasActiveIssues:       t.HasActiveIssues,
 	}, nil
 }

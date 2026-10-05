@@ -428,7 +428,7 @@ func toWebhookResource(resource raw.WebhookEventResource) WebhookResource {
 	return WebhookResource{
 		Type:      resource.Type,
 		ID:        resource.ID,
-		ProfileID: resource.ProfileID,
+		ProfileID: NewProfileID(resource.ProfileID),
 		AccountID: resource.AccountID,
 	}
 }
