@@ -401,6 +401,24 @@ func ExampleClient_GetBankAccountDetails() {
 	}
 }
 
+// List the webhook subscriptions registered on a profile — e.g. to audit
+// what still delivers where, or to find an existing subscription before
+// creating a duplicate.
+//
+//nolint:testableexamples // documentation-only; runs against the live API
+func ExampleClient_ListProfileWebhookSubscriptions() {
+	client := wise.New("your-api-key")
+
+	subs, err := client.ListProfileWebhookSubscriptions(context.Background(), wise.NewProfileID(12345))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, sub := range subs {
+		fmt.Printf("%s -> %s (%s)\n", sub.Name, sub.Delivery.URL, sub.TriggerOn)
+	}
+}
+
 // Register a webhook subscription so Wise POSTs an event envelope to your
 // HTTPS endpoint whenever the chosen event occurs, then delete it when done.
 //
