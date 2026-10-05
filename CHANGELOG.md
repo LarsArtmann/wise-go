@@ -20,6 +20,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   test suite is validated against the vendored Wise OpenAPI 3.1 snapshot
   (`docs/reviews/wise-api-openapi.json`) for route, parameter, header,
   and response-schema conformance.
+- `wise.Version` constant (currently `"0.11.0"`): lets consumers identify
+  and report the SDK version they run (e.g. inside a User-Agent string
+  via `WithUserAgent`).
+- Webhook-signature verification is pinned to Wise's published test
+  vector (byte-exact sandbox signing key, payload, and signature from
+  `transferwise/digital-signatures-examples`), covering both the verify
+  and tamper paths.
+- A private vulnerability-reporting policy (`.github/SECURITY.md`):
+  GitHub security advisories, scope, and a 7-day triage commitment.
 
 ### Changed
 
@@ -47,6 +56,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `Retry-After` hint (delta-seconds or HTTP-date) is honored as the retry
   delay, capped at the `WithRetry` max delay. `WithRetry(maxRetries, min, max)`
   keeps its semantics.
+- Test and CI hardening, no public API changes: statement download tests
+  assert content types exactly (PDF byte-for-byte; XLSX via the canonical
+  OOXML MIME type); gofumpt and govulncheck are version-pinned in CI (no
+  `@latest`); a warn-not-fail `erraudit` job checks coded-error hygiene;
+  the flake check now enforces the same 90% coverage floor as CI; the
+  apidiff app pins gorelease instead of floating `@latest`; doc-verify
+  fails on empty count-claim extraction; and the `//nolint:branching-flow:`
+  structure-linter directives are exempted from nolintlint (they are
+  load-bearing).
 
 ### Fixed
 
