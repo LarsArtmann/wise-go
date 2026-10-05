@@ -123,6 +123,45 @@ jobs:
           name: govulncheck-report
           path: govulncheck.txt
     timeout-minutes: 15
+  erraudit:
+    # Error-handling audit (errors.As→AsType modernization + coded-error
+    # enforcement). Curated config: --type-aware plus --enforce-coded-errors;
+    # the other enforcement flags are deliberately off — see AGENTS.md
+    # "Dependencies → erraudit".
+    #
+    # WARN-not-fail: github.com/larsartmann/erraudit is a PRIVATE module, so
+    # the install needs ERRAUDIT_TOKEN (a PAT with read access to that repo)
+    # in the repo secrets. Until it is set the install step fails, the gate
+    # is skipped, and the job stays green (same pattern as the cachix step
+    # in the nix job). Make this job blocking by deleting the two
+    # continue-on-error / if lines once the token exists.
+    name: Error-Handling Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Install erraudit (private module)
+        id: install
+        continue-on-error: true
+        run: |
+          git config --global \
+            url."https://x-access-token:${ERRAUDIT_TOKEN}@github.com/".insteadOf \
+            "https://github.com/"
+          GOPRIVATE=github.com/larsartmann/erraudit GOTOOLCHAIN=auto \
+            go install github.com/larsartmann/erraudit/cmd/erraudit@v0.5.1-0.20260922174106-1c6809adf02e
+        env:
+          ERRAUDIT_TOKEN: ${{ secrets.ERRAUDIT_TOKEN }}
+
+      - name: Curated erraudit gate
+        if: steps.install.outcome == 'success'
+        run: |
+          erraudit lint ./... --type-aware --enforce-coded-errors
+    timeout-minutes: 15
   coverage-badge:
     # Generates coverage/badge.json so the README badge renders live data —
     # kills badge drift (the 94.8%→84.2% hand-edit incident).

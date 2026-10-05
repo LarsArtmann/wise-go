@@ -354,7 +354,7 @@ func decodeWebhookEvent[T occurredAtPayload](e *WebhookEvent, eventType string) 
 	}
 
 	occurredAt, err := parseWebhookOccurredAt(
-		raw.WebhookOccurredAt(*payload), //nolint:branching-flow:panic // decodeWebhookPayload returns non-nil whenever err is nil
+		raw.WebhookOccurredAt(*payload), //nolint:branching-flow:panic // returns non-nil whenever err is nil
 		eventType,
 	)
 	if err != nil {
