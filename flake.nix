@@ -176,6 +176,7 @@
                     ./AGENTS.md
                     ./LICENSE
                     ./.github/workflows
+                    ./.github/SECURITY.md
                     ./docs
                   ];
                 };

@@ -137,7 +137,7 @@ go test -race -coverprofile=coverage.out -covermode=atomic ./...
 go tool cover -func=coverage.out | tail -1
 ```
 
-Tests use `net/http/httptest` to mock the Wise API — **no network access, no API key required**. Coverage is currently ~95%, and a **90% floor is enforced** in both the flake check and the CI coverage job: a silent drop below 90% fails the build.
+Tests use `net/http/httptest` to mock the Wise API — **no network access, no API key required**. Coverage is currently ~90% (measured 90.1% on 2026-10-05 — keep an eye on it; the floor is close), and a **90% floor is enforced** in both the flake check and the CI coverage job: a silent drop below 90% fails the build.
 
 ### Test style
 
