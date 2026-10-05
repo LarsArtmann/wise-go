@@ -296,6 +296,15 @@ linters:
         text: unused
         linters:
           - unused
+      # go-structure-linter (buildflow) suppression directives use a
+      # `linter:check` colon syntax that nolintlint's machine-readable
+      # format check rejects. The directives are load-bearing — they keep
+      # the structure linter's false-positive panics suppressed (verified
+      # 2026-10-05, `branching-flow panic` clean) — so exempt exactly the
+      # lines carrying them instead of weakening the directives.
+      - source: '//nolint:branching-flow:'
+        linters:
+          - nolintlint
     paths:
       - \.gen\.go$
       - _templ\.go$
