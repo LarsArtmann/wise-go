@@ -393,7 +393,7 @@ the plan; bulk payments only on a consumer demand signal).
 
 | Feature                           | Status           | Evidence                                                                                                      |
 | --------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------- |
-| Godoc examples for the public API | FULLY_FUNCTIONAL | `example_test.go`; 24 `Example*` funcs (compile-only doc examples + 3 runnable) covering every resource group |
+| Godoc examples for the public API | FULLY_FUNCTIONAL | `example_test.go`; 25 `Example*` funcs (compile-only doc examples + 3 runnable) covering every resource group |
 | README API reference              | FULLY_FUNCTIONAL | All 16 resources documented with runnable snippets + TOC                                                      |
 
 ## Deferred architecture

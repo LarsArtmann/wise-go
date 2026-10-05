@@ -130,13 +130,21 @@
         }:
         {
           # Hermetic test check with race detection and coverage output,
-          # matching the original buildGoModule test check.
+          # matching the original buildGoModule test check. Mirrors the 90%
+          # coverage gate from ci.yml — the flake check must enforce the same
+          # floor, not just measure coverage (ci.yml is disabled on GitHub).
           checks.test = config.packages.default.overrideAttrs (_old: {
             pname = "wise-go-test";
             doCheck = true;
             checkPhase = ''
               runHook preCheck
               GOEXPERIMENT=jsonv2 go test -race -coverprofile=coverage.out -covermode=atomic ./...
+              TOTAL=$(go tool cover -func=coverage.out | awk '/^total:/ {sub("%", "", $3); print $3}')
+              echo "coverage: $TOTAL%"
+              awk -v p="$TOTAL" 'BEGIN { if ((p+0) < 90.0) exit 1 }' || {
+                echo "FAIL: coverage $TOTAL% is below the 90% floor"
+                exit 1
+              }
               runHook postCheck
             '';
             installPhase = ''
@@ -226,20 +234,36 @@
                     status=1
                   fi
 
-                  # 2. Count claims in living docs must match the real surface.
+                  # 2. Count claims in living docs must match the real
+                  # surface. A claim pattern that extracts EMPTY fails
+                  # loudly — the silent-skip class (claim text drifts away,
+                  # gate quietly passes) is exactly what this check exists
+                  # to kill.
+                  check_count() {
+                    local label="$1" file="$2" pattern="$3" actual="$4" claimed
+                    claimed="$(grep -oE "$pattern" "$file" 2>/dev/null | head -1 | grep -oE '^[0-9]+' || true)"
+                    if [ -z "$claimed" ]; then
+                      echo "FAIL: count-claim pattern extracted NOTHING from $file (pattern: $pattern)"
+                      status=1
+                    elif [ "$claimed" != "$actual" ]; then
+                      echo "FAIL: $file claims $claimed $label, actual is $actual"
+                      status=1
+                    else
+                      echo "ok: $file: $claimed $label"
+                    fi
+                  }
+
                   actual_methods="$(go doc -all . | grep -c '^func (c \*Client)' || true)"
-                  claimed_methods="$(grep -oE '[0-9]+ endpoint methods' AGENTS.md | head -1 | grep -oE '^[0-9]+' || true)"
-                  if [ -n "$claimed_methods" ] && [ "$claimed_methods" != "$actual_methods" ]; then
-                    echo "FAIL: AGENTS.md claims $claimed_methods endpoint methods, actual is $actual_methods"
-                    status=1
-                  fi
+                  check_count "endpoint methods" AGENTS.md '[0-9]+ endpoint methods' "$actual_methods"
+                  # FEATURES phrases the same number as shipped operations;
+                  # they coincide today, and if they ever diverge the gate
+                  # forces a conscious doc update instead of silent drift.
+                  check_count "shipped operations" FEATURES.md '[0-9]+ of those documented' "$actual_methods"
+                  check_count "methods" ROADMAP.md '[0-9]+ methods' "$actual_methods"
+                  check_count "Client methods" docs/reviews/2026-08-21_v1.0-api-audit.md '[0-9]+ .\*Client. methods across' "$actual_methods"
 
                   actual_examples="$(grep -c '^func Example' example_test.go || true)"
-                  claimed_examples="$(grep -oE '[0-9]+ .Example.. funcs' FEATURES.md | head -1 | grep -oE '^[0-9]+' || true)"
-                  if [ -n "$claimed_examples" ] && [ "$claimed_examples" != "$actual_examples" ]; then
-                    echo "FAIL: FEATURES.md claims $claimed_examples Example funcs, actual is $actual_examples"
-                    status=1
-                  fi
+                  check_count "Example funcs" FEATURES.md '[0-9]+ .Example.. funcs' "$actual_examples"
 
                   # 3. No ghost relative links in the living docs.
                   if ! lychee --offline --no-progress \
