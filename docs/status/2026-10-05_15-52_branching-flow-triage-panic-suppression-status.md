@@ -10,15 +10,15 @@
 
 `branching-flow all .` reported **293 findings across 14 linters**. Every finding was triaged against the documented architecture (AGENTS.md). Result: **zero real issues**. The only novel flags — 2 PANIC detections in `webhooks.go` — were proven false positives by code inspection and suppressed in-source. Everything else maps to documented deliberate non-fixes (two-layer raw/public design, branded-ID policy, webhook ID polymorphism).
 
-| Linter | Findings | Verdict |
-|---|---|---|
-| DUPE | 13 groups | Groups 1–10 "actionable" = raw↔public mirror pairs (two-layer design; merging would leak wire JSON tags). 11–13 tool-flagged FP. |
-| PHANTOM | 221 | Overwhelmingly `internal/raw` wire primitives (by design) + display strings/config fields. Public surface already brands what matters. |
-| STRONG-ID | 30 | 30/30 documented non-fixes. Delta check: 2026-10-05 brands (`CustomerTransactionID`, `OTTStatus.UserID`, `WebhookResource.ProfileID`) **no longer flagged** — earlier implementation confirmed landed. |
-| PANIC | 2 | Both verified false positives; suppressed. |
-| ANTI-PATTERNS | 3 | Low-confidence large-struct warnings on wire-mirror types. Non-fix. |
-| MIXINS | 24 | "Extract mixin" contradicts no-JSON-tag-leak design; request structs deliberately explicit. Non-fix. |
-| BOOLBLIND, SPLITBRAIN, CONTEXTGUARD, NAKEDRETURN, FLAGPARAM, IFACECOMPLETE, DO, RO | 0 | Green. |
+| Linter                                                                             | Findings  | Verdict                                                                                                                                                                                                |
+| ---------------------------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| DUPE                                                                               | 13 groups | Groups 1–10 "actionable" = raw↔public mirror pairs (two-layer design; merging would leak wire JSON tags). 11–13 tool-flagged FP.                                                                       |
+| PHANTOM                                                                            | 221       | Overwhelmingly `internal/raw` wire primitives (by design) + display strings/config fields. Public surface already brands what matters.                                                                 |
+| STRONG-ID                                                                          | 30        | 30/30 documented non-fixes. Delta check: 2026-10-05 brands (`CustomerTransactionID`, `OTTStatus.UserID`, `WebhookResource.ProfileID`) **no longer flagged** — earlier implementation confirmed landed. |
+| PANIC                                                                              | 2         | Both verified false positives; suppressed.                                                                                                                                                             |
+| ANTI-PATTERNS                                                                      | 3         | Low-confidence large-struct warnings on wire-mirror types. Non-fix.                                                                                                                                    |
+| MIXINS                                                                             | 24        | "Extract mixin" contradicts no-JSON-tag-leak design; request structs deliberately explicit. Non-fix.                                                                                                   |
+| BOOLBLIND, SPLITBRAIN, CONTEXTGUARD, NAKEDRETURN, FLAGPARAM, IFACECOMPLETE, DO, RO | 0         | Green.                                                                                                                                                                                                 |
 
 ---
 
@@ -71,58 +71,58 @@ Closest things to "fucked up" (all pre-existing, NOT caused this session, named 
 
 Ranked by impact. `NEW` = from this session; `CARRY #n` = item #n of `2026-10-05_14-53_strong-id-analysis-execution-status.md` (its #1–#20 not re-verified here).
 
-| # | Task | Impact | Effort | Category | Source |
-|---|---|---|---|---|---|
-| 1 | Run `go test ./...` (incl. spec-conformance) to close the verification gap on the nolint edits | High | S | Quality | NEW |
-| 2 | Generate branching-flow SARIF baseline of the 291 known non-fixes and gate with `all --baseline` (fails only on NEW); document in AGENTS.md | High | M | Quality | NEW |
-| 3 | Verify daemon commits for this session (b392f5e verified; spot-check the next daemon sweep after this report) | High | S | Cleanup | NEW |
-| 4 | Refactor `decodeWebhookPayload`/`decodeWebhookEvent` to value returns `(T, error)` / `(T, time.Time, error)`, dropping nolint #2 structurally | Medium | S | Refactor | NEW |
-| 5 | Test generic `//nolint:branching-flow` on one dupe/phantom/strong-id site; record result in AGENTS.md (informs g2) | Medium | S | Quality | NEW |
-| 6 | Run `golangci-lint run` over webhooks.go; confirm trailing nolint comments trip nothing | Medium | S | Quality | NEW |
-| 7 | Re-run `branching-flow all .`; record post-suppression delta (panic 2→0; remaining stable) as a one-line docs note | Medium | S | Quality | NEW |
-| 8 | Add `branching-flow panic` (now at 0) to the local gate set / buildflow step so it stays 0 | Medium | S | Quality | NEW |
-| 9 | Consider value-return refactor for the `toWebhookSubscription` loop path (drops nolint #1); check all three call sites | Low | S | Refactor | NEW |
-| 10 | Write "branching-flow findings → wise-go verdicts" mapping doc (this report §Session Context is the draft) | Medium | S | Documentation | NEW |
-| 11 | Annotate the 14:53 report with this session's touchpoints (its #44 AGENTS.md-sync item partially done via the new panic bullet) | Low | S | Documentation | NEW |
-| 12 | Decide + record nolint-vs-value-return as the house convention for unexported mappers (see g3-adjacent; my rec: value returns) | Low | S | Feature | NEW |
-| 13 | Cross-link the AGENTS.md panic bullet with the strong-id bullet (umbrella "branching-flow non-fixes" or mutual references) | Low | S | Documentation | NEW |
-| 14 | README: if it tabulates the branded-ID set, add `CustomerTransactionID` (verify table exists first) | Low | S | Documentation | CARRY #21 |
-| 15 | Add CHANGELOG migration snippet: before/after for the three retyped fields | Low | S | Documentation | CARRY #22 |
-| 16 | `CreateBalanceRequest.IdempotencyKey` (plain string) → same brand treatment as `CustomerTransactionID` | Medium | S | Feature | CARRY #23 |
-| 17 | Revisit `WebhookResource.AccountID` naming vs spec ("recipient account ID" / "balance account ID" per event) | Medium | S | Quality | CARRY #24 |
-| 18 | Typed per-event webhook payload accessors (e.g. `TransferStateChangeData.TransferID`) replacing comment-only polymorphism | Medium | M | Feature | CARRY #25 |
-| 19 | WebhookCreator/WebhookScope typed variants (user vs application) as discriminated accessors | Low | M | Feature | CARRY #26 |
-| 20 | Run `buildflow format` once to normalize markdown edits (dprint) | Low | S | Cleanup | CARRY #27 |
-| 21 | Verify `.buildflow.yml` skip_steps survived the strong-id session (zero config drift) | Low | S | Cleanup | CARRY #28 |
-| 22 | Check `coverage/` and `.crush/` dirs are gitignored, not daemon-bait | Low | S | Cleanup | CARRY #29 |
-| 23 | Review git log for daemon commits sweeping unintended files (this session's sweep was clean — keep cadence) | Low | S | Cleanup | CARRY #30 |
-| 24 | CONTRIBUTING.md: document the `GOEXPERIMENT=jsonv2` requirement for non-Nix contributors | Medium | S | Documentation | CARRY #31 |
-| 25 | Backfill GitHub Release objects for v0.10.0/v0.11.0 (v0.9.0 still shows as Latest) | Medium | S | Release | CARRY #32 |
-| 26 | After release cut: verify proxy.golang.org index + clean `go get module@version` | Medium | S | Release | CARRY #33 |
-| 27 | Check go-branded-id for a version > v0.5.1 (next dependency sweep; needs network) | Low | S | Cleanup | CARRY #34 |
-| 28 | When CI re-enables: pin gofumpt/govulncheck versions in ci.yml instead of `@latest` | Medium | S | Quality | CARRY #35 |
-| 29 | Add SECURITY.md | Low | S | Documentation | CARRY #36 |
-| 30 | Wire apidiff/gorelease as a CI job once network-dependent gates are wanted server-side | Medium | M | Quality | CARRY #37 |
-| 31 | Manual sweep of remaining public string fields for missed ID semantics (types.go full pass) | Low | M | Quality | CARRY #38 |
-| 32 | v1.0.0 API-freeze audit re-run (docs/reviews/2026-08-21 audit) after brand additions settle | Low | L | Documentation | CARRY #39 |
-| 33 | Document "brands validate zero-ness, not format" as explicit house rule — or adopt validated UUID constructors broadly | Medium | S | Feature | CARRY #40 |
-| 34 | Evaluate go-composable-business-types UUID vs a `NewUUIDID` helper in go-branded-id (prefer upstream helper) | Medium | M | Feature | CARRY #41 |
-| 35 | Confirm `OTTStatus` BDD coverage asserts `.UserID` after brand change across all OTT tests (check ClearSCAChallenge suite) | Low | S | Quality | CARRY #42 |
-| 36 | Confirm spec-conformance coverage floors (37/177/5) unchanged in AGENTS.md after next doc-verify run | Low | S | Documentation | CARRY #43 |
-| 37 | Keep the AGENTS.md branching-flow bullets and any suppression config in sync (owner cadence; supersede prose if baseline gate lands) | Low | S | Cleanup | CARRY #44 |
-| 38 | Example coverage: one compile-only example demonstrating `NewCustomerTransactionID` directly | Low | S | Documentation | CARRY #45 |
-| 39 | Sweep docs/status/ for reports whose items are resolved (ANNOTATE candidates) | Low | S | Documentation | CARRY #46 |
-| 40 | Decide whether `WebhookResource.ID` deserves a neutral `ResourceID` brand despite polymorphism (likely decline; record decision) | Low | S | Feature | CARRY #47 |
-| 41 | Consider exposing `Transfer.CustomerTransactionID.Get()` in README transfer-tracking snippet | Low | S | Documentation | CARRY #48 |
-| 42 | Post-CI-enable: re-run the full gate set as CI would (proves the disabled-workflow era ends clean) | Medium | M | Quality | CARRY #49 |
-| 43 | Archive resolved status-report items via docs-health ANNOTATE (keep annotate-inline policy) | Low | S | Documentation | CARRY #50 |
-| 44 | HARVEST this report's (f) into TODO_LIST.md / ROADMAP.md (docs-health HARVEST mode) — awaiting user go-ahead | High | M | Cleanup | NEW |
-| 45 | Wire the baseline gate into `.buildflow.yml` (or skip-list it deliberately) once task #2 lands | Medium | S | Quality | NEW |
-| 46 | Re-check `grep '^go ' go.mod` after any future `go get`/buildflow run (standing 1.27-bump trap) | Medium | S | Cleanup | NEW (standing trap) |
-| 47 | When UUID validation lands (task 33/34): regenerate baseline + re-triage strong-id list in the same session | Low | S | Quality | NEW |
-| 48 | Add the two panic nolint rationales as test names/comments in webhooks_test.go if not already pinned by decode tests | Low | S | Quality | NEW |
-| 49 | Decide release vehicle for the breaking brand retypes (see g1; unblocks tasks 25/26 and CHANGELOG work) | High | S | Release | NEW (decision) |
-| 50 | Pick the suppression endgame (see g2; unblocks tasks 2/5/37/45) | High | S | Cleanup | NEW (decision) |
+| #  | Task                                                                                                                                          | Impact | Effort | Category      | Source              |
+| -- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------ | ------------- | ------------------- |
+| 1  | Run `go test ./...` (incl. spec-conformance) to close the verification gap on the nolint edits                                                | High   | S      | Quality       | NEW                 |
+| 2  | Generate branching-flow SARIF baseline of the 291 known non-fixes and gate with `all --baseline` (fails only on NEW); document in AGENTS.md   | High   | M      | Quality       | NEW                 |
+| 3  | Verify daemon commits for this session (b392f5e verified; spot-check the next daemon sweep after this report)                                 | High   | S      | Cleanup       | NEW                 |
+| 4  | Refactor `decodeWebhookPayload`/`decodeWebhookEvent` to value returns `(T, error)` / `(T, time.Time, error)`, dropping nolint #2 structurally | Medium | S      | Refactor      | NEW                 |
+| 5  | Test generic `//nolint:branching-flow` on one dupe/phantom/strong-id site; record result in AGENTS.md (informs g2)                            | Medium | S      | Quality       | NEW                 |
+| 6  | Run `golangci-lint run` over webhooks.go; confirm trailing nolint comments trip nothing                                                       | Medium | S      | Quality       | NEW                 |
+| 7  | Re-run `branching-flow all .`; record post-suppression delta (panic 2→0; remaining stable) as a one-line docs note                            | Medium | S      | Quality       | NEW                 |
+| 8  | Add `branching-flow panic` (now at 0) to the local gate set / buildflow step so it stays 0                                                    | Medium | S      | Quality       | NEW                 |
+| 9  | Consider value-return refactor for the `toWebhookSubscription` loop path (drops nolint #1); check all three call sites                        | Low    | S      | Refactor      | NEW                 |
+| 10 | Write "branching-flow findings → wise-go verdicts" mapping doc (this report §Session Context is the draft)                                    | Medium | S      | Documentation | NEW                 |
+| 11 | Annotate the 14:53 report with this session's touchpoints (its #44 AGENTS.md-sync item partially done via the new panic bullet)               | Low    | S      | Documentation | NEW                 |
+| 12 | Decide + record nolint-vs-value-return as the house convention for unexported mappers (see g3-adjacent; my rec: value returns)                | Low    | S      | Feature       | NEW                 |
+| 13 | Cross-link the AGENTS.md panic bullet with the strong-id bullet (umbrella "branching-flow non-fixes" or mutual references)                    | Low    | S      | Documentation | NEW                 |
+| 14 | README: if it tabulates the branded-ID set, add `CustomerTransactionID` (verify table exists first)                                           | Low    | S      | Documentation | CARRY #21           |
+| 15 | Add CHANGELOG migration snippet: before/after for the three retyped fields                                                                    | Low    | S      | Documentation | CARRY #22           |
+| 16 | `CreateBalanceRequest.IdempotencyKey` (plain string) → same brand treatment as `CustomerTransactionID`                                        | Medium | S      | Feature       | CARRY #23           |
+| 17 | Revisit `WebhookResource.AccountID` naming vs spec ("recipient account ID" / "balance account ID" per event)                                  | Medium | S      | Quality       | CARRY #24           |
+| 18 | Typed per-event webhook payload accessors (e.g. `TransferStateChangeData.TransferID`) replacing comment-only polymorphism                     | Medium | M      | Feature       | CARRY #25           |
+| 19 | WebhookCreator/WebhookScope typed variants (user vs application) as discriminated accessors                                                   | Low    | M      | Feature       | CARRY #26           |
+| 20 | Run `buildflow format` once to normalize markdown edits (dprint)                                                                              | Low    | S      | Cleanup       | CARRY #27           |
+| 21 | Verify `.buildflow.yml` skip_steps survived the strong-id session (zero config drift)                                                         | Low    | S      | Cleanup       | CARRY #28           |
+| 22 | Check `coverage/` and `.crush/` dirs are gitignored, not daemon-bait                                                                          | Low    | S      | Cleanup       | CARRY #29           |
+| 23 | Review git log for daemon commits sweeping unintended files (this session's sweep was clean — keep cadence)                                   | Low    | S      | Cleanup       | CARRY #30           |
+| 24 | CONTRIBUTING.md: document the `GOEXPERIMENT=jsonv2` requirement for non-Nix contributors                                                      | Medium | S      | Documentation | CARRY #31           |
+| 25 | Backfill GitHub Release objects for v0.10.0/v0.11.0 (v0.9.0 still shows as Latest)                                                            | Medium | S      | Release       | CARRY #32           |
+| 26 | After release cut: verify proxy.golang.org index + clean `go get module@version`                                                              | Medium | S      | Release       | CARRY #33           |
+| 27 | Check go-branded-id for a version > v0.5.1 (next dependency sweep; needs network)                                                             | Low    | S      | Cleanup       | CARRY #34           |
+| 28 | When CI re-enables: pin gofumpt/govulncheck versions in ci.yml instead of `@latest`                                                           | Medium | S      | Quality       | CARRY #35           |
+| 29 | Add SECURITY.md                                                                                                                               | Low    | S      | Documentation | CARRY #36           |
+| 30 | Wire apidiff/gorelease as a CI job once network-dependent gates are wanted server-side                                                        | Medium | M      | Quality       | CARRY #37           |
+| 31 | Manual sweep of remaining public string fields for missed ID semantics (types.go full pass)                                                   | Low    | M      | Quality       | CARRY #38           |
+| 32 | v1.0.0 API-freeze audit re-run (docs/reviews/2026-08-21 audit) after brand additions settle                                                   | Low    | L      | Documentation | CARRY #39           |
+| 33 | Document "brands validate zero-ness, not format" as explicit house rule — or adopt validated UUID constructors broadly                        | Medium | S      | Feature       | CARRY #40           |
+| 34 | Evaluate go-composable-business-types UUID vs a `NewUUIDID` helper in go-branded-id (prefer upstream helper)                                  | Medium | M      | Feature       | CARRY #41           |
+| 35 | Confirm `OTTStatus` BDD coverage asserts `.UserID` after brand change across all OTT tests (check ClearSCAChallenge suite)                    | Low    | S      | Quality       | CARRY #42           |
+| 36 | Confirm spec-conformance coverage floors (37/177/5) unchanged in AGENTS.md after next doc-verify run                                          | Low    | S      | Documentation | CARRY #43           |
+| 37 | Keep the AGENTS.md branching-flow bullets and any suppression config in sync (owner cadence; supersede prose if baseline gate lands)          | Low    | S      | Cleanup       | CARRY #44           |
+| 38 | Example coverage: one compile-only example demonstrating `NewCustomerTransactionID` directly                                                  | Low    | S      | Documentation | CARRY #45           |
+| 39 | Sweep docs/status/ for reports whose items are resolved (ANNOTATE candidates)                                                                 | Low    | S      | Documentation | CARRY #46           |
+| 40 | Decide whether `WebhookResource.ID` deserves a neutral `ResourceID` brand despite polymorphism (likely decline; record decision)              | Low    | S      | Feature       | CARRY #47           |
+| 41 | Consider exposing `Transfer.CustomerTransactionID.Get()` in README transfer-tracking snippet                                                  | Low    | S      | Documentation | CARRY #48           |
+| 42 | Post-CI-enable: re-run the full gate set as CI would (proves the disabled-workflow era ends clean)                                            | Medium | M      | Quality       | CARRY #49           |
+| 43 | Archive resolved status-report items via docs-health ANNOTATE (keep annotate-inline policy)                                                   | Low    | S      | Documentation | CARRY #50           |
+| 44 | HARVEST this report's (f) into TODO_LIST.md / ROADMAP.md (docs-health HARVEST mode) — awaiting user go-ahead                                  | High   | M      | Cleanup       | NEW                 |
+| 45 | Wire the baseline gate into `.buildflow.yml` (or skip-list it deliberately) once task #2 lands                                                | Medium | S      | Quality       | NEW                 |
+| 46 | Re-check `grep '^go ' go.mod` after any future `go get`/buildflow run (standing 1.27-bump trap)                                               | Medium | S      | Cleanup       | NEW (standing trap) |
+| 47 | When UUID validation lands (task 33/34): regenerate baseline + re-triage strong-id list in the same session                                   | Low    | S      | Quality       | NEW                 |
+| 48 | Add the two panic nolint rationales as test names/comments in webhooks_test.go if not already pinned by decode tests                          | Low    | S      | Quality       | NEW                 |
+| 49 | Decide release vehicle for the breaking brand retypes (see g1; unblocks tasks 25/26 and CHANGELOG work)                                       | High   | S      | Release       | NEW (decision)      |
+| 50 | Pick the suppression endgame (see g2; unblocks tasks 2/5/37/45)                                                                               | High   | S      | Cleanup       | NEW (decision)      |
 
 ---
 
@@ -134,4 +134,4 @@ Ranked by impact. `NEW` = from this session; `CARRY #n` = item #n of `2026-10-05
 
 ---
 
-*Point-in-time snapshot — goes stale by design. Section (f) is HARVEST input for TODO_LIST.md / ROADMAP.md (docs-health). User instruction: wait for instructions after this report — HARVEST not yet run.*
+_Point-in-time snapshot — goes stale by design. Section (f) is HARVEST input for TODO_LIST.md / ROADMAP.md (docs-health). User instruction: wait for instructions after this report — HARVEST not yet run._

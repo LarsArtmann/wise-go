@@ -47,7 +47,7 @@ If you do not use Nix, see [Development Setup](#development-setup) for the manua
 | ------------- | ------- | ------------------------------------------------------- |
 | Go            | 1.26+   | Language runtime. Required for the `jsonv2` experiment. |
 | Nix (flakes)  | 2.18+   | Reproducible dev + CI environment (recommended)         |
-| golangci-lint | v2.12   | Linting (the `nix develop` shell provides this)         |
+| golangci-lint | v2.13   | Linting (the `nix develop` shell provides this)         |
 
 ### Recommended: Nix
 
@@ -64,7 +64,7 @@ Everything below works inside that shell without any prefix.
 export GOEXPERIMENT=jsonv2   # add to ~/.bashrc or ~/.zshrc
 
 # Tools
-go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.0
+go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.0
 ```
 
 ---
@@ -129,7 +129,7 @@ Before contributing, read [AGENTS.md](AGENTS.md) — it documents the non-obviou
 ## Testing
 
 ```bash
-# Hermetic, includes race detector + coverage
+# Hermetic, includes race detector + coverage + the 90% coverage floor
 nix flake check
 
 # Or manually (remember GOEXPERIMENT)
@@ -137,13 +137,24 @@ go test -race -coverprofile=coverage.out -covermode=atomic ./...
 go tool cover -func=coverage.out | tail -1
 ```
 
-Tests use `net/http/httptest` to mock the Wise API — **no network access, no API key required**. Coverage is currently ~95%.
+Tests use `net/http/httptest` to mock the Wise API — **no network access, no API key required**. Coverage is currently ~95%, and a **90% floor is enforced** in both the flake check and the CI coverage job: a silent drop below 90% fails the build.
 
 ### Test style
 
 - BDD-style with Ginkgo for `wise_test.go` (black-box `package wise_test`).
 - Internal unit tests in `internal_test.go` (white-box `package wise`).
 - Use the `Given..._When..._Should...` naming pattern.
+
+### Repeating specs
+
+`go test -count=N` re-runs the Ginkgo bootstrap and reports false failures
+(specs are not re-executed N times the way plain Go tests are). To repeat
+the suite, use separate runs instead:
+
+```bash
+go test -count=1 ./...
+go test -count=1 ./...   # each run is fresh; never stack -count
+```
 
 ---
 
@@ -193,6 +204,23 @@ check uses — `lychee` is in the devShell:
 ```bash
 lychee --offline --no-progress README.md CONTRIBUTING.md
 ```
+
+### Doc health & API-compat apps
+
+Two flake apps automate the doc/compat checks that are easy to forget:
+
+```bash
+nix run .#doc-verify   # godoc render + count claims in living docs + links
+nix run .#apidiff      # gorelease diff vs the latest tag (needs network)
+```
+
+`doc-verify` fails when any documented count claim (endpoint methods,
+`Example` funcs) no longer matches the compiled surface, or when the claim
+text has drifted so far the pattern extracts nothing. Run it after changing
+the public API or the godoc examples — the claim-staleness class ("33
+methods" outliving the 37-method surface) is exactly what it catches.
+`apidiff` reports removed or changed exported API against the latest tag;
+run it before any release.
 
 ---
 
@@ -308,6 +336,7 @@ updated CI
 
 - [AGENTS.md](AGENTS.md) — project gotchas and conventions
 - [README.md](README.md) — user-facing overview and API examples
+- [SECURITY.md](.github/SECURITY.md) — how to report vulnerabilities (never in public issues)
 - [Go documentation](https://go.dev/doc/)
 - [Effective Go](https://go.dev/doc/effective_go)
 
