@@ -2779,7 +2779,7 @@ var _ = Describe("Wise Client", func() {
 					})
 			})
 
-			It("should forward the format in the path", func() {
+			It("should forward the format in the path and return the raw bytes", func() {
 				data, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
 					ProfileID: wise.NewProfileID(12345),
 					BalanceID: wise.NewBalanceID(100),
@@ -2790,6 +2790,32 @@ var _ = Describe("Wise Client", func() {
 				})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(data).To(HavePrefix("%PDF"))
+				Expect(string(data)).To(Equal("%PDF-1.7 fake"))
+			})
+		})
+
+		Context("with XLSX format", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/balance-statements/100/statement.xlsx",
+					func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type",
+							"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+						_, _ = w.Write([]byte("PK\x03\x04 fake-xlsx-bytes"))
+					})
+			})
+
+			It("should return the raw workbook bytes despite the binary content type", func() {
+				data, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					BalanceID: wise.NewBalanceID(100),
+					Currency:  wise.Currency("EUR"),
+					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
+					Format:    wise.StatementFormatXLSX,
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(data).To(HavePrefix("PK\x03\x04"))
+				Expect(string(data)).To(Equal("PK\x03\x04 fake-xlsx-bytes"))
 			})
 		})
 

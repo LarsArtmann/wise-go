@@ -190,7 +190,9 @@
                 runtimeInputs = [ pkgs.go ];
                 text = ''
                   export GOEXPERIMENT=jsonv2
-                  exec go run golang.org/x/exp/cmd/gorelease@latest -base=latest "$@"
+                  # Pinned pseudo-version: @latest would make apidiff results
+                  # drift between runs of the same commit (non-reproducible).
+                  exec go run golang.org/x/exp/cmd/gorelease@v0.0.0-20261005173118-76772065c9b0 -base=latest "$@"
                 '';
               };
             in
