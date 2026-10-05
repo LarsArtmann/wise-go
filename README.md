@@ -566,7 +566,7 @@ if err != nil {
 transferReq := wise.CreateTransferRequest{
     QuoteID:               quote.ID,
     TargetAccount:         recipient.ID,
-    CustomerTransactionID: "22244c35-9fe8-4c32-b7fd-d05c2a7734bf",
+    CustomerTransactionID: wise.NewCustomerTransactionID("22244c35-9fe8-4c32-b7fd-d05c2a7734bf"),
 }
 if missing := wise.MissingTransferDetails(requirements, transferReq); len(missing) > 0 {
     log.Fatalf("transfer details still missing: %v", missing)
@@ -578,7 +578,7 @@ if missing := wise.MissingTransferDetails(requirements, transferReq); len(missin
 transfer, err := client.CreateTransfer(ctx, wise.CreateTransferRequest{
     QuoteID:               quote.ID,
     TargetAccount:         recipient.ID,
-    CustomerTransactionID: "22244c35-9fe8-4c32-b7fd-d05c2a7734bf",
+    CustomerTransactionID: wise.NewCustomerTransactionID("22244c35-9fe8-4c32-b7fd-d05c2a7734bf"),
 })
 if err != nil {
     log.Fatal(err)

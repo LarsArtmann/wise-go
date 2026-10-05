@@ -30,6 +30,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   belong to response classification and were rejected by the API.
   Replace `Type: wise.DetailTypeX` with `Type: wise.StatementTypeFlat`
   (or `StatementTypeCompact`).
+- **Breaking:** transfer idempotency keys and remaining webhook/profile
+  identifiers are branded. `CreateTransferRequest.CustomerTransactionID`,
+  `ValidateTransferRequirementsRequest.CustomerTransactionID`, and
+  `Transfer.CustomerTransactionID` are now `CustomerTransactionID`
+  (construct with `wise.NewCustomerTransactionID`); `OTTStatus.UserID` is
+  now `UserID` and `WebhookResource.ProfileID` is now `ProfileID`. Unwrap
+  values with `.Get()` as with the other branded IDs. CreateTransfer now
+  validates the idempotency key through the shared require-ID guard.
 - The retry executor is now [go-retry](https://github.com/larsartmann/go-retry)
   v0.6.0 (in-house, zero-dependency) instead of `failsafe-go`. Retry
   classification is unchanged (429/5xx/network retry; auth, not-found, SCA,
