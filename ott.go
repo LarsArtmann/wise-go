@@ -192,7 +192,7 @@ func (c *Client) GetOTTStatus(ctx context.Context, ott string) (*OTTStatus, erro
 		return nil, err
 	}
 
-	path := fmt.Sprintf("/%s/one-time-token/status", quarterlyAPIVersion)
+	path := fmt.Sprintf("/%s/one-time-token/status", ottAPIVersion)
 
 	var response raw.OTTResponse
 
@@ -218,7 +218,7 @@ func (c *Client) TriggerOTT(ctx context.Context, ott string, channel OTTChannel)
 			fmt.Sprintf("channel must be one of sms, whatsapp, voice — got %q", channel))
 	}
 
-	path := fmt.Sprintf("/%s/one-time-token/%s/trigger", quarterlyAPIVersion, channel)
+	path := fmt.Sprintf("/%s/one-time-token/%s/trigger", ottAPIVersion, channel)
 
 	var response raw.OTTTriggerResponse
 
@@ -259,7 +259,7 @@ func (c *Client) VerifyOTT(
 			"otpCode is required — trigger the challenge first and submit the code it delivered")
 	}
 
-	path := fmt.Sprintf("/%s/one-time-token/%s/verify", quarterlyAPIVersion, channel)
+	path := fmt.Sprintf("/%s/one-time-token/%s/verify", ottAPIVersion, channel)
 
 	var response raw.OTTResponse
 

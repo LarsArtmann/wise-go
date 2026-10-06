@@ -3,7 +3,7 @@ package raw
 import "encoding/json/jsontext"
 
 // Subscription is the wire representation of a webhook subscription
-// (/2026Q3/profiles/{profileId}/subscriptions and the application-level
+// (/2026Q4/profiles/{profileId}/subscriptions and the application-level
 // equivalents). Field set mirrors the documented Subscription response;
 // unknown fields are ignored by the JSON decoder so Wise can add fields
 // without breaking the SDK.

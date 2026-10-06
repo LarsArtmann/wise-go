@@ -875,7 +875,7 @@ err := client.DeleteProfileWebhookSubscription(ctx, profileID, sub.ID)
 ```
 
 Wise's subscription endpoints live on the quarterly versioned API surface
-(`/2026Q3/profiles/{profileId}/subscriptions`) — the SDK sends that path
+(`/2026Q4/profiles/{profileId}/subscriptions`) — the SDK sends that path
 automatically. There is no update operation: subscriptions are created and
 deleted, never edited.
 

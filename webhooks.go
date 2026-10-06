@@ -81,7 +81,7 @@ func VerifyWebhookSignature(payload []byte, signatureB64 string, key *rsa.Public
 }
 
 // CreateProfileWebhookSubscription registers a webhook subscription on a
-// profile (POST /2026Q3/profiles/{profileId}/subscriptions): Wise will POST
+// profile (POST /2026Q4/profiles/{profileId}/subscriptions): Wise will POST
 // an event envelope to req.Delivery.URL whenever the req.TriggerOn event
 // occurs for anything the profile owns.
 //
@@ -102,7 +102,7 @@ func (c *Client) CreateProfileWebhookSubscription(
 		return nil, err
 	}
 
-	path := fmt.Sprintf("/%s/profiles/%d/subscriptions", quarterlyAPIVersion, profileID.Get())
+	path := fmt.Sprintf("/%s/profiles/%d/subscriptions", webhookSubscriptionsAPIVersion, profileID.Get())
 
 	var subscription raw.Subscription
 
@@ -114,7 +114,7 @@ func (c *Client) CreateProfileWebhookSubscription(
 }
 
 // ListProfileWebhookSubscriptions returns every webhook subscription
-// registered on a profile (GET /2026Q3/profiles/{profileId}/subscriptions).
+// registered on a profile (GET /2026Q4/profiles/{profileId}/subscriptions).
 // Wise returns the complete set in a single response (no pagination).
 func (c *Client) ListProfileWebhookSubscriptions(
 	ctx context.Context,
@@ -124,7 +124,7 @@ func (c *Client) ListProfileWebhookSubscriptions(
 		return nil, err
 	}
 
-	path := fmt.Sprintf("/%s/profiles/%d/subscriptions", quarterlyAPIVersion, profileID.Get())
+	path := fmt.Sprintf("/%s/profiles/%d/subscriptions", webhookSubscriptionsAPIVersion, profileID.Get())
 
 	var subscriptions []raw.Subscription
 
@@ -149,7 +149,7 @@ func (c *Client) ListProfileWebhookSubscriptions(
 }
 
 // GetProfileWebhookSubscription returns a single webhook subscription by ID
-// (GET /2026Q3/profiles/{profileId}/subscriptions/{subscriptionId}). An
+// (GET /2026Q4/profiles/{profileId}/subscriptions/{subscriptionId}). An
 // unknown subscription ID is a 404, classified as *NotFoundError.
 func (c *Client) GetProfileWebhookSubscription(
 	ctx context.Context,
@@ -164,7 +164,7 @@ func (c *Client) GetProfileWebhookSubscription(
 		return nil, err
 	}
 
-	path := fmt.Sprintf("/%s/profiles/%d/subscriptions/%s", quarterlyAPIVersion, profileID.Get(), subscriptionID.Get())
+	path := fmt.Sprintf("/%s/profiles/%d/subscriptions/%s", webhookSubscriptionsAPIVersion, profileID.Get(), subscriptionID.Get())
 
 	var subscription raw.Subscription
 
@@ -177,7 +177,7 @@ func (c *Client) GetProfileWebhookSubscription(
 }
 
 // DeleteProfileWebhookSubscription removes a webhook subscription (DELETE
-// /2026Q3/profiles/{profileId}/subscriptions/{subscriptionId}). Wise
+// /2026Q4/profiles/{profileId}/subscriptions/{subscriptionId}). Wise
 // acknowledges with 204 No Content; deleting an unknown subscription ID is a
 // 404, classified as *NotFoundError. Deleting stops deliveries immediately.
 func (c *Client) DeleteProfileWebhookSubscription(
@@ -193,7 +193,7 @@ func (c *Client) DeleteProfileWebhookSubscription(
 		return err
 	}
 
-	path := fmt.Sprintf("/%s/profiles/%d/subscriptions/%s", quarterlyAPIVersion, profileID.Get(), subscriptionID.Get())
+	path := fmt.Sprintf("/%s/profiles/%d/subscriptions/%s", webhookSubscriptionsAPIVersion, profileID.Get(), subscriptionID.Get())
 
 	if err := c.delete(ctx, path); err != nil {
 		return fmt.Errorf("delete webhook subscription %s for profile %d: %w",

@@ -3652,7 +3652,7 @@ var _ = Describe("Wise Client", func() {
 			var requestBody map[string]any
 
 			BeforeEach(func() {
-				mux.HandleFunc("/2026Q3/profiles/12345/subscriptions", func(w http.ResponseWriter, r *http.Request) {
+				mux.HandleFunc("/2026Q4/profiles/12345/subscriptions", func(w http.ResponseWriter, r *http.Request) {
 					Expect(r.Method).To(Equal(http.MethodPost))
 
 					var body map[string]any
@@ -3691,7 +3691,7 @@ var _ = Describe("Wise Client", func() {
 
 		Context("with a Wise validation rejection", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/2026Q3/profiles/12345/subscriptions",
+				mux.HandleFunc("/2026Q4/profiles/12345/subscriptions",
 					errorHandler(http.StatusBadRequest, nil, "VALIDATION_ERROR", "trigger_on: unrecognized event type"))
 			})
 
@@ -3707,7 +3707,7 @@ var _ = Describe("Wise Client", func() {
 
 		Context("with an invalid API key", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/2026Q3/profiles/12345/subscriptions", unauthorizedHandler)
+				mux.HandleFunc("/2026Q4/profiles/12345/subscriptions", unauthorizedHandler)
 			})
 
 			It("should surface an AuthError", func() {
@@ -3777,7 +3777,7 @@ var _ = Describe("Wise Client", func() {
 	Describe("ListProfileWebhookSubscriptions", func() {
 		Context("with two subscriptions", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/2026Q3/profiles/12345/subscriptions", func(w http.ResponseWriter, r *http.Request) {
+				mux.HandleFunc("/2026Q4/profiles/12345/subscriptions", func(w http.ResponseWriter, r *http.Request) {
 					Expect(r.Method).To(Equal(http.MethodGet))
 					w.Header().Set("Content-Type", "application/json")
 					_, _ = w.Write([]byte(`[
@@ -3816,7 +3816,7 @@ var _ = Describe("Wise Client", func() {
 
 		Context("with no subscriptions", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/2026Q3/profiles/12345/subscriptions", func(w http.ResponseWriter, _ *http.Request) {
+				mux.HandleFunc("/2026Q4/profiles/12345/subscriptions", func(w http.ResponseWriter, _ *http.Request) {
 					w.Header().Set("Content-Type", "application/json")
 					_, _ = w.Write([]byte(`[]`))
 				})
@@ -3832,7 +3832,7 @@ var _ = Describe("Wise Client", func() {
 		Context("with a corrupt created_at timestamp", func() {
 			BeforeEach(func() {
 				mux.HandleFunc(
-					"/2026Q3/profiles/12345/subscriptions",
+					"/2026Q4/profiles/12345/subscriptions",
 					exemptResponseSchema(func(w http.ResponseWriter, _ *http.Request) {
 						w.Header().Set("Content-Type", "application/json")
 						_, _ = w.Write([]byte(`[{
@@ -3857,7 +3857,7 @@ var _ = Describe("Wise Client", func() {
 
 		Context("with an invalid API key", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/2026Q3/profiles/12345/subscriptions", unauthorizedHandler)
+				mux.HandleFunc("/2026Q4/profiles/12345/subscriptions", unauthorizedHandler)
 			})
 
 			It("should surface an AuthError", func() {
@@ -3880,7 +3880,7 @@ var _ = Describe("Wise Client", func() {
 	Describe("GetProfileWebhookSubscription", func() {
 		Context("with an existing subscription", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/2026Q3/profiles/12345/subscriptions/72195556-e5cb-495e-a010-b37a4f2a3043",
+				mux.HandleFunc("/2026Q4/profiles/12345/subscriptions/72195556-e5cb-495e-a010-b37a4f2a3043",
 					func(w http.ResponseWriter, r *http.Request) {
 						Expect(r.Method).To(Equal(http.MethodGet))
 						w.Header().Set("Content-Type", "application/json")
@@ -3902,7 +3902,7 @@ var _ = Describe("Wise Client", func() {
 
 		Context("with an unknown subscription", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/2026Q3/profiles/12345/subscriptions/72195556-e5cb-495e-a010-b37a4f2a3043",
+				mux.HandleFunc("/2026Q4/profiles/12345/subscriptions/72195556-e5cb-495e-a010-b37a4f2a3043",
 					errorHandler(http.StatusNotFound, nil, "NOT_FOUND", "Subscription not found"))
 			})
 
@@ -3944,7 +3944,7 @@ var _ = Describe("Wise Client", func() {
 	Describe("DeleteProfileWebhookSubscription", func() {
 		Context("with an existing subscription", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/2026Q3/profiles/12345/subscriptions/72195556-e5cb-495e-a010-b37a4f2a3043",
+				mux.HandleFunc("/2026Q4/profiles/12345/subscriptions/72195556-e5cb-495e-a010-b37a4f2a3043",
 					func(w http.ResponseWriter, r *http.Request) {
 						Expect(r.Method).To(Equal(http.MethodDelete))
 						w.WriteHeader(http.StatusNoContent)
@@ -3963,7 +3963,7 @@ var _ = Describe("Wise Client", func() {
 
 		Context("with an unknown subscription", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/2026Q3/profiles/12345/subscriptions/72195556-e5cb-495e-a010-b37a4f2a3043",
+				mux.HandleFunc("/2026Q4/profiles/12345/subscriptions/72195556-e5cb-495e-a010-b37a4f2a3043",
 					errorHandler(http.StatusNotFound, nil, "NOT_FOUND", "Subscription not found"))
 			})
 

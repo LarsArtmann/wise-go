@@ -21,13 +21,19 @@ const (
 	defaultRetryBackoffCap   = 5 * time.Second
 )
 
-// quarterlyAPIVersion is the quarterly versioned API surface
-// (https://api.wise.com/2026Q3). Some endpoint families exist only there —
-// the webhook subscription CRUD and the SCA one-time-token endpoints — while
-// the rest of the SDK uses the legacy /v1../v4 paths. The OpenAPI spec's
-// server URL is authoritative; when the quarter rolls over, update this one
-// constant after verifying the paths still resolve.
-const quarterlyAPIVersion = "2026Q3"
+// The quarterly versioned API surfaces (https://api.wise.com/2026Q4) host
+// endpoint families that exist only there — the webhook subscription CRUD and
+// the SCA one-time-token endpoints — while the rest of the SDK uses the
+// legacy /v1../v4 paths. The OpenAPI spec's server URL is authoritative; when
+// a quarter rolls over, update the surface's constant after verifying the
+// paths still resolve against the live API. The two families roll over
+// independently: webhook subscriptions verified live on 2026Q4 (2026-10-05),
+// while the one-time-token surface could not be probed (404 on every prefix,
+// including the known-good 2026Q3) and stays parked until it verifies.
+const (
+	webhookSubscriptionsAPIVersion = "2026Q4"
+	ottAPIVersion                  = "2026Q3"
+)
 
 // Doer is the interface for an HTTP client. *http.Client satisfies this.
 // Inject a custom implementation via WithHTTPClient for testing or middleware
