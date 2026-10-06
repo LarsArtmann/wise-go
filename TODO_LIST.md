@@ -13,19 +13,20 @@ five spec-vs-live assumptions settled by the conformance work: statement
 `details.type` enum, `/v1/rates` array shape, text/plain funding errors.
 Source: docs/planning/2026-09-16_16-54_pareto-plan-openapi-conformance-green.md, 2026-09-16.
 
-[ ] Decide and execute the `quarterlyAPIVersion` 2026Q3 → 2026Q4 rollover as
-its own verified change. **Decision recorded 2026-10-05 (evidence-based, parked):**
-unauthenticated live probes against api.wise.com show `/2026Q4/profiles/{id}/subscriptions`
-answers 401 (surface live, same as 2026Q3) while a bogus `/9999Q1/...` 404s — so
-the webhook surface is Q4-ready. But the OTT surface is **probe-blind**: unauthenticated
-requests to `/one-time-token/*` 404 on every prefix including the known-good 2026Q3,
-so the Q4 OTT surface cannot be verified without credentials. Flipping the shared
-constant would move OTT from verified-live (Q3) to unverified — not acceptable.
-Flip procedure once `WISE_SANDBOX_API_KEY` exists (pairs with the sandbox pass above):
-change the one constant in `client.go:30`, run `go test ./...` (conformance strips
-version prefixes, so it passes either way — the gate does NOT discriminate; the live
-recheck is the real gate), verify webhook + OTT paths live, then commit. 2026-09-16,
-probes 2026-10-05.
+[x] Decide and execute the quarterly-surface 2026Q3 → 2026Q4 rollover.
+**DONE 2026-10-05 (split execution, evidence-based):** unauthenticated live probes
+against api.wise.com showed `/2026Q4/profiles/{id}/subscriptions` answering 401
+(surface live) while a bogus `/9999Q1/...` 404s — so the webhook subscription CRUD
+was flipped to `2026Q4` (`webhookSubscriptionsAPIVersion` in `client.go`; tests,
+README, and FEATURES updated; conformance gate strips any `[0-9]{4}Q[1-4]` prefix
+so it passes either way — the live probe is the real gate).
+
+[ ] Flip `ottAPIVersion` 2026Q3 → 2026Q4 once the OTT surface verifies live.
+The OTT surface is **probe-blind**: unauthenticated requests to `/one-time-token/*`
+404 on every prefix including the known-good 2026Q3, so Q4 cannot be verified
+without credentials. Procedure: with `WISE_SANDBOX_API_KEY` (pairs with the sandbox
+pass above), probe `GET /2026Q4/one-time-token/status` for a non-404, change
+`ottAPIVersion` in `client.go`, run `go test ./...`, commit. Probes 2026-10-05.
 
 [ ] Publish the GitHub Release objects for **v0.10.0 and v0.11.0** — both tags
 exist on origin and are served by the module proxy, but `gh release list` still

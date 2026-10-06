@@ -65,6 +65,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   fails on empty count-claim extraction; and the `//nolint:branching-flow:`
   structure-linter directives are exempted from nolintlint (they are
   load-bearing).
+- The webhook subscription endpoints now call the `2026Q4` surface
+  (`/2026Q4/profiles/{profileId}/subscriptions`), live-verified on
+  2026-10-05. The SCA one-time-token endpoints stay on `2026Q3` because
+  their Q4 surface could not be verified (probe-blind: 404 on every
+  prefix, including the known-good Q3). The two version constants
+  (`webhookSubscriptionsAPIVersion`, `ottAPIVersion`) roll over
+  independently.
 
 ### Fixed
 

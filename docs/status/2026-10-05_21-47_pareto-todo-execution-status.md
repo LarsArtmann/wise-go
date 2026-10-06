@@ -123,11 +123,11 @@
 39. Keep `docs/reviews/wise-api-core-schemas.json` in sync check on next spec refresh.
 40. Annotate this session against `docs/status/2026-10-05_14-53/15-52` reports (suppression-regression resolution) per the docs-health ANNOTATE convention.
 
-## g) QUESTIONS (I cannot figure these out myself)
+## g) QUESTIONS — RESOLVED 2026-10-05 (same day)
 
-1. **Q4 strategy:** when the sandbox key arrives — flip BOTH webhook and OTT to 2026Q4 only if OTT verifies live (my recommendation), or split the constants and flip webhooks to Q4 immediately since its Q4 surface is already live-verified (401 probe)?
-2. **`wise.Version` in User-Agent:** should the SDK send a default `User-Agent: wise-go/0.11.0` (wire-visible behavior change, Wise-visible telemetry, better support diagnostics) or stay silent unless `WithUserAgent` is set?
-3. **erraudit distribution:** will `github.com/larsartmann/erraudit` become public/proxy-published (making the CI gate clean and token-free), or should the gate stay PAT-dependent indefinitely?
+1. ~~**Q4 strategy:** when the sandbox key arrives — flip BOTH webhook and OTT to 2026Q4 only if OTT verifies live (my recommendation), or split the constants and flip webhooks to Q4 immediately since its Q4 surface is already live-verified (401 probe)?~~ **RESOLVED: split + flip webhooks now.** Subscription CRUD flipped to `2026Q4` (executed + gate-verified); OTT stays `2026Q3` pending live verification (TODO_LIST).
+2. ~~**`wise.Version` in User-Agent:** ...~~ **RESOLVED: stay opt-in.** No code change; `wise.Version` remains for consumer-side reporting via `WithUserAgent`.
+3. ~~**erraudit distribution:** ...~~ **RESOLVED: stays private/PAT-gated.** CI job remains warn-not-fail with `ERRAUDIT_TOKEN` + `GOPRIVATE`; the ERRAUDIT_TOKEN TODO item is the path to a blocking gate.
 
 ---
 
