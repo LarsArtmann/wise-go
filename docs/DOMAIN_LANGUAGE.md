@@ -11,7 +11,7 @@ Inspired by Domain-Driven Design (DDD) Ubiquitous Language.
 | Wise           | The financial platform (formerly TransferWise)                                                                    | External service |
 | API Key        | Bearer token for authenticating with the Wise API                                                                 | Authentication   |
 | Sandbox        | Wise test environment at `api.wise-sandbox.com` (V2; V1 `api.sandbox.transferwise.tech` deprecated June 30, 2026) | Development      |
-| 2026Q3 surface | The quarterly versioned API base (`https://api.wise.com/2026Q3`) that hosts the webhook subscription endpoints    | Webhooks         |
+| 2026Q3/2026Q4 surfaces | The quarterly versioned API bases that host endpoint families absent from the legacy `/v1../v4` paths: webhook subscriptions on `2026Q4`, SCA one-time-token on `2026Q3` — each rolls over independently | Webhooks, SCA    |
 
 ## Entities
 
@@ -46,7 +46,7 @@ Immutable objects defined by attributes.
 | Transfer          | An outgoing money movement between a quote and a recipient                             | Has lifecycle status (`TransferStatus` open enum)                                                                                                      |
 | Quote             | A locked exchange-rate offer that can back a transfer                                  | UUID-string ID (`QuoteID`), unlike int64 entity IDs                                                                                                    |
 | Recipient         | A payout destination (bank account, etc.)                                              | `details` is polymorphic per currency/corridor                                                                                                         |
-| Subscription      | A registration telling Wise to POST events for a profile to an HTTPS URL               | UUID-string ID (`WebhookSubscriptionID`); profile-level CRUD on the 2026Q3 surface                                                                     |
+| Subscription      | A registration telling Wise to POST events for a profile to an HTTPS URL               | UUID-string ID (`WebhookSubscriptionID`); profile-level CRUD on the 2026Q4 surface                                                                     |
 | Delivery          | A single webhook POST from Wise to the subscription's URL                              | Signed (`X-Signature-SHA256`); dedup on `X-Delivery-Id` (unique per attempt)                                                                           |
 | Envelope          | The JSON wrapper of every delivery (`data`, `event_type`, `schema_version`, `sent_at`) | Parsed by `ParseWebhookEvent`; unknown event types pass through with the payload raw                                                                   |
 | SCA               | Strong Customer Authentication (3-D Secure-like challenge)                             | HTTP 403 with empty body; one-time token in response headers                                                                                           |

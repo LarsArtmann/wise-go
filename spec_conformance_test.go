@@ -218,13 +218,14 @@ func exemptResponseSchema(next http.HandlerFunc) http.HandlerFunc {
 }
 
 // versionedSegment matches the leading version segments the SDK puts into
-// paths (/v1../v4 and the quarterly /2026Q3) while the spec templates carry
+// paths (/v1../v4 and the quarterly surfaces, e.g. /2026Q3 or /2026Q4) while
+// the spec templates carry
 // no version prefix at all (versioning lives in the spec server URL).
 var versionedSegment = regexp.MustCompile(`^(v[0-9]+|[0-9]{4}Q[1-4])$`)
 
 // stripVersionedPrefix removes leading version segments so SDK wire paths
 // line up with spec path templates (/v4/profiles/1/balances and
-// /2026Q3/one-time-token/status both normalize into spec-template shape).
+// /2026Q4/profiles/1/subscriptions both normalize into spec-template shape).
 func stripVersionedPrefix(path string) string {
 	segments := strings.Split(strings.TrimPrefix(path, "/"), "/")
 

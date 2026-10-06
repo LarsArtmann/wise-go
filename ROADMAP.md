@@ -35,7 +35,8 @@ Today: tiers 1 and 2 of
 quotes (including account requirements and the two-pass refresh), recipients,
 transfers (including receipts and MT103 payout info), funding, delivery estimates,
 exchange rates, transfer-requirements validation — plus webhook subscription CRUD
-and typed event parsing on the 2026Q3 surface, and SCA one-time-token endpoints
+and typed event parsing on the quarterly surfaces (subscriptions 2026Q4,
+OTT 2026Q3 — each rolls over independently), and SCA one-time-token endpoints
 that clear challenges programmatically.
 
 ### Shipped 2026-08-21 (previously near-term)
@@ -64,7 +65,7 @@ that clear challenges programmatically.
 - **`GetTransferPayoutInfo`** — banking-partner proof of payment with the
   SWIFT MT103 message (`*string`, nil for non-SWIFT corridors).
 - **Profile webhook subscription CRUD** — create/list/get/delete against
-  `/2026Q3/profiles/{profileId}/subscriptions` (app-level scope deferred, see
+  `/2026Q4/profiles/{profileId}/subscriptions` (app-level scope deferred, see
   below).
 - **Typed webhook event decoding** — `ParseWebhookEvent` envelope plus typed
   payloads for `transfers#state-change`, `transfers#payout-failure`, and
@@ -245,7 +246,7 @@ demand-gated raw ideas, not scheduled work:
 - **gopls/LSP config-skew fix** — inject `GOEXPERIMENT`/lint config so tool-result warnings stop diverging from the CLI.
 - **`nix flake check --all-systems`** — aarch64/darwin coverage for the consumer fleet.
 - **Decide `Authenticate()`'s future** now that `GetMe` exists (cheaper key check).
-- **2026Q4 bump ritual** — document the `webhookAPIVersion`/`quarterlyAPIVersion` upgrade path for when Wise moves the quarterly surface.
+- **2026Q4 bump ritual** — document the `webhookSubscriptionsAPIVersion`/`ottAPIVersion` upgrade path for when Wise moves the quarterly surfaces (they roll over independently; probe live before flipping).
 - Wishlist-era leftovers (Postman collection, currency-conversion helpers, batch APIs, mock server): only with a real consumer ask. Response caching stays a non-goal (the SDK is stateless by design).
 
 ## Release strategy
