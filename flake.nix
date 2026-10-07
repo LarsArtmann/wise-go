@@ -235,6 +235,33 @@
                 touch $out
               '';
 
+          # Dependency-pin sync: every in-house Go dependency required by go.mod
+          # must have a flake input pinned to that exact version's commit. The
+          # go-retry flake pin once lagged its go.mod tag for ten days while
+          # every local gate stayed green — nothing compared the pair, and the
+          # Nix test check vendored a different go-retry than `go test` did.
+          # Hermetic here (no network); `nix run .#pin-sync` additionally
+          # resolves each version tag remotely to catch a stale rev.
+          checks.pin-sync =
+            pkgs.runCommand "pin-sync"
+              {
+                nativeBuildInputs = [ pkgs.python3 ];
+                src = lib.fileset.toSource {
+                  root = ./.;
+                  fileset = lib.fileset.unions [
+                    ./go.mod
+                    ./flake.nix
+                    ./flake.lock
+                    ./scripts/pin_sync.py
+                  ];
+                };
+              }
+              ''
+                cd $src
+                python3 scripts/pin_sync.py --offline --root .
+                touch $out
+              '';
+
           # Breaking-change check against the latest tagged release
           # (gorelease reports removed/changed exported API). Needs network
           # to fetch the base version, so it is an app (nix run), never a
@@ -383,6 +410,28 @@
               meta.description = "Pre-flight release-notes files for split code spans and repo-relative links";
             };
 
+          # Full dependency-pin verification (needs network): resolves each
+          # go.mod version tag on GitHub and asserts it points at the pinned
+          # rev. Part of `nix run .#pre-release`.
+          apps.pin-sync =
+            let
+              pin-sync = pkgs.writeShellApplication {
+                name = "pin-sync";
+                runtimeInputs = [
+                  pkgs.python3
+                  pkgs.git
+                ];
+                text = ''
+                  exec python3 ${./scripts/pin_sync.py} --root "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+                '';
+              };
+            in
+            {
+              type = "app";
+              program = pkgs.lib.getExe pin-sync;
+              meta.description = "Verify in-house flake pins match go.mod and the remote tags";
+            };
+
           # One-command release gate: chains every local gate a release
           # previously relied on session discipline to run (the v0.12.0
           # cycle's broken release-body span shipped through exactly such a
@@ -436,6 +485,9 @@
 
                   echo "==> release-notes-check"
                   nix run .#release-notes-check
+
+                  echo "==> pin-sync (needs network)"
+                  nix run .#pin-sync
 
                   echo "==> apidiff (needs network)"
                   nix run .#apidiff

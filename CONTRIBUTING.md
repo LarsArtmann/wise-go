@@ -253,7 +253,9 @@ run it before any release.
 
 ```bash
 nix run .#release-notes-check   # split code spans + repo-relative links in docs/releases/*.md
+nix run .#pin-sync              # in-house flake pins match go.mod versions (needs network)
 nix run .#pre-release           # the whole release gate chain, one command
+nix run .#pre-release --shuffle # ...plus three randomized-order test passes, for tag day
 ```
 
 `release-notes-check` fails on the two defect classes that shipped in the
@@ -262,8 +264,20 @@ and repo-relative links (GitHub Release bodies cannot resolve repo-relative
 paths — use absolute URLs). Run it before `gh release create`.
 `pre-release` chains the full local gate sequence — dirty-tree check, build,
 vet, race tests, lint, `nix flake check`, `doc-verify`,
-`release-notes-check`, `apidiff` — so a release relies on one command
-instead of session discipline.
+`release-notes-check`, `pin-sync`, `apidiff` — so a release relies on one
+command instead of session discipline. Pass `--shuffle` on tag day: Ginkgo
+supports only `-count=1`, so repetition is three separate `-shuffle=on`
+passes, not a `-count` flag.
+
+**Flake-pin invariant.** A dependency version lives in two places — the
+`require` block of `go.mod` and the matching `flake.nix` input `rev`. A
+`go get` that bumps one without the other leaves `go test` and the hermetic
+`nix flake check` verifying DIFFERENT versions; because a pinned `rev` is
+immutable under `nix flake update`, the drift is silent (go-retry's pin
+lagged its `go.mod` tag for ten days). Any `go.mod` version bump MUST update
+the matching input `rev` in the same change. `checks.pin-sync` enforces this
+hermetically in `nix flake check`; `nix run .#pin-sync` additionally resolves
+each version tag on GitHub and fails on a stale rev.
 
 ### Quarterly API-surface rollover ritual
 
