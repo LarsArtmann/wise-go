@@ -302,7 +302,7 @@ linters:
       # the structure linter's false-positive panics suppressed (verified
       # 2026-10-05, `branching-flow panic` clean) — so exempt exactly the
       # lines carrying them instead of weakening the directives.
-      - source: '//nolint:branching-flow:'
+      - source: "//nolint:branching-flow:"
         linters:
           - nolintlint
     paths:
