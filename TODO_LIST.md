@@ -73,22 +73,6 @@ workaround is documented in CONTRIBUTING.md). Carried since
 
 ### Open
 
-[ ] Root-cause the `golangci_lint_ls` phantom on `webhooks.go:142` ("File is not
-properly formatted") that recurs while CLI `golangci-lint run` is clean. Prime
-suspect (2026-10-07): the LSP wrapper (`~/.local/bin/golangci-lint-lsp-wrapper`)
-does NOT set `GOEXPERIMENT=jsonv2`, so the LSP's golangci build/load of the
-jsonv2-dependent code diverges from the CLI. Diff formatter behavior
-wrapper-vs-CLI after injecting the env var. Source:
-`docs/status/2026-10-06_14-16_q4-flip-execution-and-gates-status.md` §d4.
-
-[ ] File the four evidenced tool-repo defects — 3 in BuildFlow (embedded
-`erraudit` false positives at HEAD; `nix run .#reinstall` not switching the
-profile; `file-size-check` scanning 0 files in root-package layouts) + 1 in
-md-go-validator (its flake cannot build its own package: package.nix pins
-`pkgs.go` 1.26.7 vs `go.mod` ≥ 1.27). Evidence captured in AGENTS.md and
-`docs/status/2026-10-07_06-07_p3-quality-tooling-sweep-status.md`.
-Source: `docs/status/2026-10-07_04-20_dual-phase-repair-and-tool-reevaluation-status.md` §b1.
-
 [ ] `nix flake check --all-systems` — verified 2026-10-07: aarch64-linux and
 aarch64-darwin evaluate clean; x86_64-darwin FAILS EXTERNALLY (nixpkgs-26.11
 dropped that system, not a flake bug). Decide: pin a nixpkgs-26.05-darwin
