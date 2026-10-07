@@ -283,7 +283,7 @@ the plan; bulk payments only on a consumer demand signal).
   pages (2026-09-16 sweep); the union with the webhook-event index (Swift
   `swift-in#credit`, `swift-message-received`) is **31 distinct event types**.
 - wise-go ships **33 documented `WebhookEventType` constants** (open enum,
-  `types.go:640-672`, verified against Wise's live webhook-event reference
+  `types.go:644-678`, verified against Wise's live webhook-event reference
   2026-09-13); unknown event types pass through by design.
 - **Typed payloads for 3 events**: `transfers#state-change`,
   `transfers#payout-failure`, `balances#credit` (`ParseWebhookEvent`).
