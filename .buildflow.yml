@@ -1,9 +1,9 @@
 # BuildFlow Configuration
 # See: https://github.com/larsartmann/buildflow
-# Required: go-branded-id v0.5.1 + go-error-family v0.10.0 import
-# encoding/json/v2.
-env:
-  GOEXPERIMENT: jsonv2
+# GOEXPERIMENT=jsonv2 dropped 2026-10-07: go-branded-id v0.5.1 +
+# go-error-family v0.10.0 import encoding/json/v2, which BuildFlow
+# auto-detects (direct imports in this repo too) and sets for tool
+# subprocesses.
 
 # go-version-auto-configure rewrites the go directive to the newest toolchain
 # line (1.27), which the repo's pinned nixpkgs toolchain (1.26.7,
