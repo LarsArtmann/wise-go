@@ -432,6 +432,13 @@
               meta.description = "Verify in-house flake pins match go.mod and the remote tags";
             };
 
+          # Apps provided by the imported flake modules; annotate them so
+          # `nix flake check` stops warning about a missing meta.description.
+          apps.default.meta.description = "Build the wise-go library";
+          apps.test.meta.description = "Run the hermetic race + coverage test suite";
+          apps.lint.meta.description = "Run golangci-lint over the module";
+          apps.fmt.meta.description = "Format the repository (treefmt)";
+
           # One-command release gate: chains every local gate a release
           # previously relied on session discipline to run (the v0.12.0
           # cycle's broken release-body span shipped through exactly such a

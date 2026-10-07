@@ -8,26 +8,59 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- Repository quality gates, no public API changes: a one-command
-  `nix run .#pre-release` release gate (dirty-tree check, build, vet, race
-  tests, lint, `nix flake check`, `doc-verify`, `release-notes-check`,
-  `apidiff`, with an optional `--shuffle` loop); `nix run .#release-notes-check`
-  for split code spans and repo-relative links in `docs/releases/*.md`; and a
-  `checks.md-go-snippets` flake check that parse-checks every fenced Go block
-  in README and `docs/**`.
+- Nothing yet.
 
 ### Changed
 
-- Repository quality gates, no public API changes: `doc-verify` now also gates
-  the latest release-notes client-method count; the OpenAPI spec-conformance
-  coverage guard asserts its floors in `TestMain` after the suite completes,
-  making it shuffle-proof; test coverage rose to 93.1% (floor 90.0); and the
-  `go-retry` flake pin is aligned with the `go.mod` tag (v0.7.1) after a
-  ten-day split-brain.
+- Nothing yet.
 
 ### Fixed
 
 - Nothing yet.
+
+## [0.13.0] - 2026-10-07
+
+### Added
+
+- `RequestLog.RetryAfterDelay`: when the retry loop delays because Wise answered
+  a 429 with a `Retry-After` hint, the client emits one extra `LogRequest` entry
+  describing that decision — `Status` 429, the honored wait in both `Duration`
+  and `RetryAfterDelay`, and empty `Method`/`URL` (no exchange happened). Purely
+  additive: a request without a usable hint (including `Retry-After: 0`) emits no
+  delay entry, and existing entries are unchanged.
+- `checks.pin-sync` (hermetic) and `nix run .#pin-sync` (network): assert every
+  in-house dependency is pinned in `flake.nix` to the exact commit of the
+  version `go.mod` requires, resolving the tags remotely to catch a stale pin.
+- Repository quality gates, no public API changes beyond the field above: a
+  one-command `nix run .#pre-release` release gate (dirty-tree check, build,
+  vet, race tests, lint, `nix flake check`, `doc-verify`, `release-notes-check`,
+  `pin-sync`, `apidiff`, with an optional `--shuffle` loop);
+  `nix run .#release-notes-check` for split code spans and repo-relative links
+  in `docs/releases/*.md`; a `checks.md-go-snippets` flake check that
+  parse-checks every fenced Go block in README and `docs/**`; and a
+  `meta.description` on each flake app.
+
+### Changed
+
+- Dependency flake pins realigned to `go.mod` and switched to commit SHAs
+  (`go-branded-id` v0.7.0, `go-error-family` v0.11.0, `go-retry` v0.7.1). The
+  inputs previously pointed at annotated *tag-object* IDs, and
+  `go-branded-id`/`go-error-family` had slipped two and one minor versions
+  behind `go.mod`, so `nix flake check` vendored older dependencies than
+  `go test` used — the split-brain the new `pin-sync` gate now makes visible.
+- `doc-verify` now also gates the latest release-notes client-method count; the
+  OpenAPI spec-conformance coverage guard asserts its floors in `TestMain` after
+  the suite completes, making it shuffle-proof; test coverage rose to 93.1%
+  (floor 90.0).
+
+### Fixed
+
+- Retry-After delay-entry coverage: a regression now pins that two consecutive
+  429s carrying a `Retry-After` hint emit exactly two delay-decision entries
+  (the `Retry-After: 0` no-entry case was already pinned).
+- CONTRIBUTING documents `--shuffle` on tag day and the flake-pin invariant
+  (a `go.mod` version bump must update the matching input `rev` in the same
+  change).
 
 ## [0.12.0] - 2026-10-07
 

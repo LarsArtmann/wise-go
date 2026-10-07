@@ -18,7 +18,7 @@ import (
 // Version is the released version of this SDK, mirrored from the latest tag.
 // Useful in User-Agent strings (see WithUserAgent) and support diagnostics so
 // Wise can correlate behavior with a specific client release.
-const Version = "0.12.0"
+const Version = "0.13.0"
 
 // API Base URLs.
 //
