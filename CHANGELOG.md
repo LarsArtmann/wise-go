@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Nothing yet.
+
+### Changed
+
+- Nothing yet.
+
+### Fixed
+
+- Nothing yet.
+
+## [0.12.0] - 2026-10-07
+
+### Added
+
 - `StatementType` (COMPACT / FLAT) with `StatementTypeCompact` and
   `StatementTypeFlat` constants for the balance-statement `type` query
   parameter, plus spec-native `DetailType` constants (CARD, DEPOSIT,
@@ -79,6 +93,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   The legacy single-object shape is still tolerated without a second
   request, and the entry matching the requested currency pair wins.
   Empty rate lists surface as corruption instead of a zero-valued rate.
+- Timestamp parsing accepts Wise's no-millis numeric-zone shape
+  (`2026-10-07T00:17:01+0000`, live `/v1/rates` `time` field), which
+  RFC3339 parsers reject and which broke exchange-rate mapping in
+  production on 2026-10-07.
 - `CreateBalance` sends the required `X-idempotence-uuid` header; calls
   without an explicit key previously failed against the live API with a
   missing-parameter error.
