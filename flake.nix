@@ -20,17 +20,17 @@
     };
 
     go-branded-id = {
-      url = "github:LarsArtmann/go-branded-id?rev=e61b48b0f00e217e3475d8f1caf272455401f6eb";
+      url = "github:LarsArtmann/go-branded-id?rev=0fe9f367e6176d446634312c462477d2276ba025";
       flake = false;
     };
 
     go-error-family = {
-      url = "github:LarsArtmann/go-error-family?rev=8ec5aeb6d3f6f45a8315436d934f1a761a07f4f8";
+      url = "github:LarsArtmann/go-error-family?rev=2d0679e03652e6244c5b6bbbcaa935fbf57e78ef";
       flake = false;
     };
 
     go-retry = {
-      url = "github:LarsArtmann/go-retry?rev=a2d063a421f368c9e293f50f256e6ba0035da8b1";
+      url = "github:LarsArtmann/go-retry?rev=082842a0bac8aa37df8e0ca894e677b0964c5faf";
       flake = false;
     };
 
