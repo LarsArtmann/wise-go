@@ -18,25 +18,20 @@ skip_steps:
   # documents as deliberate non-fixes for this repo (root-package-files,
   # go-version). Its repair corrupts the toolchain pin; skip the whole step.
   - go-structure-linter
-  # BuildFlow's embedded erraudit (in-process analyzer in the binary) reports
-  # 29 error-severity findings here that the CANONICAL standalone gate
-  # (erraudit 1c6809a, ci.yml: lint ./... --type-aware --enforce-coded-errors)
-  # does not: 8x [ignored] misreads `_, ok := errors.AsType[T](err)` (a TYPE
-  # is discarded, not an error) and cleanup `_ = resp.Body.Close()`; 21x
-  # [context_loss] demands every in-scope variable be echoed into every wrap
-  # message, against the error-context convention (AGENTS.md). Verified
-  # IDENTICAL at buildflow 3bb229e AND 202b114 (HEAD 0e9f5e301, 2026-10-07):
-  # persistent upstream false positives, skip until fixed there. Do NOT
-  # "fix" them in code. Gotcha: `buildflow -s erraudit` while skipped emits
-  # findings: null — `null | length` is 0 in jq, which once masqueraded as
-  # a clean result; check .summary.total, not .findings | length.
-  - erraudit
+  # Embedded erraudit skip REMOVED 2026-10-07 (BuildFlow issue #34 fixed):
+  # the embedded detector now runs the SAME legacyerrors engine as the
+  # canonical standalone gate (`erraudit lint`), so verdicts agree by
+  # construction. The 29 false positives (8x [ignored], 21x [context_loss])
+  # came from the detector's old AST-analyzer path, which the CLI lint never
+  # computed; that path remains available interactively via `erraudit
+  # analyze`, no longer as a pipeline gate. Verified 0 error findings at
+  # buildflow HEAD with the skip removed.
 
 # file-size-check flags .go files over N lines (buildflow default 350). 700
 # keeps the signal on true outliers (types.go 800, internal_test.go 1078,
 # wise_test.go 4229) instead of flagging 11+ files — mostly large test
-# files — every run. Empirically neutral today: at buildflow 202b114 the
-# step scans 0 files in this root-package layout (verified 0 findings at
-# BOTH 350 and 700, 2026-10-07) — likely an upstream defect; re-check the
-# threshold after future buildflow updates make the step actually scan.
+# files — every run. The 2026-10-07 "scans 0 files" note is OBSOLETE:
+# buildflow's file-size-check fix (issue #36) makes the step scan root-
+# package layouts and report the scanned-file count; at 700 the gate now
+# flags exactly the documented true outliers.
 max_file_size: 700
