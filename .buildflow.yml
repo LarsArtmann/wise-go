@@ -5,14 +5,16 @@
 # auto-detects (direct imports in this repo too) and sets for tool
 # subprocesses.
 
-# go-version-auto-configure rewrites the go directive to the newest toolchain
-# line (1.27), which the repo's pinned nixpkgs toolchain (1.26.7,
-# GOTOOLCHAIN=local) refuses — every subsequent go step then fails to load
-# the module. Fleet go-version flipflop: go-mod-normalize pins down (1.26),
-# go-version-auto-configure bumps up (1.27). Skip the upward disposition;
-# `go 1.26` satisfies the pinned toolchain.
+# go-version-auto-configure UNSKIPPED 2026-10-07: gvac v0.2.5's
+# respect_patch_floor makes the `go 1.26.0` pin policy instead of drift —
+# at or below the installed toolchain (1.26.7 fleet nixpkgs, 1.27.1
+# workstations) the directive is reported by no rule and never rewritten.
+# The go-version flipflop is structurally over.
+tool_options:
+  go-version-auto-configure:
+    respect_patch_floor: true
+
 skip_steps:
-  - go-version-auto-configure
   # Embedded erraudit skip REMOVED 2026-10-07 (BuildFlow issue #34 fixed):
   # the embedded detector now runs the SAME legacyerrors engine as the
   # canonical standalone gate (`erraudit lint`), so verdicts agree by
