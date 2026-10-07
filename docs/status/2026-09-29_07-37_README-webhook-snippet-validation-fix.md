@@ -1,6 +1,6 @@
 # Status Report: README Webhook Snippet Validation Fix
 
-> **Resolved (2026-10-07 docs-health pass):** the README webhook block is well-formed and passes `md-go-validator`; the snippet-shape rule is recorded in AGENTS.md (Gotchas). Open follow-ups (wiring `md-go-validator` into `nix flake check`/buildflow, CHANGELOG entry, `ExampleVerifyWebhookSignature` alignment) are routed to TODO_LIST.md / ROADMAP.md.
+> **Resolved (2026-10-07 docs-health pass):** the README webhook block is well-formed and passes `md-go-validator`; the snippet-shape rule is recorded in AGENTS.md (Gotchas). ~~deferred the skipped-block question; skipped `doc-verify`; skipped the memory write~~ all three closed (block identified as the archived self-referential quote; doc-verify green; AGENTS.md updated). Open follow-ups (wiring `md-go-validator` into `nix flake check`/buildflow, CHANGELOG entry, `ExampleVerifyWebhookSignature` alignment) are routed to TODO_LIST.md / ROADMAP.md.
 
 - **Timestamp:** 2026-09-29 07:37 CEST
 - **Session scope:** md-go-validator failure on `wise-go` (`README.md:815`, block #27) — diagnosis, proper fix, verification.

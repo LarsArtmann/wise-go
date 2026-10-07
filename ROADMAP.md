@@ -83,9 +83,9 @@ that clear challenges programmatically.
   subscription surface, and the rates/timestamp parse fixes.
 
 **Release state:** shipped as **v0.9.0** (2026-08-21), **v0.10.0**
-(2026-09-13), **v0.11.0** (2026-09-14), and **v0.12.0** (2026-10-07, tags on
-origin and served by the module proxy; GitHub Release objects pending user
-approval). The v1.0 audit is
+(2026-09-13), **v0.11.0** (2026-09-14), and **v0.12.0** (2026-10-07; tags on
+origin and served by the module proxy, GitHub Release objects published
+2026-10-07). The v1.0 audit is
 green and re-audited 2026-09-13 at the 33-method surface
 (`docs/reviews/2026-08-21_v1.0-api-audit.md` — refreshed inventory, godoc pass,
 risk-register items 8–10, growth lineage through 41 methods); the v1.0.0 tag

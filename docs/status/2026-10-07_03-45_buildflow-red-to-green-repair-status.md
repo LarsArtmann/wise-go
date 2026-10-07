@@ -1,6 +1,6 @@
 # Status Report — buildflow red → green repair (wise-go)
 
-> **Superseded (2026-10-07 docs-health pass):** the repair held — the repo builds green on `go 1.26` with the restored `.buildflow.yml`, and the same-night follow-up `2026-10-07_04-20_dual-phase-repair-and-tool-reevaluation-status.md` supersedes this file for current state (it also corrects this report's §a9 exit-code mis-measurement). The three BuildFlow upstream defects it surfaced are documented in AGENTS.md and routed to TODO_LIST.md. Retained (not archived) because its §b/§c/§f items remain open.
+> **Superseded (2026-10-07 docs-health pass):** the repair held — the repo builds green on `go 1.26` with the restored `.buildflow.yml`, and the same-night follow-up `2026-10-07_04-20_dual-phase-repair-and-tool-reevaluation-status.md` supersedes this file for current state (~~its §a9 "exit 0" measurement~~ corrected there: the first full run's exit code was mis-read via `tail`). The three BuildFlow upstream defects it surfaced are documented in AGENTS.md and routed to TODO_LIST.md. Retained (not archived) because its §b/§c/§f items remain open.
 
 - **Date:** 2026-10-07 03:45 CEST
 - **Scope:** This session only (trigger: `buildflow --fix --build-mode=full` exited 69 at 03:17). No unrelated research per operator instruction.

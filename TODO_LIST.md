@@ -128,6 +128,32 @@ formats); add exact content-type assertions mirroring PDF/XLSX. Source:
 and bench `VerifyWebhookSignature` (hot path for every delivery). Source:
 `docs/status/2026-10-05_21-47_pareto-todo-execution-status.md` §f11–12.
 
+[ ] Add a `nix run .#pre-release` flake app chaining the local gates (build, vet,
+race test, lint, `nix flake check`, `doc-verify`, `apidiff`, dirty-tree check) so
+a release relies on one command instead of session discipline. Source:
+`docs/status/2026-10-07_04-57_v0120-release-session-status.md` §e3/f10.
+
+[ ] Compare `docs/releases/*.md` against each tag before `gh release create` — a
+release-notes check for split code spans and relative links (a reflowed span
+shipped broken in the v0.12.0 release body). Source:
+`docs/status/2026-10-07_04-57_v0120-release-session-status.md` §d1/e5.
+
+[ ] Make the spec-conformance coverage guard assert its floors under `go test
+-shuffle` (today it SKIPs if shuffled before the recorder, dorming the
+vacuous-pass protection). Source:
+`docs/status/2026-10-07_04-57_v0120-release-session-status.md` §e4/f27.
+
+[ ] Add a `go-retry` `Retry-After`-honored log line (observability — callers
+cannot currently see that Wise's hint steered a delay). Source:
+`docs/status/2026-10-07_04-57_v0120-release-session-status.md` §f30.
+
+[ ] Fuzz `decodeExchangeRates` (array / single-object / empty / corrupt) and
+bench the rates array-decode path. Source:
+`docs/status/2026-10-07_04-57_v0120-release-session-status.md` §f28–29.
+
+[ ] Add `nix flake check --all-systems` (aarch64/darwin fleet coverage). Source:
+`docs/status/2026-10-07_04-57_v0120-release-session-status.md` §f31.
+
 ## Harvested-and-closed pointer
 
 Everything this list used to carry — including the v0.12.0 cycle's webhook

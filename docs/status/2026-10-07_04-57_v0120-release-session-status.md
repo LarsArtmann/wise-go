@@ -1,5 +1,7 @@
 # Status Report — v0.12.0 release session (wise-go)
 
+> **Resolved (2026-10-07 docs-health pass):** ~~ROADMAP release-state clause "GitHub Release objects pending user approval" was stale~~ **fixed** in ROADMAP.md (now "published 2026-10-07"). ~~broken code span in the published v0.12.0 release notes~~ **fixed** in `docs/releases/v0.12.0-release-notes.md` (single-line `Type: wise.StatementTypeFlat` span). The report's (f) release follow-ups (apidiff archive, pre-release gate app, markdown lint, Go 1.27 plan, daemon/go.mod guard, spec-conformance shuffle assertion) are routed into TODO_LIST.md / ROADMAP.md. Retained (not archived) because §b/§c/§f items remain open.
+
 - **Date:** 2026-10-07 04:57 CEST
 - **Scope:** This session only (≈04:30–04:57): full release of **wise-go v0.12.0**
   following the go-release skill, plus the published backlog of GitHub Release

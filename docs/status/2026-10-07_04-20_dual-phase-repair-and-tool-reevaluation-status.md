@@ -1,6 +1,6 @@
 # Status Report — dual-phase repair & tool re-evaluation (wise-go)
 
-> **Superseded (2026-10-07 docs-health pass):** this is the current state for the buildflow repair thread. The gate is green on `go 1.26`; the three upstream BuildFlow defects are documented in AGENTS.md and routed to TODO_LIST.md. Retained (not archived) because its §b/§c/§f items remain open.
+> **Superseded (2026-10-07 docs-health pass):** this is the current state for the buildflow repair thread. The gate is green on `go 1.26`; ~~`findings: null` misread as a clean pass~~ corrected in-session (documented in AGENTS.md and §d). The three upstream BuildFlow defects are documented in AGENTS.md and routed to TODO_LIST.md. Retained (not archived) because its §b/§c/§f items remain open.
 
 - **Date:** 2026-10-07 04:20 CEST
 - **Scope:** This session only. Phase 1 (03:17–03:45): buildflow exit 69 → green repair. Phase 2 (03:50–04:15): operator challenged three judgment calls (upgrades, erraudit, max_file_size); all three re-verified with evidence. No unrelated research.
