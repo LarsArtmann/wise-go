@@ -153,6 +153,23 @@
         "type": "github"
       }
     },
+    "md-go-validator": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1791202336,
+        "narHash": "sha256-HFblveOrhySbhxmYUCFPx36ggCjbWI6osfOoQNUfe+8=",
+        "owner": "LarsArtmann",
+        "repo": "md-go-validator",
+        "rev": "5e308580f52199d8a17959ded89167992774d134",
+        "type": "github"
+      },
+      "original": {
+        "owner": "LarsArtmann",
+        "ref": "v1.3.0",
+        "repo": "md-go-validator",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1791260994,
@@ -177,6 +194,7 @@
         "go-error-family": "go-error-family",
         "go-nix-helpers": "go-nix-helpers",
         "go-retry": "go-retry",
+        "md-go-validator": "md-go-validator",
         "nixpkgs": "nixpkgs"
       }
     },

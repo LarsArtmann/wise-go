@@ -33,6 +33,14 @@
       url = "github:LarsArtmann/go-retry?rev=61058487ec4705c723e0888e5bd32544b73ec40c";
       flake = false;
     };
+
+    # Source-only: built in checks.md-go-snippets with this repo's nixpkgs
+    # (go 1.27 for the tool's go.mod floor — its own flake currently pins a
+    # go too old to build it, so its packages.default is not consumable).
+    md-go-validator = {
+      url = "github:LarsArtmann/md-go-validator/v1.3.0";
+      flake = false;
+    };
   };
 
   outputs =
@@ -185,6 +193,45 @@
                 cd $src
                 lychee --offline --no-progress \
                   README.md FEATURES.md ROADMAP.md TODO_LIST.md CHANGELOG.md CONTRIBUTING.md AGENTS.md
+                touch $out
+              '';
+
+          # Fenced-Go snippet parse gate over the living docs and docs/:
+          # README's webhook block #27 once shipped an invalid shape that
+          # only a hand run of md-go-validator caught (fixed 2026-09-29);
+          # this fails that class at check time. The tool builds with go
+          # 1.27 — independent of the SDK's pinned 1.26 toolchain.
+          checks.md-go-snippets =
+            let
+              md-go-validator = (pkgs.buildGoModule.override { go = pkgs.go_1_27; }) {
+                pname = "md-go-validator";
+                version = "1.3.0";
+                src = inputs.md-go-validator;
+                vendorHash = "sha256-QUgeh99RqCc80oh1UNJDH38Llm8jMW3hQkKmPGZr3NE=";
+                proxyVendor = true;
+                env.GOEXPERIMENT = "jsonv2";
+              };
+            in
+            pkgs.runCommand "md-go-snippets"
+              {
+                nativeBuildInputs = [ md-go-validator ];
+                src = lib.fileset.toSource {
+                  root = ./.;
+                  fileset = lib.fileset.unions [
+                    ./README.md
+                    ./FEATURES.md
+                    ./ROADMAP.md
+                    ./TODO_LIST.md
+                    ./CHANGELOG.md
+                    ./CONTRIBUTING.md
+                    ./AGENTS.md
+                    ./docs
+                  ];
+                };
+              }
+              ''
+                cd $src
+                md-go-validator README.md FEATURES.md ROADMAP.md TODO_LIST.md CHANGELOG.md CONTRIBUTING.md AGENTS.md $(find docs -type d)
                 touch $out
               '';
 
