@@ -9,6 +9,8 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"encoding/pem"
 	"fmt"
 	"net/http"
@@ -18,6 +20,7 @@ import (
 	"time"
 
 	errorfamily "github.com/larsartmann/go-error-family"
+	"github.com/larsartmann/wise-go/internal/raw"
 )
 
 // expectRejection asserts err is non-nil, contains wantSubstr, and classifies
@@ -1161,6 +1164,48 @@ func FuzzVerifyWebhookSignature(f *testing.F) {
 
 		if bytes.Equal(fuzzPayload, payload) && signatureB64 == validSig && !got {
 			t.Fatal("genuine (payload, signature) pair rejected")
+		}
+	})
+}
+
+// FuzzDecodeExchangeRates pins the rates decoder's invariants on arbitrary
+// payloads: it never panics, a payload it accepts decodes as the spec array
+// (at least one entry) or the tolerated legacy single object, and when the
+// payload contains an entry exactly matching the requested pair the decoder
+// returns that entry.
+func FuzzDecodeExchangeRates(f *testing.F) {
+	f.Add([]byte(`[{"source":"EUR","target":"USD","rate":1.0854,"time":"2026-10-07T00:17:01+0000"}]`), "EUR", "USD")
+	f.Add([]byte(`{"source":"EUR","target":"USD","rate":1.0854,"time":"2026-10-07T00:17:01+0000"}`), "EUR", "USD")
+	f.Add([]byte(`[]`), "EUR", "USD")
+	f.Add([]byte(`{}`), "EUR", "USD")
+	f.Add([]byte(`not json`), "EUR", "USD")
+	f.Add([]byte(`null`), "EUR", "USD")
+
+	f.Fuzz(func(t *testing.T, payload []byte, source, target string) {
+		got, err := decodeExchangeRates(jsontext.Value(payload), Currency(source), Currency(target))
+		if err != nil {
+			return // rejected payloads are fine; panics are not
+		}
+
+		var rates []raw.ExchangeRate
+		if arrErr := json.Unmarshal(jsontext.Value(payload), &rates); arrErr == nil {
+			if len(rates) == 0 {
+				t.Fatal("accepted an empty array without the empty-list corruption error")
+			}
+
+			for _, rate := range rates {
+				if rate.Source == source && rate.Target == target && got != rate {
+					t.Fatalf("payload contains an exact %s-%s entry but the decoder returned %+v",
+						source, target, got)
+				}
+			}
+
+			return
+		}
+
+		var single raw.ExchangeRate
+		if singleErr := json.Unmarshal(jsontext.Value(payload), &single); singleErr != nil {
+			t.Fatalf("accepted a payload that decodes as neither array nor single object: %s", payload)
 		}
 	})
 }

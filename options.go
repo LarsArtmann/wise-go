@@ -35,6 +35,13 @@ type RequestLog struct {
 	Duration time.Duration
 	Attempt  int   // 1-based; greater than 1 means this was a retry.
 	Error    error // Transport error, if any; API errors are not logged here.
+
+	// RetryAfterDelay is positive only on a delay-decision entry, emitted
+	// between retry attempts when Wise's 429 Retry-After hint steered the
+	// inter-attempt wait (capped at the client's inter-attempt ceiling).
+	// Such entries carry the 429 in Status, the honored wait in Duration,
+	// and leave Method and URL empty — no exchange happened.
+	RetryAfterDelay time.Duration
 }
 
 // Logger is notified about every HTTP attempt against the Wise API,

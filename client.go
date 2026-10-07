@@ -110,7 +110,18 @@ func New(apiKey string, opts ...Option) *Client {
 			return 0
 		}
 
-		return min(rle.RetryAfter, retryMaxDelay)
+		honored := min(rle.RetryAfter, retryMaxDelay)
+
+		if cfg.logger != nil {
+			cfg.logger.LogRequest(RequestLog{
+				Status:          rle.StatusCode,
+				Duration:        honored,
+				Attempt:         attempt,
+				RetryAfterDelay: honored,
+			})
+		}
+
+		return honored
 	}
 
 	return &Client{

@@ -6,6 +6,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json/jsontext"
 	"testing"
 
 	"github.com/larsartmann/wise-go/internal/raw"
@@ -94,6 +95,28 @@ func BenchmarkVerifyWebhookSignature(b *testing.B) {
 	for b.Loop() {
 		if !VerifyWebhookSignature(payload, signature, publicKey) {
 			b.Fatal("VerifyWebhookSignature(valid) = false, want true")
+		}
+	}
+}
+
+// BenchmarkDecodeExchangeRates measures the rates array-decode path (the
+// live /v1/rates wire shape; several entries, requested pair not first).
+func BenchmarkDecodeExchangeRates(b *testing.B) {
+	payload := jsontext.Value(`[
+		{"source":"GBP","target":"USD","rate":1.27,"time":"2026-10-07T00:17:01+0000"},
+		{"source":"EUR","target":"GBP","rate":0.84,"time":"2026-10-07T00:17:01+0000"},
+		{"source":"EUR","target":"USD","rate":1.0854,"time":"2026-10-07T00:17:01+0000"},
+		{"source":"USD","target":"EUR","rate":0.92,"time":"2026-10-07T00:17:01+0000"}
+	]`)
+
+	source, target := Currency("EUR"), Currency("USD")
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for b.Loop() {
+		if _, err := decodeExchangeRates(payload, source, target); err != nil {
+			b.Fatalf("decodeExchangeRates: %v", err)
 		}
 	}
 }
