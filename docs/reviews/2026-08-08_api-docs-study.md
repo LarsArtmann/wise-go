@@ -1,12 +1,13 @@
 # Wise API Docs Study — Changelog & API Reference Analysis
 
-> **Resolution (2026-09-13 docs-health pass):** tier 1–2 shipped through
-> v0.9.0/v0.10.0 (quotes, recipients, transfers + receipts + MT103 payout info,
-> funding, rates, statements, users, MCA/bank details, currencies, webhook
-> signature verification, observability, mTLS docs). Still open, routed:
-> webhook subscription CRUD + typed events (TODO_LIST P3); addresses,
+> **Resolution (2026-10-07 docs-health pass — supersedes the 2026-09-13 note):**
+> tier 1–2 shipped through v0.11.0/v0.12.0 (quotes, recipients, transfers +
+> receipts + MT103 payout info, funding, rates, statements, users, MCA/bank
+> details, currencies, webhook signature verification, observability, mTLS docs,
+> ~~webhook subscription CRUD + typed events~~ **shipped v0.11.0**, SCA
+> one-time tokens, the `2026Q4` webhook surface). Still open, routed: addresses,
 > balance-capacity, `Profile.currentState`/`externalCustomerId`, OAuth token
-> endpoint, 2026Q4 global version header, simulation endpoints, batch groups
+> endpoint, simulation endpoints, batch groups
 > (plan tier 3/4 → ROADMAP); cards/KYC/SCA-sessions/disputes stay tier-3/4
 > demand-gated; OB-package and JOSE remain declined (ROADMAP non-goals);
 > x-trace-id stays WONT (intermediary-set). This study remains the canonical
