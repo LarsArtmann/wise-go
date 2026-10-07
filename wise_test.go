@@ -3576,7 +3576,6 @@ var _ = Describe("Wise Client", func() {
 				Expect(entries[1].Attempt).To(Equal(2))
 			})
 		})
-	})
 
 		Context("on a Retry-After-honored delay", func() {
 			var callCount int
@@ -3625,8 +3624,9 @@ var _ = Describe("Wise Client", func() {
 				Expect(entries[2].Status).To(Equal(http.StatusOK))
 			})
 		})
+	})
 
-		Describe("Retry cancellation", func() {
+	Describe("Retry cancellation", func() {
 		Context("when the context is cancelled mid-retry", func() {
 			It("aborts the retry loop promptly", func() {
 				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {
