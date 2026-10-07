@@ -75,29 +75,10 @@ Source: `docs/status/archived/2026-10-07_03-57_session-status-unblocked-prep-rel
 
 ### Open
 
-[ ] Audit the remaining in-house flake-pin drifts — the go-retry rev/`go.mod`
-split-brain (v0.6.0 flake pin vs v0.7.1 dep, ten days) is fixed (2026-10-07), but
-`go-branded-id` (v0.5.1), `go-error-family` (v0.10.0), and `go-nix-helpers` carry
-the same exposure: compare each `github:` input's `rev=` to the tag its `go.mod`
-version names.
-Source: `docs/status/2026-10-07_07-35_go-retry-pin-drift-fix-status.md` §f1–3.
-
-[ ] Add a `checks.pin-sync` flake check that asserts every `github:LarsArtmann/*`
-input with a `rev=` matches a tag whose module version satisfies `go.mod` — turns
-the silent drift class into a red check. Same report §e1 / §f5.
-
-[ ] Identify the process that bumped `go.mod` deps without syncing flake revs
-(2026-09-27) and decide the going-forward rule (buildflow step, pre-commit guard,
-or a loud "flake pin now stale" warning). Same report §f8.
-
 [ ] Wire `md-go-snippets` + `release-notes-check` into `.github/workflows/ci.yml`
 when CI re-enables — both are flake-local today and ran green inside
 `nix flake check` twice on 2026-10-07.
 Source: `docs/status/2026-10-07_07-09_p3-resume-execution-prerelease-green-status.md` §f18.
-
-[ ] Add `meta.description` to the 8 flake apps — every `nix flake check` warns
-`lacks attribute 'meta.description'`.
-Source: `docs/status/2026-10-07_06-07_p3-quality-tooling-sweep-status.md` §e8.
 
 [ ] Type the webhook label surface — `decodeWebhookEvent` takes `WebhookEventType`
 instead of `string`, and the `"get"`/`"refresh"` verbs become typed values
@@ -108,11 +89,11 @@ Source: `docs/status/archived/2026-09-27_23-42_dedup-pass2-gomod-flipflop-rootca
 CI re-enable so the gate also runs off-machine.
 Source: `docs/status/2026-10-07_06-07_p3-quality-tooling-sweep-status.md` §f13.
 
-[ ] Close the 06-07 test gaps: a regression pinning that `Retry-After: 0` emits NO
-delay entry; a BDD test for two consecutive 429s (two delay entries); checked-in
-`testdata/` seeds for the three fuzz targets; `FuzzParseWiseDate`; and a
-`docs/bench/README.md` one-pager.
-Source: `docs/status/2026-10-07_06-07_p3-quality-tooling-sweep-status.md` §f16, §f26–27, §f42–45.
+[ ] Close the remaining 06-07 test gaps: checked-in `testdata/` seeds for the
+three fuzz targets; `FuzzParseWiseDate`; and a `docs/bench/README.md` one-pager.
+(The `Retry-After` delay-entry cases are covered — `Retry-After: 0` emits no
+entry, and two consecutive 429s emit two, both pinned 2026-10-07.)
+Source: `docs/status/2026-10-07_06-07_p3-quality-tooling-sweep-status.md` §f26–27, §f42–45.
 
 [ ] Consume the committed `benchstat` baseline
 (`docs/bench/2026-10-07_v0120_baseline.txt`) in the next perf-touching PR.
@@ -120,14 +101,6 @@ Source: `docs/status/2026-10-07_06-07_p3-quality-tooling-sweep-status.md` §f16,
 [ ] De-duplicate the LSP-resolution narrative — the struck ROADMAP raw idea and
 the AGENTS.md gotcha should have one canonical home.
 Source: `docs/status/2026-10-07_07-09_p3-resume-execution-prerelease-green-status.md` §f20.
-
-[ ] `CONTRIBUTING.md`: add a `--shuffle` line for tag day and the `pin-sync`
-invariant. Sources: 07-09 §f33; 07-35 §f29.
-
-[ ] Commit/sweep the remaining post-pin cleanup: verify the `vendorHash.nix`
-repair is committed and re-run the full pre-release chain once on the aligned
-go-retry v0.7.1 pin.
-Source: `docs/status/2026-10-07_07-35_go-retry-pin-drift-fix-status.md` §f4/§f6.
 
 ### Decisions (P3)
 
