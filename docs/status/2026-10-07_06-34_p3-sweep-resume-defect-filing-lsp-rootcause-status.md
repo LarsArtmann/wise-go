@@ -23,16 +23,16 @@
 
 ## b) PARTIALLY DONE
 
-1. **LSP env fix is deployed but NOT yet verified end-to-end** — `.crushrc` loads at session START, and `lsp_restart` re-forks with the session-loaded (old) env, so the fix is provably-correct-by-A/B but not yet observed killing the live phantoms. Verification belongs to the next session.
+1. **LSP env fix is deployed but NOT yet verified end-to-end** — `.crushrc` loads at session START, and `lsp_restart` re-forks with the session-loaded (old) env, so the fix is provably-correct-by-A/B but not yet observed killing the live phantoms. Verification belongs to the next session. ~~(verification pending)~~ VERIFIED 2026-10-07 (resume session, first action): zero diagnostics on `internal_test.go` and `webhooks.go` — both phantoms gone.
 2. **The 06:07 report's three user questions** — 1 of 3 resolved this session (art-dupl policy: decided + recorded); 2 remain open for the user (x86_64-darwin strategy; `RequestLog.RetryAfterDelay` v1.0 API lock) — see §g.
-3. **ROADMAP consistency** — AGENTS.md previously said the three BuildFlow defects were "filed as ROADMAP raw ideas until upstream fixes land"; they are now FILED upstream (#34–36), but I did not check/update the ROADMAP raw-idea entries to point at the issues.
-4. **Pre-existing dirty docs at session start** (`docs/planning/2026-07-18_19-59…`, `docs/status/2026-10-07_04-57…`, `docs/status/2026-10-07_05-14…`) — committed by the daemon mid-session; the diffs were authored before this resume and never reviewed by me.
+3. ~~**ROADMAP consistency** — AGENTS.md previously said the three BuildFlow defects were "filed as ROADMAP raw ideas until upstream fixes land"; they are now FILED upstream (#34–36), but I did not check/update the ROADMAP raw-idea entries to point at the issues.~~ RESOLVED 2026-10-07 (resume session): ROADMAP raw ideas now carry the #34/#35/#36 links and the stale gopls/art-dupl/erraudit entries are struck with their resolutions.
+4. ~~**Pre-existing dirty docs at session start** (`docs/planning/2026-07-18_19-59…`, `docs/status/2026-10-07_04-57…`, `docs/status/2026-10-07_05-14…`) — committed by the daemon mid-session; the diffs were authored before this resume and never reviewed by me.~~ REVIEWED 2026-10-07 (resume session): 04-57 and 05-14 are harmless dprint table re-alignment/emphasis normalization; 2026-07-18 was SEMANTIC corruption (the `~~~` strikethrough banner reinterpreted as a code fence) — fixed to 2-tildes strikethrough and the 3-tilde trap recorded in AGENTS.md.
 
 ## c) NOT STARTED
 
-1. **`nix run .#pre-release` end-to-end** — the first full-chain run (incl. apidiff, needs network) still has never happened; it was queued when the tree was dirty and deferred behind the defect filing.
+1. ~~**`nix run .#pre-release` end-to-end** — the first full-chain run (incl. apidiff, needs network) still has never happened; it was queued when the tree was dirty and deferred behind the defect filing.~~ DONE 2026-10-07 (resume session): first end-to-end run ALL GATES PASSED, exit 0 (build, vet, race, lint 0 issues, 9/9 flake checks, doc-verify 41-method claims + 64 links, release-notes-check, apidiff vs v0.12.0: only compatible delta `RequestLog.RetryAfterDelay added`, suggested v0.13.0).
 2. **x86_64-darwin decision execution** — blocked on the user's §g answer (pin nixpkgs-26.05-darwin vs drop the system).
-3. **GOEXPERIMENT ergonomics TODO item** (direnv/home-manager pin) — untouched; `.crushrc` covers only Crush-launched LSPs, not arbitrary shells.
+3. ~~**GOEXPERIMENT ergonomics TODO item** (direnv/home-manager pin) — untouched; `.crushrc` covers only Crush-launched LSPs, not arbitrary shells.~~ RESOLVED 2026-10-07 (resume session): the existing local `.envrc` (`use flake` + `use_go_env`) is now TRACKED (buildflow `.gitignore` ignore overridden by `!.envrc`, fleet convention); direnv verified live injecting `GOEXPERIMENT=jsonv2` on `cd`. Home-manager fleet pin remains optional.
 
 ## d) TOTALLY FUCKED UP (honest)
 
@@ -53,6 +53,23 @@
 7. **Record the gh-pipe silent-failure quirk as a cross-project lesson** (crush-config `references/lessons.md`) — it will bite every repo that files issues from scripts.
 
 ## f) NEXT — up to 50 things to get done
+
+> **Resolution (2026-10-07 resume session, same day):** items **1, 2, 3, 6,
+> 7, 8, 10, 32, 34, 35, 36, 38, 39, 40** executed and verified this session
+> (LSP fix live-verified; first end-to-end pre-release ALL GATES PASSED +
+> `--shuffle` flag added to the app and verified — the first implementation's
+> `-count=3` tripped Ginkgo's `-count>1` ban and was caught by the flag's own
+> verification run, fixed to three `-shuffle=on` passes; ROADMAP #34–36 links + stale-entry
+> resolutions; pre-session diffs reviewed, `~~~` corruption fixed; gh-pipe +
+> fence-truncation lessons committed to crush-config `references/lessons.md`;
+> WATCH notes on the filed-defect TODO item; drafts README + no-go-fence
+> convention; `BenchmarkParseWiseTimestamp` + missing fuzz seed; daemon
+> commit spot-checks; CONTRIBUTING LSP note; 06:07 report Q1 annotated).
+> Items 4/5 stay watch-gated on upstream issue closure; 9/11/12 remain the
+> §g user questions; 13/15/16/17 and 41/42 are trigger-gated; 18–25 are the
+> standing P1/P2 user-blocked set; 26–31 re-checked (nixpkgs stable go =
+> 1.26.8, condition 1 NOT met); 27–31 condition-gated; 37/43–49 pruned as
+> raw ideas per item 50.
 
 **Verify the fixes landed (this week)**
 1. Next session: confirm `.crushrc` env fix kills both phantoms (gopls `bytes unused`, golangci webhooks.go:142); reopen if not.
