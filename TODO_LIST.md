@@ -11,7 +11,7 @@ Completed work lives in [CHANGELOG.md](CHANGELOG.md), never here.
 five spec-vs-live assumptions settled by the conformance work: statement
 `type` COMPACT/FLAT, `X-idempotence-uuid` on balance creation, statement
 `details.type` enum, `/v1/rates` array shape, text/plain funding errors.
-Source: docs/planning/2026-09-16_16-54_pareto-plan-openapi-conformance-green.md, 2026-09-16.
+Source: docs/planning/archived/2026-09-16_16-54_pareto-plan-openapi-conformance-green.md, 2026-09-16.
 
 [ ] Flip `ottAPIVersion` 2026Q3 → 2026Q4 once the OTT surface verifies live.
 The OTT surface is **probe-blind**: unauthenticated requests to `/one-time-token/*`
@@ -19,14 +19,6 @@ The OTT surface is **probe-blind**: unauthenticated requests to `/one-time-token
 without credentials. Procedure: with `WISE_SANDBOX_API_KEY` (pairs with the sandbox
 pass above), probe `GET /2026Q4/one-time-token/status` for a non-404, change
 `ottAPIVersion` in `client.go`, run `go test ./...`, commit. Probes 2026-10-05.
-
-[ ] Publish the GitHub Release objects for **v0.10.0, v0.11.0, and v0.12.0** — all
-three tags exist on origin and are served by the module proxy, but `gh release
-list` still shows v0.9.0 as Latest. Drafted notes:
-`docs/releases/v0.10.0-release-notes.md`, `docs/releases/v0.11.0-release-notes.md`,
-and `docs/releases/v0.12.0-release-notes.md`. Remaining: three `gh release create`
-calls with the note files. Source: re-verified 2026-10-07.
-**BLOCKED: needs the user's approval to publish releases.**
 
 ## P2 — User-gated
 
@@ -144,6 +136,7 @@ subscription CRUD, typed event decoding, OTT endpoints, `WithUserAgent`,
 govulncheck zero-findings, benchmarks/fuzz/raw round-trips, test-file split,
 concurrency test, coverage gate, templates, ADRs, `doc-verify`/`apidiff` apps,
 CI tool pinning, the `erraudit` CI gate, the 90% coverage floor, the Q4 webhook
-rollover, the go-retry v0.6.0 executor, and the declined ideas — is recorded in
+rollover, the go-retry v0.6.0 executor, the v0.10.0/v0.11.0/v0.12.0 GitHub
+Release objects (published 2026-10-07), and the declined ideas — is recorded in
 [CHANGELOG.md](CHANGELOG.md) (`[0.12.0]` and the v0.10.0/v0.11.0 / 2026-09-13
 sections) and annotated inline in the corresponding `docs/status/` reports.

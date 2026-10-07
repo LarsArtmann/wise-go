@@ -1,6 +1,6 @@
 # Status Report — Status-Vocabulary Expansion + Endpoint-Matrix Session (part 2)
 
-> **Resolved (2026-10-07 docs-health pass):** the 8-label vocabulary and the coverage arithmetic (`215 = 41 + 20 + 26 + 5 + 123`) are live in FEATURES.md today and gate-checked by `nix run .#doc-verify`. The residual items (legacy-only surface decision, pinned offline spec snapshot, doc-verify coverage-total gating, HARVEST) are routed to TODO_LIST.md / ROADMAP.md. Archived as fully resolved; superseded for current state by the v0.12.0 living docs.
+> **Resolved (2026-10-07 docs-health pass):** the 8-label vocabulary and the coverage arithmetic (`215 = 41 + 20 + 26 + 5 + 123`) are live in FEATURES.md today and gate-checked by `nix run .#doc-verify`. ~~HARVEST pending~~ **executed**; ~~test-suite color unknown~~ **green (41 methods, suite ok)**. Residual items (legacy-only surface decision, pinned offline spec snapshot, doc-verify coverage-total gating) are routed to TODO_LIST.md / ROADMAP.md. Archived as fully resolved; superseded for current state by the v0.12.0 living docs.
 
 - **Written:** 2026-09-16 17:56 CEST
 - **Session scope:** Continues `2026-09-16_16-35_features-endpoint-coverage-matrix-status.md`.

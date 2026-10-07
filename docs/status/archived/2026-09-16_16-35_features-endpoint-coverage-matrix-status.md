@@ -1,5 +1,7 @@
 # Status Report — FEATURES.md Endpoint-Coverage Matrix Audit
 
+> **Resolved (2026-10-07 docs-health pass):** the per-endpoint coverage matrix is live in FEATURES.md and gate-checked (`doc-verify` gates the "41 shipped operations" count; `215 = 41 + 51 + 123`). The 51 unshipped ops are tracked per-tier in FEATURES.md; ~~HARVEST pending~~ **executed**; ~~main test suite RED (48 failures)~~ **green — those failures were a parallel conformance-harness WIP, since shipped in v0.12.0**. Residual ideas (legacy-only surface decision, spec refresh, doc-verify coverage-total gating, CHANGELOG note) are routed to TODO_LIST.md / ROADMAP.md. Archived as fully resolved.
+
 - **Written:** 2026-09-16 16:35 CEST
 - **Session scope:** Full audit of the live Wise Platform API reference
   (`docs.wise.com/api-reference/preview`) against wise-go, and a complete

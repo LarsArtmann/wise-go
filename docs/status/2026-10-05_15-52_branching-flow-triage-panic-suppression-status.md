@@ -1,5 +1,7 @@
 # Status Report: branching-flow Full-Suite Triage & Panic False-Positive Suppression
 
+> **Shipped (2026-10-07 docs-health pass):** the two `//nolint:branching-flow:panic` suppressions are live and verified (see AGENTS.md gotcha); ~~`go test ./...` NOT run after the nolint edits~~ **suite green since**. The suppression-endgame question (§g2) is answered in practice: in-source directives + the `.golangci.yml` nolintlint exclusion are the mechanism. Carried open items (SARIF baseline, `CreateBalanceRequest.IdempotencyKey` brand, generic-nolint applicability) remain in TODO_LIST.md / ROADMAP.md.
+
 **Date:** 2026-10-05 15:52 CEST
 **Repo:** wise-go (master)
 **Scope:** This session only — the `branching-flow all .` run (14 linters, 293 findings), its triage, and the fixes/decisions that came out of it. Carried items from `2026-10-05_14-53_strong-id-analysis-execution-status.md` are marked `CARRY #n`; its items #1–#20 were not re-verified this session (not part of this run).

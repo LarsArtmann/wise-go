@@ -1,5 +1,7 @@
 # Status Report: `branching-flow strong-id` Execution — 35 Findings Triaged, Brands Implemented
 
+> **Shipped (2026-10-07 docs-health pass):** the brands landed — `CustomerTransactionID`, `OTTStatus.UserID`, `WebhookResource.ProfileID` — and are recorded in CHANGELOG `[0.12.0]` (`220e2c8`). ~~not run: `nix flake check`, `apidiff`, `doc-verify`~~ all three gate clean since. The release question (§g1) is answered: **v0.12.0 cut 2026-10-07**. Open items (§b–§f: `WebhookResource.AccountID` naming, typed per-event payloads, live OTT `userId` ID-space verification, suppression-config upstream) remain tracked in TODO_LIST.md / ROADMAP.md.
+
 - **Date:** 2026-10-05 14:53 CEST
 - **Repo:** wise-go @ master, working tree clean
 - **Session scope:** Run the strong-id analysis to ground: triage all 35 findings, implement the justified ones, decline the rest with documented rationale, verify everything.

@@ -1,5 +1,7 @@
 # Pareto Execution Plan: OpenAPI Spec-Conformance Gate → Green → Institutionalized
 
+> **Executed (2026-10-07 docs-health pass):** every micro-task in this plan landed — the suite reached 202/202, the harness bug / `omitzero` tags / `rateType` fixtures / rates-array fix all shipped, and the gate is wired into `nix flake check`. The whole conformance gate shipped in **v0.12.0** (`220e2c8`). ~~suite at 162/202 passing, 40 failures~~ → **202/202 green**. Archived as fully resolved; its remaining seeds (spec-refresh tooling, sandbox live verification, raw-type field-coverage gate, paginated `/accounts`, `2026Q4` rollover) live in ROADMAP.md / TODO_LIST.md.
+
 _Created 2026-09-16 16:54 CEST · Scope: finish the Wise OpenAPI spec-conformance work started this session_
 _Format note: `.md` written because the user explicitly requested Markdown + mermaid/d2; the pareto-planning skill's canonical format is HTML (override flagged per skill contract)._
 
@@ -7,7 +9,7 @@ _Format note: `.md` written because the user explicitly requested Markdown + mer
 
 ## Current State (baseline, verified)
 
-- Conformance gate exists and runs; suite at **162/202 passing**, 40 failures, **every failure root-caused** (status report: `docs/status/2026-09-16_16-45_openapi-spec-conformance-status.md`).
+- Conformance gate exists and runs; ~~suite at **162/202 passing**, 40 failures, **every failure root-caused**~~ **202/202 green, shipped v0.12.0** (status report: `docs/status/archived/2026-09-16_16-45_openapi-spec-conformance-status.md`).
 - 3 real client bugs already fixed in code (statement `type` filter → `StatementType`, `CreateBalance` `X-idempotence-uuid` header, statement `details.type` spec enum), plus text/plain funding-error fixtures.
 - Known-blocking: response-side validation `Options` never engaged (harness bug), `omitzero` missing on 3 raw pointer fields, 3 quote fixtures missing `rateType`, rates array-shape divergence (spec=array, SDK parses object), `tmp_probe/` debris, no gofmt/lint/nix/docs wiring yet.
 - Daemon committed all WIP (incl. one syntactically broken intermediate) — accepted, documented; no history rewrites.

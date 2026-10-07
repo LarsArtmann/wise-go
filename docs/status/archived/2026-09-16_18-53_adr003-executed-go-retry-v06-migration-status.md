@@ -1,6 +1,6 @@
 # Status: ADR 003 accepted and executed — failsafe-go → go-retry v0.6.0 migration
 
-> **Resolved (2026-10-07 docs-health pass):** the migration shipped. `client.go` runs `retry.DoWithValue`, `classifyExhaustedRetries` is deleted, and Wise's `Retry-After` steers the delay — recorded in CHANGELOG `[0.12.0]` (`220e2c8`, "retry executor is now go-retry v0.6.0"). All gates green then and since. Residual items (coverage-floor enforcement, apidiff, retry regression/injection test coverage) are routed to TODO_LIST.md. Archived as fully resolved.
+> **Resolved (2026-10-07 docs-health pass):** the migration shipped. `client.go` runs `retry.DoWithValue`, `classifyExhaustedRetries` is deleted, and Wise's `Retry-After` steers the delay — recorded in CHANGELOG `[0.12.0]` (`220e2c8`, "retry executor is now go-retry v0.6.0"). All gates green then and since. ~~coverage-floor enforcement pending; apidiff not run~~ **both landed since** (flake `checks.test` 90% floor; apidiff pin). Residual retry regression/injection test coverage is routed to TODO_LIST.md. Archived as fully resolved.
 
 **Date:** 2026-09-16 18:53
 **Scope:** This session only — (1) re-review of the blocked go-retry TODO item with the
