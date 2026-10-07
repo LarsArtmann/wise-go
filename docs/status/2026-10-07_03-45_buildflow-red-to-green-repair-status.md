@@ -164,3 +164,15 @@ Key detection signal worth remembering: gopls/compiler errors of the form `use o
 ---
 
 _Point-in-time snapshot, 2026-10-07 03:45 CEST. Completed work will move to CHANGELOG.md per convention; for later sessions: use docs-health ANNOTATE to resolve items inline, and HARVEST section (f) into TODO_LIST.md (blocked only by the concurrent uncommitted TODO_LIST.md edit at report time)._
+
+---
+
+## ADDENDUM — same session, ~04:15 CEST (operator challenged three calls; all re-verified)
+
+1. **samber/lo re-ruled with a full census** (was a 2-of-9 sample): all 9 sites reviewed individually — 6 idiomatic keeps (incl. one prepend-cons the Map pattern over-matches, ott.go:346; one keyed map transform lo.Map cannot express, recipients.go:195), 3 marginal lo.Map fits (errors.go:192, ott.go:421/434), 0 decisive. Fleet adoption 34/322 repos — no standardization pressure. **DECLINE stands**, now evidence-complete. AGENTS.md bullet updated.
+2. **Buildflow rebuilt/reinstalled to 202b114** (BuildFlow HEAD 0e9f5e301) and the embedded erraudit retested: the **identical 29 findings** (12 critical + 17 error; same file:line + rules). The false positives are PERSISTENT upstream, not stale-binary-only. The earlier "0 findings at fresh binary" was a measurement trap: `buildflow -s <skipped-tool>` emits `findings: null` and jq's `null | length` = 0 — the skip had briefly been lifted on that misread and was reinstated the same hour. Skip + rationale now carry double-binary evidence. (Also: `nix run .#reinstall` did NOT switch `~/.nix-profile` — the profile entry stays locked at rev 3bb229e; manual `nix profile remove/add` of the store path was required. Upstream bug candidate.)
+3. **max_file_size evaluated with data** (was carried over blind): it is the file-size-check lint threshold in LINES (default 350), not a scan cap. The tool — new in the 160 commits — scans **0 files** in wise-go at BOTH 350 and 700 (verified empirically; upstream defect for root-package layouts). Threshold currently has no practical effect; **700 kept + documented** in `.buildflow.yml` (when the scan works, 350 would flag 11+ files incl. wise_test.go 4229; 700 keeps the signal on types.go 800, internal_test.go 1078, wise_test.go 4229).
+
+Final state after addendum: `buildflow --fix --build-mode=full` on binary 202b114 → **exit 0**, erraudit skipped-via-config with evidence, all other gates green.
+
+New upstream findings for the harvest list: (a) embedded erraudit 29 false positives at HEAD (evidence: client.go:135–155/189/394, canonical gate clean); (b) `nix run .#reinstall` leaves the nix profile locked at the old rev; (c) file-size-check scans 0 files in root-package Go repos.
