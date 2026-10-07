@@ -149,7 +149,7 @@ linters:
         - (*strings.Builder).WriteString
         - (*bytes.Buffer).WriteString
     exhaustruct_v5:
-      exclude:
+      ignore-patterns:
         - os/exec.Cmd
     funlen:
       lines: 200
