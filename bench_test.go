@@ -43,6 +43,28 @@ func BenchmarkClassifyTransactionType(b *testing.B) {
 	}
 }
 
+func BenchmarkParseWiseTimestamp(b *testing.B) {
+	shapes := []struct{ name, input string }{
+		{"rfc3339-zulu", "2020-05-27T10:27:22Z"},
+		{"zoneless-t-separated", "2020-05-27T10:27:22"},
+		{"space-separated", "2020-05-27 10:27:22"},
+		{"millis-numeric-zone", "2018-01-10T12:15:00.000+0000"},
+		{"no-millis-numeric-zone", "2026-10-07T00:17:01+0000"},
+	}
+
+	for _, shape := range shapes {
+		b.Run(shape.name, func(b *testing.B) {
+			b.ReportAllocs()
+
+			for b.Loop() {
+				if _, err := parseWiseTimestamp(shape.input); err != nil {
+					b.Fatalf("parseWiseTimestamp(%q): %v", shape.input, err)
+				}
+			}
+		})
+	}
+}
+
 func BenchmarkMapTransaction(b *testing.B) {
 	tx := raw.StatementTransaction{
 		TransactionID: "tx-1",

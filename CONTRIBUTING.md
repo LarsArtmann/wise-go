@@ -95,6 +95,18 @@ Where it is already wired in:
 
 `nix develop` sets it for you, so inside that shell plain `go test ./...` works.
 
+### Editor/LSP environments need it too
+
+Tools launched OUTSIDE the dev shell (IDE language servers, agent-launched
+LSPs, hooks) do not inherit the variable. Their package load fails with the
+same `build constraints exclude all Go files` error, and the degraded
+analysis surfaces as phantom diagnostics (false "unused import",
+`undefined: json`, bogus formatting findings) that the CLI does not show.
+Inject `GOEXPERIMENT=jsonv2` into the editor's LSP server environment; this
+repo's `.crushrc` does exactly that for Crush-launched `gopls` and
+`golangci_lint_ls`. Root-cause write-up: AGENTS.md, "LSP phantoms were an env
+problem" (2026-10-07).
+
 ---
 
 ## Project Layout

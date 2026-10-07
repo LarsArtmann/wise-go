@@ -81,6 +81,9 @@ false positives), [#35](https://github.com/LarsArtmann/BuildFlow/issues/35)
 scanning 0 files in root-package layouts); md-go-validator
 [#8](https://github.com/LarsArtmann/md-go-validator/issues/8) (own flake
 cannot build its package). Drafts (voice-checked) kept in `docs/drafts/`.
+WATCH: when #34 fixes, re-run the embedded step vs standalone byte-for-byte
+and lift the `skip_steps`; when #8 fixes, switch the flake input to upstream
+flake and drop the `go_1_27` override + vendorHash.
 Source: `docs/status/2026-10-07_04-20_dual-phase-repair-and-tool-reevaluation-status.md` §b1.
 
 [ ] `nix flake check --all-systems` — verified 2026-10-07: aarch64-linux and

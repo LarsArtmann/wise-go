@@ -355,10 +355,13 @@ suite green (`go test .` → ok, 3.8s); `golangci-lint run` → 0 issues.
 
 ## g) QUESTIONS (cannot self-answer)
 
-1. **art-dupl policy**: I decided "accept the suppressed baseline as
+1. ~~**art-dupl policy**: I decided "accept the suppressed baseline as
    policy; no enforced gate; revisit at CI re-enable (warn-first job)".
    Confirm — or do you want the exit-code gate wired into buildflow/CI
-   NOW (as continue-on-error) despite CI being disabled?
+   NOW (as continue-on-error) despite CI being disabled?~~ RESOLVED
+   2026-10-07 (P3-resume session): decided as proposed — baseline is
+   policy, no enforced gate, revisit warn-first at CI re-enable.
+   Recorded in AGENTS.md (art-dupl bullet) and TODO_LIST Closed 2026-10-07.
 2. **x86_64-darwin**: nixpkgs-26.11 dropped the system, so
    `nix flake check --all-systems` can never pass against
    nixpkgs-unstable. Pin a `nixpkgs-26.05-darwin` input for darwin

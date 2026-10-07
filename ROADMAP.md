@@ -252,14 +252,16 @@ scheduled work:
 - **Webhook end-to-end README quickstart** — subscribe → verify → parse in one runnable block.
 - **`ParseWebhookEvent` RFC3339 fast path** — the bench shows the multi-layout timestamp trial loop dominates (34µs); one-line win if webhook volume ever matters.
 - **benchstat baseline file** committed so benchmark runs have a comparison point.
-- **gopls/LSP config-skew fix** — inject `GOEXPERIMENT`/lint config so tool-result warnings stop diverging from the CLI.
+- ~~**gopls/LSP config-skew fix**~~ RESOLVED 2026-10-07: root cause was Crush-launched LSP servers running outside the devShell without `GOEXPERIMENT=jsonv2` (json/v2 imports build-constraint-excluded → degraded analysis → phantom diagnostics). Project `.crushrc` injects the env; see the AGENTS.md LSP-phantom gotcha.
 - **`nix flake check --all-systems`** — aarch64/darwin coverage for the consumer fleet.
 - **Decide `Authenticate()`'s future** now that `GetMe` exists (cheaper key check).
 - **2026Q4 bump ritual** — document the `webhookSubscriptionsAPIVersion`/`ottAPIVersion` upgrade path for when Wise moves the quarterly surfaces (they roll over independently; probe live before flipping).
 - **Go 1.27 migration plan** — toolchain + `GOTOOLCHAIN` policy bump (erraudit needs ≥ 1.27); today every 1.27-syntax push by the modernizer is reverted because the flake pins 1.26 (see AGENTS.md).
 - **Markdown-validation gate** — wire `md-go-validator` into `nix flake check` (or buildflow) so fenced Go snippets in README/docs are parse-checked; today block #27's mixed-scope bug was found by hand.
-- **`art-dupl` enforced-gate decision** — accept the suppressed baseline as policy, or enforce an exit-code gate (reverses the 2026-09-13 decline).
-- **erraudit class-wide policy** — fix the 29 `context_loss`/`ignored` advisories or suppress the rules with rationale; per-finding drift is the worst option.
+- ~~**`art-dupl` enforced-gate decision**~~ DECIDED 2026-10-07: the suppressed baseline is policy, no enforced gate; revisit warn-first at CI re-enable (AGENTS.md art-dupl bullet).
+- ~~**erraudit class-wide policy**~~ RESOLVED 2026-10-07: the 29 embedded-analyzer findings are upstream false positives, evidenced and FILED as [BuildFlow #34](https://github.com/LarsArtmann/BuildFlow/issues/34); policy = skip the embedded step as a class, the standalone `erraudit` gate governs (AGENTS.md erraudit bullet).
+- **BuildFlow `reinstall` no-op** — `nix run .#reinstall` prints REINSTALL-OK but never switches `~/.nix-profile`; manual `nix profile remove/add` of the store path is required. FILED upstream: [BuildFlow #35](https://github.com/LarsArtmann/BuildFlow/issues/35).
+- **BuildFlow `file-size-check` inert** — the step scans 0 files in root-package Go layouts (350 and 700-line thresholds both report zero), so `max_file_size` never fires. FILED upstream: [BuildFlow #36](https://github.com/LarsArtmann/BuildFlow/issues/36).
 - **Daemon/`go.mod` guard hook** — a session-start (or pre-commit) check that fails loudly when `.buildflow.yml` is deleted or `grep '^go ' go.mod` leaves the 1.26 line.
 - Wishlist-era leftovers (Postman collection, currency-conversion helpers, batch APIs, mock server): only with a real consumer ask. Response caching stays a non-goal (the SDK is stateless by design).
 

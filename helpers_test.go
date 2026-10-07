@@ -439,6 +439,7 @@ func TestParseWiseDate(t *testing.T) {
 func FuzzParseWiseTimestamp(f *testing.F) {
 	f.Add("2020-05-27T10:27:22Z")
 	f.Add("2018-01-10T12:15:00.000+0000")
+	f.Add("2026-10-07T00:17:01+0000")
 	f.Add("2020-05-27T10:27:22")
 	f.Add("2020-05-27 10:27:22")
 	f.Add("")
