@@ -1,0 +1,22 @@
+# BuildFlow Configuration
+# See: https://github.com/larsartmann/buildflow
+# Required: go-branded-id v0.5.1 + go-error-family v0.10.0 import
+# encoding/json/v2.
+env:
+  GOEXPERIMENT: jsonv2
+
+# go-version-auto-configure rewrites the go directive to the newest toolchain
+# line (1.27), which the repo's pinned nixpkgs toolchain (1.26.7,
+# GOTOOLCHAIN=local) refuses — every subsequent go step then fails to load
+# the module. Fleet go-version flipflop: go-mod-normalize pins down (1.26),
+# go-version-auto-configure bumps up (1.27). Skip the upward disposition;
+# `go 1.26` satisfies the pinned toolchain.
+skip_steps:
+  - go-version-auto-configure
+  # go-structure-linter's repair auto-bumps go.mod ("rule=go-version") while
+  # "fixing" its go-version finding — one of the ~22 findings AGENTS.md
+  # documents as deliberate non-fixes for this repo (root-package-files,
+  # go-version). Its repair corrupts the toolchain pin; skip the whole step.
+  - go-structure-linter
+
+max_file_size: 700

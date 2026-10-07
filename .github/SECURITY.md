@@ -36,7 +36,7 @@ consumer of this SDK, for example:
 ## What is out of scope
 
 - Vulnerabilities in the Wise API itself — report those to Wise
-  (<https://wise.com/security/report/>)
+  (<https://bugcrowd.com/wise>)
 - Missing features, hardening suggestions without an attack path — those are
   regular issues
 - Bypasses that require control of the consumer's own process or environment
