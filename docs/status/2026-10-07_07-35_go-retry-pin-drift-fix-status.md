@@ -27,7 +27,7 @@ One question produced one answer, one latent defect, and one fix:
    rev-vs-go.mod exposure right now and I did not audit them this session. This
    is the biggest miss: the same split-brain may be live for those today.
 2. **Root cause, not just symptom.** I fixed the pin but the deeper question —
-   *what process* bumps `go.mod` without syncing the flake rev — is only
+   _what process_ bumps `go.mod` without syncing the flake rev — is only
    partially answered (see "Root cause" under (d)). Without a guard, the next
    in-house dep bump can reopen the same hole.
 3. **Harvest + lesson capture.** I did not add the pin-sync task to
@@ -70,36 +70,36 @@ One question produced one answer, one latent defect, and one fix:
 
 ## a) FULLY DONE
 
-| # | Item | Evidence |
-| - | ---- | -------- |
-| 1 | go-retry usage audit answered with evidence | `go.mod:13` (v0.7.1); import `client.go:14`; `retry.DoWithValue` `client.go:329`; `isRetryableError` `client.go:139`; `DelayFunc` (Retry-After honored, capped) `client.go:107`; ADR 003 `docs/adr/003-retry-executor-go-retry-override.md`; flake input `flake.nix:32-35`, module override `flake.nix:112` |
-| 2 | Drift discovered and root-caused | `go.mod` v0.6.0→v0.7.1 in `949f629` (2026-09-27, the gomod-restore session; 5 files incl. a `...gomod-restore-status.md` doc); flake pin `61058487` proven to be the v0.6.0 release commit (git log/tag in `/home/lars/projects/go-retry`) |
-| 3 | Flake pin aligned to v0.7.1 tag | `flake.nix:33` → `a2d063a421f368c9e293f50f256e6ba0035da8b1` (= v0.7.1); `flake.lock` refreshed via `nix flake update go-retry`; committed by daemon `3ed4fb4` (contents verified: flake.nix, flake.lock, AGENTS.md) |
-| 4 | vendorHash repaired by the owned tool, not by hand | `buildflow -s nix-hash-fix --fix` → `vendorHash.nix` = `sha256-PHGvRfUbcuanO9pQMVjAV2/LvF0d+/ouooZe17kq7ZQ=`, byte-matching the FOD's `got:` hash |
-| 5 | Verification green on v0.7.1 | nix-hash-fix diagnose: 9/9 targets built incl. sandboxed `wise-go-test` derivation; final `nix flake check` **EXIT=0**, all 7 checks pass (build, format, links, md-go-snippets, pre-commit, test, treefmt) |
-| 6 | AGENTS.md corrected | go-retry entry v0.6.0→v0.7.1 + "keep flake rev in sync with the go.mod tag" rule + drift history (committed in `3ed4fb4`) |
-| 7 | Local go-retry HEAD triaged | `v0.7.1-19-g09bbfce`; non-chore delta = only "Restore go directive to 1.26" → the tag remains the correct pin, no bump warranted |
-| 8 | "running 0 flake checks" oddity investigated | nix counts *unbuilt* derivations on re-run; verbose run explicitly checked `checks.x86_64-linux.test`; exit 0. Benign, undocumented quirk |
+| # | Item                                               | Evidence                                                                                                                                                                                                                                                                                                    |
+| - | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 | go-retry usage audit answered with evidence        | `go.mod:13` (v0.7.1); import `client.go:14`; `retry.DoWithValue` `client.go:329`; `isRetryableError` `client.go:139`; `DelayFunc` (Retry-After honored, capped) `client.go:107`; ADR 003 `docs/adr/003-retry-executor-go-retry-override.md`; flake input `flake.nix:32-35`, module override `flake.nix:112` |
+| 2 | Drift discovered and root-caused                   | `go.mod` v0.6.0→v0.7.1 in `949f629` (2026-09-27, the gomod-restore session; 5 files incl. a `...gomod-restore-status.md` doc); flake pin `61058487` proven to be the v0.6.0 release commit (git log/tag in `/home/lars/projects/go-retry`)                                                                  |
+| 3 | Flake pin aligned to v0.7.1 tag                    | `flake.nix:33` → `a2d063a421f368c9e293f50f256e6ba0035da8b1` (= v0.7.1); `flake.lock` refreshed via `nix flake update go-retry`; committed by daemon `3ed4fb4` (contents verified: flake.nix, flake.lock, AGENTS.md)                                                                                         |
+| 4 | vendorHash repaired by the owned tool, not by hand | `buildflow -s nix-hash-fix --fix` → `vendorHash.nix` = `sha256-PHGvRfUbcuanO9pQMVjAV2/LvF0d+/ouooZe17kq7ZQ=`, byte-matching the FOD's `got:` hash                                                                                                                                                           |
+| 5 | Verification green on v0.7.1                       | nix-hash-fix diagnose: 9/9 targets built incl. sandboxed `wise-go-test` derivation; final `nix flake check` **EXIT=0**, all 7 checks pass (build, format, links, md-go-snippets, pre-commit, test, treefmt)                                                                                                 |
+| 6 | AGENTS.md corrected                                | go-retry entry v0.6.0→v0.7.1 + "keep flake rev in sync with the go.mod tag" rule + drift history (committed in `3ed4fb4`)                                                                                                                                                                                   |
+| 7 | Local go-retry HEAD triaged                        | `v0.7.1-19-g09bbfce`; non-chore delta = only "Restore go directive to 1.26" → the tag remains the correct pin, no bump warranted                                                                                                                                                                            |
+| 8 | "running 0 flake checks" oddity investigated       | nix counts _unbuilt_ derivations on re-run; verbose run explicitly checked `checks.x86_64-linux.test`; exit 0. Benign, undocumented quirk                                                                                                                                                                   |
 
 ## b) PARTIALLY DONE
 
-| # | Item | Works now | Remains open | Blocker | Effort |
-| - | ---- | --------- | ------------ | ------- | ------ |
-| 1 | In-house pin-sync audit | go-retry audited + fixed | go-branded-id, go-error-family, go-nix-helpers pins NOT compared to their go.mod/tag versions | none — out of this session's trigger scope | S |
-| 2 | `vendorHash.nix` commit | content verified correct + green build | still uncommitted at session end (daemon expected to sweep) | none | S |
-| 3 | library-deep-dive skill execution | Phase 1 usage discovery done | Phases 2–7 (capability research, HTML report) deliberately skipped | deviation, not blocker — in-house lib, binary question | M if wanted |
-| 4 | Drift guard | fully specified idea (see (e)1) | zero implementation | not started | S–M in-repo, M–L upstream |
+| # | Item                              | Works now                              | Remains open                                                                                  | Blocker                                                | Effort                    |
+| - | --------------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------ | ------------------------- |
+| 1 | In-house pin-sync audit           | go-retry audited + fixed               | go-branded-id, go-error-family, go-nix-helpers pins NOT compared to their go.mod/tag versions | none — out of this session's trigger scope             | S                         |
+| 2 | `vendorHash.nix` commit           | content verified correct + green build | still uncommitted at session end (daemon expected to sweep)                                   | none                                                   | S                         |
+| 3 | library-deep-dive skill execution | Phase 1 usage discovery done           | Phases 2–7 (capability research, HTML report) deliberately skipped                            | deviation, not blocker — in-house lib, binary question | M if wanted               |
+| 4 | Drift guard                       | fully specified idea (see (e)1)        | zero implementation                                                                           | not started                                            | S–M in-repo, M–L upstream |
 
 ## c) NOT STARTED
 
-| # | Item | Why not started | Still wanted? |
-| - | ---- | --------------- | ------------- |
-| 1 | Automated pin-sync guard (repo flake check attr or buildflow step) | discovered this session; needs the (g) policy answer | yes — top priority |
-| 2 | Cross-project lesson in crush-config `references/lessons.md` | needs a commit in the crush-config repo (out of repo scope) | yes |
-| 3 | HARVEST of section (f) into `TODO_LIST.md` | report written last; harvest is the immediate next step | yes |
-| 4 | go-retry upstream: Retry-After-aware recipe/example (archived ADR-003 TODO #33) | inherited open item, untouched | demand-gated |
-| 5 | go-retry upstream: record capped-honoring design decision (archived TODO #34) | inherited, untouched | demand-gated |
-| 6 | Dependabot pickup check for go-retry bumps (archived TODO #31) | inherited, untouched | low |
+| # | Item                                                                            | Why not started                                             | Still wanted?      |
+| - | ------------------------------------------------------------------------------- | ----------------------------------------------------------- | ------------------ |
+| 1 | Automated pin-sync guard (repo flake check attr or buildflow step)              | discovered this session; needs the (g) policy answer        | yes — top priority |
+| 2 | Cross-project lesson in crush-config `references/lessons.md`                    | needs a commit in the crush-config repo (out of repo scope) | yes                |
+| 3 | HARVEST of section (f) into `TODO_LIST.md`                                      | report written last; harvest is the immediate next step     | yes                |
+| 4 | go-retry upstream: Retry-After-aware recipe/example (archived ADR-003 TODO #33) | inherited open item, untouched                              | demand-gated       |
+| 5 | go-retry upstream: record capped-honoring design decision (archived TODO #34)   | inherited, untouched                                        | demand-gated       |
+| 6 | Dependabot pickup check for go-retry bumps (archived TODO #31)                  | inherited, untouched                                        | low                |
 
 ## d) TOTALLY FUCKED UP
 
@@ -161,51 +161,51 @@ the self-critique, not here — it cost time, nothing else.
 > 50, not a commitment list). Items 1–12 are the real queue; 13+ are ROADMAP
 > fuel. HARVEST should pull the actionable ones into `TODO_LIST.md`.
 
-| # | Task | Impact | Effort | Category |
-|---|------|--------|--------|----------|
-| 1 | Audit go-error-family flake pin vs go.mod (v0.10.0) for the same drift | High | S | Cleanup |
-| 2 | Audit go-branded-id flake pin vs go.mod (v0.5.1) for the same drift | High | S | Cleanup |
-| 3 | Audit go-nix-helpers input currency (not a go.mod dep — check rev freshness vs its releases) | High | S | Cleanup |
-| 4 | Commit `vendorHash.nix` (or verify the daemon swept it) | High | S | Cleanup |
-| 5 | Add `checks.pin-sync` flake check attr asserting rev==tag and version==go.mod for all in-house inputs | High | M | Quality |
-| 6 | Re-run the full pre-release chain end-to-end after the pin change | High | M | Quality |
-| 7 | HARVEST this report's actionable items into `TODO_LIST.md` | High | S | Documentation |
-| 8 | Identify which process bumped go.mod deps on 2026-09-27 and decide how it must sync flake revs going forward | High | S | Quality |
-| 9 | Record the cross-project lesson (go.mod bumps must update flake revs) in crush-config `references/lessons.md` | Medium | S | Documentation |
-| 10 | Propose the pin-sync guard upstream to BuildFlow (fleet-wide value: every flake+go repo) | Medium | M | Feature |
-| 11 | When CI is re-enabled: add the pin-sync check as a ci.yml job | Medium | S | Feature |
-| 12 | Direct `go test -race ./...` sanity run to re-confirm the non-sandbox baseline (go.mod unchanged, cheap insurance) | Medium | S | Quality |
-| 13 | Document the "0 flake checks" nix message quirk in AGENTS.md | Low | S | Documentation |
-| 14 | Add "last verified" dates to AGENTS.md dependency entries (go-branded-id, go-error-family, go-retry) | Medium | S | Documentation |
-| 15 | Ask go-retry upstream for a Retry-After-aware recipe/example (archived ADR-003 TODO #33) | Low | M | Feature |
-| 16 | Record the capped-honoring design decision in go-retry's docs (archived TODO #34) | Low | S | Documentation |
-| 17 | Check whether the Dependabot config picks up go-retry bumps (archived TODO #31) | Low | S | Quality |
-| 18 | Sweep the other fleet repos (md-go, go-output, dynamic-markdown-site, …) for the same rev↔go.mod drift pattern | Medium | M | Cleanup |
-| 19 | Decide the pin policy question in (g)2 (tag-equality vs version-match) | Medium | S | Decision |
-| 20 | Add a tiny script/one-liner doc: `git ls-remote --tags` rev-vs-tag verification for all inputs | Low | S | Cleanup |
-| 21 | Consider making nix-hash-fix detect run before fix to avoid gate-error confusion (buildflow UX feedback) | Low | S | Quality |
-| 22 | Verify the sandbox-live workflow still passes post-pin (hits real API; unaffected, but cheap) | Low | S | Quality |
-| 23 | Annotate the 2026-10-07_07-09 status doc if any of its "pre-verify in-house deps" items advanced | Low | S | Documentation |
-| 24 | Review whether buildflow's gomod-check could warn when a required module version is flake-pinned at a different rev | Medium | M | Quality |
-| 25 | Clean up go-retry's local branch: 19 auto-commits since v0.7.1 — tag or squash discussion belongs in that repo | Low | S | Cleanup |
-| 26 | Extract the drift story into a short AGENTS.md gotcha cross-link from the flake.nix comment | Low | S | Documentation |
-| 27 | Consider a `nix flake check --all-systems` x86_64-darwin decision (pre-existing blocker: nixpkgs-26.11 dropped it) | Low | S | Decision |
-| 28 | go-retry upstream: cut v0.7.2/v0.8.0 if the go-directive restore in HEAD matters to consumers | Low | S | Release |
-| 29 | Add the pin-sync invariant to CONTRIBUTING.md so humans bumping deps see it | Medium | S | Documentation |
-| 30 | Evaluate whether `nix flake update` should be forbidden when go.mod and flake revs disagree (pre-commit guard) | Medium | M | Quality |
-| 31 | Backfill: confirm the 09-27 session's other go.mod changes (5 files) are all pin-consistent now | Medium | S | Cleanup |
-| 32 | Check md-go-validator v1.3.0 input is still current vs its releases | Low | S | Cleanup |
-| 33 | File the "0 flake checks" message confusion upstream to nix (optional; low value) | Low | S | Cleanup |
-| 34 | Add a session-start check: diff every `github:` input rev against `git ls-remote` tags once per week (cron/daemon) | Low | M | Quality |
-| 35 | AGENTS.md: note that flake-pinned revs are IMMUTABLE under `nix flake update` (only flake.nix edits move them) | Medium | S | Documentation |
+| #  | Task                                                                                                                | Impact | Effort | Category      |
+| -- | ------------------------------------------------------------------------------------------------------------------- | ------ | ------ | ------------- |
+| 1  | Audit go-error-family flake pin vs go.mod (v0.10.0) for the same drift                                              | High   | S      | Cleanup       |
+| 2  | Audit go-branded-id flake pin vs go.mod (v0.5.1) for the same drift                                                 | High   | S      | Cleanup       |
+| 3  | Audit go-nix-helpers input currency (not a go.mod dep — check rev freshness vs its releases)                        | High   | S      | Cleanup       |
+| 4  | Commit `vendorHash.nix` (or verify the daemon swept it)                                                             | High   | S      | Cleanup       |
+| 5  | Add `checks.pin-sync` flake check attr asserting rev==tag and version==go.mod for all in-house inputs               | High   | M      | Quality       |
+| 6  | Re-run the full pre-release chain end-to-end after the pin change                                                   | High   | M      | Quality       |
+| 7  | HARVEST this report's actionable items into `TODO_LIST.md`                                                          | High   | S      | Documentation |
+| 8  | Identify which process bumped go.mod deps on 2026-09-27 and decide how it must sync flake revs going forward        | High   | S      | Quality       |
+| 9  | Record the cross-project lesson (go.mod bumps must update flake revs) in crush-config `references/lessons.md`       | Medium | S      | Documentation |
+| 10 | Propose the pin-sync guard upstream to BuildFlow (fleet-wide value: every flake+go repo)                            | Medium | M      | Feature       |
+| 11 | When CI is re-enabled: add the pin-sync check as a ci.yml job                                                       | Medium | S      | Feature       |
+| 12 | Direct `go test -race ./...` sanity run to re-confirm the non-sandbox baseline (go.mod unchanged, cheap insurance)  | Medium | S      | Quality       |
+| 13 | Document the "0 flake checks" nix message quirk in AGENTS.md                                                        | Low    | S      | Documentation |
+| 14 | Add "last verified" dates to AGENTS.md dependency entries (go-branded-id, go-error-family, go-retry)                | Medium | S      | Documentation |
+| 15 | Ask go-retry upstream for a Retry-After-aware recipe/example (archived ADR-003 TODO #33)                            | Low    | M      | Feature       |
+| 16 | Record the capped-honoring design decision in go-retry's docs (archived TODO #34)                                   | Low    | S      | Documentation |
+| 17 | Check whether the Dependabot config picks up go-retry bumps (archived TODO #31)                                     | Low    | S      | Quality       |
+| 18 | Sweep the other fleet repos (md-go, go-output, dynamic-markdown-site, …) for the same rev↔go.mod drift pattern      | Medium | M      | Cleanup       |
+| 19 | Decide the pin policy question in (g)2 (tag-equality vs version-match)                                              | Medium | S      | Decision      |
+| 20 | Add a tiny script/one-liner doc: `git ls-remote --tags` rev-vs-tag verification for all inputs                      | Low    | S      | Cleanup       |
+| 21 | Consider making nix-hash-fix detect run before fix to avoid gate-error confusion (buildflow UX feedback)            | Low    | S      | Quality       |
+| 22 | Verify the sandbox-live workflow still passes post-pin (hits real API; unaffected, but cheap)                       | Low    | S      | Quality       |
+| 23 | Annotate the 2026-10-07_07-09 status doc if any of its "pre-verify in-house deps" items advanced                    | Low    | S      | Documentation |
+| 24 | Review whether buildflow's gomod-check could warn when a required module version is flake-pinned at a different rev | Medium | M      | Quality       |
+| 25 | Clean up go-retry's local branch: 19 auto-commits since v0.7.1 — tag or squash discussion belongs in that repo      | Low    | S      | Cleanup       |
+| 26 | Extract the drift story into a short AGENTS.md gotcha cross-link from the flake.nix comment                         | Low    | S      | Documentation |
+| 27 | Consider a `nix flake check --all-systems` x86_64-darwin decision (pre-existing blocker: nixpkgs-26.11 dropped it)  | Low    | S      | Decision      |
+| 28 | go-retry upstream: cut v0.7.2/v0.8.0 if the go-directive restore in HEAD matters to consumers                       | Low    | S      | Release       |
+| 29 | Add the pin-sync invariant to CONTRIBUTING.md so humans bumping deps see it                                         | Medium | S      | Documentation |
+| 30 | Evaluate whether `nix flake update` should be forbidden when go.mod and flake revs disagree (pre-commit guard)      | Medium | M      | Quality       |
+| 31 | Backfill: confirm the 09-27 session's other go.mod changes (5 files) are all pin-consistent now                     | Medium | S      | Cleanup       |
+| 32 | Check md-go-validator v1.3.0 input is still current vs its releases                                                 | Low    | S      | Cleanup       |
+| 33 | File the "0 flake checks" message confusion upstream to nix (optional; low value)                                   | Low    | S      | Cleanup       |
+| 34 | Add a session-start check: diff every `github:` input rev against `git ls-remote` tags once per week (cron/daemon)  | Low    | M      | Quality       |
+| 35 | AGENTS.md: note that flake-pinned revs are IMMUTABLE under `nix flake update` (only flake.nix edits move them)      | Medium | S      | Documentation |
 
 ## g) Questions I can NOT figure out myself
 
 1. **Was the 2026-09-27 go.mod dependency bump (`949f629`, the gomod-restore
    session) an intentional choice of latest versions, or a side effect you
    did not notice?** I tried: `git show` on the commit, the session's status
-   doc name, and AGENTS.md incident notes — they show *what* happened but not
-   *intent*. The answer decides whether the fix is "add a guard" (accident) or
+   doc name, and AGENTS.md incident notes — they show _what_ happened but not
+   _intent_. The answer decides whether the fix is "add a guard" (accident) or
    "also change the recovery runbook" (policy).
 2. **What is the pin policy: must every `github:LarsArtmann/*` flake input rev
    equal a release tag commit, or is any rev acceptable while the go.mod
@@ -221,5 +221,5 @@ the self-critique, not here — it cost time, nothing else.
 
 ---
 
-*Report ends. Next step per the status-report skill: HARVEST section (f) into
-`TODO_LIST.md`, then wait for instructions.*
+_Report ends. Next step per the status-report skill: HARVEST section (f) into
+`TODO_LIST.md`, then wait for instructions._

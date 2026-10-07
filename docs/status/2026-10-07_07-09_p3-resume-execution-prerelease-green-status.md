@@ -72,6 +72,7 @@
 ## f) NEXT — up to 50 things to get done next
 
 **Verify / watch (immediate, unblocked)**
+
 1. Watch BuildFlow #34 → on fix: re-run embedded vs standalone byte-for-byte, lift the `skip_steps` (TODO_LIST WATCH).
 2. Watch BuildFlow #35 (reinstall) and #36 (file-size-check) → verify profile switch / non-zero scan on fix.
 3. Watch md-go-validator #8 → switch wise-go's flake input to upstream flake; drop `go_1_27` override + vendorHash; re-lock (TODO_LIST WATCH).

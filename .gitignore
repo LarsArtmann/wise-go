@@ -50,7 +50,6 @@ workflow-audit-log.*
 .buildflow-workflow-baseline.json
 
 ## Reports and coverage
-/coverage
 reports/
 
 ## Go
@@ -66,6 +65,24 @@ go.work.sum
 
 ## Nix
 .envrc
+
+## Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+.ipynb_checkpoints/
+.hypothesis/
+cython_debug/
+.coverage
+htmlcov/
 # <<< buildflow-managed (.gitignore) <<<
 
 # Nix

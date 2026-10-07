@@ -383,5 +383,5 @@ suite green (`go test .` → ok, 3.8s); `golangci-lint run` → 0 issues.
 
 ---
 
-*Report: 2026-10-07 06:07 · suite green · lint 0 issues · tree clean ·
-coverage 93.1% · conformance 180 exchanges / 6 statement variants.*
+_Report: 2026-10-07 06:07 · suite green · lint 0 issues · tree clean ·
+coverage 93.1% · conformance 180 exchanges / 6 statement variants._

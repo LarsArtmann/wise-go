@@ -1,0 +1,8 @@
+# Root-level .go files ARE the public API of this library; /internal or
+# /pkg would break every consumer import path. Flat single-package layout
+# by design (same pattern as go-datastar ADR-002).
+presets: [flat]
+# go-version excluded: this repo deliberately pins go 1.26 (AGENTS.md
+# documents it as a deliberate non-fix); the go.mod pin satisfies the
+# toolchain policy and must not be auto-bumped.
+exclude_patterns: [go-version]

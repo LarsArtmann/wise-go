@@ -19,12 +19,12 @@ nix run .#reinstall prints REINSTALL-OK but does not switch ~/.nix-profile
 ## Root cause (source)
 
 The app builds/installs the store path but does not perform the profile mutation a `nix profile` install would. Verified workaround on the same day:
-
 ```
+
 nix profile remove buildflow
 nix profile install <store-path>
-```
 
+```
 After the manual remove/add, `~/.nix-profile/bin/buildflow` matches the freshly built store path.
 
 ## Operator steps (repo)

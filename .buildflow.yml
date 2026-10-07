@@ -13,11 +13,6 @@
 # `go 1.26` satisfies the pinned toolchain.
 skip_steps:
   - go-version-auto-configure
-  # go-structure-linter's repair auto-bumps go.mod ("rule=go-version") while
-  # "fixing" its go-version finding — one of the ~22 findings AGENTS.md
-  # documents as deliberate non-fixes for this repo (root-package-files,
-  # go-version). Its repair corrupts the toolchain pin; skip the whole step.
-  - go-structure-linter
   # Embedded erraudit skip REMOVED 2026-10-07 (BuildFlow issue #34 fixed):
   # the embedded detector now runs the SAME legacyerrors engine as the
   # canonical standalone gate (`erraudit lint`), so verdicts agree by

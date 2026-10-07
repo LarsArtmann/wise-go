@@ -43,7 +43,7 @@
 ## d) TOTALLY FUCKED UP (honest)
 
 1. **`gh issue create` failed silently TWICE before any issue landed** — first attempt: "no output", no issue created (only caught because I listed issues afterward); second attempt (batched 3-in-a-row via piped `--body-file -`): all three silently created NOTHING. Working form: `--body-file <real-file>` (exit 0, URL on stdout). The pipe form prints no error to stdout or stderr under this shell. Cost: the "file the defects" step appeared briefly stuck; only systematic verify-after-each saved it.
-2. **The extraction almost filed TRUNCATED issue bodies** — the sed-based fence extraction (`/^```markdown$/,/^```$/`) stops at the FIRST closing fence, so drafts containing nested code fences extracted at 784 and 135 bytes (of ~1.5 KB). Caught by byte-count check before posting, but the first create attempt ran against an unverified pipeline — the failure that followed was lucky, not designed.
+2. **The extraction almost filed TRUNCATED issue bodies** — the sed-based fence extraction (``/^```markdown$/,/^```$/``) stops at the FIRST closing fence, so drafts containing nested code fences extracted at 784 and 135 bytes (of ~1.5 KB). Caught by byte-count check before posting, but the first create attempt ran against an unverified pipeline — the failure that followed was lucky, not designed.
 3. **Two TODO_LIST.md multiedit accidents** — the phantom-item edit ALSO deleted the defects item; the restore edit then clobbered the md-go-validator closed item. Both caught by post-edit greps and restored, but three consecutive editing mistakes in one file is sloppy discipline — the exact failure mode "include more context in old_string" exists to prevent.
 4. **Exit codes masked by pipes** — `env -u GOEXPERIMENT go build ./... 2>&1 | head -5; echo "exit: $?"` reported head's exit (0), not go's. The error TEXT made the verdict obvious anyway, but the printed "build exit: 0" was false evidence I nearly quoted.
 5. **From the prior session (still unfixed): the pre-release chain has never run end-to-end** — every component has run individually, the composed app has not.
@@ -78,6 +78,7 @@
 > raw ideas per item 50.
 
 **Verify the fixes landed (this week)**
+
 1. Next session: confirm `.crushrc` env fix kills both phantoms (gopls `bytes unused`, golangci webhooks.go:142); reopen if not.
 2. Run `nix run .#pre-release` end-to-end on the clean tree (first full-chain validation incl. apidiff).
 3. Update ROADMAP raw-idea entries for the three BuildFlow defects to point at #34–36.
