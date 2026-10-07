@@ -21,6 +21,12 @@ import (
 func TestWiseClient(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Wise SDK Suite")
+
+	// Marks the recorder's floors as assertable: the spec-conformance
+	// coverage guard (TestMain, post-run) must only enforce them after the
+	// full suite ran — a -run-filtered binary records a few exchanges via
+	// standalone validator tests without ever reaching them.
+	conformanceSuiteCompleted = true
 }
 
 // meFixtureJSON is a minimal personal-profile /v1/me response body.
