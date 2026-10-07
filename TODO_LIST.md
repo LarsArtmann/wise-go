@@ -71,88 +71,91 @@ workaround is documented in CONTRIBUTING.md). Carried since
 
 ## P3 — Quality & tooling (unblocked)
 
-[ ] Wire `md-go-validator` into `nix flake check` (or `.buildflow.yml`) as a
-fenced-Go snippet parse gate — README block #27's invalid shape (fixed 2026-09-29)
-was found by hand; nothing currently fails if a future edit breaks a snippet.
-Source: `docs/status/2026-09-29_07-37_README-webhook-snippet-validation-fix.md` §f.
-
-[ ] Extend `doc-verify` count-claims to `docs/releases/*.md` (the release-notes
-method-count lines are a drift blind spot — AGENTS/FEATURES/ROADMAP/audit are
-gated, `docs/releases/` is not). Source:
-`docs/status/2026-10-07_03-57_session-status-unblocked-prep-release-readiness.md` §d6/f#8.
-
-[ ] Build coverage headroom: 90.1% total against a 90.0 floor is a hair-trigger;
-raise to ~92% (cheapest wins: JSON-error-path mappers, `checkError` body-read
-branches) before the next feature PR. Source:
-`docs/status/2026-10-06_14-16_q4-flip-execution-and-gates-status.md` §b3/e4.
+### Open
 
 [ ] Root-cause the `golangci_lint_ls` phantom on `webhooks.go:142` ("File is not
-properly formatted") that recurs while CLI `golangci-lint run` is clean — diff the
-LSP's golangci invocation (config, working dir, GOEXPERIMENT) against the CLI.
-Source: `docs/status/2026-10-06_14-16_q4-flip-execution-and-gates-status.md` §d4.
+properly formatted") that recurs while CLI `golangci-lint run` is clean. Prime
+suspect (2026-10-07): the LSP wrapper (`~/.local/bin/golangci-lint-lsp-wrapper`)
+does NOT set `GOEXPERIMENT=jsonv2`, so the LSP's golangci build/load of the
+jsonv2-dependent code diverges from the CLI. Diff formatter behavior
+wrapper-vs-CLI after injecting the env var. Source:
+`docs/status/2026-10-06_14-16_q4-flip-execution-and-gates-status.md` §d4.
 
-[ ] Write the quarterly-surface rollover ritual (probe → flip → repo-wide straggler
-grep → changelog → doc-verify) into CONTRIBUTING — the Q4 flip proved a value-flip
-is not done until `grep -rn <old-value>` is clean. Source:
-`docs/status/2026-10-07_03-57_session-status-unblocked-prep-release-readiness.md` f#36.
-
-[ ] File the three evidenced BuildFlow-repo defects (embedded `erraudit` false
-positives at HEAD; `nix run .#reinstall` not switching the profile; `file-size-check`
-scanning 0 files in root-package layouts) — evidence is captured in AGENTS.md.
+[ ] File the four evidenced tool-repo defects — 3 in BuildFlow (embedded
+`erraudit` false positives at HEAD; `nix run .#reinstall` not switching the
+profile; `file-size-check` scanning 0 files in root-package layouts) + 1 in
+md-go-validator (its flake cannot build its own package: package.nix pins
+`pkgs.go` 1.26.7 vs `go.mod` ≥ 1.27). Evidence captured in AGENTS.md and
+`docs/status/2026-10-07_06-07_p3-quality-tooling-sweep-status.md`.
 Source: `docs/status/2026-10-07_04-20_dual-phase-repair-and-tool-reevaluation-status.md` §b1.
 
-[ ] `art-dupl` enforced-gate decision — accept the suppressed baseline as policy,
-or enforce an exit-code gate (`art-dupl -t 2 --type-aware`); records the choice in
-AGENTS.md. Source: `docs/status/2026-09-27_23-42_dedup-pass2-gomod-flipflop-rootcause-status.md` §c4.
+[ ] `nix flake check --all-systems` — verified 2026-10-07: aarch64-linux and
+aarch64-darwin evaluate clean; x86_64-darwin FAILS EXTERNALLY (nixpkgs-26.11
+dropped that system, not a flake bug). Decide: pin a nixpkgs-26.05-darwin
+input for darwin checks, or drop x86_64-darwin from the check matrix.
+**BLOCKED: user decision.**
 
-[ ] erraudit class-wide policy — fix the 29 `context_loss`/`ignored` advisories or
-suppress the rules with rationale; per-finding drift is the worst option. Source:
-`docs/status/2026-09-27_23-42_dedup-pass2-gomod-flipflop-rootcause-status.md` §c11.
-
-[ ] Go 1.27 migration plan — decide the condition/date for moving the flake
-toolchain + `GOTOOLCHAIN` policy off the 1.26 pin (erraudit needs ≥ 1.27); until
-then the modernizer's 1.27-syntax pushes are reverted per incident. Source:
+[ ] Go 1.27 migration — plan written at
+`docs/planning/2026-10-07_go-1.27-migration-plan.md` (4 unlock conditions,
+single-commit flip/rollback). Execution is blocked on those conditions
+(nixpkgs stable 1.27, in-house deps verified on 1.27, erraudit local install,
+buildflow skip_steps removal). Source:
 `docs/status/2026-10-07_03-45_buildflow-red-to-green-repair-status.md` §g1.
 
-[ ] Add a CAMT (`.xml`) `GetStatement` test — the only statement format still
-without direct coverage (the conformance suite covers `json` + the exempt file
-formats); add exact content-type assertions mirroring PDF/XLSX. Source:
-`docs/status/2026-10-05_21-47_pareto-todo-execution-status.md` §f7.
+### Closed 2026-10-07 (P3 sweep — `docs/status/2026-10-07_06-07_p3-quality-tooling-sweep-status.md`)
 
-[ ] Commit a `benchstat` baseline file so benchmark runs have a comparison point
-(the hot mappers/parsers are in `bench_test.go`). Source:
-`docs/status/2026-10-05_21-47_pareto-todo-execution-status.md` §f.
+[x] Wire `md-go-validator` into `nix flake check` — done as
+`checks.md-go-snippets`, consuming the tool as a source-only flake input
+(`v1.3.0`, `flake = false`) because upstream's flake cannot build it (see open
+defect-filing item); scans README + `docs/**`.
 
-[ ] Add a fuzz target / corpus entry for `VerifyWebhookSignature` +
-`ParseWebhookPublicKey` (webhook funcs were added after the original fuzz round)
-and bench `VerifyWebhookSignature` (hot path for every delivery). Source:
-`docs/status/2026-10-05_21-47_pareto-todo-execution-status.md` §f11–12.
+[x] Extend `doc-verify` count-claims to `docs/releases/*.md` — done; the
+latest `*-release-notes.md` client-method count is now gate-checked.
 
-[ ] Add a `nix run .#pre-release` flake app chaining the local gates (build, vet,
-race test, lint, `nix flake check`, `doc-verify`, `apidiff`, dirty-tree check) so
-a release relies on one command instead of session discipline. Source:
-`docs/status/2026-10-07_04-57_v0120-release-session-status.md` §e3/f10.
+[x] Build coverage headroom — done: 93.1% total against the 90.0 floor
+(was 90.1%); added brand-name, corruption-path, validate-path, and
+unreadable-body tests.
 
-[ ] Compare `docs/releases/*.md` against each tag before `gh release create` — a
-release-notes check for split code spans and relative links (a reflowed span
-shipped broken in the v0.12.0 release body). Source:
-`docs/status/2026-10-07_04-57_v0120-release-session-status.md` §d1/e5.
+[x] Write the quarterly-surface rollover ritual into CONTRIBUTING — done
+("Quarterly API-surface rollover ritual" section: probe → flip → straggler
+grep → changelog → verify, with the OTT probe-blind caveat).
 
-[ ] Make the spec-conformance coverage guard assert its floors under `go test
--shuffle` (today it SKIPs if shuffled before the recorder, dorming the
-vacuous-pass protection). Source:
-`docs/status/2026-10-07_04-57_v0120-release-session-status.md` §e4/f27.
+[x] `art-dupl` enforced-gate decision — RESOLVED: accept the suppressed
+baseline as policy, NO enforced gate; revisit at CI re-enable as a warn-first
+job. Recorded in AGENTS.md (art-dupl bullet).
 
-[ ] Add a `go-retry` `Retry-After`-honored log line (observability — callers
-cannot currently see that Wise's hint steered a delay). Source:
-`docs/status/2026-10-07_04-57_v0120-release-session-status.md` §f30.
+[x] erraudit class-wide policy — RESOLVED: embedded-analyzer findings are
+ignored AS A CLASS via `skip_steps`; the canonical standalone gate governs;
+never per-finding. Recorded in AGENTS.md (erraudit bullet).
 
-[ ] Fuzz `decodeExchangeRates` (array / single-object / empty / corrupt) and
-bench the rates array-decode path. Source:
-`docs/status/2026-10-07_04-57_v0120-release-session-status.md` §f28–29.
+[x] Add a CAMT (`.xml`) `GetStatement` test — done in `wise_test.go`
+(`application/xml`, camt.053.001.02 raw bytes asserted).
 
-[ ] Add `nix flake check --all-systems` (aarch64/darwin fleet coverage). Source:
-`docs/status/2026-10-07_04-57_v0120-release-session-status.md` §f31.
+[x] Commit a `benchstat` baseline — done: `docs/bench/2026-10-07_v0120_baseline.txt`
+(6 benchmarks × count=6).
+
+[x] Fuzz + bench webhook funcs — done: `FuzzVerifyWebhookSignature`,
+`FuzzParseWebhookPublicKey` (8s live fuzz clean), `BenchmarkVerifyWebhookSignature`
+(~22.8µs/op) in `internal_test.go`/`bench_test.go`.
+
+[x] Add a `nix run .#pre-release` flake app — done: dirty-tree guard → build →
+vet → race → golangci-lint → `nix flake check` → doc-verify → release-notes-check
+→ apidiff.
+
+[x] Release-notes check for split code spans and relative links — done as
+`nix run .#release-notes-check` (odd-backtick-outside-fence + repo-relative
+link detectors, both negative-tested).
+
+[x] Make the spec-conformance coverage guard shuffle-proof — done: floors now
+assert in `TestMain` post-run, gated by `conformanceSuiteCompleted`; statement
+floor raised 3 → 4 (actual 6), exchange floor hit at 180 recorded.
+
+[x] Add a go-retry `Retry-After`-honored log line — done: `RequestLog.RetryAfterDelay`
+delay-decision entry (Status=429, honored wait as Duration), pinned by a
+Ginkgo Context asserting the 3-entry sequence.
+
+[x] Fuzz + bench `decodeExchangeRates` — done: `FuzzDecodeExchangeRates`
+(8s live fuzz clean) + `BenchmarkDecodeExchangeRates` (~1.2–1.7µs/op, 4 allocs).
 
 ## Harvested-and-closed pointer
 
