@@ -139,17 +139,17 @@
     "go-retry": {
       "flake": false,
       "locked": {
-        "lastModified": 1789318239,
-        "narHash": "sha256-YP1p0Pls1YQNKcOaqUJqyQpGDFs20vspeqXqEcokDko=",
+        "lastModified": 1789661285,
+        "narHash": "sha256-XYy/bRX22iL6tNTwbnawph6vIa3GsfCj+eY0A1bSI0E=",
         "owner": "LarsArtmann",
         "repo": "go-retry",
-        "rev": "61058487ec4705c723e0888e5bd32544b73ec40c",
+        "rev": "a2d063a421f368c9e293f50f256e6ba0035da8b1",
         "type": "github"
       },
       "original": {
         "owner": "LarsArtmann",
         "repo": "go-retry",
-        "rev": "61058487ec4705c723e0888e5bd32544b73ec40c",
+        "rev": "a2d063a421f368c9e293f50f256e6ba0035da8b1",
         "type": "github"
       }
     },

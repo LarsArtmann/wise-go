@@ -30,7 +30,7 @@
     };
 
     go-retry = {
-      url = "github:LarsArtmann/go-retry?rev=61058487ec4705c723e0888e5bd32544b73ec40c";
+      url = "github:LarsArtmann/go-retry?rev=a2d063a421f368c9e293f50f256e6ba0035da8b1";
       flake = false;
     };
 
