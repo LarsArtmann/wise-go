@@ -189,6 +189,13 @@ func TestParseWiseTimestamp(t *testing.T) {
 			input: "2018-01-10T12:15:00.000+0000",
 			want:  time.Date(2018, time.January, 10, 12, 15, 0, 0, time.UTC),
 		},
+		{
+			name: "numeric zone without millis (live /v1/rates format)",
+			// Exact value observed from the live Wise API on 2026-10-07; FX
+			// totals died with corruption until this layout was accepted.
+			input: "2026-10-07T00:17:01+0000",
+			want:  time.Date(2026, time.October, 7, 0, 17, 1, 0, time.UTC),
+		},
 	}
 
 	assertTimestampCases(t, tests)

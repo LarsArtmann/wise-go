@@ -107,8 +107,10 @@ func parseRetryAfter(value string) time.Duration {
 
 // parseWiseTimestamp parses a Wise API timestamp. Wise is inconsistent about
 // separators and zone designators across endpoints: some emit full RFC3339
-// ("2020-05-27T10:27:22Z"), others omit the zone ("2020-05-27T10:27:22") or
-// use a space separator ("2020-05-27 10:27:22"). Zoneless values are
+// ("2020-05-27T10:27:22Z"), others omit the zone ("2020-05-27T10:27:22"),
+// use a space separator ("2020-05-27 10:27:22"), or carry a numeric zone
+// without colon or milliseconds ("2026-10-07T00:17:01+0000", live /v1/rates).
+// Zoneless values are
 // interpreted as UTC. Callers comparing the resulting time.Time to a
 // local-time value must convert explicitly to avoid silent off-by-one-day
 // errors at boundaries.
@@ -120,6 +122,10 @@ func parseWiseTimestamp(s string) (time.Time, error) {
 		// without fractional-second tolerance rejects.
 		"2006-01-02T15:04:05.000-0700",
 		"2006-01-02T15:04:05.000Z0700",
+		// Live /v1/rates timestamps carry the numeric zone WITHOUT
+		// fractional seconds ("2026-10-07T00:17:01+0000") — RFC3339 demands
+		// a colon, the layouts above demand milliseconds.
+		"2006-01-02T15:04:05-0700",
 		"2006-01-02T15:04:05",
 		"2006-01-02 15:04:05",
 	}
@@ -130,7 +136,7 @@ func parseWiseTimestamp(s string) (time.Time, error) {
 		}
 	}
 
-	// One line naming the accepted layouts beats a dump of five near-identical
+	// One line naming the accepted layouts beats a dump of six near-identical
 	// time.Parse errors; the raw value is the part callers actually need.
 	//nolint:err113 // dynamic value in message; no sentinel to wrap
 	return time.Time{}, fmt.Errorf(
