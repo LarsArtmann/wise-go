@@ -580,7 +580,7 @@ func TestErrorContexts(t *testing.T) {
 		t.Parallel()
 
 		rateLimitErr := &RateLimitError{
-			APIError:      APIError{StatusCode: http.StatusTooManyRequests},
+			StatusCode:    http.StatusTooManyRequests,
 			RetryAfter:    3 * time.Second,
 			RateLimitedBy: "ip",
 		}
@@ -598,7 +598,7 @@ func TestErrorContexts(t *testing.T) {
 	t.Run("SCAChallengeError code identifies the challenge", func(t *testing.T) {
 		t.Parallel()
 
-		scaErr := &SCAChallengeError{APIError: APIError{StatusCode: http.StatusForbidden}}
+		scaErr := &SCAChallengeError{StatusCode: http.StatusForbidden}
 		if got := scaErr.ErrorCode(); got != errorCodeSCA {
 			t.Errorf("ErrorCode = %q, want %q", got, errorCodeSCA)
 		}
@@ -610,7 +610,7 @@ func TestErrorContexts(t *testing.T) {
 		headers := http.Header{}
 		headers.Set(HeaderTwoFAApprovalResult, "REJECTED")
 		headers.Set(HeaderTwoFAApproval, "ott-123")
-		scaErr := &SCAChallengeError{APIError: APIError{StatusCode: http.StatusForbidden, Headers: headers}}
+		scaErr := &SCAChallengeError{StatusCode: http.StatusForbidden, Headers: headers}
 
 		ctx := scaErr.ErrorContext()
 		if ctx["status_code"] != "403" {
@@ -629,12 +629,12 @@ func TestErrorContexts(t *testing.T) {
 	t.Run("AuthError and NotFoundError expose the promoted status-code context", func(t *testing.T) {
 		t.Parallel()
 
-		authErr := &AuthError{APIError: APIError{StatusCode: http.StatusUnauthorized}}
+		authErr := &AuthError{StatusCode: http.StatusUnauthorized}
 		if ctx := authErr.ErrorContext(); ctx["status_code"] != "401" {
 			t.Errorf("ErrorContext = %v, want status_code 401", ctx)
 		}
 
-		notFoundErr := &NotFoundError{APIError: APIError{StatusCode: http.StatusNotFound}}
+		notFoundErr := &NotFoundError{StatusCode: http.StatusNotFound}
 		if ctx := notFoundErr.ErrorContext(); ctx["status_code"] != "404" {
 			t.Errorf("ErrorContext = %v, want status_code 404", ctx)
 		}
