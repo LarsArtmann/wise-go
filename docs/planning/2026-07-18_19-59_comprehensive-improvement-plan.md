@@ -2,7 +2,7 @@
 
 > **Resolution (2026-10-07 docs-health pass — supersedes the 2026-09-13 note):**
 >
-> ```90% shipped~~~ **fully shipped through v0.12.0** — the D-tier
+> ~~90% shipped~~ **fully shipped through v0.12.0** — the D-tier
 > (InvestmentState, DetailType constants, Doer), E-tier (README sections,
 > EndOfStatementBalance), F-tier (badge automation, WithLogger, godoc examples,
 > 121+ BDD specs, GetProfile, Money/Currency v0.4.0, HasMore removal,
@@ -13,7 +13,6 @@
 > deliberate non-goals (routed). v1.0 lock: audit green, tag user-gated
 > (TODO_LIST P2). Keep in place — the go-retry rationale and the review lineage
 > reference this plan.
-> ```
 
 > Generated 2026-07-18 19:59 · Pareto-driven · Source: 13-skill review session + brutal self-review
 
