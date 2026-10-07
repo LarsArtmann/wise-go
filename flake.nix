@@ -415,6 +415,11 @@
                   echo "==> race tests"
                   go test -race ./...
 
+                  if [ "''${1:-}" = "--shuffle" ]; then
+                    echo "==> shuffle battery (go test -shuffle=on -count=3)"
+                    go test -shuffle=on -count=3 ./...
+                  fi
+
                   echo "==> golangci-lint"
                   golangci-lint run
 
