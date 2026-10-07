@@ -310,6 +310,14 @@
                   check_count "methods" ROADMAP.md '[0-9]+ methods' "$actual_methods"
                   check_count "Client methods" docs/reviews/2026-08-21_v1.0-api-audit.md '[0-9]+ .\*Client. methods across' "$actual_methods"
 
+                  # Release notes: only the LATEST docs/releases file is a
+                  # living claim — it must state the current method count.
+                  # Historical notes stay frozen at their tags by design.
+                  latest_release_notes="$(find docs/releases -name '*-release-notes.md' 2>/dev/null | sort -V | tail -1 || true)"
+                  if [ -n "$latest_release_notes" ]; then
+                    check_count "client methods" "$latest_release_notes" '[0-9]+ client methods' "$actual_methods"
+                  fi
+
                   actual_examples="$(grep -c '^func Example' example_test.go || true)"
                   check_count "Example funcs" FEATURES.md '[0-9]+ .Example.. funcs' "$actual_examples"
 
@@ -329,6 +337,106 @@
             {
               type = "app";
               program = pkgs.lib.getExe doc-verify;
+            };
+          # Release-notes pre-flight for `gh release create`: fails on the
+          # two defects that shipped in the v0.12.0 release body — a code
+          # span split across lines by a reflow, and repo-relative links
+          # (GitHub Release bodies cannot resolve repo-relative paths).
+          apps.release-notes-check =
+            let
+              release-notes-check = pkgs.writeShellApplication {
+                name = "release-notes-check";
+                text = ''
+                  set -euo pipefail
+                  status=0
+                  shopt -s nullglob
+                  files=(docs/releases/*-release-notes.md)
+                  if [ "''${#files[@]}" -eq 0 ]; then
+                    echo "FAIL: no docs/releases/*-release-notes.md found (run from the repo root)"
+                    exit 1
+                  fi
+
+                  for f in "''${files[@]}"; do
+                    while read -r line; do
+                      echo "FAIL: $f:$line: code span split across lines (odd backtick count)"
+                      status=1
+                    done < <(awk '/^```/ { infence = !infence; next } !infence { n = gsub(/`/, "`"); if (n % 2 == 1) print FNR }' "$f")
+
+                    while read -r target; do
+                      echo "FAIL: $f: repo-relative link target '$target' (GitHub Release bodies need absolute URLs)"
+                      status=1
+                    done < <(grep -oE '\]\([^)]+\)' "$f" | sed -E 's/^\]\(//; s/\)$//' | grep -vE '^(https?://|mailto:|#)' || true)
+                  done
+
+                  if [ "$status" -eq 0 ]; then
+                    echo "release-notes-check: all release-notes files clean"
+                  fi
+                  exit "$status"
+                '';
+              };
+            in
+            {
+              type = "app";
+              program = pkgs.lib.getExe release-notes-check;
+            };
+
+          # One-command release gate: chains every local gate a release
+          # previously relied on session discipline to run (the v0.12.0
+          # cycle's broken release-body span shipped through exactly such a
+          # manual sequence). Fails fast; the dirty-tree check runs first so
+          # a release never cuts from uncommitted work.
+          apps.pre-release =
+            let
+              pre-release = pkgs.writeShellApplication {
+                name = "pre-release";
+                runtimeInputs = with pkgs; [
+                  git
+                  go
+                  golangci-lint
+                ];
+                text = ''
+                  set -euo pipefail
+                  cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+                  export GOEXPERIMENT=jsonv2
+
+                  echo "==> dirty-tree check"
+                  if [ -n "$(git status --porcelain)" ]; then
+                    echo "FAIL: working tree is dirty; commit or stash before releasing"
+                    git status --short
+                    exit 1
+                  fi
+
+                  echo "==> go build"
+                  go build ./...
+
+                  echo "==> go vet"
+                  go vet ./...
+
+                  echo "==> race tests"
+                  go test -race ./...
+
+                  echo "==> golangci-lint"
+                  golangci-lint run
+
+                  echo "==> nix flake check"
+                  nix flake check
+
+                  echo "==> doc-verify"
+                  nix run .#doc-verify
+
+                  echo "==> release-notes-check"
+                  nix run .#release-notes-check
+
+                  echo "==> apidiff (needs network)"
+                  nix run .#apidiff
+
+                  echo "pre-release: all gates passed"
+                '';
+              };
+            in
+            {
+              type = "app";
+              program = pkgs.lib.getExe pre-release;
             };
         };
     };
