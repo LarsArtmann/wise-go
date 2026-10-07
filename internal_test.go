@@ -1,6 +1,7 @@
 package wise
 
 import (
+	"bytes"
 	"context"
 	"crypto"
 	"crypto/rand"
@@ -1073,6 +1074,93 @@ func TestRefreshQuoteAccountRequirementsToWire(t *testing.T) {
 
 		if got["ownedByCustomer"] != true {
 			t.Errorf("toWire()[ownedByCustomer] = %v, want true", got["ownedByCustomer"])
+		}
+	})
+}
+
+// FuzzParseWebhookPublicKey pins the PEM parser's invariants on arbitrary
+// input: it never panics, never returns a key alongside an error, and any
+// key it accepts must round-trip through a PKIX PEM re-encode.
+func FuzzParseWebhookPublicKey(f *testing.F) {
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		f.Fatalf("generate key: %v", err)
+	}
+
+	pemKey, err := publicKeyPEM(&key.PublicKey)
+	if err != nil {
+		f.Fatalf("marshal public key: %v", err)
+	}
+
+	f.Add(pemKey)
+	f.Add([]byte("garbage"))
+	f.Add([]byte("-----BEGIN PUBLIC KEY-----\nAAAA\n-----END PUBLIC KEY-----\n"))
+	f.Add([]byte(nil))
+
+	f.Fuzz(func(t *testing.T, pemBytes []byte) {
+		parsed, err := ParseWebhookPublicKey(pemBytes)
+		if err != nil {
+			if parsed != nil {
+				t.Fatal("ParseWebhookPublicKey returned a key alongside an error")
+			}
+
+			return
+		}
+
+		der, err := x509.MarshalPKIXPublicKey(parsed)
+		if err != nil {
+			t.Fatalf("marshal parsed key: %v", err)
+		}
+
+		reencoded := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: der})
+
+		roundTripped, err := ParseWebhookPublicKey(reencoded)
+		if err != nil {
+			t.Fatalf("re-parse re-encoded key: %v", err)
+		}
+
+		if !parsed.Equal(roundTripped) {
+			t.Fatal("parsed key does not round-trip through a PKIX PEM re-encode")
+		}
+	})
+}
+
+// FuzzVerifyWebhookSignature pins the verifier's invariants on arbitrary
+// payload/signature pairs: it never panics, the genuine (payload, signature)
+// pair always verifies, and any other payload carrying the genuine signature
+// is rejected.
+func FuzzVerifyWebhookSignature(f *testing.F) {
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		f.Fatalf("generate key: %v", err)
+	}
+
+	payload := []byte(`{"event":{"type":"transfers#state-change"}}`)
+
+	digest := sha256.Sum256(payload)
+
+	sig, err := rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA256, digest[:])
+	if err != nil {
+		f.Fatalf("sign payload: %v", err)
+	}
+
+	validSig := base64.StdEncoding.EncodeToString(sig)
+	publicKey := &key.PublicKey
+
+	f.Add(payload, validSig)
+	f.Add([]byte{}, "")
+	f.Add([]byte("tampered"), validSig)
+	f.Add(payload, "not-base64!!!")
+
+	f.Fuzz(func(t *testing.T, fuzzPayload []byte, signatureB64 string) {
+		got := VerifyWebhookSignature(fuzzPayload, signatureB64, publicKey)
+
+		if !bytes.Equal(fuzzPayload, payload) && signatureB64 == validSig && got {
+			t.Fatal("tampered payload accepted with the genuine signature")
+		}
+
+		if bytes.Equal(fuzzPayload, payload) && signatureB64 == validSig && !got {
+			t.Fatal("genuine (payload, signature) pair rejected")
 		}
 	})
 }

@@ -1,6 +1,11 @@
 package wise
 
 import (
+	"crypto"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"encoding/base64"
 	"testing"
 
 	"github.com/larsartmann/wise-go/internal/raw"
@@ -59,6 +64,36 @@ func BenchmarkMapTransaction(b *testing.B) {
 	for b.Loop() {
 		if _, err := mapTransaction(tx, profileID, balanceID, "EUR"); err != nil {
 			b.Fatalf("mapTransaction: %v", err)
+		}
+	}
+}
+
+// BenchmarkVerifyWebhookSignature measures the per-delivery verification hot
+// path (RSA-SHA256 PKCS1v15 over the raw request bytes).
+func BenchmarkVerifyWebhookSignature(b *testing.B) {
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		b.Fatalf("generate key: %v", err)
+	}
+
+	payload := []byte(`{"schema_version":"4.0.0","event_type":"transfers#state-change","data":{"resource":{"id":1}}}`)
+
+	digest := sha256.Sum256(payload)
+
+	sig, err := rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA256, digest[:])
+	if err != nil {
+		b.Fatalf("sign payload: %v", err)
+	}
+
+	signature := base64.StdEncoding.EncodeToString(sig)
+	publicKey := &key.PublicKey
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for b.Loop() {
+		if !VerifyWebhookSignature(payload, signature, publicKey) {
+			b.Fatal("VerifyWebhookSignature(valid) = false, want true")
 		}
 	}
 }
