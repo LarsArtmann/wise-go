@@ -1,5 +1,14 @@
 # Status: P3 TODO Execution Sweep — 2026-10-07 06:07
 
+> **Shipped (2026-10-07 docs-health pass):** the §a sweep all landed and is
+> recorded in CHANGELOG `[Unreleased]` / AGENTS.md — the CAMT test, webhook
+> fuzz/bench, the `RequestLog.RetryAfterDelay` log line, the shuffle-proof
+> conformance guard, coverage 93.1%, the benchstat baseline, `md-go-snippets`,
+> `doc-verify`→`docs/releases/*`, `release-notes-check`, and the `pre-release`
+> app; the art-dupl policy decision (§g1) is answered. The x86_64-darwin and
+> `RequestLog.RetryAfterDelay`-freeze questions are harvested to `TODO_LIST.md`;
+> the rest is routed to `ROADMAP.md`.
+
 Session goal: execute the unblocked P3 (Quality & tooling) items from
 TODO_LIST.md end-to-end — READ/UNDERSTAND → break down → execute → verify,
 one step at a time. P1/P2 items were skipped by design (all user-blocked).

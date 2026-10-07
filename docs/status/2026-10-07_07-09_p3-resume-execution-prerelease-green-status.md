@@ -1,5 +1,11 @@
 # P3 Resume Execution — Pre-Release Green, Shuffle Flag Caught & Fixed, Cross-Repo Lessons
 
+> **Shipped (2026-10-07 docs-health pass):** the pre-release chain is green
+> end-to-end and `--shuffle` is verified; the cross-repo lessons and the
+> `meta.description`/CI-wiring follow-ups are harvested to `TODO_LIST.md` (P3 +
+> Cross-repo). Open items: the three §g user questions (x86_64-darwin,
+> `RetryAfterDelay` freeze, GOEXPERIMENT scope) and the P1/P2 user-blocked set.
+
 **Date:** 2026-10-07 07:09 CEST
 **Session:** continuation of the P3 sweep resume (`docs/status/2026-10-07_06-34_p3-sweep-resume-defect-filing-lsp-rootcause-status.md`), executing its §f backlog end-to-end under the user's blanket "do the whole list" directive.
 **Tree:** clean at report time; HEAD `0dc97d6`. All 13 session todo items completed. Go tests + golangci-lint (0 issues) green after every mutation; `nix run .#pre-release` green twice.

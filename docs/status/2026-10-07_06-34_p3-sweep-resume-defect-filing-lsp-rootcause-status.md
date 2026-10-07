@@ -1,5 +1,11 @@
 # P3 Sweep Resume — Defect Filing, LSP Root Cause, Honest Gaps
 
+> **Resolved (2026-10-07 docs-health pass):** every §a outcome held; the §b/§c
+> items are struck inline with their 2026-10-07 resolutions, and the §f queue
+> carries its own resolution banner. The four filed upstream defects (BuildFlow
+> #34–36, md-go-validator #8) stay watch-gated (`TODO_LIST.md`); the §g user
+> questions are the standing set, harvested to `TODO_LIST.md`.
+
 **Date:** 2026-10-07 06:34 CEST
 **Session:** resume of the P3 quality/tooling sweep (`docs/status/2026-10-07_06-07_p3-quality-tooling-sweep-status.md`), executing its leftover next-steps.
 **Tree:** clean at report time (auto-commit daemon swept everything); HEAD `47bf3a7`.

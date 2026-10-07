@@ -35,9 +35,16 @@ Carried since `docs/status/archived/2026-08-08_05-15_wise-sandbox-integration-st
 v0.12.0 surface); remaining: tag `v1.0.0`.
 **BLOCKED: needs the user's explicit approval (tagging is irreversible).**
 
+[ ] `RequestLog.RetryAfterDelay` API freeze — lock the delay-decision-entry shape
+(entry riding the `LogRequest` channel, `Method`/`URL` empty, honored wait as a
+`time.Duration`) for v1.0, or grow a dedicated observer interface. Evidence:
+`nix run .#apidiff` vs v0.12.0 shows it is the ONLY compatible delta (gorelease
+suggests v0.13.0). Source: `docs/status/2026-10-07_07-09_p3-resume-execution-prerelease-green-status.md` §g2.
+**BLOCKED: needs the user's design decision.**
+
 [ ] Typed recipient `Details` — typed per-corridor structs vs `map[string]string`
 key constants. Carried unanswered through seven status reports (2026-08-19_17-14
-g.2 through 2026-10-05_14-53 g2 — all in `docs/status/`). The v1.0 audit confirms
+g.2 through 2026-10-05_14-53 g2 — all under `docs/status/`, several now in `archived/`). The v1.0 audit confirms
 the map is the only shape consumers depend on today, so v1.0 can freeze the map
 and add typed accessors later.
 **BLOCKED: needs the user's design decision.**
@@ -61,32 +68,68 @@ needs no secrets; the workflow file is refreshed (`GOLANGCI_LINT_VERSION`
 v2.13, no-auth nix job, 90% coverage gate). Remaining: push master, re-enable
 the workflow server-side (`gh workflow enable ci`), and watch the first run.
 Until then the coverage badge stays frozen at its last CI-measured value.
+Source: `docs/status/archived/2026-10-07_03-57_session-status-unblocked-prep-release-readiness.md`.
 **BLOCKED: needs the user's approval to push and enable.**
-
-[x] GOEXPERIMENT ergonomics — RESOLVED 2026-10-07 repo-side: `.envrc`
-(`use flake` + `use_go_env`, the go-output/md-go-validator fleet convention,
-existed locally since 2026-08) is now TRACKED — the buildflow-managed
-.gitignore block's `.envrc` ignore is overridden by a `!.envrc` negation, so
-direnv sets `jsonv2` on `cd` without `.buildflow.yml` and fresh clones get
-it. Home-manager fleet-wide pin remains optional. Carried since
-`docs/status/archived/2026-07-23_03-49_buildflow-env-fix-and-golangci-restore.md`.
 
 ## P3 — Quality & tooling (unblocked)
 
 ### Open
 
-[x] File the four evidenced tool-repo defects — FILED 2026-10-07: BuildFlow
-[#34](https://github.com/LarsArtmann/BuildFlow/issues/34) (embedded `erraudit`
-false positives), [#35](https://github.com/LarsArtmann/BuildFlow/issues/35)
-(`reinstall` not switching the profile),
-[#36](https://github.com/LarsArtmann/BuildFlow/issues/36) (`file-size-check`
-scanning 0 files in root-package layouts); md-go-validator
-[#8](https://github.com/LarsArtmann/md-go-validator/issues/8) (own flake
-cannot build its package). Drafts (voice-checked) kept in `docs/drafts/`.
-WATCH: when #34 fixes, re-run the embedded step vs standalone byte-for-byte
-and lift the `skip_steps`; when #8 fixes, switch the flake input to upstream
-flake and drop the `go_1_27` override + vendorHash.
-Source: `docs/status/2026-10-07_04-20_dual-phase-repair-and-tool-reevaluation-status.md` §b1.
+[ ] Audit the remaining in-house flake-pin drifts — the go-retry rev/`go.mod`
+split-brain (v0.6.0 flake pin vs v0.7.1 dep, ten days) is fixed (2026-10-07), but
+`go-branded-id` (v0.5.1), `go-error-family` (v0.10.0), and `go-nix-helpers` carry
+the same exposure: compare each `github:` input's `rev=` to the tag its `go.mod`
+version names.
+Source: `docs/status/2026-10-07_07-35_go-retry-pin-drift-fix-status.md` §f1–3.
+
+[ ] Add a `checks.pin-sync` flake check that asserts every `github:LarsArtmann/*`
+input with a `rev=` matches a tag whose module version satisfies `go.mod` — turns
+the silent drift class into a red check. Same report §e1 / §f5.
+
+[ ] Identify the process that bumped `go.mod` deps without syncing flake revs
+(2026-09-27) and decide the going-forward rule (buildflow step, pre-commit guard,
+or a loud "flake pin now stale" warning). Same report §f8.
+
+[ ] Wire `md-go-snippets` + `release-notes-check` into `.github/workflows/ci.yml`
+when CI re-enables — both are flake-local today and ran green inside
+`nix flake check` twice on 2026-10-07.
+Source: `docs/status/2026-10-07_07-09_p3-resume-execution-prerelease-green-status.md` §f18.
+
+[ ] Add `meta.description` to the 8 flake apps — every `nix flake check` warns
+`lacks attribute 'meta.description'`.
+Source: `docs/status/2026-10-07_06-07_p3-quality-tooling-sweep-status.md` §e8.
+
+[ ] Type the webhook label surface — `decodeWebhookEvent` takes `WebhookEventType`
+instead of `string`, and the `"get"`/`"refresh"` verbs become typed values
+(carried since 2026-09-27; `webhooks.go:360` still takes `eventType string`).
+Source: `docs/status/archived/2026-09-27_23-42_dedup-pass2-gomod-flipflop-rootcause-status.md` §b3/§f5.
+
+[ ] Promote the enforced coverage floor 90 → 92 — actual is 93.1%; pair with the
+CI re-enable so the gate also runs off-machine.
+Source: `docs/status/2026-10-07_06-07_p3-quality-tooling-sweep-status.md` §f13.
+
+[ ] Close the 06-07 test gaps: a regression pinning that `Retry-After: 0` emits NO
+delay entry; a BDD test for two consecutive 429s (two delay entries); checked-in
+`testdata/` seeds for the three fuzz targets; `FuzzParseWiseDate`; and a
+`docs/bench/README.md` one-pager.
+Source: `docs/status/2026-10-07_06-07_p3-quality-tooling-sweep-status.md` §f16, §f26–27, §f42–45.
+
+[ ] Consume the committed `benchstat` baseline
+(`docs/bench/2026-10-07_v0120_baseline.txt`) in the next perf-touching PR.
+
+[ ] De-duplicate the LSP-resolution narrative — the struck ROADMAP raw idea and
+the AGENTS.md gotcha should have one canonical home.
+Source: `docs/status/2026-10-07_07-09_p3-resume-execution-prerelease-green-status.md` §f20.
+
+[ ] `CONTRIBUTING.md`: add a `--shuffle` line for tag day and the `pin-sync`
+invariant. Sources: 07-09 §f33; 07-35 §f29.
+
+[ ] Commit/sweep the remaining post-pin cleanup: verify the `vendorHash.nix`
+repair is committed and re-run the full pre-release chain once on the aligned
+go-retry v0.7.1 pin.
+Source: `docs/status/2026-10-07_07-35_go-retry-pin-drift-fix-status.md` §f4/§f6.
+
+### Decisions (P3)
 
 [ ] `nix flake check --all-systems` — verified 2026-10-07: aarch64-linux and
 aarch64-darwin evaluate clean; x86_64-darwin FAILS EXTERNALLY (nixpkgs-26.11
@@ -102,79 +145,15 @@ conditions (nixpkgs stable 1.27, in-house deps verified on 1.27, erraudit local 
 buildflow skip_steps removal). Source:
 `docs/status/2026-10-07_03-45_buildflow-red-to-green-repair-status.md` §g1.
 
-### Closed 2026-10-07 (P3 sweep — `docs/status/2026-10-07_06-07_p3-quality-tooling-sweep-status.md`)
+## Cross-repo (crush-config, not wise-go)
 
-[x] Wire `md-go-validator` into `nix flake check` — done as
-`checks.md-go-snippets`, consuming the tool as a source-only flake input
-(`v1.3.0`, `flake = false`) because upstream's flake cannot build it (see open
-defect-filing item); scans README + `docs/**`.
+[ ] Record the go-retry drift lesson ("a `go.mod` version bump must update the
+matching flake input rev; pinned revs are immutable under `nix flake update`") in
+crush-config `references/lessons.md`, plus the Ginkgo `-count>1` ban and the
+`gh issue create --body-file -` silent-failure quirk.
+Sources: `docs/status/2026-10-07_07-35_go-retry-pin-drift-fix-status.md` §f9; `docs/status/2026-10-07_07-09_p3-resume-execution-prerelease-green-status.md` §f25.
 
-[x] Root-cause the `golangci_lint_ls` phantom on `webhooks.go:142` — RESOLVED
-2026-10-07: the LSP servers run outside the nix devShell without
-`GOEXPERIMENT=jsonv2`, so the json/v2-dependent package failed to load and
-gopls/golangci emitted phantoms from degraded analysis. Fixed via project
-`.crushrc` (`--env GOEXPERIMENT jsonv2` on gopls + golangci_lint_ls;
-activates at session start) + poisoned golangci analysis cache cleared.
-Recorded in AGENTS.md; reopen only if phantoms recur after 2026-10-07.
-Source: `docs/status/2026-10-06_14-16_q4-flip-execution-and-gates-status.md` §d4.
-
-[x] Extend `doc-verify` count-claims to `docs/releases/*.md` — done; the
-latest `*-release-notes.md` client-method count is now gate-checked.
-
-[x] Build coverage headroom — done: 93.1% total against the 90.0 floor
-(was 90.1%); added brand-name, corruption-path, validate-path, and
-unreadable-body tests.
-
-[x] Write the quarterly-surface rollover ritual into CONTRIBUTING — done
-("Quarterly API-surface rollover ritual" section: probe → flip → straggler
-grep → changelog → verify, with the OTT probe-blind caveat).
-
-[x] `art-dupl` enforced-gate decision — RESOLVED: accept the suppressed
-baseline as policy, NO enforced gate; revisit at CI re-enable as a warn-first
-job. Recorded in AGENTS.md (art-dupl bullet).
-
-[x] erraudit class-wide policy — RESOLVED: embedded-analyzer findings are
-ignored AS A CLASS via `skip_steps`; the canonical standalone gate governs;
-never per-finding. Recorded in AGENTS.md (erraudit bullet).
-
-[x] Add a CAMT (`.xml`) `GetStatement` test — done in `wise_test.go`
-(`application/xml`, camt.053.001.02 raw bytes asserted).
-
-[x] Commit a `benchstat` baseline — done: `docs/bench/2026-10-07_v0120_baseline.txt`
-(6 benchmarks × count=6).
-
-[x] Fuzz + bench webhook funcs — done: `FuzzVerifyWebhookSignature`,
-`FuzzParseWebhookPublicKey` (8s live fuzz clean), `BenchmarkVerifyWebhookSignature`
-(~22.8µs/op) in `internal_test.go`/`bench_test.go`.
-
-[x] Add a `nix run .#pre-release` flake app — done: dirty-tree guard → build →
-vet → race → golangci-lint → `nix flake check` → doc-verify → release-notes-check
-→ apidiff.
-
-[x] Release-notes check for split code spans and relative links — done as
-`nix run .#release-notes-check` (odd-backtick-outside-fence + repo-relative
-link detectors, both negative-tested).
-
-[x] Make the spec-conformance coverage guard shuffle-proof — done: floors now
-assert in `TestMain` post-run, gated by `conformanceSuiteCompleted`; statement
-floor raised 3 → 4 (actual 6), exchange floor hit at 180 recorded.
-
-[x] Add a go-retry `Retry-After`-honored log line — done: `RequestLog.RetryAfterDelay`
-delay-decision entry (Status=429, honored wait as Duration), pinned by a
-Ginkgo Context asserting the 3-entry sequence.
-
-[x] Fuzz + bench `decodeExchangeRates` — done: `FuzzDecodeExchangeRates`
-(8s live fuzz clean) + `BenchmarkDecodeExchangeRates` (~1.2–1.7µs/op, 4 allocs).
-
-## Harvested-and-closed pointer
-
-Everything this list used to carry — including the v0.12.0 cycle's webhook
-subscription CRUD, typed event decoding, OTT endpoints, `WithUserAgent`,
-`Profile.UserID`/`PublicID`, `TestRequireID`, `fetchByID` routing, exhaustruct_v5,
-govulncheck zero-findings, benchmarks/fuzz/raw round-trips, test-file split,
-concurrency test, coverage gate, templates, ADRs, `doc-verify`/`apidiff` apps,
-CI tool pinning, the `erraudit` CI gate, the 90% coverage floor, the Q4 webhook
-rollover, the go-retry v0.6.0 executor, the v0.10.0/v0.11.0/v0.12.0 GitHub
-Release objects (published 2026-10-07), and the declined ideas — is recorded in
-[CHANGELOG.md](CHANGELOG.md) (`[0.12.0]` and the v0.10.0/v0.11.0 / 2026-09-13
-sections) and annotated inline in the corresponding `docs/status/` reports.
+[ ] Resolve the `check-skill-fanout.sh` absence — global AGENTS.md documents
+`bash ~/.config/crush/scripts/check-skill-fanout.sh`, but the path does not exist;
+restore the script or fix the doc.
+Source: `docs/status/2026-10-07_07-09_p3-resume-execution-prerelease-green-status.md` §b6.

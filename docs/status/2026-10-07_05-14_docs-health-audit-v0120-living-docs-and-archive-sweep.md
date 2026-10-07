@@ -1,5 +1,13 @@
 # Status Report — docs-health full audit (v0.12.0 living docs + annotate/archive sweep)
 
+> **Superseded (2026-10-07 docs-health pass, second run):** this audit's §f
+> follow-ups landed — `md-go-snippets` wired as `checks.md-go-snippets`,
+> `release-notes-check` and `pre-release` apps shipped, `doc-verify` extended to
+> `docs/releases/*`, coverage raised to 93.1%, the spec-conformance guard made
+> shuffle-proof, and the LSP phantom root-caused. The remaining §g PR/policy
+> questions are standing. Retained as the second docs-health audit record (see
+> also `2026-09-16_15-30`, the canonical convention record).
+
 - **Date:** 2026-10-07 05:14 CEST
 - **Repo:** wise-go @ master (auto-commit daemon active; a **concurrent release session** was also editing docs mid-run)
 - **Scope:** This session only — the operator ordered: "View ALL `**/2026-0*` files! Execute the docs-health SKILL! TODO_LIST/CHANGELOG/AGENTS/README/ROADMAP/FEATURES superb; archive fully-done + inline-struck reports." **No Go source was modified.** Findings only from this run.

@@ -8,11 +8,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- Nothing yet.
+- Repository quality gates, no public API changes: a one-command
+  `nix run .#pre-release` release gate (dirty-tree check, build, vet, race
+  tests, lint, `nix flake check`, `doc-verify`, `release-notes-check`,
+  `apidiff`, with an optional `--shuffle` loop); `nix run .#release-notes-check`
+  for split code spans and repo-relative links in `docs/releases/*.md`; and a
+  `checks.md-go-snippets` flake check that parse-checks every fenced Go block
+  in README and `docs/**`.
 
 ### Changed
 
-- Nothing yet.
+- Repository quality gates, no public API changes: `doc-verify` now also gates
+  the latest release-notes client-method count; the OpenAPI spec-conformance
+  coverage guard asserts its floors in `TestMain` after the suite completes,
+  making it shuffle-proof; test coverage rose to 93.1% (floor 90.0); and the
+  `go-retry` flake pin is aligned with the `go.mod` tag (v0.7.1) after a
+  ten-day split-brain.
 
 ### Fixed
 

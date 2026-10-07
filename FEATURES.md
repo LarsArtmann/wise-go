@@ -46,7 +46,7 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
 | Category                                                                                                | Ops | Shipped | State                                                               |
 | ------------------------------------------------------------------------------------------------------- | --- | ------- | ------------------------------------------------------------------- |
 | Balances                                                                                                | 10  | 4       | core shipped; delete/movements PLANNED; regulatory ops DEMAND_GATED |
-| Balance statements                                                                                      | 1   | 1       | all 7 formats shipped                                               |
+| Balance statements                                                                                      | 1   | 1       | all 6 formats shipped                                               |
 | Bank account details                                                                                    | 5   | 1       | read shipped; ordering PLANNED; returns DEMAND_GATED                |
 | Batch groups                                                                                            | 7   | 0       | DEMAND_GATED (tier 3)                                               |
 | Profiles                                                                                                | 19  | 2       | reads shipped; writes PLANNED; KYB OUT_OF_SCOPE                     |
@@ -88,7 +88,7 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
 | GET    | `/v4/profiles/{id}/balances/hold-limit-breach`      | DEMAND_GATED     | hold-limit breaches (SG/MY)                   |
 | POST   | `/v4/profiles/{id}/balances/hold-limit-breach/{id}` | DEMAND_GATED     | close breach via one-time refund              |
 
-### Balance statements (1 operation, 7 formats)
+### Balance statements (1 operation, 6 formats)
 
 | Method | Path                                                                                     | Status           | wise-go                                                                                        |
 | ------ | ---------------------------------------------------------------------------------------- | ---------------- | ---------------------------------------------------------------------------------------------- |
