@@ -255,6 +255,7 @@
             {
               type = "app";
               program = pkgs.lib.getExe apidiff;
+              meta.description = "Compare the public API against the latest release tag (gorelease; needs network)";
             };
 
           # Living-docs health: link check + godoc render + count-claims
@@ -337,6 +338,7 @@
             {
               type = "app";
               program = pkgs.lib.getExe doc-verify;
+              meta.description = "Check living-doc links, godoc render, and count-claim freshness";
             };
           # Release-notes pre-flight for `gh release create`: fails on the
           # two defects that shipped in the v0.12.0 release body — a code
@@ -378,6 +380,7 @@
             {
               type = "app";
               program = pkgs.lib.getExe release-notes-check;
+              meta.description = "Pre-flight release-notes files for split code spans and repo-relative links";
             };
 
           # One-command release gate: chains every local gate a release
@@ -444,6 +447,7 @@
             {
               type = "app";
               program = pkgs.lib.getExe pre-release;
+              meta.description = "Run the full local release gate (build, vet, race, lint, flake check, docs, apidiff)";
             };
         };
     };

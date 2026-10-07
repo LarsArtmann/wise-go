@@ -3630,6 +3630,58 @@ var _ = Describe("Wise Client", func() {
 				Expect(entries[2].Status).To(Equal(http.StatusOK))
 			})
 		})
+
+		Context("on two consecutive Retry-After-honored delays", func() {
+			var callCount int
+
+			BeforeEach(func() {
+				entries = nil
+				callCount = 0
+				client = wise.New("test-api-key",
+					wise.WithBaseURL(server.URL),
+					wise.WithRetry(2, time.Millisecond, time.Millisecond),
+					wise.WithLogger(wise.RequestLogFunc(func(entry wise.RequestLog) {
+						entries = append(entries, entry)
+					})),
+				)
+
+				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {
+					callCount++
+
+					if callCount <= 2 {
+						w.Header().Set("Retry-After", "30")
+						w.WriteHeader(http.StatusTooManyRequests)
+
+						return
+					}
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, []raw.Profile{})
+				})
+			})
+
+			It("emits one delay-decision entry per honored retry", func() {
+				_, err := client.ListProfiles(context.Background())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(entries).To(HaveLen(5))
+
+				Expect(entries[0].Status).To(Equal(http.StatusTooManyRequests))
+				Expect(entries[0].RetryAfterDelay).To(BeZero())
+
+				Expect(entries[1].Status).To(Equal(http.StatusTooManyRequests))
+				Expect(entries[1].Method).To(BeEmpty())
+				Expect(entries[1].RetryAfterDelay).To(Equal(time.Millisecond))
+
+				Expect(entries[2].Status).To(Equal(http.StatusTooManyRequests))
+				Expect(entries[2].RetryAfterDelay).To(BeZero())
+
+				Expect(entries[3].Status).To(Equal(http.StatusTooManyRequests))
+				Expect(entries[3].Method).To(BeEmpty())
+				Expect(entries[3].RetryAfterDelay).To(Equal(time.Millisecond))
+
+				Expect(entries[4].Status).To(Equal(http.StatusOK))
+			})
+		})
 	})
 
 	Describe("Retry cancellation", func() {
