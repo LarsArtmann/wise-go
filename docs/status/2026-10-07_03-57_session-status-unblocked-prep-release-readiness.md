@@ -1,5 +1,7 @@
 # Session Status: Unblocked Prep & Release Readiness — 2026-10-07 03:57 CEST
 
+> **Shipped (2026-10-07 docs-health pass):** the release prep landed — **v0.12.0 is tagged** (`220e2c8`) and the **v0.10.0/v0.11.0/v0.12.0 GitHub Release objects are published** (2026-10-07). ~~stale v0.10.0-release-notes header~~ fixed; the release-notes files now read "Published". Open items (sandbox key pass, OTT flip, `v1.0.0` tag, typed `Details`, CI re-enable, doc-verify-vs-`docs/releases` extension) remain in TODO_LIST.md / ROADMAP.md.
+
 Point-in-time status for the 2026-10-07 session (TODO_LIST/ROADMAP plan →
 execute unblocked work → verify). Scope: **this session only**, per operator
 instruction. Prior-session work (buildflow erraudit repair, tool pinning,

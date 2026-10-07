@@ -2,12 +2,9 @@
 
 **Date:** 2026-08-19
 **Source:** [docs.wise.com/api-reference](https://docs.wise.com/api-reference)
-**Current SDK version:** v0.7.0
+**Current SDK version:** v0.7.0 (plan baseline; SDK is now v0.12.0)
 
-> **Update (2026-08-21 docs-health pass):** the SDK is now v0.8.1 and the
-> tier-1 core transfer flow below is fully shipped except row 5
-> (`GetQuoteAccountRequirements`, still PLANNED). Open tier-2/3/4 work is
-> tracked in `TODO_LIST.md` (bounded tasks) and `ROADMAP.md` (strategy).
+> **Update (2026-10-07 docs-health pass):** tier 1 is fully shipped — ~~row 5 (`GetQuoteAccountRequirements`, still PLANNED)~~ shipped in v0.9.0. The SDK is now **v0.12.0** with 41 `*Client` methods; the full per-endpoint coverage matrix lives in `FEATURES.md`, and open tier-2/3/4 work is tracked in `TODO_LIST.md` (bounded tasks) and `ROADMAP.md` (strategy). Earlier banner: ~~the SDK is now v0.8.1, tier-1 fully shipped except row 5~~ (2026-08-21).
 
 ---
 

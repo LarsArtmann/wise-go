@@ -1,5 +1,7 @@
 # Status Report — Dedup Pass 2 (Groups Resurfaced), go.mod Flipflop Root-Cause, Gate Restoration
 
+> **Resolved (2026-10-07 docs-health pass):** the pass-2 extractions (`quoteAccountRequirements`, `decodeWebhookEvent[T]`) and the in-body directive placement are live and stable through v0.12.0; ~~art-dupl actionable groups~~ stay at 0. The go.mod flipflop is settled at `go 1.26` (`.buildflow.yml` skip_steps). Open decisions (§b/§c/§g: art-dupl gate, webhook label typing, erraudit policy, CI re-enable, Go 1.27 endgame) are routed to TODO_LIST.md / ROADMAP.md.
+
 **Date:** 2026-09-27 23:42 CEST
 **Scope:** This session only (22:20–23:45 CEST). Session = art-dupl triage of 3 resurfaced clone groups → 1 suppression-placement fix + 2 real extractions → shuffle-unsafe coverage-guard fix → go.mod `go 1.27` flipflop root-caused and mitigated via `.buildflow.yml` skip_steps → AGENTS.md + prior-report annotations → full gate battery green.
 **Trigger:** User ran `art-dupl --sort total-tokens -t 2 --type-aware --rich-text --explain --html` → 3 actionable groups (7 occurrences; 19 detected / 16 suppressed).

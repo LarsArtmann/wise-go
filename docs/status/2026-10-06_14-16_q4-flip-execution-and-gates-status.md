@@ -1,5 +1,7 @@
 # Status Report — 2026Q4 Flip Execution, Unverified Gates Closed, Decision Set Resolved
 
+> **Shipped (2026-10-07 docs-health pass):** the Q4 webhook flip, the flake-check + apidiff runs, and the AGENTS/CHANGELOG batches all reached **v0.12.0** (`220e2c8`; CHANGELOG `[0.12.0]` "webhook subscription endpoints now call the 2026Q4 surface"). The ~~v0.12.0 timing~~ question (§g1) is answered — cut 2026-10-07 — and ~~unpublished Release objects~~ are now published (2026-10-07). The three §g questions are resolved (release cut; CI re-enable still gated; coverage floor kept at 90.0 with headroom tracked in TODO_LIST.md).
+
 **Date:** 2026-10-06 14:16 CEST
 **Repo:** `/home/lars/projects/wise-go` (branch `master`, tree clean)
 **Scope:** Continuation of the 2026-10-05 pareto TODO-execution session. This segment closed the two never-run gates from the prior session, executed the user-decided 2026Q3→2026Q4 webhook flip, and resolved all three open questions.

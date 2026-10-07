@@ -1,5 +1,7 @@
 # Pareto TODO Execution — Status Report
 
+> **Shipped (2026-10-07 docs-health pass):** the §a done items all reached release — `wise.Version`, the webhook-vector test, tool pinning, SECURITY.md, the 90% coverage floor, doc-verify hardening, the erraudit gate, and the Q4 webhook rollover are in CHANGELOG `[0.12.0]` (`220e2c8`). ~~`nix flake check` NOT run; apidiff NOT run~~ **both green since** (2026-10-06), so the single most important pending gate (§b1) closed. The rollover questions (§g) resolved 2026-10-06 (split constants; webhooks→Q4, OTT parked). Open §b/§c/§f items (LSP phantom, coverage headroom, CAMT test, benchstat baseline, fuzz webhook funcs) are harvested into TODO_LIST.md.
+
 **Date:** 2026-10-05 21:47 CEST
 **Session scope:** Full execution of the unblocked `TODO_LIST.md` items (Pareto-planned, then executed and verified one step at a time). Plan artifact: `docs/planning/2026-10-05_20-24-pareto-todo-execution-plan.html` (D2 execution graph inlined).
 **Branch:** master (auto-commit daemon active — 6 daemon commits this session: `839de31`, `51121d2`, `776ad6b`, `71184bb`, `e2c6ace`, `9a23204`).

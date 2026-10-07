@@ -1,5 +1,7 @@
 # Status Report — Dedup to Zero-Actionable + go.mod Restore
 
+> **Resolved (2026-10-07 docs-health pass):** ~~this report's "0 actionable" snapshot did not hold~~ — the resurfaced groups were fixed the same night and dedup is stable at 0 actionable through v0.12.0 (see the superseding `2026-09-27_23-42_dedup-pass2-gomod-flipflop-rootcause-status.md`). The go.mod restore held: `go 1.26` is the settled directive. Open items (art-dupl enforced-gate decision, webhook label typing, erraudit class-wide policy) are routed to TODO_LIST.md / ROADMAP.md.
+
 **Date:** 2026-09-27 22:02 CEST
 **Scope:** This session only (per instruction: no unrelated research). Session = art-dupl triage → 3 extractions → 8 accept directives → incidental discovery and fix of an 11-day broken build → AGENTS.md updates → full verification battery.
 **Honesty note:** This report doubles as the brutal self-review. Sections (d) and (e) include failures from THIS session, not just the repo's history.
