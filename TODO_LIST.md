@@ -73,6 +73,14 @@ workaround is documented in CONTRIBUTING.md). Carried since
 
 ### Open
 
+[ ] File the four evidenced tool-repo defects — 3 in BuildFlow (embedded
+`erraudit` false positives at HEAD; `nix run .#reinstall` not switching the
+profile; `file-size-check` scanning 0 files in root-package layouts) + 1 in
+md-go-validator (its flake cannot build its own package: package.nix pins
+`pkgs.go` 1.26.7 vs `go.mod` ≥ 1.27). Evidence captured in AGENTS.md and
+`docs/status/2026-10-07_06-07_p3-quality-tooling-sweep-status.md`.
+Source: `docs/status/2026-10-07_04-20_dual-phase-repair-and-tool-reevaluation-status.md` §b1.
+
 [ ] `nix flake check --all-systems` — verified 2026-10-07: aarch64-linux and
 aarch64-darwin evaluate clean; x86_64-darwin FAILS EXTERNALLY (nixpkgs-26.11
 dropped that system, not a flake bug). Decide: pin a nixpkgs-26.05-darwin
@@ -92,6 +100,15 @@ buildflow skip_steps removal). Source:
 `checks.md-go-snippets`, consuming the tool as a source-only flake input
 (`v1.3.0`, `flake = false`) because upstream's flake cannot build it (see open
 defect-filing item); scans README + `docs/**`.
+
+[x] Root-cause the `golangci_lint_ls` phantom on `webhooks.go:142` — RESOLVED
+2026-10-07: the LSP servers run outside the nix devShell without
+`GOEXPERIMENT=jsonv2`, so the json/v2-dependent package failed to load and
+gopls/golangci emitted phantoms from degraded analysis. Fixed via project
+`.crushrc` (`--env GOEXPERIMENT jsonv2` on gopls + golangci_lint_ls;
+activates at session start) + poisoned golangci analysis cache cleared.
+Recorded in AGENTS.md; reopen only if phantoms recur after 2026-10-07.
+Source: `docs/status/2026-10-06_14-16_q4-flip-execution-and-gates-status.md` §d4.
 
 [x] Extend `doc-verify` count-claims to `docs/releases/*.md` — done; the
 latest `*-release-notes.md` client-method count is now gate-checked.
