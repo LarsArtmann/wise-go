@@ -90,6 +90,7 @@ GOEXPERIMENT=jsonv2 golangci-lint run
 Where it is already wired in:
 
 - `flake.nix` — both devShells and the `buildGoModule` checkPhase.
+- `.envrc` — `use flake` + `use_go_env`; direnv applies it on `cd` (needs direnv + nix-direnv).
 - `.golangci.yml` — `run.build-tags: [goexperiment.jsonv2, ...]` so the analyzer sees the same code the compiler does.
 - `.github/workflows/ci.yml` — top-level `env: GOEXPERIMENT: "jsonv2"`, inherited by every job.
 

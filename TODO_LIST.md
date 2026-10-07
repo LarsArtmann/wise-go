@@ -63,11 +63,13 @@ the workflow server-side (`gh workflow enable ci`), and watch the first run.
 Until then the coverage badge stays frozen at its last CI-measured value.
 **BLOCKED: needs the user's approval to push and enable.**
 
-[ ] GOEXPERIMENT ergonomics — pin direnv/home-manager setup so `jsonv2` is set
-without relying on `.buildflow.yml` env injection (user-machine work; the
-workaround is documented in CONTRIBUTING.md). Carried since
+[x] GOEXPERIMENT ergonomics — RESOLVED 2026-10-07 repo-side: `.envrc`
+(`use flake` + `use_go_env`, the go-output/md-go-validator fleet convention,
+existed locally since 2026-08) is now TRACKED — the buildflow-managed
+.gitignore block's `.envrc` ignore is overridden by a `!.envrc` negation, so
+direnv sets `jsonv2` on `cd` without `.buildflow.yml` and fresh clones get
+it. Home-manager fleet-wide pin remains optional. Carried since
 `docs/status/archived/2026-07-23_03-49_buildflow-env-fix-and-golangci-restore.md`.
-**BLOCKED: user-machine change.**
 
 ## P3 — Quality & tooling (unblocked)
 
@@ -94,8 +96,9 @@ input for darwin checks, or drop x86_64-darwin from the check matrix.
 
 [ ] Go 1.27 migration — plan written at
 `docs/planning/2026-10-07_go-1.27-migration-plan.md` (4 unlock conditions,
-single-commit flip/rollback). Execution is blocked on those conditions
-(nixpkgs stable 1.27, in-house deps verified on 1.27, erraudit local install,
+single-commit flip/rollback). Condition-1 probe 2026-10-07: `nix eval
+nixpkgs#go.version` = 1.26.8 → not met. Execution is blocked on those
+conditions (nixpkgs stable 1.27, in-house deps verified on 1.27, erraudit local install,
 buildflow skip_steps removal). Source:
 `docs/status/2026-10-07_03-45_buildflow-red-to-green-repair-status.md` §g1.
 

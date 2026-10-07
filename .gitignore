@@ -72,5 +72,8 @@ go.work.sum
 result
 result-*
 .direnv/
+# Fleet convention (go-output, md-go-validator): .envrc is tracked even though
+# the buildflow-managed block above ignores it; last-match-wins overrides.
+!.envrc
 # BuildFlow filesystem-probe temp artifacts
 buildflow-fsprobe-*
