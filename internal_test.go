@@ -12,6 +12,7 @@ import (
 	"encoding/json/jsontext"
 	"encoding/json/v2"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -1208,4 +1209,353 @@ func FuzzDecodeExchangeRates(f *testing.F) {
 			t.Fatalf("accepted a payload that decodes as neither array nor single object: %s", payload)
 		}
 	})
+}
+
+// --- White-box coverage: brand names and mapper/validation error paths ---
+
+// TestBrandNames pins every phantom brand's Name() (go-branded-id's
+// NameProvider, used in validation error messages).
+func TestBrandNames(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		brand any
+		want  string
+	}{
+		{ProfileBrand{}, "Profile"},
+		{UserBrand{}, "User"},
+		{BalanceBrand{}, "Balance"},
+		{TransactionBrand{}, "Transaction"},
+		{TransferBrand{}, "Transfer"},
+		{RecipientBrand{}, "Recipient"},
+		{AccountBrand{}, "Account"},
+		{BalanceTransactionBrand{}, "BalanceTransaction"},
+		{QuoteBrand{}, "Quote"},
+		{WebhookSubscriptionBrand{}, "WebhookSubscription"},
+		{CustomerTransactionIDBrand{}, "CustomerTransaction"},
+	}
+
+	for _, tt := range tests {
+		named, ok := tt.brand.(interface{ Name() string })
+		if !ok {
+			t.Fatalf("brand %T does not implement Name()", tt.brand)
+		}
+
+		if got := named.Name(); got != tt.want {
+			t.Errorf("brand %T Name() = %q, want %q", tt.brand, got, tt.want)
+		}
+	}
+}
+
+func TestMapExchangeRateCorruption(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		rate     raw.ExchangeRate
+		wantCode string
+		wantSub  string
+	}{
+		{
+			name:     "corrupt time",
+			rate:     raw.ExchangeRate{Time: "garbage", Source: "EUR", Target: "USD"},
+			wantCode: "wise.rates.parse_time",
+			wantSub:  `"garbage"`,
+		},
+		{
+			name:     "corrupt source",
+			rate:     raw.ExchangeRate{Time: "2026-10-07T00:17:01+0000", Source: "eu", Target: "USD"},
+			wantCode: "wise.rates.parse_source",
+			wantSub:  `"eu"`,
+		},
+		{
+			name:     "corrupt target",
+			rate:     raw.ExchangeRate{Time: "2026-10-07T00:17:01+0000", Source: "EUR", Target: "us"},
+			wantCode: "wise.rates.parse_target",
+			wantSub:  `"us"`,
+		},
+	}
+
+	for _, tt := range tests {
+		_, err := mapExchangeRate(tt.rate)
+		if err == nil {
+			t.Fatalf("%s: mapExchangeRate = nil error, want corruption", tt.name)
+		}
+
+		if !strings.Contains(err.Error(), tt.wantCode) || !strings.Contains(err.Error(), tt.wantSub) {
+			t.Errorf("%s: error %q lacks %q/%q", tt.name, err.Error(), tt.wantCode, tt.wantSub)
+		}
+	}
+}
+
+func TestMapMultiCurrencyAccountCorruption(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		account  raw.MultiCurrencyAccount
+		wantCode string
+	}{
+		{
+			name:     "corrupt creationTime",
+			account:  raw.MultiCurrencyAccount{CreationTime: "garbage"},
+			wantCode: "wise.account.parse_creation_time",
+		},
+		{
+			name: "corrupt modificationTime",
+			account: raw.MultiCurrencyAccount{
+				CreationTime:     "2023-01-01T00:00:00Z",
+				ModificationTime: "also garbage",
+			},
+			wantCode: "wise.account.parse_modification_time",
+		},
+	}
+
+	for _, tt := range tests {
+		_, err := mapMultiCurrencyAccount(tt.account)
+		if err == nil {
+			t.Fatalf("%s: mapMultiCurrencyAccount = nil error, want corruption", tt.name)
+		}
+
+		if !strings.Contains(err.Error(), tt.wantCode) {
+			t.Errorf("%s: error %q lacks %q", tt.name, err.Error(), tt.wantCode)
+		}
+	}
+}
+
+func TestMapUserCorruption(t *testing.T) {
+	t.Parallel()
+
+	_, err := mapUser(raw.User{ID: 1, Detail: &raw.UserDetail{DateOfBirth: "not-a-date"}})
+	if err == nil {
+		t.Fatal("mapUser(corrupt dateOfBirth) = nil error, want corruption")
+	}
+
+	if !strings.Contains(err.Error(), "wise.user.parse_date_of_birth") {
+		t.Errorf("error %q lacks the parse_date_of_birth code", err.Error())
+	}
+
+	withAddress, err := mapUser(raw.User{
+		ID:     2,
+		Detail: &raw.UserDetail{DateOfBirth: "1977-01-01", Address: &raw.UserAddress{City: "Berlin"}},
+	})
+	if err != nil {
+		t.Fatalf("mapUser(valid with address): %v", err)
+	}
+
+	if withAddress.Details == nil || withAddress.Details.Address == nil || withAddress.Details.Address.City != "Berlin" {
+		t.Errorf("mapUser did not map the address: %+v", withAddress.Details)
+	}
+}
+
+func TestMapTransactionCorruption(t *testing.T) {
+	t.Parallel()
+
+	valid := raw.StatementTransaction{
+		TransactionID:  "tx-1",
+		Date:           "2023-01-15 14:30:00",
+		Amount:         raw.BalanceAmount{Value: -10.5, Currency: "EUR"},
+		TotalFees:      raw.BalanceAmount{Value: 0, Currency: "EUR"},
+		RunningBalance: raw.BalanceAmount{Value: 90, Currency: "EUR"},
+		Details:        raw.TransactionDetails{Type: "TRANSFER"},
+	}
+
+	tests := []struct {
+		name    string
+		mutate  func(*raw.StatementTransaction)
+		wantSub string
+	}{
+		{
+			name:    "corrupt date",
+			mutate:  func(tx *raw.StatementTransaction) { tx.Date = "garbage" },
+			wantSub: "wise.transaction.parse_date",
+		},
+		{
+			name:    "corrupt total currency",
+			mutate:  func(tx *raw.StatementTransaction) { tx.Amount.Currency = "euro" },
+			wantSub: "total amount",
+		},
+		{
+			name:    "corrupt fees currency",
+			mutate:  func(tx *raw.StatementTransaction) { tx.TotalFees.Currency = "eur1" },
+			wantSub: "fees amount",
+		},
+		{
+			name:    "corrupt running balance currency",
+			mutate:  func(tx *raw.StatementTransaction) { tx.RunningBalance.Currency = "" },
+			wantSub: "running balance",
+		},
+		{
+			name: "corrupt exchange from-amount currency",
+			mutate: func(tx *raw.StatementTransaction) {
+				tx.ExchangeDetails = &raw.ExchangeDetails{
+					FromAmount: raw.BalanceAmount{Value: 1, Currency: "ZZ"},
+				}
+			},
+			wantSub: "from amount",
+		},
+	}
+
+	for _, tt := range tests {
+		fixture := valid
+		tt.mutate(&fixture)
+
+		_, err := mapTransaction(fixture, NewProfileID(1), NewBalanceID(2), Currency("EUR"))
+		if err == nil {
+			t.Fatalf("%s: mapTransaction = nil error, want corruption", tt.name)
+		}
+
+		if !strings.Contains(err.Error(), tt.wantSub) {
+			t.Errorf("%s: error %q lacks %q", tt.name, err.Error(), tt.wantSub)
+		}
+	}
+}
+
+func TestCreateBalanceRequestValidate(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		req     CreateBalanceRequest
+		wantSub string
+	}{
+		{
+			name:    "zero profile",
+			req:     CreateBalanceRequest{Currency: Currency("EUR"), Type: BalanceTypeStandard},
+			wantSub: "profileID",
+		},
+		{
+			name:    "empty currency",
+			req:     CreateBalanceRequest{ProfileID: NewProfileID(1), Type: BalanceTypeStandard},
+			wantSub: "currency is required",
+		},
+		{
+			name: "unknown type",
+			req: CreateBalanceRequest{
+				ProfileID: NewProfileID(1),
+				Currency:  Currency("EUR"),
+				Type:      BalanceType("joint"),
+			},
+			wantSub: "type must be",
+		},
+		{
+			name: "savings without name",
+			req: CreateBalanceRequest{
+				ProfileID: NewProfileID(1),
+				Currency:  Currency("EUR"),
+				Type:      BalanceTypeSavings,
+			},
+			wantSub: "name is required",
+		},
+	}
+
+	for _, tt := range tests {
+		err := tt.req.validate()
+		if err == nil {
+			t.Fatalf("%s: validate = nil error, want rejection", tt.name)
+		}
+
+		if !strings.Contains(err.Error(), tt.wantSub) {
+			t.Errorf("%s: error %q lacks %q", tt.name, err.Error(), tt.wantSub)
+		}
+	}
+}
+
+func TestBalanceTypeWire(t *testing.T) {
+	t.Parallel()
+
+	if got := balanceTypeWire(BalanceTypeSavings); got != "SAVINGS" {
+		t.Errorf("balanceTypeWire(savings) = %q, want SAVINGS", got)
+	}
+
+	if got := balanceTypeWire(BalanceTypeStandard); got != "STANDARD" {
+		t.Errorf("balanceTypeWire(standard) = %q, want STANDARD", got)
+	}
+}
+
+func TestGetStatementRequestValidate(t *testing.T) {
+	t.Parallel()
+
+	from := time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
+	to := time.Date(2023, 1, 31, 0, 0, 0, 0, time.UTC)
+
+	tests := []struct {
+		name    string
+		mutate  func(*GetStatementRequest)
+		wantSub string
+	}{
+		{
+			name:    "zero balance ID",
+			mutate:  func(req *GetStatementRequest) { req.BalanceID = BalanceID{} },
+			wantSub: "balanceID",
+		},
+		{
+			name:    "empty currency",
+			mutate:  func(req *GetStatementRequest) { req.Currency = "" },
+			wantSub: "currency is required",
+		},
+		{
+			name: "from after to",
+			mutate: func(req *GetStatementRequest) {
+				req.From, req.To = to, from
+			},
+			wantSub: "intervalStart must not be after intervalEnd",
+		},
+	}
+
+	for _, tt := range tests {
+		req := GetStatementRequest{
+			ProfileID: NewProfileID(1),
+			BalanceID: NewBalanceID(2),
+			Currency:  Currency("EUR"),
+			From:      from,
+			To:        to,
+			Format:    StatementFormatCSV,
+		}
+		tt.mutate(&req)
+
+		err := req.validate()
+		if err == nil {
+			t.Fatalf("%s: validate = nil error, want rejection", tt.name)
+		}
+
+		if !strings.Contains(err.Error(), tt.wantSub) {
+			t.Errorf("%s: error %q lacks %q", tt.name, err.Error(), tt.wantSub)
+		}
+	}
+}
+
+type failingBody struct{}
+
+func (failingBody) Read([]byte) (int, error) { return 0, errors.New("disk on fire") }
+
+func (failingBody) Close() error { return nil }
+
+// TestCheckErrorUnreadableBody pins that an unreadable response body is
+// surfaced in the error message instead of masquerading as an empty body.
+func TestCheckErrorUnreadableBody(t *testing.T) {
+	t.Parallel()
+
+	client := New("test-api-key")
+
+	resp := &http.Response{
+		StatusCode: http.StatusInternalServerError,
+		Header:     http.Header{},
+		Body:       failingBody{},
+	}
+
+	err := client.checkError(resp)
+	if err == nil {
+		t.Fatal("checkError(unreadable body) = nil error, want APIError")
+	}
+
+	apiErr, ok := errors.AsType[*ServerError](err)
+	if !ok {
+		t.Fatalf("checkError = %T, want *ServerError: %v", err, err)
+	}
+
+	if !strings.Contains(apiErr.Body, "response body could not be read") ||
+		!strings.Contains(apiErr.Body, "disk on fire") {
+		t.Errorf("body %q does not surface the read failure", apiErr.Body)
+	}
 }
