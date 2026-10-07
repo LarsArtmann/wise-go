@@ -44,6 +44,7 @@ func TestMain(m *testing.M) {
 		)
 	case verdict.violation != "":
 		fmt.Fprintf(os.Stderr, "spec conformance coverage guard: %s\n", verdict.violation)
+
 		code = 1
 	default:
 		templates, exemptPaths, exchanges, exemptAccountsLists := conformanceCoverageSnapshot()

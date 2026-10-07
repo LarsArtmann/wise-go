@@ -156,6 +156,20 @@ go test -count=1 ./...
 go test -count=1 ./...   # each run is fresh; never stack -count
 ```
 
+### Benchmarks
+
+The hot parsing/mapping paths are benchmarked in `bench_test.go`. A
+committed baseline lives in `docs/bench/` (`2026-10-07_v0120_baseline.txt`
+at the time of writing). Regenerate and compare:
+
+```bash
+GOEXPERIMENT=jsonv2 go test -bench . -benchmem -count=6 -run '^$' . > /tmp/new.txt
+benchstat docs/bench/2026-10-07_v0120_baseline.txt /tmp/new.txt
+```
+
+Commit a fresh baseline file (named `<date>_<label>.txt`) when benchmark
+names or shapes change, or after landing a change that moves the numbers.
+
 ---
 
 ## Linting & Formatting
@@ -221,6 +235,44 @@ the public API or the godoc examples — the claim-staleness class ("33
 methods" outliving the 37-method surface) is exactly what it catches.
 `apidiff` reports removed or changed exported API against the latest tag;
 run it before any release.
+
+### Release gates
+
+```bash
+nix run .#release-notes-check   # split code spans + repo-relative links in docs/releases/*.md
+nix run .#pre-release           # the whole release gate chain, one command
+```
+
+`release-notes-check` fails on the two defect classes that shipped in the
+v0.12.0 release body: a code span split across lines by a markdown reflow,
+and repo-relative links (GitHub Release bodies cannot resolve repo-relative
+paths — use absolute URLs). Run it before `gh release create`.
+`pre-release` chains the full local gate sequence — dirty-tree check, build,
+vet, race tests, lint, `nix flake check`, `doc-verify`,
+`release-notes-check`, `apidiff` — so a release relies on one command
+instead of session discipline.
+
+### Quarterly API-surface rollover ritual
+
+Wise versions some surfaces by quarter (`2026Q3`, `2026Q4`); the webhook
+subscription CRUD and the OTT endpoints roll over INDEPENDENTLY (see
+AGENTS.md). The 2026Q4 flip proved that a value-flip is not done until the
+straggler grep is clean — a stale path in a comment or doc survives every
+test. The ritual:
+
+1. **Probe** — confirm the new prefix answers non-404 on the surface.
+   Unauthenticated probes 404 on some surfaces even when live (e.g.
+   `one-time-token`); those need sandbox credentials (see TODO_LIST.md).
+2. **Flip** — change the version constant in `client.go`
+   (`webhookSubscriptionsAPIVersion` / `ottAPIVersion`). The two roll over
+   independently; never move both because one moved.
+3. **Straggler grep** — `grep -rn "2026Q3" --include='*.go' .` (the old
+   value) must come back empty outside changelog/history; update any
+   comment, test path, or doc that still names the old prefix.
+4. **Changelog** — record the flip under `[Unreleased]`.
+5. **Verify** — `go test ./...` and `nix run .#doc-verify` (the spec
+   conformance harness normalizes quarterly prefixes; a stale path fails
+   there).
 
 ---
 
