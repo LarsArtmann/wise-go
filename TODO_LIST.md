@@ -28,16 +28,13 @@ without credentials. Procedure: with `WISE_SANDBOX_API_KEY` (pairs with the sand
 pass above), probe `GET /2026Q4/one-time-token/status` for a non-404, change
 `ottAPIVersion` in `client.go`, run `go test ./...`, commit. Probes 2026-10-05.
 
-[ ] Publish the GitHub Release objects for **v0.10.0 and v0.11.0** — both tags
-exist on origin and are served by the module proxy, but `gh release list` still
-shows v0.9.0 as Latest. Notes for BOTH releases are drafted:
-`docs/releases/v0.10.0-release-notes.md` and
-`docs/releases/v0.11.0-release-notes.md` (cut from the CHANGELOG `[0.11.0]`
-section 2026-10-07; describes the tag as shipped, including its pre-rollover
-`2026Q3` subscription surface). Remaining: two `gh release create` calls with
-the note files. Source: `docs/status/archived/2026-09-13_15-41_pareto-tail-resume-24x-25x-status.md` §b.4, re-verified
+[x] Publish the GitHub Release objects for **v0.10.0 and v0.11.0** — DONE
+2026-10-07 alongside the v0.12.0 release: all three `gh release create` calls
+made from their drafted note files (`docs/releases/v0.10.0-release-notes.md`,
+`docs/releases/v0.11.0-release-notes.md`,
+`docs/releases/v0.12.0-release-notes.md`); `/releases/latest` now serves
+v0.12.0. Source: `docs/status/archived/2026-09-13_15-41_pareto-tail-resume-24x-25x-status.md` §b.4, re-verified
 2026-09-16.
-**BLOCKED: needs the user's approval to publish releases.**
 
 [x] Pin the CI-installed tools — DONE 2026-10-05: `gofumpt` v0.12.0 and
 `govulncheck` (golang.org/x/vuln) v1.8.0 pinned via `GOFUMPT_VERSION` /
