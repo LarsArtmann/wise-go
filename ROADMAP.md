@@ -74,10 +74,18 @@ that clear challenges programmatically.
   and the `ClearSCAChallenge` convenience loop (`/2026Q3/one-time-token/...`).
 - **`WithUserAgent`** + `Profile.UserID`/`PublicID` + client concurrency pinned
   by test.
+- **v0.12.0 — correctness + conformance** — the OpenAPI spec-conformance gate
+  (every mock exchange validated against the vendored Wise spec),
+  `wise.Version`, `CreateBalanceRequest.IdempotencyKey`, spec-native
+  `StatementType` (COMPACT/FLAT), branded `CustomerTransactionID` /
+  `OTTStatus.UserID` / `WebhookResource.ProfileID`, the go-retry v0.6.0
+  executor (Wise's `Retry-After` now steers the delay), the `2026Q4` webhook
+  subscription surface, and the rates/timestamp parse fixes.
 
 **Release state:** shipped as **v0.9.0** (2026-08-21), **v0.10.0**
-(2026-09-13), and **v0.11.0** (2026-09-14, tags on origin and served by the
-module proxy; GitHub Release objects pending user approval). The v1.0 audit is
+(2026-09-13), **v0.11.0** (2026-09-14), and **v0.12.0** (2026-10-07, tags on
+origin and served by the module proxy; GitHub Release objects pending user
+approval). The v1.0 audit is
 green and re-audited 2026-09-13 at the 33-method surface
 (`docs/reviews/2026-08-21_v1.0-api-audit.md` — refreshed inventory, godoc pass,
 risk-register items 8–10, growth lineage through 41 methods); the v1.0.0 tag
@@ -230,11 +238,12 @@ structs"); documented in README.
 - **Domain-core / infrastructure split** — one HTTP backend, one retry library.
   The seam would be unused.
 
-## Raw ideas (harvested from status reports, 2026-09-16)
+## Raw ideas (harvested from status reports, 2026-10-07)
 
 Routed here from `docs/status/archived/2026-05-17_18-48`,
-`2026-05-23_00-49`, `2026-08-21_20-57`, and the `2026-09-13` reports —
-demand-gated raw ideas, not scheduled work:
+`2026-05-23_00-49`, `2026-08-21_20-57`, the `2026-09-13` reports, and the
+2026-09-16 → 2026-10-07 status reports — demand-gated raw ideas, not
+scheduled work:
 
 - **Typed `BadRequestError`** for 400 responses (design idea; today 400s are `*APIError`).
 - **Circuit breaker** — go-retry does not provide one; wiring one is new in-house code (or go-cqrs-lite middleware). Only with a consumer demand signal.
@@ -247,6 +256,11 @@ demand-gated raw ideas, not scheduled work:
 - **`nix flake check --all-systems`** — aarch64/darwin coverage for the consumer fleet.
 - **Decide `Authenticate()`'s future** now that `GetMe` exists (cheaper key check).
 - **2026Q4 bump ritual** — document the `webhookSubscriptionsAPIVersion`/`ottAPIVersion` upgrade path for when Wise moves the quarterly surfaces (they roll over independently; probe live before flipping).
+- **Go 1.27 migration plan** — toolchain + `GOTOOLCHAIN` policy bump (erraudit needs ≥ 1.27); today every 1.27-syntax push by the modernizer is reverted because the flake pins 1.26 (see AGENTS.md).
+- **Markdown-validation gate** — wire `md-go-validator` into `nix flake check` (or buildflow) so fenced Go snippets in README/docs are parse-checked; today block #27's mixed-scope bug was found by hand.
+- **`art-dupl` enforced-gate decision** — accept the suppressed baseline as policy, or enforce an exit-code gate (reverses the 2026-09-13 decline).
+- **erraudit class-wide policy** — fix the 29 `context_loss`/`ignored` advisories or suppress the rules with rationale; per-finding drift is the worst option.
+- **Daemon/`go.mod` guard hook** — a session-start (or pre-commit) check that fails loudly when `.buildflow.yml` is deleted or `grep '^go ' go.mod` leaves the 1.26 line.
 - Wishlist-era leftovers (Postman collection, currency-conversion helpers, batch APIs, mock server): only with a real consumer ask. Response caching stays a non-goal (the SDK is stateless by design).
 
 ## Release strategy
@@ -257,7 +271,9 @@ demand-gated raw ideas, not scheduled work:
   read; v0.8.0 the full core transfer flow (quotes, recipients, transfers write,
   rates); v0.8.1 the outgoing-timestamp wire fix; v0.9.0 funding + tier-2 reads +
   observability; v0.10.0 receipts + MT103; v0.11.0 webhook subscriptions, typed
-  events, and SCA one-time-token endpoints.
+  events, and SCA one-time-token endpoints; v0.12.0 the OpenAPI conformance
+  gate, spec-native statement types, branded idempotency keys, and the
+  go-retry executor.
 - **v1.0** — public API freeze. After v1.0, breaking changes require v2 and a
   deliberate migration path.
 

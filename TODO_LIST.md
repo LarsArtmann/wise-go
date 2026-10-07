@@ -13,14 +13,6 @@ five spec-vs-live assumptions settled by the conformance work: statement
 `details.type` enum, `/v1/rates` array shape, text/plain funding errors.
 Source: docs/planning/2026-09-16_16-54_pareto-plan-openapi-conformance-green.md, 2026-09-16.
 
-[x] Decide and execute the quarterly-surface 2026Q3 → 2026Q4 rollover.
-**DONE 2026-10-05 (split execution, evidence-based):** unauthenticated live probes
-against api.wise.com showed `/2026Q4/profiles/{id}/subscriptions` answering 401
-(surface live) while a bogus `/9999Q1/...` 404s — so the webhook subscription CRUD
-was flipped to `2026Q4` (`webhookSubscriptionsAPIVersion` in `client.go`; tests,
-README, and FEATURES updated; conformance gate strips any `[0-9]{4}Q[1-4]` prefix
-so it passes either way — the live probe is the real gate).
-
 [ ] Flip `ottAPIVersion` 2026Q3 → 2026Q4 once the OTT surface verifies live.
 The OTT surface is **probe-blind**: unauthenticated requests to `/one-time-token/*`
 404 on every prefix including the known-good 2026Q3, so Q4 cannot be verified
@@ -28,24 +20,13 @@ without credentials. Procedure: with `WISE_SANDBOX_API_KEY` (pairs with the sand
 pass above), probe `GET /2026Q4/one-time-token/status` for a non-404, change
 `ottAPIVersion` in `client.go`, run `go test ./...`, commit. Probes 2026-10-05.
 
-[x] Publish the GitHub Release objects for **v0.10.0 and v0.11.0** — DONE
-2026-10-07 alongside the v0.12.0 release: all three `gh release create` calls
-made from their drafted note files (`docs/releases/v0.10.0-release-notes.md`,
-`docs/releases/v0.11.0-release-notes.md`,
-`docs/releases/v0.12.0-release-notes.md`); `/releases/latest` now serves
-v0.12.0. Source: `docs/status/archived/2026-09-13_15-41_pareto-tail-resume-24x-25x-status.md` §b.4, re-verified
-2026-09-16.
-
-[x] Pin the CI-installed tools — DONE 2026-10-05: `gofumpt` v0.12.0 and
-`govulncheck` (golang.org/x/vuln) v1.8.0 pinned via `GOFUMPT_VERSION` /
-`GOVULNCHECK_VERSION` env vars in `ci.yml`; the `apidiff` flake app pins
-gorelease to `golang.org/x/exp@v0.0.0-20261005173118-76772065c9b0`. No `@latest`
-remains in workflows or flake apps (comments excepted).
-
-[x] Add an erraudit CI gate — DONE 2026-10-05 (new item born from the erraudit
-pass below): `ci.yml` has an `erraudit` job running the curated config. It is
-WARN-not-fail until the private module can be fetched. Carries one user-gated
-secret (see P2).
+[ ] Publish the GitHub Release objects for **v0.10.0, v0.11.0, and v0.12.0** — all
+three tags exist on origin and are served by the module proxy, but `gh release
+list` still shows v0.9.0 as Latest. Drafted notes:
+`docs/releases/v0.10.0-release-notes.md`, `docs/releases/v0.11.0-release-notes.md`,
+and `docs/releases/v0.12.0-release-notes.md`. Remaining: three `gh release create`
+calls with the note files. Source: re-verified 2026-10-07.
+**BLOCKED: needs the user's approval to publish releases.**
 
 ## P2 — User-gated
 
@@ -59,17 +40,15 @@ Carried since `docs/status/archived/2026-08-08_05-15_wise-sandbox-integration-st
 
 [ ] Lock the public API at v1.0 — audit is green (re-audit + growth lineage in
 `docs/reviews/2026-08-21_v1.0-api-audit.md`, now covering the 41-method
-v0.11.0 surface); remaining: tag `v1.0.0`.
+v0.12.0 surface); remaining: tag `v1.0.0`.
 **BLOCKED: needs the user's explicit approval (tagging is irreversible).**
 
 [ ] Typed recipient `Details` — typed per-corridor structs vs `map[string]string`
-
-- key constants. Carried unanswered through six status reports
-  (2026-08-19_17-14 g.2, 18-15 g.2, 09-50 g.3, 20-57 f.5, 22-31 d.1 — all in
-  `docs/status/archived/`). The v1.0
-  audit confirms the map is the only shape consumers depend on today, so v1.0 can
-  freeze the map and add typed accessors later.
-  **BLOCKED: needs the user's design decision.**
+key constants. Carried unanswered through seven status reports (2026-08-19_17-14
+g.2 through 2026-10-05_14-53 g2 — all in `docs/status/`). The v1.0 audit confirms
+the map is the only shape consumers depend on today, so v1.0 can freeze the map
+and add typed accessors later.
+**BLOCKED: needs the user's design decision.**
 
 [ ] Set the `CACHIX_AUTH_TOKEN` secret (and confirm the `larsartmann` cache
 exists) — the CI cachix step (pinned to verified v15 commit `ad2ddac`) is
@@ -92,13 +71,6 @@ the workflow server-side (`gh workflow enable ci`), and watch the first run.
 Until then the coverage badge stays frozen at its last CI-measured value.
 **BLOCKED: needs the user's approval to push and enable.**
 
-[x] Adopt `go-retry` v0.6.0 in place of the failsafe-go executor — DONE
-2026-09-16: ADR 003 accepted and executed. `client.go` runs
-`retry.DoWithValue`; `classifyExhaustedRetries` is deleted (the `ErrExhausted`
-chain carries the final typed error via `WithCause`); Wise's `Retry-After`
-feeds `Config.DelayFunc`, capped at `WithRetry`'s max delay. Gates green:
-`go test -race ./...`, `golangci-lint run`, `nix flake check`.
-
 [ ] GOEXPERIMENT ergonomics — pin direnv/home-manager setup so `jsonv2` is set
 without relying on `.buildflow.yml` env injection (user-machine work; the
 workaround is documented in CONTRIBUTING.md). Carried since
@@ -107,68 +79,71 @@ workaround is documented in CONTRIBUTING.md). Carried since
 
 ## P3 — Quality & tooling (unblocked)
 
-[x] Mirror the 90% coverage floor into the sandboxed `checks.test` checkPhase —
-DONE 2026-10-05: the checkPhase now computes the total from `coverage.out` and
-fails below 90.0 (mirrors the ci.yml gate verbatim), so the flake check enforces
-the floor instead of only measuring.
+[ ] Wire `md-go-validator` into `nix flake check` (or `.buildflow.yml`) as a
+fenced-Go snippet parse gate — README block #27's invalid shape (fixed 2026-09-29)
+was found by hand; nothing currently fails if a future edit breaks a snippet.
+Source: `docs/status/2026-09-29_07-37_README-webhook-snippet-validation-fix.md` §f.
 
-[x] erraudit pass over the v0.11.0 webhook + OTT code, curated erraudit config,
-CI gate, and the samber/oops decision — DONE 2026-10-05:
-`erraudit lint ./... --type-aware` and `fix --type-aware` report ZERO findings
-repo-wide (webhook + OTT code included), so no migrations were needed. Curated
-gate config: `erraudit lint ./... --type-aware --enforce-coded-errors` (the only
-applicable opt-in: flags go-error-family constructors called with empty codes;
-repo-verified clean). **samber/oops: DECLINED** — the SDK's error contract
-(`go-error-family` interfaces + What/Why/Fix messages) already provides the
-structure oops would add; adopting it would overlap two classification layers
-with zero consumer demand. `--enforce-samber-oops` / `--enforce-go-error-family`
-/ `--enforce-deferred-close` / `--enforce-generic-return` are all inapplicable
-(stdlib wrapping is a deliberate convention here; reasons in AGENTS.md
-Dependencies → erraudit). CI gate: `erraudit` job in ci.yml, WARN-not-fail until
-`ERRAUDIT_TOKEN` exists (private module). Extend BuildFlow with an erraudit
-provider remains a fleet decision (BuildFlow-repo task, not this repo).
+[ ] Extend `doc-verify` count-claims to `docs/releases/*.md` (the release-notes
+method-count lines are a drift blind spot — AGENTS/FEATURES/ROADMAP/audit are
+gated, `docs/releases/` is not). Source:
+`docs/status/2026-10-07_03-57_session-status-unblocked-prep-release-readiness.md` §d6/f#8.
 
-[x] Add `.github/SECURITY.md` — DONE 2026-10-05: private vulnerability reporting
-via GitHub security advisories, scope (what to report / what is out of scope),
-and a 7-day triage commitment. Linked from CONTRIBUTING.md; the flake
-`checks.links` fileset now includes it so the lychee link check can resolve the
-relative link.
+[ ] Build coverage headroom: 90.1% total against a 90.0 floor is a hair-trigger;
+raise to ~92% (cheapest wins: JSON-error-path mappers, `checkError` body-read
+branches) before the next feature PR. Source:
+`docs/status/2026-10-06_14-16_q4-flip-execution-and-gates-status.md` §b3/e4.
 
-[x] `doc-verify` hardening — DONE 2026-10-05: count-claim extraction is now a
-`check_count` helper that FAILS when a pattern extracts EMPTY (silent-skip class
-closed; negative-tested both ways: a mismatched 41→42 claim and a bogus pattern
-both fail loudly), and coverage extends beyond AGENTS.md to the FEATURES shipped-
-operations claim, the ROADMAP `41 methods` claim, and the audit doc's
-`41 \`*Client\` methods` lineage marker.
+[ ] Root-cause the `golangci_lint_ls` phantom on `webhooks.go:142` ("File is not
+properly formatted") that recurs while CLI `golangci-lint run` is clean — diff the
+LSP's golangci invocation (config, working dir, GOEXPERIMENT) against the CLI.
+Source: `docs/status/2026-10-06_14-16_q4-flip-execution-and-gates-status.md` §d4.
 
-[x] CONTRIBUTING currency — DONE 2026-10-05: documents `nix run .#doc-verify` /
-`nix run .#apidiff` (with what each catches), the 90% coverage floor (both
-enforcement sites), the Ginkgo repeat note (`-count=N` false failures → separate
-`-count=1` runs), golangci-lint v2.13 alignment with ci.yml, and a SECURITY.md
-pointer.
+[ ] Write the quarterly-surface rollover ritual (probe → flip → repo-wide straggler
+grep → changelog → doc-verify) into CONTRIBUTING — the Q4 flip proved a value-flip
+is not done until `grep -rn <old-value>` is clean. Source:
+`docs/status/2026-10-07_03-57_session-status-unblocked-prep-release-readiness.md` f#36.
 
-[x] Quality micro-batch — DONE 2026-10-05, all five items:
-`GetStatement` now has XLSX coverage (was missing entirely) plus exact-bytes
-content-type assertions for PDF and XLSX (binary content types pass through
-`getRaw` undecoded); `VerifyWebhookSignature` has
-`TestVerifyWebhookSignatureDocumentedVector` — Wise DOES publish a worked
-example (sandbox public key + delivery body + signature in
-github.com/transferwise/digital-signatures-examples), and the trio is pinned
-byte-for-byte and verified by the test;
-`ListProfileWebhookSubscriptions` pagination shape verified against the vendored
-spec (`webhookProfileSubscriptionList` 200 response is a bare JSON array of
-`subscription` — no pagination envelope; the SDK returns the complete set, tests
-cover two-subscription and empty cases); godoc example
-`ExampleClient_ListProfileWebhookSubscriptions` added (nolint:testableexamples,
-like its siblings); `wise.Version` constant added (`"0.11.0"`, mirrors the
-latest tag).
+[ ] File the three evidenced BuildFlow-repo defects (embedded `erraudit` false
+positives at HEAD; `nix run .#reinstall` not switching the profile; `file-size-check`
+scanning 0 files in root-package layouts) — evidence is captured in AGENTS.md.
+Source: `docs/status/2026-10-07_04-20_dual-phase-repair-and-tool-reevaluation-status.md` §b1.
+
+[ ] `art-dupl` enforced-gate decision — accept the suppressed baseline as policy,
+or enforce an exit-code gate (`art-dupl -t 2 --type-aware`); records the choice in
+AGENTS.md. Source: `docs/status/2026-09-27_23-42_dedup-pass2-gomod-flipflop-rootcause-status.md` §c4.
+
+[ ] erraudit class-wide policy — fix the 29 `context_loss`/`ignored` advisories or
+suppress the rules with rationale; per-finding drift is the worst option. Source:
+`docs/status/2026-09-27_23-42_dedup-pass2-gomod-flipflop-rootcause-status.md` §c11.
+
+[ ] Go 1.27 migration plan — decide the condition/date for moving the flake
+toolchain + `GOTOOLCHAIN` policy off the 1.26 pin (erraudit needs ≥ 1.27); until
+then the modernizer's 1.27-syntax pushes are reverted per incident. Source:
+`docs/status/2026-10-07_03-45_buildflow-red-to-green-repair-status.md` §g1.
+
+[ ] Add a CAMT (`.xml`) `GetStatement` test — the only statement format still
+without direct coverage (the conformance suite covers `json` + the exempt file
+formats); add exact content-type assertions mirroring PDF/XLSX. Source:
+`docs/status/2026-10-05_21-47_pareto-todo-execution-status.md` §f7.
+
+[ ] Commit a `benchstat` baseline file so benchmark runs have a comparison point
+(the hot mappers/parsers are in `bench_test.go`). Source:
+`docs/status/2026-10-05_21-47_pareto-todo-execution-status.md` §f.
+
+[ ] Add a fuzz target / corpus entry for `VerifyWebhookSignature` +
+`ParseWebhookPublicKey` (webhook funcs were added after the original fuzz round)
+and bench `VerifyWebhookSignature` (hot path for every delivery). Source:
+`docs/status/2026-10-05_21-47_pareto-todo-execution-status.md` §f11–12.
 
 ## Harvested-and-closed pointer
 
-Everything this list used to carry as `[x]` (webhook CRUD, typed event
-decoding, OTT endpoints, `WithUserAgent`, `Profile.UserID`/`PublicID`,
-`TestRequireID`, `fetchByID` routing, exhaustruct_v5, govulncheck zero-findings,
-benchmarks/fuzz/raw round-trips, test-file split, concurrency test, coverage
-gate, templates, ADRs, `doc-verify`/`apidiff` apps, declined ideas) is recorded
-in [CHANGELOG.md](CHANGELOG.md) (v0.10.0/v0.11.0 and the 2026-09-13 sessions)
-and annotated in the corresponding `docs/status/archived/2026-09-13_*` reports.
+Everything this list used to carry — including the v0.12.0 cycle's webhook
+subscription CRUD, typed event decoding, OTT endpoints, `WithUserAgent`,
+`Profile.UserID`/`PublicID`, `TestRequireID`, `fetchByID` routing, exhaustruct_v5,
+govulncheck zero-findings, benchmarks/fuzz/raw round-trips, test-file split,
+concurrency test, coverage gate, templates, ADRs, `doc-verify`/`apidiff` apps,
+CI tool pinning, the `erraudit` CI gate, the 90% coverage floor, the Q4 webhook
+rollover, the go-retry v0.6.0 executor, and the declined ideas — is recorded in
+[CHANGELOG.md](CHANGELOG.md) (`[0.12.0]` and the v0.10.0/v0.11.0 / 2026-09-13
+sections) and annotated inline in the corresponding `docs/status/` reports.

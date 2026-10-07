@@ -388,6 +388,9 @@ the plan; bulk payments only on a consumer demand signal).
 | `nix fmt` (gofumpt + goimports + nixfmt)               | FULLY_FUNCTIONAL | `flake.nix` treefmt config                                                                                                                                                    |
 | BDD tests via Ginkgo + httptest                        | FULLY_FUNCTIONAL | `wise_test.go`                                                                                                                                                                |
 | `nix run .#doc-verify` (links + godoc + count claims)  | FULLY_FUNCTIONAL | `flake.nix` app; gates the count claims in AGENTS.md/FEATURES.md against the compiled surface                                                                                 |
+| OpenAPI spec-conformance gate                          | FULLY_FUNCTIONAL | `spec_conformance_test.go` + `zz_spec_conformance_coverage_test.go`; every mock exchange validated against `docs/reviews/wise-api-openapi.json` (v0.12.0)                        |
+| `nix run .#apidiff` (gorelease vs latest tag)          | FULLY_FUNCTIONAL | `flake.nix` app; pins gorelease via `golang.org/x/exp`; public-surface delta report                                                                                            |
+| `.github/SECURITY.md` (vulnerability reporting)        | FULLY_FUNCTIONAL | private advisories, scope, 7-day triage; linked from CONTRIBUTING.md                                                                                                           |
 
 ## Documentation
 
