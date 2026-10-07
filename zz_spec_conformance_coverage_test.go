@@ -34,17 +34,21 @@ func TestMain(m *testing.M) {
 		os.Exit(code)
 	}
 
-	violation, suiteRan := coverageViolation()
+	verdict := evaluateConformanceCoverage()
 
 	switch {
-	case !suiteRan:
-		fmt.Println("spec conformance coverage: suite did not run (a -run filter likely excluded it); floors not asserted")
-	case violation != "":
-		fmt.Fprintf(os.Stderr, "spec conformance coverage guard: %s\n", violation)
+	case !verdict.suiteRan:
+		fmt.Fprintln(
+			os.Stdout,
+			"spec conformance coverage: suite did not run (a -run filter likely excluded it); floors not asserted",
+		)
+	case verdict.violation != "":
+		fmt.Fprintf(os.Stderr, "spec conformance coverage guard: %s\n", verdict.violation)
 		code = 1
 	default:
 		templates, exemptPaths, exchanges, exemptAccountsLists := conformanceCoverageSnapshot()
-		fmt.Printf(
+		fmt.Fprintf(
+			os.Stdout,
 			"spec conformance: %d exchanges validated across %d distinct spec operations; %d exempt statement variants; %d exempt legacy recipient lists\n",
 			exchanges,
 			len(templates),
@@ -56,49 +60,71 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-// coverageViolation evaluates the recorder floors once: it returns the
-// floor-violation message ("" when conforming) and whether the full Ginkgo
-// suite ran, without which the assertion is meaningless (a -run filter that
-// excluded it still records a few exchanges via standalone validator tests).
-func coverageViolation() (violation string, suiteRan bool) {
+// conformanceCoverageVerdict is the outcome of the post-run floor check.
+type conformanceCoverageVerdict struct {
+	// violation is the floor-violation message, empty when conforming.
+	violation string
+	// suiteRan reports whether the floors were assertable at all: without
+	// the full Ginkgo suite (a -run filter excluded it) nothing meaningful
+	// is recorded, even though standalone validator tests may record a few
+	// exchanges.
+	suiteRan bool
+}
+
+func evaluateConformanceCoverage() conformanceCoverageVerdict {
 	if !conformanceSuiteCompleted {
-		return "", false
+		return conformanceCoverageVerdict{}
 	}
 
 	templates, exemptPaths, exchanges, _ := conformanceCoverageSnapshot()
 
 	if _, err := loadConformanceSpec(); err != nil {
-		return fmt.Sprintf("load spec snapshot %s: %v", specSnapshotPath, err), true
+		return conformanceCoverageVerdict{
+			violation: fmt.Sprintf("load spec snapshot %s: %v", specSnapshotPath, err),
+			suiteRan:  true,
+		}
 	}
 
 	if doc := conformanceLoaded.doc; doc.OpenAPI != "3.1.0" || len(doc.Paths.Map()) < 150 {
-		return fmt.Sprintf(
-			"spec snapshot %s looks wrong (openapi=%q paths=%d); the conformance results are not trustworthy",
-			specSnapshotPath, doc.OpenAPI, len(doc.Paths.Map()),
-		), true
+		return conformanceCoverageVerdict{
+			violation: fmt.Sprintf(
+				"spec snapshot %s looks wrong (openapi=%q paths=%d); the conformance results are not trustworthy",
+				specSnapshotPath, doc.OpenAPI, len(doc.Paths.Map()),
+			),
+			suiteRan: true,
+		}
 	}
 
 	if exchanges < minValidatedExchanges {
-		return fmt.Sprintf(
-			"spec conformance validated only %d exchanges (floor %d); the recorder hook must be broken",
-			exchanges, minValidatedExchanges,
-		), true
+		return conformanceCoverageVerdict{
+			violation: fmt.Sprintf(
+				"spec conformance validated only %d exchanges (floor %d); the recorder hook must be broken",
+				exchanges, minValidatedExchanges,
+			),
+			suiteRan: true,
+		}
 	}
 
 	if len(templates) < minConformingTemplates {
-		return fmt.Sprintf(
-			"spec conformance covered only %d distinct spec operations (floor %d): %v; "+
-				"the recorder hook or the suite must be broken",
-			len(templates), minConformingTemplates, templates,
-		), true
+		return conformanceCoverageVerdict{
+			violation: fmt.Sprintf(
+				"spec conformance covered only %d distinct spec operations (floor %d): %v; "+
+					"the recorder hook or the suite must be broken",
+				len(templates), minConformingTemplates, templates,
+			),
+			suiteRan: true,
+		}
 	}
 
 	if len(exemptPaths) < minExemptStatementVariants {
-		return fmt.Sprintf(
-			"expected at least %d exempt statement format variants (csv/pdf/xlsx/xml), got %d: %v",
-			minExemptStatementVariants, len(exemptPaths), exemptPaths,
-		), true
+		return conformanceCoverageVerdict{
+			violation: fmt.Sprintf(
+				"expected at least %d exempt statement format variants (csv/pdf/xlsx/xml), got %d: %v",
+				minExemptStatementVariants, len(exemptPaths), exemptPaths,
+			),
+			suiteRan: true,
+		}
 	}
 
-	return "", true
+	return conformanceCoverageVerdict{suiteRan: true}
 }

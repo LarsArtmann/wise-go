@@ -1343,7 +1343,9 @@ func TestMapUserCorruption(t *testing.T) {
 		t.Fatalf("mapUser(valid with address): %v", err)
 	}
 
-	if withAddress.Details == nil || withAddress.Details.Address == nil || withAddress.Details.Address.City != "Berlin" {
+	if withAddress.Details == nil ||
+		withAddress.Details.Address == nil ||
+		withAddress.Details.Address.City != "Berlin" {
 		t.Errorf("mapUser did not map the address: %+v", withAddress.Details)
 	}
 }
@@ -1527,9 +1529,12 @@ func TestGetStatementRequestValidate(t *testing.T) {
 
 type failingBody struct{}
 
-func (failingBody) Read([]byte) (int, error) { return 0, errors.New("disk on fire") }
+func (failingBody) Read([]byte) (int, error) { return 0, errFailingBody }
 
 func (failingBody) Close() error { return nil }
+
+// errFailingBody is the static error a failingBody reader always returns.
+var errFailingBody = errors.New("disk on fire")
 
 // TestCheckErrorUnreadableBody pins that an unreadable response body is
 // surfaced in the error message instead of masquerading as an empty body.
