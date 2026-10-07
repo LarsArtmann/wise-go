@@ -2,7 +2,7 @@
 
 Session goal: **"Wise has an OpenAPI spec — can we test our implementation against it automatically?"**
 Answer: **Yes — and the first runs already caught three real client bugs and one confirmed spec/SDK divergence.**
-The conformance gate is built, wired into both mock harnesses, and driving the suite from 52/202 → **162/202 passing**. 40 failures remain; their causes are root-caused (list in b/f). Report written mid-fix-sweep at the user's request — **the suite is currently RED, by design, mid-iteration.**
+The conformance gate is built, wired into both mock harnesses, and driving the suite from 52/202 → **162/202 passing**. ~~40 failures remain; their causes are root-caused (list in b/f). Report written mid-fix-sweep at the user's request — the suite is currently RED, by design, mid-iteration.~~ **ALL FIXED (2026-10-07 docs-health pass):** the suite reached 202/202 green, the flake wiring + gofmt/lint landed, and the whole gate shipped in **v0.12.0** (`220e2c8`; CHANGELOG `[0.12.0]` → Added "automated OpenAPI spec-conformance gate"). This report's session work is fully resolved; the residual ideas (spec-refresh tooling, sandbox live verification, raw-type field-coverage gate, `2026Q4` rollover) are routed to ROADMAP.md and TODO_LIST.md. Archived as fully resolved.
 
 Method note: `.md` written because the user explicitly requested it; the status-report skill's canonical format is HTML (flagged per skill contract).
 
