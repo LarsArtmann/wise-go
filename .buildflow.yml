@@ -18,5 +18,14 @@ skip_steps:
   # documents as deliberate non-fixes for this repo (root-package-files,
   # go-version). Its repair corrupts the toolchain pin; skip the whole step.
   - go-structure-linter
+  # BuildFlow's erraudit is an in-process analyzer bundled in the buildflow
+  # binary, NOT the pinned standalone erraudit (1c6809a) that ci.yml runs as
+  # the canonical gate. The embedded variant false-positives on
+  # `_, ok := errors.AsType[T](err)` (6 hits in client.go's retry classifier)
+  # and cleanup `_ = resp.Body.Close()` discards, and demands every in-scope
+  # variable be echoed into every wrapped message — conflicting with the
+  # repo's error-context convention (AGENTS.md). Canonical gate is clean on
+  # the same tree; skip the diverged duplicate (2026-10-07, buildflow 3bb229e).
+  - erraudit
 
 max_file_size: 700
