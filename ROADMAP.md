@@ -11,7 +11,7 @@ library that is obviously correct, obviously typed, and obviously safe to depend
 Every monetary amount is `Money` (cents paired with `Currency`). Every entity ID is
 branded. Every error is typed and classifiable. Every API call retries intelligently.
 
-As of 2026-09-14 (v0.11.0), the type-safety redesign is complete, the core transfer
+As of 2026-10-07 (v0.12.0), the type-safety redesign is complete, the core transfer
 flow is live END TO END (quotes, recipients, transfers, funding, delivery estimates,
 transfer-requirements and account-requirements validation, exchange rates),
 the tier-2 surface shipped: users, statement files in all six formats, webhook
@@ -20,8 +20,8 @@ Multi-Currency Account + bank details, and currency reference data — 41
 `*Client` methods across 16 resources, plus webhook subscriptions with typed
 event decoding, programmatic SCA challenge clearing (one-time-token endpoints),
 observability (WithLogger, per-request correlation IDs) and write helpers under
-the existing retry/error architecture. v0.9.0, v0.10.0, and v0.11.0 have
-shipped; the v1.0 audit (`docs/reviews/2026-08-21_v1.0-api-audit.md`) found
+the existing retry/error architecture. v0.9.0, v0.10.0, v0.11.0, and v0.12.0
+have shipped; the v1.0 audit (`docs/reviews/2026-08-21_v1.0-api-audit.md`) found
 nothing blocking the tag (re-audited 2026-09-13; the v0.11.0 OTT additions are
 covered by the audit's growth-lineage note). The roadmap expands the surface
 along four axes — completeness, type-safety, observability, and scale — while
@@ -58,7 +58,7 @@ that clear challenges programmatically.
   MT940, QIF) via the raw-response path; 469-day interval enforced client-side,
   `Locale` localizes the export.
 
-**Shipped v0.10.0 (2026-09-13) and v0.11.0 (2026-09-14):**
+**Shipped v0.10.0 (2026-09-13), v0.11.0 (2026-09-14), and v0.12.0 (2026-10-07):**
 
 - **`GetTransferReceipt`** — branded PDF confirmation receipt for paid-out
   transfers (404 = not yet paid out).

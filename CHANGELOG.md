@@ -34,7 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   test suite is validated against the vendored Wise OpenAPI 3.1 snapshot
   (`docs/reviews/wise-api-openapi.json`) for route, parameter, header,
   and response-schema conformance.
-- `wise.Version` constant (currently `"0.11.0"`): lets consumers identify
+- `wise.Version` constant (`"0.12.0"`): lets consumers identify
   and report the SDK version they run (e.g. inside a User-Agent string
   via `WithUserAgent`).
 - Webhook-signature verification is pinned to Wise's published test
