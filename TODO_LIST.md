@@ -30,9 +30,12 @@ pass above), probe `GET /2026Q4/one-time-token/status` for a non-404, change
 
 [ ] Publish the GitHub Release objects for **v0.10.0 and v0.11.0** — both tags
 exist on origin and are served by the module proxy, but `gh release list` still
-shows v0.9.0 as Latest. v0.10.0 notes are drafted at
-`docs/releases/v0.10.0-release-notes.md`; cut v0.11.0 notes from the CHANGELOG
-`[0.11.0]` section. Source: `docs/status/archived/2026-09-13_15-41_pareto-tail-resume-24x-25x-status.md` §b.4, re-verified
+shows v0.9.0 as Latest. Notes for BOTH releases are drafted:
+`docs/releases/v0.10.0-release-notes.md` and
+`docs/releases/v0.11.0-release-notes.md` (cut from the CHANGELOG `[0.11.0]`
+section 2026-10-07; describes the tag as shipped, including its pre-rollover
+`2026Q3` subscription surface). Remaining: two `gh release create` calls with
+the note files. Source: `docs/status/archived/2026-09-13_15-41_pareto-tail-resume-24x-25x-status.md` §b.4, re-verified
 2026-09-16.
 **BLOCKED: needs the user's approval to publish releases.**
 
@@ -53,6 +56,7 @@ secret (see P2).
 (`.github/workflows/sandbox-live.yml`, active, dispatch-gated) and test skeleton
 (`sandbox_live_test.go`) are key-drop-ready; only a first recorded run against
 `api.wise-sandbox.com` is missing, plus a CHANGELOG entry once a run succeeds.
+Skip path re-verified 2026-10-07 (no key → clean SKIP, suite green).
 Carried since `docs/status/archived/2026-08-08_05-15_wise-sandbox-integration-status.md`.
 **BLOCKED: needs a sandbox API key (`WISE_SANDBOX_API_KEY`) from the user.**
 
