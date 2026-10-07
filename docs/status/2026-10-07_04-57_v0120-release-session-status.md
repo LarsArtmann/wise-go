@@ -17,21 +17,21 @@
 
 ## a) FULLY DONE
 
-| # | Item | Evidence |
-|---|------|----------|
-| 1 | Phase 0/1 assessment: 90 commits since v0.11.0 (mostly daemon-wrapped real work); MINOR bump confirmed — 2 breaking changes are allowed in 0.x | `git log v0.11.0..HEAD`, CHANGELOG `[0.12.0]` section |
-| 2 | Release-prep edits: `wise.Version` → `"0.12.0"` (types.go:21), CHANGELOG `[0.12.0] - 2026-10-07` section cut + fresh `[Unreleased]` placeholders, README status line → v0.12.0, `docs/releases/v0.12.0-release-notes.md` drafted | commit `220e2c8` |
-| 3 | Caught a missing user-facing fix during curation: the no-millis numeric-zone timestamp fix (`parseWiseTimestamp`, live `/v1/rates`, production regression 2026-10-07) was absent from the inherited `[Unreleased]` section — added to CHANGELOG and release notes | CHANGELOG `[0.12.0]` §Fixed |
-| 4 | go.mod hygiene: no `replace`, no pseudo-versions, `go 1.26.0` ≤ 1.26.x, module path correct; `go mod tidy` produced zero drift | Phase 3 checks |
-| 5 | All local gates green pre-tag: `go build`, `go vet`, `go test -race -count=1`, `golangci-lint` (0 issues), `nix flake check` (format + sandboxed race/coverage + links), `nix run .#doc-verify` (41-method count claims hold, 64 links OK) | session transcript |
-| 6 | Annotated tag `v0.12.0` created, verified on HEAD, and content-verified in the tagged tree (`go.mod` + `const Version = "0.12.0"`) BEFORE push | `git tag --points-at HEAD`, `git show v0.12.0:types.go` |
-| 7 | Pushed master + tag; proxy indexed `v0.12.0` at exactly `220e2c8` | `proxy.golang.org/.../@v/v0.12.0.info` JSON |
-| 8 | Consumer verification (the definitive test): clean-dir `go get github.com/larsartmann/wise-go@v0.12.0` → sumdb-verified; consumer program **compiled AND ran**, printing `wise-go version: 0.12.0`; `go list -m -versions` lists v0.12.0 | `/tmp/release-verify` (cleaned up) |
-| 9 | pkg.go.dev: v0.12.0 already **Latest** with docs fully rendered (the `/fetch` 404 is the documented non-signal) | pkg.go.dev page fetched |
-| 10 | GitHub Releases: published the long-standing drafted backlog objects **v0.10.0** and **v0.11.0** (TODO_LIST P1, was blocked on approval) plus **v0.12.0** with `--latest`; `/releases/latest` → v0.12.0 | `gh release create` × 3 |
-| 11 | Post-release cleanup: TODO_LIST publish item → `[x] DONE`, all three release-notes draft-headers → published status, `nix fmt` (0 changed) + `doc-verify` re-green, commit `b0ec651` | git log |
-| 12 | Detected a **concurrent session** editing FEATURES.md/ROADMAP.md/AGENTS.md mid-flight (timestamps interleaved with my edits) — did not touch, revert, or commit those files | `stat` comparison, `git diff` review |
-| 13 | Repo conventions honored: no `--prerelease` flag (v0.5.0/v0.9.0 precedent: `isPrerelease=false`), changelog folded into a code-touching commit (dprint zero-file pre-commit trap avoided), flake fileset untouched (no new .go files) | session transcript |
+| #  | Item                                                                                                                                                                                                                                                              | Evidence                                                |
+| -- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| 1  | Phase 0/1 assessment: 90 commits since v0.11.0 (mostly daemon-wrapped real work); MINOR bump confirmed — 2 breaking changes are allowed in 0.x                                                                                                                    | `git log v0.11.0..HEAD`, CHANGELOG `[0.12.0]` section   |
+| 2  | Release-prep edits: `wise.Version` → `"0.12.0"` (types.go:21), CHANGELOG `[0.12.0] - 2026-10-07` section cut + fresh `[Unreleased]` placeholders, README status line → v0.12.0, `docs/releases/v0.12.0-release-notes.md` drafted                                  | commit `220e2c8`                                        |
+| 3  | Caught a missing user-facing fix during curation: the no-millis numeric-zone timestamp fix (`parseWiseTimestamp`, live `/v1/rates`, production regression 2026-10-07) was absent from the inherited `[Unreleased]` section — added to CHANGELOG and release notes | CHANGELOG `[0.12.0]` §Fixed                             |
+| 4  | go.mod hygiene: no `replace`, no pseudo-versions, `go 1.26.0` ≤ 1.26.x, module path correct; `go mod tidy` produced zero drift                                                                                                                                    | Phase 3 checks                                          |
+| 5  | All local gates green pre-tag: `go build`, `go vet`, `go test -race -count=1`, `golangci-lint` (0 issues), `nix flake check` (format + sandboxed race/coverage + links), `nix run .#doc-verify` (41-method count claims hold, 64 links OK)                        | session transcript                                      |
+| 6  | Annotated tag `v0.12.0` created, verified on HEAD, and content-verified in the tagged tree (`go.mod` + `const Version = "0.12.0"`) BEFORE push                                                                                                                    | `git tag --points-at HEAD`, `git show v0.12.0:types.go` |
+| 7  | Pushed master + tag; proxy indexed `v0.12.0` at exactly `220e2c8`                                                                                                                                                                                                 | `proxy.golang.org/.../@v/v0.12.0.info` JSON             |
+| 8  | Consumer verification (the definitive test): clean-dir `go get github.com/larsartmann/wise-go@v0.12.0` → sumdb-verified; consumer program **compiled AND ran**, printing `wise-go version: 0.12.0`; `go list -m -versions` lists v0.12.0                          | `/tmp/release-verify` (cleaned up)                      |
+| 9  | pkg.go.dev: v0.12.0 already **Latest** with docs fully rendered (the `/fetch` 404 is the documented non-signal)                                                                                                                                                   | pkg.go.dev page fetched                                 |
+| 10 | GitHub Releases: published the long-standing drafted backlog objects **v0.10.0** and **v0.11.0** (TODO_LIST P1, was blocked on approval) plus **v0.12.0** with `--latest`; `/releases/latest` → v0.12.0                                                           | `gh release create` × 3                                 |
+| 11 | Post-release cleanup: TODO_LIST publish item → `[x] DONE`, all three release-notes draft-headers → published status, `nix fmt` (0 changed) + `doc-verify` re-green, commit `b0ec651`                                                                              | git log                                                 |
+| 12 | Detected a **concurrent session** editing FEATURES.md/ROADMAP.md/AGENTS.md mid-flight (timestamps interleaved with my edits) — did not touch, revert, or commit those files                                                                                       | `stat` comparison, `git diff` review                    |
+| 13 | Repo conventions honored: no `--prerelease` flag (v0.5.0/v0.9.0 precedent: `isPrerelease=false`), changelog folded into a code-touching commit (dprint zero-file pre-commit trap avoided), flake fileset untouched (no new .go files)                             | session transcript                                      |
 
 ## b) PARTIALLY DONE
 
@@ -110,72 +110,72 @@ Two genuine defects, both small and fixable:
 
 Release follow-ups (this session's direct output):
 
-| # | Task | Impact |
-|---|------|--------|
-| 1 | Fix broken code span in published v0.12.0 release notes (`gh release edit`) | High, 2 min |
-| 2 | Push local master (`c6c01a9`, `b0ec651`) once approved | High |
-| 3 | Run `nix run .#apidiff` vs v0.11.0, archive delta to `docs/releases/v0.12.0-apidiff.md` | High |
-| 4 | HARVEST this report's list into TODO_LIST (docs-health) | High |
-| 5 | Verify v0.10.0/v0.11.0 published note bodies against their tags (skim for factual errors) | Med |
-| 6 | Fix ROADMAP stale "pending user approval" clause after the concurrent session lands | Med |
-| 7 | Annotate/archive today's earlier status docs (03:45, 04:20) per the annotate-then-archive rule | Med |
-| 8 | Re-enable GitHub CI workflow (resolved SSH blocker, 2026-09-13; remaining: push+enable+green) | High |
-| 9 | After CI enable: verify coverage-badge job rebases/pushes cleanly, then delete the frozen-badge caveats in AGENTS.md/README | Med |
-| 10 | Add `nix run .#pre-release` gate app (build/vet/race/lint/flake/doc-verify/apidiff chain) | High |
-| 11 | Release-notes template + pre-publish checklist under `docs/releases/` | Med |
-| 12 | Markdown lint gate (code spans, relative links) wired into doc-verify | Med |
-| 13 | Run spec-conformance coverage guard explicitly (non-shuffled + shuffled) and pin the floor result | Med |
+| #  | Task                                                                                                                        | Impact      |
+| -- | --------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| 1  | Fix broken code span in published v0.12.0 release notes (`gh release edit`)                                                 | High, 2 min |
+| 2  | Push local master (`c6c01a9`, `b0ec651`) once approved                                                                      | High        |
+| 3  | Run `nix run .#apidiff` vs v0.11.0, archive delta to `docs/releases/v0.12.0-apidiff.md`                                     | High        |
+| 4  | HARVEST this report's list into TODO_LIST (docs-health)                                                                     | High        |
+| 5  | Verify v0.10.0/v0.11.0 published note bodies against their tags (skim for factual errors)                                   | Med         |
+| 6  | Fix ROADMAP stale "pending user approval" clause after the concurrent session lands                                         | Med         |
+| 7  | Annotate/archive today's earlier status docs (03:45, 04:20) per the annotate-then-archive rule                              | Med         |
+| 8  | Re-enable GitHub CI workflow (resolved SSH blocker, 2026-09-13; remaining: push+enable+green)                               | High        |
+| 9  | After CI enable: verify coverage-badge job rebases/pushes cleanly, then delete the frozen-badge caveats in AGENTS.md/README | Med         |
+| 10 | Add `nix run .#pre-release` gate app (build/vet/race/lint/flake/doc-verify/apidiff chain)                                   | High        |
+| 11 | Release-notes template + pre-publish checklist under `docs/releases/`                                                       | Med         |
+| 12 | Markdown lint gate (code spans, relative links) wired into doc-verify                                                       | Med         |
+| 13 | Run spec-conformance coverage guard explicitly (non-shuffled + shuffled) and pin the floor result                           | Med         |
 
 Credentials-gated (waiting on user, not on code):
 
-| # | Task | Blocked on |
-|---|------|-----------|
-| 14 | Probe + flip `ottAPIVersion` to 2026Q4 | sandbox API key |
+| #  | Task                                                         | Blocked on      |
+| -- | ------------------------------------------------------------ | --------------- |
+| 14 | Probe + flip `ottAPIVersion` to 2026Q4                       | sandbox API key |
 | 15 | First credentialed sandbox-live run (`sandbox_live_test.go`) | sandbox API key |
-| 16 | v1.0.0 API-freeze tag | user approval |
+| 16 | v1.0.0 API-freeze tag                                        | user approval   |
 
 Endpoint expansion (from the FEATURES matrix — tiers per the implementation plan):
 
-| # | Task |
-|---|------|
-| 17 | DELETE /v4/profiles/{id}/balances/{id} (close balance) |
+| #  | Task                                                    |
+| -- | ------------------------------------------------------- |
+| 17 | DELETE /v4/profiles/{id}/balances/{id} (close balance)  |
 | 18 | POST /v4/profiles/{id}/balance-movements (convert/move) |
-| 19 | Remaining balance operations (per coverage matrix) |
-| 20 | Bank account details ordering operation |
-| 21 | Profile write operations |
-| 22 | Quotes PATCH update |
-| 23 | Recipients deactivate / compatibility / confirmations |
-| 24 | 3 remaining standard-transfers operations |
-| 25 | Multi-currency account configuration operation |
-| 26 | Comparison operation (tier-2 leftover) |
+| 19 | Remaining balance operations (per coverage matrix)      |
+| 20 | Bank account details ordering operation                 |
+| 21 | Profile write operations                                |
+| 22 | Quotes PATCH update                                     |
+| 23 | Recipients deactivate / compatibility / confirmations   |
+| 24 | 3 remaining standard-transfers operations               |
+| 25 | Multi-currency account configuration operation          |
+| 26 | Comparison operation (tier-2 leftover)                  |
 
 Quality / infrastructure:
 
-| # | Task |
-|---|------|
-| 27 | Spec-conformance guard: make floors assert under shuffle, not skip |
-| 28 | Fuzz `decodeExchangeRates` (array / single / empty / corrupt) |
-| 29 | Bench the rates array-decode path in `bench_test.go` |
-| 30 | Log line when go-retry honors a `Retry-After` hint (observability) |
-| 31 | `nix flake check --all-systems` (aarch64/darwin coverage) |
-| 32 | Go 1.27 migration plan (erraudit needs ≥ 1.27; today 1.27 pushes get reverted) |
-| 33 | Daemon/go.mod guard hook (fail loudly on `.buildflow.yml` deletion / go-directive bump) |
-| 34 | Markdown-validation gate for fenced Go snippets in docs |
-| 35 | art-dupl enforced-gate decision (accept baseline vs exit-code gate) |
-| 36 | erraudit 29 false-positive advisories: class-wide suppress-with-rationale or upstream fix |
-| 37 | Typed `BadRequestError` (raw idea; today 400s are `*APIError`) |
-| 38 | Circuit breaker (raw idea; only on consumer demand) |
-| 39 | 2026Q4→2027Q1 quarterly-surface rollover runbook (the two constants roll independently) |
-| 40 | Decide `Authenticate()`'s future now that `GetMe` exists |
-| 41 | Webhook signing-key rotation story (if Wise publishes one) |
-| 42 | Sweep `docs/status/` for further archive candidates (annotate-then-archive rule) |
-| 43 | Typed recipient `Details` (per-corridor structs vs `map[string]string`) |
-| 44 | README install/quick-start snippet validation once #34 exists |
-| 45 | Demand-gated: Postman collection, currency-conversion helpers, mock server (re-evaluate only on real consumer ask) |
-| 46 | Keep response caching a documented non-goal (stateless client by design) |
-| 47 | AGENTS.md: add a short release-ritual note (CI-disabled exception, apidiff-before-tag) |
-| 48 | Check next Dependabot actions-group sweep lands green (last: `55acf61`) |
-| 49 | After CI enable: re-run apidiff in CI so surface deltas gate merges, not releases |
+| #  | Task                                                                                                                              |
+| -- | --------------------------------------------------------------------------------------------------------------------------------- |
+| 27 | Spec-conformance guard: make floors assert under shuffle, not skip                                                                |
+| 28 | Fuzz `decodeExchangeRates` (array / single / empty / corrupt)                                                                     |
+| 29 | Bench the rates array-decode path in `bench_test.go`                                                                              |
+| 30 | Log line when go-retry honors a `Retry-After` hint (observability)                                                                |
+| 31 | `nix flake check --all-systems` (aarch64/darwin coverage)                                                                         |
+| 32 | Go 1.27 migration plan (erraudit needs ≥ 1.27; today 1.27 pushes get reverted)                                                    |
+| 33 | Daemon/go.mod guard hook (fail loudly on `.buildflow.yml` deletion / go-directive bump)                                           |
+| 34 | Markdown-validation gate for fenced Go snippets in docs                                                                           |
+| 35 | art-dupl enforced-gate decision (accept baseline vs exit-code gate)                                                               |
+| 36 | erraudit 29 false-positive advisories: class-wide suppress-with-rationale or upstream fix                                         |
+| 37 | Typed `BadRequestError` (raw idea; today 400s are `*APIError`)                                                                    |
+| 38 | Circuit breaker (raw idea; only on consumer demand)                                                                               |
+| 39 | 2026Q4→2027Q1 quarterly-surface rollover runbook (the two constants roll independently)                                           |
+| 40 | Decide `Authenticate()`'s future now that `GetMe` exists                                                                          |
+| 41 | Webhook signing-key rotation story (if Wise publishes one)                                                                        |
+| 42 | Sweep `docs/status/` for further archive candidates (annotate-then-archive rule)                                                  |
+| 43 | Typed recipient `Details` (per-corridor structs vs `map[string]string`)                                                           |
+| 44 | README install/quick-start snippet validation once #34 exists                                                                     |
+| 45 | Demand-gated: Postman collection, currency-conversion helpers, mock server (re-evaluate only on real consumer ask)                |
+| 46 | Keep response caching a documented non-goal (stateless client by design)                                                          |
+| 47 | AGENTS.md: add a short release-ritual note (CI-disabled exception, apidiff-before-tag)                                            |
+| 48 | Check next Dependabot actions-group sweep lands green (last: `55acf61`)                                                           |
+| 49 | After CI enable: re-run apidiff in CI so surface deltas gate merges, not releases                                                 |
 | 50 | Consider tagging strategy note: v0.x releases ship without `--prerelease` (repo convention) — document it in the release template |
 
 ## g) QUESTIONS I CANNOT FIGURE OUT MYSELF
@@ -193,5 +193,5 @@ Quality / infrastructure:
 
 ---
 
-*Point-in-time snapshot; goes stale. Feed section (f) into `docs-health`
-HARVEST; annotate (don't rewrite) when bringing this report current.*
+_Point-in-time snapshot; goes stale. Feed section (f) into `docs-health`
+HARVEST; annotate (don't rewrite) when bringing this report current._

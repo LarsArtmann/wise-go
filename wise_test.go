@@ -2819,6 +2819,31 @@ var _ = Describe("Wise Client", func() {
 			})
 		})
 
+		Context("with CAMT (xml) format", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/balance-statements/100/statement.xml",
+					func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "application/xml")
+						_, _ = w.Write([]byte("<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
+							"<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:camt.053.001.02\">" +
+							"<BkToCstmrStmt><Stmt><Id>stmt-1</Id></Stmt></BkToCstmrStmt></Document>"))
+					})
+			})
+
+			It("should return the raw CAMT bytes despite the XML content type", func() {
+				data, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					BalanceID: wise.NewBalanceID(100),
+					Currency:  wise.Currency("EUR"),
+					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
+					Format:    wise.StatementFormatCAMT,
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(data).To(ContainSubstring("camt.053.001.02"))
+			})
+		})
+
 		Context("with a locale", func() {
 			BeforeEach(func() {
 				mux.HandleFunc("/v1/profiles/12345/balance-statements/100/statement.csv",
