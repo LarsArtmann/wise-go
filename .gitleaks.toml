@@ -1,0 +1,14 @@
+# Gitleaks configuration for wise-go.
+#
+# Extends the default rules; the only addition is an allowlist for the
+# vendored Wise OpenAPI snapshot, whose examples contain deliberate
+# documentation fixtures (example card tokens, example EC key material,
+# example JWTs) that trip generic-api-key and jwt rules. Everything else
+# is scanned with defaults so a real leak still surfaces.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Vendored Wise OpenAPI spec ships documentation examples, not credentials"
+paths = ['''docs/reviews/wise-api-openapi\.json''']
