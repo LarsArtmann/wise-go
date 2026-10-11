@@ -255,9 +255,6 @@ scheduled work:
 - **Decide `Authenticate()`'s future** now that `GetMe` exists (cheaper key check).
 - **2026Q4 bump ritual** — document the `webhookSubscriptionsAPIVersion`/`ottAPIVersion` upgrade path for when Wise moves the quarterly surfaces (they roll over independently; probe live before flipping).
 - **Go 1.27 migration plan** — toolchain + `GOTOOLCHAIN` policy bump (erraudit needs ≥ 1.27); today every 1.27-syntax push by the modernizer is reverted because the flake pins 1.26 (see AGENTS.md).
-- **Markdown-validation gate** — wire `md-go-validator` into `nix flake check` (or buildflow) so fenced Go snippets in README/docs are parse-checked; today block #27's mixed-scope bug was found by hand.
-- ~~**`art-dupl` enforced-gate decision**~~ DECIDED 2026-10-07: the suppressed baseline is policy, no enforced gate; revisit warn-first at CI re-enable (AGENTS.md art-dupl bullet).
-- ~~**erraudit class-wide policy**~~ RESOLVED 2026-10-07: the 29 embedded-analyzer findings are upstream false positives, evidenced and FILED as [BuildFlow #34](https://github.com/LarsArtmann/BuildFlow/issues/34); policy = skip the embedded step as a class, the standalone `erraudit` gate governs (AGENTS.md erraudit bullet).
 - **BuildFlow `reinstall` no-op** — `nix run .#reinstall` prints REINSTALL-OK but never switches `~/.nix-profile`; manual `nix profile remove/add` of the store path is required. FILED upstream: [BuildFlow #35](https://github.com/LarsArtmann/BuildFlow/issues/35).
 - **BuildFlow `file-size-check` inert** — the step scans 0 files in root-package Go layouts (350 and 700-line thresholds both report zero), so `max_file_size` never fires. FILED upstream: [BuildFlow #36](https://github.com/LarsArtmann/BuildFlow/issues/36).
 - **Daemon/`go.mod` guard hook** — a session-start (or pre-commit) check that fails loudly when `.buildflow.yml` is deleted or `grep '^go ' go.mod` leaves the 1.26 line.
