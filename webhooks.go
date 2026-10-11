@@ -141,7 +141,9 @@ func (c *Client) ListProfileWebhookSubscriptions(
 
 		results = append(
 			results,
-			*mapped, //nolint:branching-flow:panic // toWebhookSubscription never returns (nil, nil)
+			// toWebhookSubscription never returns (nil, nil)
+			//branching-flow:ignore panic
+			*mapped,
 		)
 	}
 
@@ -364,7 +366,9 @@ func decodeWebhookEvent[T occurredAtPayload](e *WebhookEvent, eventType string) 
 	}
 
 	occurredAt, err := parseWebhookOccurredAt(
-		raw.WebhookOccurredAt(*payload), //nolint:branching-flow:panic // returns non-nil whenever err is nil
+		// returns non-nil whenever err is nil
+		//branching-flow:ignore panic
+		raw.WebhookOccurredAt(*payload),
 		eventType,
 	)
 	if err != nil {
