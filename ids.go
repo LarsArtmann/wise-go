@@ -7,20 +7,32 @@ import (
 // ProfileBrand is a phantom type for ProfileID.
 type ProfileBrand struct{}
 
+func (ProfileBrand) Name() string { return "Profile" }
+
 // BalanceBrand is a phantom type for BalanceID.
 type BalanceBrand struct{}
+
+func (BalanceBrand) Name() string { return "Balance" }
 
 // TransactionBrand is a phantom type for TransactionID.
 type TransactionBrand struct{}
 
+func (TransactionBrand) Name() string { return "Transaction" }
+
 // TransferBrand is a phantom type for TransferID.
 type TransferBrand struct{}
+
+func (TransferBrand) Name() string { return "Transfer" }
 
 // RecipientBrand is a phantom type for RecipientID.
 type RecipientBrand struct{}
 
+func (RecipientBrand) Name() string { return "Recipient" }
+
 // QuoteBrand is a phantom type for QuoteID.
 type QuoteBrand struct{}
+
+func (QuoteBrand) Name() string { return "Quote" }
 
 // ProfileID is a strongly-typed identifier for Wise profiles.
 type ProfileID = id.ID[ProfileBrand, int64]
