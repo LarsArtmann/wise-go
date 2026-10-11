@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json/v2"
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
@@ -18,7 +21,16 @@ import (
 func TestWiseClient(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Wise SDK Suite")
+
+	// Marks the recorder's floors as assertable: the spec-conformance
+	// coverage guard (TestMain, post-run) must only enforce them after the
+	// full suite ran — a -run-filtered binary records a few exchanges via
+	// standalone validator tests without ever reaching them.
+	conformanceSuiteCompleted = true
 }
+
+// meFixtureJSON is a minimal personal-profile /v1/me response body.
+const meFixtureJSON = `{"id":1,"type":"PERSONAL","email":"t@t.com","createdAt":"2023-01-01T00:00:00Z"}`
 
 func stdBalance(
 	id int64,
@@ -50,6 +62,58 @@ func testTx(id, txType string, amount float64) raw.StatementTransaction {
 var unauthorizedHandler = func(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusUnauthorized)
 	_, _ = w.Write([]byte(`{"errors":[{"code":"UNAUTHORIZED","message":"Invalid API key"}]}`))
+}
+
+// errorHandler serves a fixed error status with a Wise-style error body and
+// optional extra headers (Retry-After, X-Rate-Limited-By, ...).
+func errorHandler(status int, headers map[string]string, code, message string) http.HandlerFunc {
+	return func(w http.ResponseWriter, _ *http.Request) {
+		for name, value := range headers {
+			w.Header().Set(name, value)
+		}
+
+		w.WriteHeader(status)
+		_, _ = w.Write(fmt.Appendf(nil, `{"errors":[{"code":%q,"message":%q}]}`, code, message))
+	}
+}
+
+// plainErrorHandler serves the text/plain error bodies the spec declares for
+// the transfer funding endpoint (POST .../payments); Wise does not answer
+// funding conflicts with the JSON error envelope other endpoints use.
+func plainErrorHandler(status int, message string) http.HandlerFunc {
+	return func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(status)
+		_, _ = w.Write([]byte(message))
+	}
+}
+
+// scaChallengeHandler serves Wise's header-only SCA rejection: 403 with an
+// empty body, the verdict in x-2fa-approval-result and the one-time token in
+// x-2fa-approval.
+var scaChallengeHandler = func(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("X-2fa-Approval-Result", "REJECTED")
+	w.Header().Set("X-2fa-Approval", "one-time-token-123")
+	w.WriteHeader(http.StatusForbidden)
+}
+
+// validQuoteRequest is a minimal request that passes CreateQuote validation.
+func validQuoteRequest() wise.CreateQuoteRequest {
+	return wise.CreateQuoteRequest{
+		SourceCurrency: wise.Currency("EUR"),
+		TargetCurrency: wise.Currency("USD"),
+		SourceAmount:   &wise.Money{Cents: 1000, Currency: wise.Currency("EUR")},
+	}
+}
+
+// validCreateTransferRequest is a minimal request that passes
+// CreateTransfer validation.
+func validCreateTransferRequest() wise.CreateTransferRequest {
+	return wise.CreateTransferRequest{
+		QuoteID:               wise.NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
+		TargetAccount:         wise.NewRecipientID(98765432),
+		CustomerTransactionID: wise.NewCustomerTransactionID("22244c35-9fe8-4c32-b7fd-d05c2a7734bf"),
+	}
 }
 
 func expectListProfilesError(client *wise.Client, substr string) {
@@ -102,14 +166,12 @@ func expectTransactionQueryParams(r *http.Request, currency, intervalStart, inte
 }
 
 func listBalances(ctx context.Context, client *wise.Client) ([]wise.Balance, error) {
-	//nolint:wrapcheck // transparent pass-through; tests assert on the original error.
 	return client.ListBalances(ctx, wise.NewProfileID(12345))
 }
 
 func getBalance(
 	ctx context.Context, client *wise.Client, balanceID int64,
 ) (*wise.Balance, error) {
-	//nolint:wrapcheck // transparent pass-through; tests assert on the original error.
 	return client.GetBalance(ctx, wise.NewProfileID(12345), wise.NewBalanceID(balanceID))
 }
 
@@ -117,13 +179,15 @@ var _ = Describe("Wise Client", func() {
 	var (
 		server           *httptest.Server
 		mux              *http.ServeMux
+		conformance      *conformanceHarness
 		client           *wise.Client
 		defaultListTxReq wise.ListTransactionsRequest
 	)
 
 	BeforeEach(func() {
 		mux = http.NewServeMux()
-		server = httptest.NewServer(mux)
+		conformance = attachConformance(mux)
+		server = httptest.NewServer(conformance)
 		client = wise.New("test-api-key", wise.WithBaseURL(server.URL))
 		defaultListTxReq = wise.ListTransactionsRequest{
 			ProfileID: wise.NewProfileID(12345),
@@ -136,6 +200,7 @@ var _ = Describe("Wise Client", func() {
 
 	AfterEach(func() {
 		server.Close()
+		conformance.finish(func(msg string) { Fail(msg) })
 	})
 
 	Describe("New", func() {
@@ -157,6 +222,116 @@ var _ = Describe("Wise Client", func() {
 		It("should create client with custom retry", func() {
 			c := wise.New("key", wise.WithRetry(5, time.Second, 30*time.Second))
 			Expect(c).ToNot(BeNil())
+		})
+	})
+
+	Describe("WithUserAgent", func() {
+		Context("with a custom agent", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/me", func(w http.ResponseWriter, r *http.Request) {
+					if r.Header.Get("User-Agent") != "bank-sync/1.0" {
+						w.WriteHeader(http.StatusBadRequest)
+
+						return
+					}
+
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = w.Write([]byte(meFixtureJSON))
+				})
+
+				client = wise.New("test-api-key",
+					wise.WithBaseURL(server.URL), wise.WithUserAgent("bank-sync/1.0"))
+			})
+
+			It("should forward the custom User-Agent", func() {
+				Expect(client.GetMe(context.Background())).ToNot(BeNil())
+			})
+		})
+
+		Context("without a custom agent", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/me", func(w http.ResponseWriter, _ *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = w.Write([]byte(meFixtureJSON))
+				})
+			})
+
+			It("should keep Go's default agent", func() {
+				_, err := client.GetMe(context.Background())
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("Concurrency", func() {
+		Context("one shared client serving parallel requests", func() {
+			It("should isolate per-request context and responses under -race", func() {
+				const workers = 16
+
+				var (
+					seenMu sync.Mutex
+					seen   = map[string]bool{}
+				)
+
+				mux.HandleFunc("/v1/rates", exemptResponseSchema(func(w http.ResponseWriter, r *http.Request) {
+					corr := r.Header.Get("X-External-Correlation-Id")
+
+					seenMu.Lock()
+					seen[corr] = true
+					seenMu.Unlock()
+
+					var idx int
+
+					_, _ = fmt.Sscanf(corr, "corr-%d", &idx)
+
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = fmt.Fprintf(w,
+						`{"source":"EUR","target":"USD","rate":%d,"time":"2023-01-01T00:00:00Z"}`,
+						1000+idx)
+				}))
+
+				type rateResult struct {
+					rate float64
+					err  error
+				}
+
+				var results [workers]rateResult
+
+				var workerWg sync.WaitGroup
+
+				for i := range workers {
+					workerWg.Go(func() {
+						ctx := wise.WithRequestCorrelationID(
+							context.Background(), fmt.Sprintf("corr-%d", i))
+
+						rate, err := client.GetExchangeRate(
+							ctx, wise.Currency("EUR"), wise.Currency("USD"), time.Time{})
+
+						res := rateResult{err: err}
+
+						if rate != nil {
+							res.rate = rate.Rate
+						}
+
+						results[i] = res
+					})
+				}
+
+				workerWg.Wait()
+
+				for i := range workers {
+					Expect(results[i].err).ToNot(HaveOccurred(),
+						"worker %d request failed", i)
+					Expect(results[i].rate).To(Equal(float64(1000+i)),
+						"worker %d got another request's response", i)
+				}
+
+				for i := range workers {
+					Expect(seen).To(HaveKey(fmt.Sprintf("corr-%d", i)))
+				}
+
+				Expect(seen).To(HaveLen(workers))
+			})
 		})
 	})
 
@@ -293,14 +468,14 @@ var _ = Describe("Wise Client", func() {
 
 		Context("with unknown profile type", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {
+				mux.HandleFunc("/v2/profiles", exemptResponseSchema(func(w http.ResponseWriter, _ *http.Request) {
 					profiles := []raw.Profile{
 						{ID: 1, Type: "UNKNOWN_TYPE", CreatedAt: "2023-01-15T10:30:00Z"},
 					}
 
 					w.Header().Set("Content-Type", "application/json")
 					_ = json.MarshalWrite(w, profiles)
-				})
+				}))
 			})
 
 			It("should return an error", func() {
@@ -448,23 +623,21 @@ var _ = Describe("Wise Client", func() {
 	Describe("GetBalance", func() {
 		BeforeEach(func() {
 			mux.HandleFunc(
-				"/v4/profiles/12345/balances",
-				func(w http.ResponseWriter, _ *http.Request) {
-					balances := []raw.Balance{
-						stdBalance(
-							100,
-							"EUR",
-							"EUR Account",
-							true,
-							"NOT_INVESTED",
-							1000.00,
-							0,
-							"2023-01-01T00:00:00Z",
-						),
-					}
+				"/v4/profiles/12345/balances/100",
+				func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Method).To(Equal(http.MethodGet))
 
 					w.Header().Set("Content-Type", "application/json")
-					_ = json.MarshalWrite(w, balances)
+					_ = json.MarshalWrite(w, stdBalance(
+						100,
+						"EUR",
+						"EUR Account",
+						true,
+						"NOT_INVESTED",
+						1000.00,
+						0,
+						"2023-01-01T00:00:00Z",
+					))
 				},
 			)
 		})
@@ -477,9 +650,138 @@ var _ = Describe("Wise Client", func() {
 		})
 
 		It("should return error for non-existent balance", func() {
+			mux.HandleFunc("/v4/profiles/12345/balances/999", errorHandler(
+				http.StatusNotFound, nil, "NOT_FOUND", "Balance not found",
+			))
+
 			_, err := getBalance(context.Background(), client, 999)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("not found"))
+			Expect(err.Error()).To(ContainSubstring("404"))
+		})
+
+		It("should reject a zero balance ID without calling the API", func() {
+			_, err := getBalance(context.Background(), client, 0)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("balanceID is required"))
+		})
+	})
+
+	Describe("CreateBalance", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v4/profiles/12345/balances", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Method).To(Equal(http.MethodPost))
+
+					var body map[string]any
+					Expect(json.UnmarshalRead(r.Body, &body)).To(Succeed())
+					Expect(body["currency"]).To(Equal("EUR"))
+					Expect(body["type"]).To(Equal("SAVINGS"))
+					Expect(body["name"]).To(Equal("Vacation fund"))
+					Expect(r.Header.Get("X-Idempotence-Uuid")).ToNot(BeEmpty(),
+						"Wise requires X-idempotence-uuid on balance creation")
+
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusCreated)
+					_ = json.MarshalWrite(w, raw.Balance{
+						ID: 200, Currency: "EUR", Type: "SAVINGS", Name: "Vacation fund",
+						InvestmentState: "NOT_INVESTED", Visible: true,
+						Amount:         raw.BalanceAmount{Value: 0, Currency: "EUR"},
+						ReservedAmount: raw.BalanceAmount{Value: 0, Currency: "EUR"},
+						CreationTime:   "2023-06-01T00:00:00Z",
+					})
+				})
+			})
+
+			It("should create and map the balance", func() {
+				balance, err := client.CreateBalance(context.Background(), wise.CreateBalanceRequest{
+					ProfileID: wise.NewProfileID(12345),
+					Currency:  wise.Currency("EUR"),
+					Type:      wise.BalanceTypeSavings,
+					Name:      "Vacation fund",
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(balance).ToNot(BeNil())
+				Expect(balance.ID.Get()).To(Equal(int64(200)))
+				Expect(balance.Type).To(Equal(wise.BalanceTypeSavings))
+			})
+		})
+
+		Context("with a savings balance missing a name", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.CreateBalance(context.Background(), wise.CreateBalanceRequest{
+					ProfileID: wise.NewProfileID(12345),
+					Currency:  wise.Currency("EUR"),
+					Type:      wise.BalanceTypeSavings,
+				})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("name is required for savings"))
+			})
+		})
+	})
+
+	Describe("GetTotalFunds", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v4/profiles/12345/total-funds/EUR", func(w http.ResponseWriter, _ *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, raw.TotalFunds{
+						TotalWorth:     raw.BalanceAmount{Value: 2000.55, Currency: "EUR"},
+						TotalAvailable: raw.BalanceAmount{Value: 1990.05, Currency: "EUR"},
+					})
+				})
+			})
+
+			It("should map worth and available as Money", func() {
+				funds, err := client.GetTotalFunds(
+					context.Background(), wise.NewProfileID(12345), wise.Currency("EUR"),
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(funds.Worth.Cents).To(Equal(int64(200055)))
+				Expect(funds.Worth.Currency).To(Equal(wise.Currency("EUR")))
+				Expect(funds.Available.Cents).To(Equal(int64(199005)))
+			})
+		})
+
+		Context("with a zero profile ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetTotalFunds(context.Background(), wise.ProfileID{}, wise.Currency("EUR"))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("profileID is required"))
+			})
+		})
+
+		Context("with 401 unauthorized", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v4/profiles/12345/total-funds/EUR", errorHandler(
+					http.StatusUnauthorized, nil, "UNAUTHORIZED", "Invalid API key",
+				))
+			})
+
+			It("should surface an AuthError", func() {
+				_, err := client.GetTotalFunds(
+					context.Background(), wise.NewProfileID(12345), wise.Currency("EUR"),
+				)
+				authErr, ok := errors.AsType[*wise.AuthError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.AuthError, got %T: %v", err, err)
+				Expect(authErr.StatusCode).To(Equal(http.StatusUnauthorized))
+			})
+		})
+
+		Context("with 404 unknown profile", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v4/profiles/404/total-funds/EUR", errorHandler(
+					http.StatusNotFound, nil, "NOT_FOUND", "Profile not found",
+				))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.GetTotalFunds(
+					context.Background(), wise.NewProfileID(404), wise.Currency("EUR"),
+				)
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
 		})
 	})
 
@@ -512,7 +814,7 @@ var _ = Describe("Wise Client", func() {
 									},
 									ReferenceNumber: "REF-001",
 									Details: raw.TransactionDetails{
-										Type:         "CARD_PAYMENT",
+										Type:         "CARD",
 										Description:  "Coffee Shop",
 										Category:     "food",
 										MerchantName: "Starbucks",
@@ -613,10 +915,10 @@ var _ = Describe("Wise Client", func() {
 					func(w http.ResponseWriter, _ *http.Request) {
 						response := raw.StatementResponse{
 							Transactions: []raw.StatementTransaction{
-								testTx("tx-refund", "CARD_REFUND", 25.00),
+								testTx("tx-refund", "CARD_CASHBACK", 25.00),
 								testTx("tx-exchange", "CONVERSION", -100.00),
-								testTx("tx-fee", "FEE", -0.50),
-								testTx("tx-payment", "PAYMENT", -200.00),
+								testTx("tx-interest", "BALANCE_INTEREST", -0.50),
+								testTx("tx-payment", "ACQUIRING_PAYMENT", -200.00),
 							},
 							EndOfStatementBalance: raw.BalanceAmount{Value: 0, Currency: "EUR"},
 						}
@@ -627,7 +929,7 @@ var _ = Describe("Wise Client", func() {
 				)
 			})
 
-			It("should classify CARD_REFUND with positive amount as refund", func() {
+			It("should classify CARD_CASHBACK with positive amount as refund", func() {
 				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(resp.Transactions[0].Type).To(Equal(wise.TransactionTypeRefund))
@@ -639,13 +941,13 @@ var _ = Describe("Wise Client", func() {
 				Expect(resp.Transactions[1].Type).To(Equal(wise.TransactionTypeExchange))
 			})
 
-			It("should classify FEE as fee", func() {
+			It("should classify BALANCE_INTEREST by amount sign as debit", func() {
 				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(resp.Transactions[2].Type).To(Equal(wise.TransactionTypeFee))
+				Expect(resp.Transactions[2].Type).To(Equal(wise.TransactionTypeDebit))
 			})
 
-			It("should classify PAYMENT as payment", func() {
+			It("should classify ACQUIRING_PAYMENT as payment", func() {
 				resp, err := client.ListTransactions(context.Background(), defaultListTxReq)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(resp.Transactions[3].Type).To(Equal(wise.TransactionTypePayment))
@@ -748,7 +1050,7 @@ var _ = Describe("Wise Client", func() {
 										Value: 200.00, Currency: "USD",
 									},
 									ReferenceNumber: "REF-USD",
-									Details:         raw.TransactionDetails{Type: "CARD_PAYMENT"},
+									Details:         raw.TransactionDetails{Type: "CARD"},
 								},
 							},
 							EndOfStatementBalance: raw.BalanceAmount{Value: 200, Currency: "USD"},
@@ -808,7 +1110,7 @@ var _ = Describe("Wise Client", func() {
 						capturedRequest = r
 						response := raw.StatementResponse{
 							Transactions: []raw.StatementTransaction{
-								testTx("tx-filtered", "CARD_PAYMENT", -10.00),
+								testTx("tx-filtered", "CARD", -10.00),
 							},
 							EndOfStatementBalance: raw.BalanceAmount{Value: 0, Currency: "EUR"},
 						}
@@ -821,12 +1123,12 @@ var _ = Describe("Wise Client", func() {
 
 			It("should forward the type filter in the query string", func() {
 				req := defaultListTxReq
-				req.Type = wise.DetailTypeCardPayment
+				req.Type = wise.StatementTypeFlat
 
 				_, err := client.ListTransactions(context.Background(), req)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(capturedRequest).ToNot(BeNil())
-				Expect(capturedRequest.URL.Query().Get("type")).To(Equal("CARD_PAYMENT"))
+				Expect(capturedRequest.URL.Query().Get("type")).To(Equal("FLAT"))
 			})
 
 			It("should omit the type filter when unset", func() {
@@ -835,6 +1137,39 @@ var _ = Describe("Wise Client", func() {
 				Expect(capturedRequest).ToNot(BeNil())
 				_, hasType := capturedRequest.URL.Query()["type"]
 				Expect(hasType).To(BeFalse())
+			})
+		})
+
+		Context("with local-zone timestamps", func() {
+			// Regression: Wise rejects zone offsets other than "Z" with
+			// HTTP 422 wrong.date.format. Callers pass local time.Time
+			// values; the client must normalize intervalStart/End to UTC.
+			var cest *time.Location
+
+			BeforeEach(func() {
+				cest = time.FixedZone("CEST", 2*60*60)
+
+				mux.HandleFunc(
+					"/v1/profiles/12345/balance-statements/100/statement.json",
+					func(w http.ResponseWriter, r *http.Request) {
+						expectTransactionQueryParams(
+							r, "EUR", "2023-01-01T00:00:00Z", "2023-01-31T23:59:59Z",
+						)
+
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.MarshalWrite(w, raw.StatementResponse{
+							EndOfStatementBalance: raw.BalanceAmount{Value: 0, Currency: "EUR"},
+						})
+					})
+			})
+
+			It("normalizes intervalStart/End to UTC Z format", func() {
+				req := defaultListTxReq
+				req.From = time.Date(2023, 1, 1, 2, 0, 0, 0, cest) // 2023-01-01T00:00:00Z
+				req.To = time.Date(2023, 2, 1, 1, 59, 59, 0, cest) // 2023-01-31T23:59:59Z
+				resp, err := client.ListTransactions(context.Background(), req)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(resp.Transactions).To(BeEmpty())
 			})
 		})
 
@@ -921,7 +1256,7 @@ var _ = Describe("Wise Client", func() {
 					time.Date(2023, 11, 24, 10, 47, 49, 0, time.UTC),
 				))
 				Expect(first.Reference).To(Equal("Rent November"))
-				Expect(first.CustomerTransactionID).To(Equal("54a6bc09-cef9-49a8-9041-f1f0c654cd88"))
+				Expect(first.CustomerTransactionID.Get()).To(Equal("54a6bc09-cef9-49a8-9041-f1f0c654cd88"))
 				Expect(first.HasActiveIssues).To(BeFalse())
 			})
 
@@ -949,6 +1284,36 @@ var _ = Describe("Wise Client", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(transfers[0].Created.Format(time.RFC3339)).To(Equal("2023-11-24T10:47:49Z"))
 				Expect(transfers[1].Created.Format(time.RFC3339)).To(Equal("2023-12-02T08:15:00Z"))
+			})
+		})
+
+		Context("with local-zone timestamps", func() {
+			// Regression: Wise rejects zone offsets other than "Z" with
+			// HTTP 422 wrong.date.format (seen live 2026-08-19..21 with
+			// createdDateEnd=…+02:00). Callers pass local time.Time values
+			// (e.g. time.Now()); the client must normalize to UTC on the wire.
+			var cest *time.Location
+
+			BeforeEach(func() {
+				cest = time.FixedZone("CEST", 2*60*60)
+
+				mux.HandleFunc("/v1/transfers", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.URL.Query().Get("createdDateStart")).To(Equal("2023-01-01T00:00:00Z"))
+					Expect(r.URL.Query().Get("createdDateEnd")).To(Equal("2023-12-31T23:59:59Z"))
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, []raw.Transfer{})
+				})
+			})
+
+			It("normalizes createdDateStart/End to UTC Z format", func() {
+				transfers, err := client.ListTransfers(context.Background(), wise.ListTransfersRequest{
+					ProfileID: wise.NewProfileID(12345),
+					From:      time.Date(2023, 1, 1, 2, 0, 0, 0, cest),   // 2023-01-01T00:00:00Z
+					To:        time.Date(2024, 1, 1, 1, 59, 59, 0, cest), // 2023-12-31T23:59:59Z
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(transfers).To(BeEmpty())
 			})
 		})
 
@@ -988,12 +1353,12 @@ var _ = Describe("Wise Client", func() {
 
 		Context("with an unparseable created timestamp", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/v1/transfers", func(w http.ResponseWriter, _ *http.Request) {
+				mux.HandleFunc("/v1/transfers", exemptResponseSchema(func(w http.ResponseWriter, _ *http.Request) {
 					response := []raw.Transfer{transferFixture(1, "delivered", "not-a-timestamp")}
 
 					w.Header().Set("Content-Type", "application/json")
 					_ = json.MarshalWrite(w, response)
-				})
+				}))
 			})
 
 			It("returns a corruption error naming the transfer", func() {
@@ -1040,8 +1405,8 @@ var _ = Describe("Wise Client", func() {
 					Expect(r.URL.Query().Get("target")).To(Equal("USD"))
 
 					w.Header().Set("Content-Type", "application/json")
-					_ = json.MarshalWrite(w, raw.ExchangeRate{
-						Source: "EUR", Target: "USD", Rate: 1.0857, Time: "2023-01-15T10:30:00Z",
+					_ = json.MarshalWrite(w, []raw.ExchangeRate{
+						{Source: "EUR", Target: "USD", Rate: 1.0857, Time: "2023-01-15T10:30:00Z"},
 					})
 				})
 			})
@@ -1058,6 +1423,33 @@ var _ = Describe("Wise Client", func() {
 				Expect(rate.Source).To(Equal(wise.Currency("EUR")))
 				Expect(rate.Target).To(Equal(wise.Currency("USD")))
 				Expect(rate.Rate).To(Equal(1.0857))
+			})
+		})
+
+		Context("with a historical time in a non-UTC zone", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/rates", exemptResponseSchema(func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.URL.Query().Get("time")).To(Equal("2023-06-15T10:30:00Z"),
+						"rate time parameter must serialize as UTC with a Z suffix")
+
+					// Single-object shape: not what the spec declares today, but
+					// the client tolerates it without a second request.
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, raw.ExchangeRate{
+						Source: "EUR", Target: "USD", Rate: 1.0857, Time: "2023-06-15T10:30:00Z",
+					})
+				}))
+			})
+
+			It("should serialize the time parameter as UTC Z", func() {
+				cest := time.FixedZone("CEST", 2*60*60)
+				_, err := client.GetExchangeRate(
+					context.Background(),
+					wise.Currency("EUR"),
+					wise.Currency("USD"),
+					time.Date(2023, 6, 15, 12, 30, 0, 0, cest),
+				)
+				Expect(err).ToNot(HaveOccurred())
 			})
 		})
 
@@ -1102,6 +1494,49 @@ var _ = Describe("Wise Client", func() {
 				Expect(transfer.RecipientID.Get()).To(Equal(int64(98765432)))
 			})
 		})
+
+		Context("with 404 unknown transfer", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/16521632", errorHandler(
+					http.StatusNotFound, nil, "NOT_FOUND", "Transfer not found",
+				))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.GetTransfer(context.Background(), wise.NewTransferID(16521632))
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+
+		Context("with 401 unauthorized", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/16521632", errorHandler(
+					http.StatusUnauthorized, nil, "UNAUTHORIZED", "Invalid API key",
+				))
+			})
+
+			It("should surface an AuthError", func() {
+				_, err := client.GetTransfer(context.Background(), wise.NewTransferID(16521632))
+				authErr, ok := errors.AsType[*wise.AuthError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.AuthError, got %T: %v", err, err)
+				Expect(authErr.StatusCode).To(Equal(http.StatusUnauthorized))
+			})
+		})
+
+		Context("with 403 SCA challenge", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/16521632", scaChallengeHandler)
+			})
+
+			It("should surface an SCAChallengeError", func() {
+				_, err := client.GetTransfer(context.Background(), wise.NewTransferID(16521632))
+				scaErr, ok := errors.AsType[*wise.SCAChallengeError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.SCAChallengeError, got %T: %v", err, err)
+				Expect(scaErr.TwoFAApprovalToken()).To(Equal("one-time-token-123"))
+			})
+		})
 	})
 
 	Describe("CreateQuote", func() {
@@ -1118,16 +1553,18 @@ var _ = Describe("Wise Client", func() {
 
 					w.Header().Set("Content-Type", "application/json")
 					_ = json.MarshalWrite(w, raw.Quote{
-						ID:             "11144c35-9fe8-4c32-b7fd-d05c2a7734bf",
-						SourceCurrency: "EUR",
-						TargetCurrency: "USD",
-						SourceAmount:   10,
-						TargetAmount:   10.86,
-						PayOut:         "BANK_TRANSFER",
-						Rate:           1.0857,
-						CreatedTime:    "2023-01-15T10:30:00Z",
-						ExpirationTime: "2023-01-15T11:00:00Z",
-						Status:         "ACTIVE",
+						ID:                 "11144c35-9fe8-4c32-b7fd-d05c2a7734bf",
+						SourceCurrency:     "EUR",
+						TargetCurrency:     "USD",
+						SourceAmount:       10,
+						TargetAmount:       10.86,
+						PayOut:             "BANK_TRANSFER",
+						Rate:               1.0857,
+						RateType:           "FIXED",
+						ProvidedAmountType: "SOURCE",
+						Status:             "ACCEPTED",
+						CreatedTime:        "2023-01-15T10:30:00Z",
+						ExpirationTime:     "2023-01-15T11:00:00Z",
 					})
 				})
 			})
@@ -1150,6 +1587,155 @@ var _ = Describe("Wise Client", func() {
 				Expect(quote.Profile.Get()).To(Equal(int64(12345)))
 			})
 		})
+
+		Context("with 400 validation response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v3/profiles/12345/quotes", errorHandler(
+					http.StatusBadRequest, nil,
+					"VALIDATION_INVALID_SOURCE_AMOUNT", "must be greater than zero",
+				))
+			})
+
+			It("should surface an APIError with code and message", func() {
+				_, err := client.CreateQuote(
+					context.Background(), wise.NewProfileID(12345), validQuoteRequest(),
+				)
+				apiErr, ok := errors.AsType[*wise.APIError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.APIError, got %T: %v", err, err)
+				Expect(apiErr.StatusCode).To(Equal(http.StatusBadRequest))
+				Expect(apiErr.Message).To(ContainSubstring("VALIDATION_INVALID_SOURCE_AMOUNT"))
+				Expect(apiErr.Message).To(ContainSubstring("must be greater than zero"))
+			})
+		})
+
+		Context("with 401 unauthorized", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v3/profiles/12345/quotes", errorHandler(
+					http.StatusUnauthorized, nil, "UNAUTHORIZED", "Invalid API key",
+				))
+			})
+
+			It("should surface an AuthError", func() {
+				_, err := client.CreateQuote(
+					context.Background(), wise.NewProfileID(12345), validQuoteRequest(),
+				)
+				authErr, ok := errors.AsType[*wise.AuthError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.AuthError, got %T: %v", err, err)
+				Expect(authErr.StatusCode).To(Equal(http.StatusUnauthorized))
+			})
+		})
+
+		Context("with 403 SCA challenge", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v3/profiles/12345/quotes", scaChallengeHandler)
+			})
+
+			It("should surface an SCAChallengeError with the one-time token", func() {
+				_, err := client.CreateQuote(
+					context.Background(), wise.NewProfileID(12345), validQuoteRequest(),
+				)
+				scaErr, ok := errors.AsType[*wise.SCAChallengeError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.SCAChallengeError, got %T: %v", err, err)
+				Expect(scaErr.TwoFAApprovalToken()).To(Equal("one-time-token-123"))
+			})
+		})
+
+		Context("with 404 unknown profile", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v3/profiles/12345/quotes", errorHandler(
+					http.StatusNotFound, nil, "NOT_FOUND", "Profile not found",
+				))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.CreateQuote(
+					context.Background(), wise.NewProfileID(12345), validQuoteRequest(),
+				)
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+
+		Context("with 429 rate limit and Retry-After", func() {
+			BeforeEach(func() {
+				// Fast retries so the spec exhausts the policy quickly.
+				client = wise.New("test-api-key",
+					wise.WithBaseURL(server.URL),
+					wise.WithRetry(1, time.Millisecond, time.Millisecond),
+				)
+
+				mux.HandleFunc("/v3/profiles/12345/quotes", errorHandler(
+					http.StatusTooManyRequests,
+					map[string]string{"Retry-After": "30", "X-Rate-Limited-By": "profile"},
+					"RATE_LIMITED", "Too many requests",
+				))
+			})
+
+			It("should exhaust retries and surface RateLimitError with headers", func() {
+				_, err := client.CreateQuote(
+					context.Background(), wise.NewProfileID(12345), validQuoteRequest(),
+				)
+				rlErr, ok := errors.AsType[*wise.RateLimitError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.RateLimitError, got %T: %v", err, err)
+				Expect(rlErr.RetryAfter).To(Equal(30 * time.Second))
+				Expect(rlErr.RateLimitedBy).To(Equal("profile"))
+				Expect(rlErr.IsRetryable()).To(BeTrue())
+			})
+		})
+	})
+
+	Describe("CreateUnauthenticatedQuote", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v3/quotes", func(w http.ResponseWriter, r *http.Request) {
+					var body map[string]any
+					Expect(json.UnmarshalRead(r.Body, &body)).To(Succeed())
+					Expect(body["sourceCurrency"]).To(Equal("EUR"))
+					Expect(body["targetCurrency"]).To(Equal("USD"))
+					// Unauthenticated quotes carry no profile-scoped fields.
+					Expect(body).ToNot(HaveKey("preferredPayIn"))
+					Expect(body).ToNot(HaveKey("payOut"))
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, raw.Quote{
+						ID:                 "11144c35-9fe8-4c32-b7fd-d05c2a7734bf",
+						SourceCurrency:     "EUR",
+						TargetCurrency:     "USD",
+						SourceAmount:       10,
+						TargetAmount:       10.86,
+						Rate:               1.086,
+						RateType:           "FIXED",
+						ProvidedAmountType: "SOURCE",
+						Status:             "ACCEPTED",
+						CreatedTime:        "2023-01-15T10:27:22Z",
+						ExpirationTime:     "2023-01-15T10:57:22Z",
+					})
+				})
+			})
+
+			It("should create an illustrative quote without a profile", func() {
+				quote, err := client.CreateUnauthenticatedQuote(context.Background(), wise.CreateQuoteRequest{
+					SourceCurrency: wise.Currency("EUR"),
+					TargetCurrency: wise.Currency("USD"),
+					SourceAmount:   &wise.Money{Cents: 1000, Currency: wise.Currency("EUR")},
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(quote).ToNot(BeNil())
+				Expect(quote.Rate).To(Equal(1.086))
+				Expect(quote.Profile.Get()).To(Equal(int64(0)), "unauthenticated quotes carry no profile")
+			})
+		})
+
+		Context("with an invalid request", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.CreateUnauthenticatedQuote(context.Background(), wise.CreateQuoteRequest{
+					SourceCurrency: wise.Currency("EUR"),
+				})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("targetCurrency is required"))
+			})
+		})
 	})
 
 	Describe("GetQuote", func() {
@@ -1159,16 +1745,18 @@ var _ = Describe("Wise Client", func() {
 					func(w http.ResponseWriter, _ *http.Request) {
 						w.Header().Set("Content-Type", "application/json")
 						_ = json.MarshalWrite(w, raw.Quote{
-							ID:             "11144c35-9fe8-4c32-b7fd-d05c2a7734bf",
-							SourceCurrency: "EUR",
-							TargetCurrency: "USD",
-							SourceAmount:   10,
-							TargetAmount:   10.86,
-							PayOut:         "BANK_TRANSFER",
-							Rate:           1.0857,
-							CreatedTime:    "2023-01-15T10:30:00Z",
-							ExpirationTime: "2023-01-15T11:00:00Z",
-							Status:         "ACTIVE",
+							ID:                 "11144c35-9fe8-4c32-b7fd-d05c2a7734bf",
+							SourceCurrency:     "EUR",
+							TargetCurrency:     "USD",
+							SourceAmount:       10,
+							TargetAmount:       10.86,
+							PayOut:             "BANK_TRANSFER",
+							Rate:               1.0857,
+							RateType:           "FIXED",
+							ProvidedAmountType: "SOURCE",
+							Status:             "ACCEPTED",
+							CreatedTime:        "2023-01-15T10:30:00Z",
+							ExpirationTime:     "2023-01-15T11:00:00Z",
 						})
 					})
 			})
@@ -1182,6 +1770,225 @@ var _ = Describe("Wise Client", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(quote).ToNot(BeNil())
 				Expect(quote.ID.Get()).To(Equal("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"))
+			})
+		})
+	})
+
+	Describe("GetQuoteAccountRequirements", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/quotes/11144c35-9fe8-4c32-b7fd-d05c2a7734bf/account-requirements",
+					func(w http.ResponseWriter, r *http.Request) {
+						Expect(r.Header.Get("Accept-Minor-Version")).To(Equal("1"))
+						Expect(r.URL.Query().Get("originatorLegalEntityType")).To(Equal("PRIVATE"))
+
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.MarshalWrite(w, []raw.AccountRequirement{
+							{
+								Type:  "sort_code",
+								Title: "Local transfer in GBP",
+								Fields: []raw.TransferRequirementForm{
+									{
+										Name: "Recipient",
+										Group: []raw.TransferRequirementField{
+											{
+												Key: "sortCode", Name: "UK Sort Code", Type: "text",
+												Required: true, MinLength: new(int32(6)), MaxLength: new(int32(6)),
+											},
+											{
+												Key: "accountNumber", Name: "Account number", Type: "text",
+												Required: true, MaxLength: new(int32(8)),
+											},
+										},
+									},
+								},
+							},
+						})
+					})
+			})
+
+			It("should map the route requirement forms", func() {
+				requirements, err := client.GetQuoteAccountRequirements(
+					context.Background(),
+					wise.QuoteAccountRequirementsRequest{
+						QuoteID:                   wise.NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
+						OriginatorLegalEntityType: "PRIVATE",
+					},
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(requirements).To(HaveLen(1))
+
+				route := requirements[0]
+				Expect(route.Type).To(Equal("sort_code"))
+				Expect(route.Title).To(Equal("Local transfer in GBP"))
+
+				sortCode := route.Fields[0].Group[0]
+				Expect(sortCode.Key).To(Equal("sortCode"))
+				Expect(sortCode.Required).To(BeTrue())
+				Expect(*sortCode.MinLength).To(Equal(int32(6)))
+				Expect(route.Fields[0].Group[1].Key).To(Equal("accountNumber"))
+			})
+		})
+
+		Context("with empty quote ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetQuoteAccountRequirements(
+					context.Background(),
+					wise.QuoteAccountRequirementsRequest{},
+				)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("quoteID is required"))
+			})
+		})
+	})
+
+	Describe("RefreshQuoteAccountRequirements", func() {
+		Context("two-pass flow after a refreshRequirementsOnChange field was updated", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/quotes/11144c35-9fe8-4c32-b7fd-d05c2a7734bf/account-requirements",
+					func(w http.ResponseWriter, r *http.Request) {
+						Expect(r.Method).To(Equal(http.MethodPost))
+						Expect(r.Header.Get("Accept-Minor-Version")).To(Equal("1"))
+						Expect(r.URL.Query().Get("originatorLegalEntityType")).To(Equal("PRIVATE"))
+
+						var body map[string]any
+						Expect(json.UnmarshalRead(r.Body, &body)).To(Succeed())
+						Expect(body["currency"]).To(Equal("USD"))
+						Expect(body["type"]).To(Equal("swift_code"))
+						Expect(body["details"]).To(Equal(map[string]any{"legalEntityType": "PRIVATE"}))
+						Expect(body).ToNot(HaveKey("accountHolderName"),
+							"unset form fields must not be sent during a refresh pass")
+						Expect(body).ToNot(HaveKey("profile"))
+
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.MarshalWrite(w, []raw.AccountRequirement{
+							{
+								Type: "swift_code", Title: "SWIFT transfer in USD",
+								Fields: []raw.TransferRequirementForm{
+									{
+										Name: "Recipient",
+										Group: []raw.TransferRequirementField{
+											{
+												Key: "legalEntityType", Name: "Legal entity type", Type: "select",
+												Required: true, RefreshRequirementsOnChange: true,
+											},
+											{
+												Key: "address.state", Name: "State", Type: "select",
+												Required: true,
+												ValuesAllowed: []raw.TransferRequirementValue{
+													{Key: "US-CA", Name: "California"},
+													{Key: "US-NY", Name: "New York"},
+												},
+											},
+										},
+									},
+								},
+							},
+						})
+					})
+			})
+
+			It("should send the partial form and return the revised requirements", func() {
+				requirements, err := client.RefreshQuoteAccountRequirements(
+					context.Background(),
+					wise.RefreshQuoteAccountRequirementsRequest{
+						QuoteID:                   wise.NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
+						OriginatorLegalEntityType: "PRIVATE",
+						Recipient: wise.CreateRecipientRequest{
+							Currency: wise.Currency("USD"),
+							Type:     "swift_code",
+							Details:  map[string]string{"legalEntityType": "PRIVATE"},
+						},
+					},
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(requirements).To(HaveLen(1))
+
+				trigger, revealed := requirements[0].Fields[0].Group[0], requirements[0].Fields[0].Group[1]
+				Expect(trigger.RefreshRequirementsOnChange).To(BeTrue())
+				Expect(revealed.Key).To(Equal("address.state"))
+				Expect(revealed.Required).To(BeTrue())
+				Expect(revealed.ValuesAllowed).To(HaveLen(2))
+				Expect(revealed.ValuesAllowed[0].Key).To(Equal("US-CA"))
+			})
+		})
+
+		Context("with empty quote ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.RefreshQuoteAccountRequirements(
+					context.Background(),
+					wise.RefreshQuoteAccountRequirementsRequest{
+						Recipient: wise.CreateRecipientRequest{
+							Currency: wise.Currency("USD"),
+							Type:     "swift_code",
+							Details:  map[string]string{"legalEntityType": "PRIVATE"},
+						},
+					},
+				)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("quoteID is required"))
+			})
+		})
+
+		Context("with missing recipient details", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.RefreshQuoteAccountRequirements(
+					context.Background(),
+					wise.RefreshQuoteAccountRequirementsRequest{
+						QuoteID:   wise.NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
+						Recipient: wise.CreateRecipientRequest{Currency: wise.Currency("USD"), Type: "swift_code"},
+					},
+				)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("recipient details are required"))
+			})
+		})
+
+		Context("with 404 unknown quote", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/quotes/00000000-0000-0000-0000-000000000000/account-requirements",
+					errorHandler(http.StatusNotFound, nil, "NOT_FOUND", "Quote not found"))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.RefreshQuoteAccountRequirements(
+					context.Background(),
+					wise.RefreshQuoteAccountRequirementsRequest{
+						QuoteID: wise.NewQuoteID("00000000-0000-0000-0000-000000000000"),
+						Recipient: wise.CreateRecipientRequest{
+							Currency: wise.Currency("USD"), Type: "swift_code",
+							Details: map[string]string{"legalEntityType": "PRIVATE"},
+						},
+					},
+				)
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+
+		Context("with a corrupt response body", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/quotes/11144c35-9fe8-4c32-b7fd-d05c2a7734bf/account-requirements",
+					exemptResponseSchema(func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						_, _ = w.Write([]byte(`{"not":"an array"}`))
+					}))
+			})
+
+			It("should classify the decode failure as corruption", func() {
+				_, err := client.RefreshQuoteAccountRequirements(
+					context.Background(),
+					wise.RefreshQuoteAccountRequirementsRequest{
+						QuoteID: wise.NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
+						Recipient: wise.CreateRecipientRequest{
+							Currency: wise.Currency("USD"), Type: "swift_code",
+							Details: map[string]string{"legalEntityType": "PRIVATE"},
+						},
+					},
+				)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("decode response"))
 			})
 		})
 	})
@@ -1216,6 +2023,23 @@ var _ = Describe("Wise Client", func() {
 				Expect(recipients[0].ID.Get()).To(Equal(int64(98765432)))
 				Expect(recipients[0].AccountHolderName).To(Equal("Jane Doe"))
 				Expect(recipients[0].Details["sortCode"]).To(Equal("040075"))
+			})
+		})
+
+		Context("with 401 unauthorized", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v2/accounts", errorHandler(
+					http.StatusUnauthorized, nil, "UNAUTHORIZED", "Invalid API key",
+				))
+			})
+
+			It("should surface an AuthError", func() {
+				_, err := client.ListRecipients(context.Background(), wise.ListRecipientsRequest{
+					ProfileID: wise.NewProfileID(12345),
+				})
+				authErr, ok := errors.AsType[*wise.AuthError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.AuthError, got %T: %v", err, err)
+				Expect(authErr.StatusCode).To(Equal(http.StatusUnauthorized))
 			})
 		})
 	})
@@ -1286,6 +2110,69 @@ var _ = Describe("Wise Client", func() {
 				Expect(recipient.ID.Get()).To(Equal(int64(98765432)))
 			})
 		})
+
+		Context("with 400 validation response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/accounts", errorHandler(
+					http.StatusBadRequest, nil,
+					"VALIDATION_INVALID_SORT_CODE", "sortCode must be 6 digits",
+				))
+			})
+
+			It("should surface an APIError with the validation message", func() {
+				_, err := client.CreateRecipient(context.Background(), wise.CreateRecipientRequest{
+					ProfileID:         wise.NewProfileID(12345),
+					Currency:          wise.Currency("GBP"),
+					Type:              "sort_code",
+					AccountHolderName: "Jane Doe",
+					Details:           map[string]string{"sortCode": "040075"},
+				})
+				apiErr, ok := errors.AsType[*wise.APIError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.APIError, got %T: %v", err, err)
+				Expect(apiErr.StatusCode).To(Equal(http.StatusBadRequest))
+				Expect(apiErr.Message).To(ContainSubstring("sortCode must be 6 digits"))
+			})
+		})
+
+		Context("with 404 unknown profile", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/accounts", errorHandler(
+					http.StatusNotFound, nil, "NOT_FOUND", "Profile not found",
+				))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.CreateRecipient(context.Background(), wise.CreateRecipientRequest{
+					ProfileID:         wise.NewProfileID(12345),
+					Currency:          wise.Currency("GBP"),
+					Type:              "sort_code",
+					AccountHolderName: "Jane Doe",
+					Details:           map[string]string{"sortCode": "040075"},
+				})
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+
+		Context("with 403 SCA challenge", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/accounts", scaChallengeHandler)
+			})
+
+			It("should surface an SCAChallengeError", func() {
+				_, err := client.CreateRecipient(context.Background(), wise.CreateRecipientRequest{
+					ProfileID:         wise.NewProfileID(12345),
+					Currency:          wise.Currency("GBP"),
+					Type:              "sort_code",
+					AccountHolderName: "Jane Doe",
+					Details:           map[string]string{"sortCode": "040075"},
+				})
+				scaErr, ok := errors.AsType[*wise.SCAChallengeError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.SCAChallengeError, got %T: %v", err, err)
+				Expect(scaErr.TwoFAApprovalToken()).To(Equal("one-time-token-123"))
+			})
+		})
 	})
 
 	Describe("CreateTransfer", func() {
@@ -1319,12 +2206,97 @@ var _ = Describe("Wise Client", func() {
 				transfer, err := client.CreateTransfer(context.Background(), wise.CreateTransferRequest{
 					QuoteID:               wise.NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
 					TargetAccount:         wise.NewRecipientID(98765432),
-					CustomerTransactionID: "22244c35-9fe8-4c32-b7fd-d05c2a7734bf",
+					CustomerTransactionID: wise.NewCustomerTransactionID("22244c35-9fe8-4c32-b7fd-d05c2a7734bf"),
 				})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(transfer).ToNot(BeNil())
 				Expect(transfer.ID.Get()).To(Equal(int64(16521633)))
 				Expect(transfer.Status).To(Equal(wise.TransferStatusIncomingPaymentWaiting))
+			})
+		})
+
+		Context("with 400 validation response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers", errorHandler(
+					http.StatusBadRequest, nil,
+					"VALIDATION_INVALID_QUOTE", "Quote expired or not found",
+				))
+			})
+
+			It("should surface an APIError", func() {
+				_, err := client.CreateTransfer(context.Background(), validCreateTransferRequest())
+				apiErr, ok := errors.AsType[*wise.APIError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.APIError, got %T: %v", err, err)
+				Expect(apiErr.StatusCode).To(Equal(http.StatusBadRequest))
+				Expect(apiErr.Message).To(ContainSubstring("Quote expired"))
+			})
+		})
+
+		Context("with 409 duplicate customerTransactionId", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers", errorHandler(
+					http.StatusConflict, nil,
+					"TRANSFER_EXISTS", "Transfer with this customerTransactionId already exists",
+				))
+			})
+
+			It("should surface an APIError carrying the conflict", func() {
+				_, err := client.CreateTransfer(context.Background(), validCreateTransferRequest())
+				apiErr, ok := errors.AsType[*wise.APIError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.APIError, got %T: %v", err, err)
+				Expect(apiErr.StatusCode).To(Equal(http.StatusConflict))
+				Expect(apiErr.Message).To(ContainSubstring("already exists"))
+			})
+		})
+
+		Context("with 404 unknown quote", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers", errorHandler(
+					http.StatusNotFound, nil, "NOT_FOUND", "Quote not found",
+				))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.CreateTransfer(context.Background(), validCreateTransferRequest())
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+
+		Context("with 403 SCA challenge", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers", scaChallengeHandler)
+			})
+
+			It("should surface an SCAChallengeError", func() {
+				_, err := client.CreateTransfer(context.Background(), validCreateTransferRequest())
+				scaErr, ok := errors.AsType[*wise.SCAChallengeError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.SCAChallengeError, got %T: %v", err, err)
+				Expect(scaErr.TwoFAApprovalToken()).To(Equal("one-time-token-123"))
+			})
+		})
+
+		Context("with 429 rate limit and Retry-After", func() {
+			BeforeEach(func() {
+				client = wise.New("test-api-key",
+					wise.WithBaseURL(server.URL),
+					wise.WithRetry(1, time.Millisecond, time.Millisecond),
+				)
+
+				mux.HandleFunc("/v1/transfers", errorHandler(
+					http.StatusTooManyRequests,
+					map[string]string{"Retry-After": "17", "X-Rate-Limited-By": "ip"},
+					"RATE_LIMITED", "Too many requests",
+				))
+			})
+
+			It("should exhaust retries and surface RateLimitError", func() {
+				_, err := client.CreateTransfer(context.Background(), validCreateTransferRequest())
+				rlErr, ok := errors.AsType[*wise.RateLimitError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.RateLimitError, got %T: %v", err, err)
+				Expect(rlErr.RetryAfter).To(Equal(17 * time.Second))
+				Expect(rlErr.RateLimitedBy).To(Equal("ip"))
 			})
 		})
 	})
@@ -1364,6 +2336,166 @@ var _ = Describe("Wise Client", func() {
 				_, err := client.CancelTransfer(context.Background(), wise.TransferID{})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("transferID is required"))
+			})
+		})
+
+		Context("with 409 cancellation not allowed", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/16521634/cancel", errorHandler(
+					http.StatusConflict, nil,
+					"TRANSFER_CANNOT_BE_CANCELLED", "Transfer already processed",
+				))
+			})
+
+			It("should surface an APIError carrying the conflict", func() {
+				_, err := client.CancelTransfer(context.Background(), wise.NewTransferID(16521634))
+				apiErr, ok := errors.AsType[*wise.APIError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.APIError, got %T: %v", err, err)
+				Expect(apiErr.StatusCode).To(Equal(http.StatusConflict))
+				Expect(apiErr.Message).To(ContainSubstring("already processed"))
+			})
+		})
+
+		Context("with 404 unknown transfer", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/16521634/cancel", errorHandler(
+					http.StatusNotFound, nil, "NOT_FOUND", "Transfer not found",
+				))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.CancelTransfer(context.Background(), wise.NewTransferID(16521634))
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+	})
+
+	Describe("FundTransfer", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/transfers/16521634/payments",
+					func(w http.ResponseWriter, r *http.Request) {
+						Expect(r.Method).To(Equal(http.MethodPost))
+
+						body, readErr := io.ReadAll(r.Body)
+						Expect(readErr).To(Succeed())
+						Expect(body).To(BeEmpty())
+
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.MarshalWrite(w, raw.FundingResponse{
+							Type:                 "BALANCE",
+							Status:               "COMPLETED",
+							BalanceTransactionID: new(int64(987654321)),
+						})
+					})
+			})
+
+			It("should fund and map the result", func() {
+				result, err := client.FundTransfer(
+					context.Background(),
+					wise.NewProfileID(12345),
+					wise.NewTransferID(16521634),
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+				Expect(result.Type).To(Equal(wise.FundingTypeBalance))
+				Expect(result.Status).To(Equal(wise.FundingStatusCompleted))
+				Expect(result.BalanceTransactionID).ToNot(BeNil())
+				Expect(result.BalanceTransactionID.Get()).To(Equal(int64(987654321)))
+			})
+		})
+
+		Context("when the API rejects the funding", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/transfers/16521635/payments",
+					func(w http.ResponseWriter, r *http.Request) {
+						Expect(r.Method).To(Equal(http.MethodPost))
+
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusCreated)
+						_ = json.MarshalWrite(w, raw.FundingResponse{
+							Type:         "BALANCE",
+							Status:       "REJECTED",
+							ErrorCode:    "balance.insufficient-funds",
+							ErrorMessage: "Not enough funds",
+						})
+					})
+			})
+
+			It("should map the rejection into the result", func() {
+				result, err := client.FundTransfer(
+					context.Background(),
+					wise.NewProfileID(12345),
+					wise.NewTransferID(16521635),
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+				Expect(result.Status).To(Equal(wise.FundingStatusRejected))
+				Expect(result.ErrorCode).To(Equal(wise.FundingErrorCodeBalanceInsufficientFunds))
+				Expect(result.ErrorMessage).To(Equal("Not enough funds"))
+			})
+		})
+
+		Context("with zero profile ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.FundTransfer(
+					context.Background(),
+					wise.ProfileID{},
+					wise.NewTransferID(16521634),
+				)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("profileID is required"))
+			})
+		})
+
+		Context("with zero transfer ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.FundTransfer(
+					context.Background(),
+					wise.NewProfileID(12345),
+					wise.TransferID{},
+				)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("transferID is required"))
+			})
+		})
+
+		Context("with 409 payment already exists", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/transfers/16521634/payments", plainErrorHandler(
+					http.StatusConflict, "Transfer is already funded",
+				))
+			})
+
+			It("should surface an APIError carrying the conflict", func() {
+				_, err := client.FundTransfer(
+					context.Background(),
+					wise.NewProfileID(12345),
+					wise.NewTransferID(16521634),
+				)
+				apiErr, ok := errors.AsType[*wise.APIError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.APIError, got %T: %v", err, err)
+				Expect(apiErr.StatusCode).To(Equal(http.StatusConflict))
+				Expect(apiErr.Message).To(ContainSubstring("already funded"))
+			})
+		})
+
+		Context("with 403 SCA challenge", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/transfers/16521634/payments", scaChallengeHandler)
+			})
+
+			It("should surface an SCAChallengeError", func() {
+				_, err := client.FundTransfer(
+					context.Background(),
+					wise.NewProfileID(12345),
+					wise.NewTransferID(16521634),
+				)
+				scaErr, ok := errors.AsType[*wise.SCAChallengeError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.SCAChallengeError, got %T: %v", err, err)
+				Expect(scaErr.TwoFAApprovalToken()).To(Equal("one-time-token-123"))
 			})
 		})
 	})
@@ -1501,6 +2633,48 @@ var _ = Describe("Wise Client", func() {
 				Expect(err.Error()).To(ContainSubstring("quoteUuid is required"))
 			})
 		})
+
+		Context("with 400 validation response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfer-requirements", errorHandler(
+					http.StatusBadRequest, nil,
+					"VALIDATION_FAILED", "Transfer purpose is required for this corridor",
+				))
+			})
+
+			It("should surface an APIError with the validation message", func() {
+				_, err := client.ValidateTransferRequirements(
+					context.Background(),
+					wise.ValidateTransferRequirementsRequest{
+						TargetAccount: wise.NewRecipientID(98765432),
+						QuoteID:       wise.NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
+					},
+				)
+				apiErr, ok := errors.AsType[*wise.APIError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.APIError, got %T: %v", err, err)
+				Expect(apiErr.StatusCode).To(Equal(http.StatusBadRequest))
+				Expect(apiErr.Message).To(ContainSubstring("Transfer purpose is required"))
+			})
+		})
+
+		Context("with 403 SCA challenge", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfer-requirements", scaChallengeHandler)
+			})
+
+			It("should surface an SCAChallengeError", func() {
+				_, err := client.ValidateTransferRequirements(
+					context.Background(),
+					wise.ValidateTransferRequirementsRequest{
+						TargetAccount: wise.NewRecipientID(98765432),
+						QuoteID:       wise.NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
+					},
+				)
+				scaErr, ok := errors.AsType[*wise.SCAChallengeError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.SCAChallengeError, got %T: %v", err, err)
+				Expect(scaErr.TwoFAApprovalToken()).To(Equal("one-time-token-123"))
+			})
+		})
 	})
 
 	Describe("Quote payment options", func() {
@@ -1574,6 +2748,975 @@ var _ = Describe("Wise Client", func() {
 		})
 	})
 
+	Describe("GetStatement", func() {
+		Context("with CSV happy path", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/balance-statements/100/statement.csv",
+					func(w http.ResponseWriter, r *http.Request) {
+						Expect(r.Method).To(Equal(http.MethodGet))
+						expectTransactionQueryParams(r, "EUR",
+							"2023-01-01T00:00:00Z", "2023-01-31T23:59:59Z")
+
+						w.Header().Set("Content-Type", "text/csv")
+						_, _ = w.Write([]byte("Date,Description,Amount\n2023-01-15,Coffee,-4.50\n"))
+					})
+			})
+
+			It("should return the raw statement bytes", func() {
+				data, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					BalanceID: wise.NewBalanceID(100),
+					Currency:  wise.Currency("EUR"),
+					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
+					Format:    wise.StatementFormatCSV,
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(data).To(ContainSubstring("Coffee,-4.50"))
+			})
+		})
+
+		Context("with a different format", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/balance-statements/100/statement.pdf",
+					func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "application/pdf")
+						_, _ = w.Write([]byte("%PDF-1.7 fake"))
+					})
+			})
+
+			It("should forward the format in the path and return the raw bytes", func() {
+				data, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					BalanceID: wise.NewBalanceID(100),
+					Currency:  wise.Currency("EUR"),
+					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
+					Format:    wise.StatementFormatPDF,
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(data).To(HavePrefix("%PDF"))
+				Expect(string(data)).To(Equal("%PDF-1.7 fake"))
+			})
+		})
+
+		Context("with XLSX format", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/balance-statements/100/statement.xlsx",
+					func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type",
+							"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+						_, _ = w.Write([]byte("PK\x03\x04 fake-xlsx-bytes"))
+					})
+			})
+
+			It("should return the raw workbook bytes despite the binary content type", func() {
+				data, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					BalanceID: wise.NewBalanceID(100),
+					Currency:  wise.Currency("EUR"),
+					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
+					Format:    wise.StatementFormatXLSX,
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(data).To(HavePrefix("PK\x03\x04"))
+				Expect(string(data)).To(Equal("PK\x03\x04 fake-xlsx-bytes"))
+			})
+		})
+
+		Context("with CAMT (xml) format", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/balance-statements/100/statement.xml",
+					func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "application/xml")
+						_, _ = w.Write([]byte("<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
+							"<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:camt.053.001.02\">" +
+							"<BkToCstmrStmt><Stmt><Id>stmt-1</Id></Stmt></BkToCstmrStmt></Document>"))
+					})
+			})
+
+			It("should return the raw CAMT bytes despite the XML content type", func() {
+				data, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					BalanceID: wise.NewBalanceID(100),
+					Currency:  wise.Currency("EUR"),
+					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
+					Format:    wise.StatementFormatCAMT,
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(data).To(ContainSubstring("camt.053.001.02"))
+			})
+		})
+
+		Context("with a locale", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/balance-statements/100/statement.csv",
+					func(w http.ResponseWriter, r *http.Request) {
+						Expect(r.URL.Query().Get("statementLocale")).To(Equal("de"))
+
+						w.Header().Set("Content-Type", "text/csv")
+						_, _ = w.Write([]byte("Datum,Beschreibung,Betrag\n"))
+					})
+			})
+
+			It("should forward statementLocale and return the bytes", func() {
+				data, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					BalanceID: wise.NewBalanceID(100),
+					Currency:  wise.Currency("EUR"),
+					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
+					Format:    wise.StatementFormatCSV,
+					Locale:    "de",
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(data).To(ContainSubstring("Datum"))
+			})
+		})
+
+		Context("with an interval longer than 469 days", func() {
+			It("should return a rejection without calling the API", func() {
+				from := time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
+				_, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					BalanceID: wise.NewBalanceID(100),
+					Currency:  wise.Currency("EUR"),
+					From:      from,
+					To:        from.Add(470 * 24 * time.Hour),
+					Format:    wise.StatementFormatCSV,
+				})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("must not exceed 469 days"))
+			})
+		})
+
+		Context("with an interval of exactly 469 days", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/balance-statements/100/statement.csv",
+					func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "text/csv")
+						_, _ = w.Write([]byte("Date,Description,Amount\n"))
+					})
+			})
+
+			It("should accept the boundary interval and call the API", func() {
+				from := time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
+				_, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					BalanceID: wise.NewBalanceID(100),
+					Currency:  wise.Currency("EUR"),
+					From:      from,
+					To:        from.Add(469 * 24 * time.Hour),
+					Format:    wise.StatementFormatCSV,
+				})
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+
+		Context("with MT940 format", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/balance-statements/100/statement.mt940",
+					func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "text/plain")
+						_, _ = w.Write([]byte(":20:STATEMENT100\n:25:EUR1234567890\n:60F:C230101EUR1000,00\n" +
+							":61:2301150115CR4,50NTRFCOFFEE\n:62F:C230131EUR995,50\n-\n"))
+					})
+			})
+
+			It("should return the raw SWIFT bytes", func() {
+				data, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					BalanceID: wise.NewBalanceID(100),
+					Currency:  wise.Currency("EUR"),
+					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
+					Format:    wise.StatementFormatMT940,
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(data).To(ContainSubstring(":20:STATEMENT100"))
+				Expect(data).To(ContainSubstring(":62F:"))
+			})
+		})
+
+		Context("with QIF format", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/balance-statements/100/statement.qif",
+					func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "text/plain")
+						_, _ = w.Write([]byte("!Type:Bank\nD01/15/2023\nT-4.50\nPCoffee\n^\n"))
+					})
+			})
+
+			It("should return the raw QIF bytes", func() {
+				data, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					BalanceID: wise.NewBalanceID(100),
+					Currency:  wise.Currency("EUR"),
+					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
+					Format:    wise.StatementFormatQIF,
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(data).To(ContainSubstring("!Type:Bank"))
+				Expect(data).To(ContainSubstring("T-4.50"))
+			})
+		})
+
+		Context("with an unknown format", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					BalanceID: wise.NewBalanceID(100),
+					Currency:  wise.Currency("EUR"),
+					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
+					Format:    wise.StatementFormat("docx"),
+				})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("unknown statement format"))
+			})
+		})
+
+		Context("with a zero balance ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					Currency:  wise.Currency("EUR"),
+					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
+					Format:    wise.StatementFormatCSV,
+				})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("balanceID is required"))
+			})
+		})
+
+		Context("with 404 unknown balance", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/balance-statements/404/statement.csv", errorHandler(
+					http.StatusNotFound, nil, "NOT_FOUND", "Balance not found",
+				))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					BalanceID: wise.NewBalanceID(404),
+					Currency:  wise.Currency("EUR"),
+					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
+					Format:    wise.StatementFormatCSV,
+				})
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+
+		Context("with 403 SCA challenge", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/balance-statements/100/statement.csv", scaChallengeHandler)
+			})
+
+			It("should surface an SCAChallengeError", func() {
+				_, err := client.GetStatement(context.Background(), wise.GetStatementRequest{
+					ProfileID: wise.NewProfileID(12345),
+					BalanceID: wise.NewBalanceID(100),
+					Currency:  wise.Currency("EUR"),
+					From:      time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					To:        time.Date(2023, 1, 31, 23, 59, 59, 0, time.UTC),
+					Format:    wise.StatementFormatCSV,
+				})
+				scaErr, ok := errors.AsType[*wise.SCAChallengeError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.SCAChallengeError, got %T: %v", err, err)
+				Expect(scaErr.TwoFAApprovalToken()).To(Equal("one-time-token-123"))
+			})
+		})
+	})
+
+	Describe("GetTransferReceipt", func() {
+		Context("with a paid-out transfer", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/987654/receipt.pdf", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Method).To(Equal(http.MethodGet))
+					w.Header().Set("Content-Type", "application/pdf")
+					_, _ = w.Write([]byte("%PDF-1.7 receipt"))
+				})
+			})
+
+			It("should return the raw receipt bytes", func() {
+				data, err := client.GetTransferReceipt(context.Background(), wise.NewTransferID(987654))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(data).To(HavePrefix("%PDF-1.7"))
+			})
+		})
+
+		Context("with a transfer that has no receipt", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/987654/receipt.pdf",
+					errorHandler(http.StatusNotFound, nil, "NOT_FOUND", "Transfer not found"))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.GetTransferReceipt(context.Background(), wise.NewTransferID(987654))
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+
+		Context("with an invalid API key", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/987654/receipt.pdf", unauthorizedHandler)
+			})
+
+			It("should surface an AuthError", func() {
+				_, err := client.GetTransferReceipt(context.Background(), wise.NewTransferID(987654))
+				authErr, ok := errors.AsType[*wise.AuthError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.AuthError, got %T: %v", err, err)
+				Expect(authErr.StatusCode).To(Equal(http.StatusUnauthorized))
+			})
+		})
+
+		Context("with a zero transfer ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetTransferReceipt(context.Background(), wise.NewTransferID(0))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("transferID is required"))
+			})
+		})
+	})
+
+	Describe("GetTransferPayoutInfo", func() {
+		Context("with a SWIFT payout", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/987654/invoices/bankingpartner", func(
+					w http.ResponseWriter, _ *http.Request,
+				) {
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = w.Write([]byte(`{
+						"processorName": "Acme Bank Ltd.",
+						"deliveryMode": "SWIFT",
+						"bankingPartnerReference": "ABCD1234",
+						"bankingPartnerName": "Global Bank Corp.",
+						"mt103": "{1:F01XXXXGBXXAXXX0000000000}{4:\n:20:1234567\n-}"
+					}`))
+				})
+			})
+
+			It("should return the mapped payout info with MT103", func() {
+				info, err := client.GetTransferPayoutInfo(context.Background(), wise.NewTransferID(987654))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(info).ToNot(BeNil())
+				Expect(info.ProcessorName).To(Equal("Acme Bank Ltd."))
+				Expect(info.DeliveryMode).To(Equal("SWIFT"))
+				Expect(info.BankingPartnerReference).To(Equal("ABCD1234"))
+				Expect(info.BankingPartnerName).To(Equal("Global Bank Corp."))
+				Expect(info.MT103).ToNot(BeNil())
+				Expect(*info.MT103).To(ContainSubstring(":20:1234567"))
+			})
+		})
+
+		Context("with a non-SWIFT corridor", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/987654/invoices/bankingpartner", func(
+					w http.ResponseWriter, _ *http.Request,
+				) {
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = w.Write([]byte(`{
+						"processorName": "Acme Bank Ltd.",
+						"deliveryMode": "LOCAL",
+						"bankingPartnerReference": "ABCD1234",
+						"bankingPartnerName": "Global Bank Corp.",
+						"mt103": null
+					}`))
+				})
+			})
+
+			It("should return nil MT103", func() {
+				info, err := client.GetTransferPayoutInfo(context.Background(), wise.NewTransferID(987654))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(info).ToNot(BeNil())
+				Expect(info.MT103).To(BeNil())
+				Expect(info.DeliveryMode).To(Equal("LOCAL"))
+			})
+		})
+
+		Context("with an unknown transfer", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/987654/invoices/bankingpartner",
+					errorHandler(http.StatusNotFound, nil, "NOT_FOUND", "Transfer not found"))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.GetTransferPayoutInfo(context.Background(), wise.NewTransferID(987654))
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+
+		Context("with a zero transfer ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetTransferPayoutInfo(context.Background(), wise.NewTransferID(0))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("transferID is required"))
+			})
+		})
+	})
+
+	Describe("GetMe", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/me", func(w http.ResponseWriter, _ *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, raw.User{
+						ID: 101, Name: "Example Person", Email: "person@example.com", Active: true,
+						Detail: &raw.UserDetail{
+							FirstName: "Example", LastName: "Person",
+							PhoneNumber: "+37111111111", DateOfBirth: "1977-01-01",
+							PrimaryAddress: 111,
+							Address: &raw.UserAddress{
+								CountryCode: "EE", FirstLine: "Road 123",
+								PostCode: "11111", City: "Tallinn",
+							},
+						},
+					})
+				})
+			})
+
+			It("should return the mapped user", func() {
+				user, err := client.GetMe(context.Background())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(user).ToNot(BeNil())
+				Expect(user.ID.Get()).To(Equal(int64(101)))
+				Expect(user.Email).To(Equal("person@example.com"))
+				Expect(user.Active).To(BeTrue())
+				Expect(user.Details).ToNot(BeNil())
+				Expect(user.Details.FirstName).To(Equal("Example"))
+				Expect(user.Details.DateOfBirth).
+					To(Equal(time.Date(1977, time.January, 1, 0, 0, 0, 0, time.UTC)))
+				Expect(user.Details.Address).ToNot(BeNil())
+				Expect(user.Details.Address.CountryCode).To(Equal("EE"))
+			})
+		})
+
+		Context("with null details", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/me", func(w http.ResponseWriter, _ *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, raw.User{ID: 101, Email: "person@example.com", Active: true})
+				})
+			})
+
+			It("should map details as nil", func() {
+				user, err := client.GetMe(context.Background())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(user.Details).To(BeNil())
+			})
+		})
+
+		Context("with 401 unauthorized", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/me", errorHandler(
+					http.StatusUnauthorized, nil, "UNAUTHORIZED", "Invalid API key",
+				))
+			})
+
+			It("should surface an AuthError", func() {
+				_, err := client.GetMe(context.Background())
+				authErr, ok := errors.AsType[*wise.AuthError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.AuthError, got %T: %v", err, err)
+				Expect(authErr.StatusCode).To(Equal(http.StatusUnauthorized))
+			})
+		})
+	})
+
+	Describe("GetUser", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/users/101", func(w http.ResponseWriter, _ *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, raw.User{ID: 101, Email: "person@example.com", Active: true})
+				})
+			})
+
+			It("should return the mapped user", func() {
+				user, err := client.GetUser(context.Background(), wise.NewUserID(101))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(user).ToNot(BeNil())
+				Expect(user.ID.Get()).To(Equal(int64(101)))
+			})
+		})
+
+		Context("with zero user ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetUser(context.Background(), wise.UserID{})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("userID is required"))
+			})
+		})
+
+		Context("with 404 unknown user", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/users/404", errorHandler(
+					http.StatusNotFound, nil, "NOT_FOUND", "User not found",
+				))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.GetUser(context.Background(), wise.NewUserID(404))
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+
+		Context("with 403 plain rejection (no SCA headers)", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/users/403", errorHandler(
+					http.StatusForbidden, nil, "FORBIDDEN", "Insufficient permissions",
+				))
+			})
+
+			It("should surface an AuthError, not an SCAChallengeError", func() {
+				_, err := client.GetUser(context.Background(), wise.NewUserID(403))
+				authErr, ok := errors.AsType[*wise.AuthError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.AuthError, got %T: %v", err, err)
+				Expect(authErr.StatusCode).To(Equal(http.StatusForbidden))
+
+				_, isSCA := errors.AsType[*wise.SCAChallengeError](err)
+				Expect(isSCA).To(BeFalse(), "a 403 without 2FA headers must not classify as SCA")
+			})
+		})
+	})
+
+	Describe("GetMultiCurrencyAccount", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/multi-currency-account",
+					func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.MarshalWrite(w, raw.MultiCurrencyAccount{
+							ID: 1, ProfileID: 12345, RecipientID: 12345678,
+							CreationTime:     "2020-05-20T14:43:16.658Z",
+							ModificationTime: "2020-05-20T14:43:16.658Z",
+							Active:           true, Eligible: true,
+						})
+					})
+			})
+
+			It("should map the account with its self-recipient", func() {
+				account, err := client.GetMultiCurrencyAccount(
+					context.Background(), wise.NewProfileID(12345),
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(account).ToNot(BeNil())
+				Expect(account.ID.Get()).To(Equal(int64(1)))
+				Expect(account.RecipientID.Get()).To(Equal(int64(12345678)))
+				Expect(account.Created.Year()).To(Equal(2020))
+				Expect(account.Active).To(BeTrue())
+			})
+		})
+
+		Context("with zero profile ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetMultiCurrencyAccount(context.Background(), wise.ProfileID{})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("profileID is required"))
+			})
+		})
+
+		Context("with 404 unknown profile", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/404/multi-currency-account", errorHandler(
+					http.StatusNotFound, nil, "NOT_FOUND", "Profile not found",
+				))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.GetMultiCurrencyAccount(
+					context.Background(), wise.NewProfileID(404),
+				)
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+	})
+
+	Describe("GetBankAccountDetails", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/account-details",
+					func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.MarshalWrite(w, []raw.BankAccountDetails{
+							{
+								ID:         new(int64(14000001)),
+								Currency:   raw.BankAccountCurrency{Code: "EUR", Name: "Euro"},
+								Title:      "Your EUR account details",
+								Subtitle:   "IBAN, SWIFT/BIC",
+								Status:     "ACTIVE",
+								Deprecated: false,
+								ReceiveOptions: []raw.BankReceiveOption{
+									{
+										Type:  "LOCAL",
+										Title: "Local",
+										Description: &raw.BankOptionDescription{
+											Title: "Your EUR account details",
+											Body:  "Receive from a bank in the Eurozone",
+											CTA:   &raw.BankOptionCTA{Label: "IBAN", Content: "BE12 3456 7890 1234"},
+										},
+									},
+								},
+							},
+						})
+					})
+			})
+
+			It("should map the details and receive options", func() {
+				details, err := client.GetBankAccountDetails(
+					context.Background(), wise.NewProfileID(12345),
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(details).To(HaveLen(1))
+
+				detail := details[0]
+				Expect(detail.ID).ToNot(BeNil())
+				Expect(*detail.ID).To(Equal(int64(14000001)))
+				Expect(detail.Currency).To(Equal(wise.Currency("EUR")))
+				Expect(detail.Status).To(Equal(wise.AccountDetailsStatusActive))
+				Expect(detail.ReceiveOptions).To(HaveLen(1))
+				Expect(detail.ReceiveOptions[0].Type).To(Equal(wise.ReceiveOptionTypeLocal))
+				Expect(detail.ReceiveOptions[0].Description.CTA.Content).To(Equal("BE12 3456 7890 1234"))
+			})
+		})
+
+		Context("with zero profile ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetBankAccountDetails(context.Background(), wise.ProfileID{})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("profileID is required"))
+			})
+		})
+
+		Context("with 404 unknown profile", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/404/account-details", errorHandler(
+					http.StatusNotFound, nil, "NOT_FOUND", "Profile not found",
+				))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.GetBankAccountDetails(
+					context.Background(), wise.NewProfileID(404),
+				)
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+	})
+
+	Describe("ListCurrencies", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/currencies", func(w http.ResponseWriter, _ *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, []raw.CurrencyInfo{
+						{
+							Code: "EUR", Symbol: "€", Name: "Euro",
+							CountryKeywords:  []string{"Germany", "France"},
+							SupportsDecimals: true,
+						},
+						{
+							Code: "JPY", Symbol: "¥", Name: "Japanese Yen",
+							CountryKeywords:  []string{"Japan"},
+							SupportsDecimals: false,
+						},
+					})
+				})
+			})
+
+			It("should map the currency reference data", func() {
+				currencies, err := client.ListCurrencies(context.Background())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(currencies).To(HaveLen(2))
+				Expect(currencies[0].Code).To(Equal(wise.Currency("EUR")))
+				Expect(currencies[0].Symbol).To(Equal("€"))
+				Expect(currencies[1].SupportsDecimals).To(BeFalse())
+			})
+		})
+
+		Context("with 401 unauthorized", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/currencies", errorHandler(
+					http.StatusUnauthorized, nil, "UNAUTHORIZED", "Invalid API key",
+				))
+			})
+
+			It("should surface an AuthError", func() {
+				_, err := client.ListCurrencies(context.Background())
+				authErr, ok := errors.AsType[*wise.AuthError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.AuthError, got %T: %v", err, err)
+				Expect(authErr.StatusCode).To(Equal(http.StatusUnauthorized))
+			})
+		})
+	})
+
+	Describe("CorrelationID", func() {
+		var correlationClient *wise.Client
+
+		BeforeEach(func() {
+			correlationClient = wise.New("test-api-key",
+				wise.WithBaseURL(server.URL),
+				wise.WithCorrelationID("client-wide-id"),
+			)
+		})
+
+		Context("without a per-request override", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Header.Get("X-External-Correlation-Id")).To(Equal("client-wide-id"))
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, []raw.Profile{})
+				})
+			})
+
+			It("sends the client-wide correlation ID", func() {
+				_, err := correlationClient.ListProfiles(context.Background())
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+
+		Context("with a per-request override", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Header.Get("X-External-Correlation-Id")).To(Equal("request-specific-id"))
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, []raw.Profile{})
+				})
+			})
+
+			It("overrides the client-wide value", func() {
+				ctx := wise.WithRequestCorrelationID(context.Background(), "request-specific-id")
+				_, err := correlationClient.ListProfiles(ctx)
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("WithLogger", func() {
+		var entries []wise.RequestLog
+
+		Context("on a successful request", func() {
+			BeforeEach(func() {
+				entries = nil
+				client = wise.New("test-api-key",
+					wise.WithBaseURL(server.URL),
+					wise.WithLogger(wise.RequestLogFunc(func(entry wise.RequestLog) {
+						entries = append(entries, entry)
+					})),
+				)
+
+				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, []raw.Profile{})
+				})
+			})
+
+			It("logs method, URL, status, duration, and attempt", func() {
+				_, err := client.ListProfiles(context.Background())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(entries).To(HaveLen(1))
+				Expect(entries[0].Method).To(Equal(http.MethodGet))
+				Expect(entries[0].URL).To(ContainSubstring("/v2/profiles"))
+				Expect(entries[0].Status).To(Equal(http.StatusOK))
+				Expect(entries[0].Duration).To(BeNumerically(">=", 0))
+				Expect(entries[0].Attempt).To(Equal(1))
+				Expect(entries[0].Error).ToNot(HaveOccurred())
+			})
+		})
+
+		Context("on retries", func() {
+			var callCount int
+
+			BeforeEach(func() {
+				entries = nil
+				callCount = 0
+				client = wise.New("test-api-key",
+					wise.WithBaseURL(server.URL),
+					wise.WithRetry(2, time.Millisecond, time.Millisecond),
+					wise.WithLogger(wise.RequestLogFunc(func(entry wise.RequestLog) {
+						entries = append(entries, entry)
+					})),
+				)
+
+				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {
+					callCount++
+
+					if callCount == 1 {
+						w.Header().Set("Retry-After", "0")
+						w.WriteHeader(http.StatusTooManyRequests)
+
+						return
+					}
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, []raw.Profile{})
+				})
+			})
+
+			It("logs every attempt with increasing attempt numbers", func() {
+				_, err := client.ListProfiles(context.Background())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(entries).To(HaveLen(2))
+				Expect(entries[0].Status).To(Equal(http.StatusTooManyRequests))
+				Expect(entries[0].Attempt).To(Equal(1))
+				Expect(entries[1].Status).To(Equal(http.StatusOK))
+				Expect(entries[1].Attempt).To(Equal(2))
+			})
+		})
+
+		Context("on a Retry-After-honored delay", func() {
+			var callCount int
+
+			BeforeEach(func() {
+				entries = nil
+				callCount = 0
+				client = wise.New("test-api-key",
+					wise.WithBaseURL(server.URL),
+					wise.WithRetry(1, time.Millisecond, time.Millisecond),
+					wise.WithLogger(wise.RequestLogFunc(func(entry wise.RequestLog) {
+						entries = append(entries, entry)
+					})),
+				)
+
+				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {
+					callCount++
+
+					if callCount == 1 {
+						w.Header().Set("Retry-After", "30")
+						w.WriteHeader(http.StatusTooManyRequests)
+
+						return
+					}
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, []raw.Profile{})
+				})
+			})
+
+			It("emits a delay-decision entry showing the honored hint", func() {
+				_, err := client.ListProfiles(context.Background())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(entries).To(HaveLen(3))
+
+				delay := entries[1]
+				Expect(delay.Method).To(BeEmpty())
+				Expect(delay.URL).To(BeEmpty())
+				Expect(delay.Status).To(Equal(http.StatusTooManyRequests))
+				Expect(delay.Attempt).To(Equal(1))
+				Expect(delay.Error).ToNot(HaveOccurred())
+				Expect(delay.RetryAfterDelay).To(Equal(time.Millisecond))
+				Expect(delay.Duration).To(Equal(time.Millisecond))
+
+				Expect(entries[0].Status).To(Equal(http.StatusTooManyRequests))
+				Expect(entries[2].Status).To(Equal(http.StatusOK))
+			})
+		})
+
+		Context("on two consecutive Retry-After-honored delays", func() {
+			var callCount int
+
+			BeforeEach(func() {
+				entries = nil
+				callCount = 0
+				client = wise.New("test-api-key",
+					wise.WithBaseURL(server.URL),
+					wise.WithRetry(2, time.Millisecond, time.Millisecond),
+					wise.WithLogger(wise.RequestLogFunc(func(entry wise.RequestLog) {
+						entries = append(entries, entry)
+					})),
+				)
+
+				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {
+					callCount++
+
+					if callCount <= 2 {
+						w.Header().Set("Retry-After", "30")
+						w.WriteHeader(http.StatusTooManyRequests)
+
+						return
+					}
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(w, []raw.Profile{})
+				})
+			})
+
+			It("emits one delay-decision entry per honored retry", func() {
+				_, err := client.ListProfiles(context.Background())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(entries).To(HaveLen(5))
+
+				Expect(entries[0].Status).To(Equal(http.StatusTooManyRequests))
+				Expect(entries[0].RetryAfterDelay).To(BeZero())
+
+				Expect(entries[1].Status).To(Equal(http.StatusTooManyRequests))
+				Expect(entries[1].Method).To(BeEmpty())
+				Expect(entries[1].RetryAfterDelay).To(Equal(time.Millisecond))
+
+				Expect(entries[2].Status).To(Equal(http.StatusTooManyRequests))
+				Expect(entries[2].RetryAfterDelay).To(BeZero())
+
+				Expect(entries[3].Status).To(Equal(http.StatusTooManyRequests))
+				Expect(entries[3].Method).To(BeEmpty())
+				Expect(entries[3].RetryAfterDelay).To(Equal(time.Millisecond))
+
+				Expect(entries[4].Status).To(Equal(http.StatusOK))
+			})
+		})
+	})
+
+	Describe("Retry cancellation", func() {
+		Context("when the context is cancelled mid-retry", func() {
+			It("aborts the retry loop promptly", func() {
+				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {
+					time.Sleep(20 * time.Millisecond)
+					w.WriteHeader(http.StatusInternalServerError)
+				})
+
+				retryClient := wise.New("test-api-key",
+					wise.WithBaseURL(server.URL),
+					wise.WithRetry(10, 100*time.Millisecond, 100*time.Millisecond),
+				)
+
+				ctx, cancel := context.WithCancel(context.Background())
+
+				go func() {
+					time.Sleep(150 * time.Millisecond)
+					cancel()
+				}()
+
+				start := time.Now()
+				_, err := retryClient.ListProfiles(ctx)
+				elapsed := time.Since(start)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("context canceled"))
+				// Without cancellation the 10 retries take >= 1s; with it the
+				// call must return shortly after the cancel fires.
+				Expect(elapsed).To(BeNumerically("<", 600*time.Millisecond))
+			})
+		})
+	})
+
 	Describe("Retry", func() {
 		Context("on 429 with Retry-After header", func() {
 			var callCount int
@@ -1609,6 +3752,609 @@ var _ = Describe("Wise Client", func() {
 				_, err := client.ListProfiles(context.Background())
 				Expect(err).ToNot(HaveOccurred())
 			})
+		})
+	})
+
+	var (
+		validSubscriptionJSON string
+		validCreateReq        wise.CreateWebhookSubscriptionRequest
+	)
+
+	BeforeEach(func() {
+		validSubscriptionJSON = `{
+		"id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+		"name": "Payout watcher",
+		"trigger_on": "transfers#state-change",
+		"delivery": {"version": "4.0.0", "url": "https://example.com/hooks/wise"},
+		"created_at": "2026-09-13T10:00:00Z",
+		"created_by": {"id": "api-key-123", "type": "user"},
+		"scope": {"domain": "profile", "id": "12345"}
+	}`
+
+		validCreateReq = wise.CreateWebhookSubscriptionRequest{
+			Name:      "Payout watcher",
+			TriggerOn: wise.WebhookEventTransfersStateChange,
+			Delivery:  wise.WebhookDelivery{Version: "4.0.0", URL: "https://example.com/hooks/wise"},
+		}
+	})
+
+	Describe("CreateProfileWebhookSubscription", func() {
+		Context("with a valid subscription request", func() {
+			var requestBody map[string]any
+
+			BeforeEach(func() {
+				mux.HandleFunc("/2026Q4/profiles/12345/subscriptions", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Method).To(Equal(http.MethodPost))
+
+					var body map[string]any
+					Expect(json.UnmarshalRead(r.Body, &body)).To(Succeed())
+					requestBody = body
+
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = w.Write([]byte(validSubscriptionJSON))
+				})
+			})
+
+			It("should POST the wire body and map the created subscription", func() {
+				sub, err := client.CreateProfileWebhookSubscription(
+					context.Background(), wise.NewProfileID(12345), validCreateReq,
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(sub.ID.Get()).To(Equal("72195556-e5cb-495e-a010-b37a4f2a3043"))
+				Expect(sub.Name).To(Equal("Payout watcher"))
+				Expect(sub.TriggerOn).To(Equal(wise.WebhookEventTransfersStateChange))
+				Expect(sub.Delivery.Version).To(Equal("4.0.0"))
+				Expect(sub.Delivery.URL).To(Equal("https://example.com/hooks/wise"))
+				Expect(sub.CreatedAt.Equal(time.Date(2026, 9, 13, 10, 0, 0, 0, time.UTC))).To(BeTrue())
+				Expect(sub.CreatedBy.ID).To(Equal("api-key-123"))
+				Expect(sub.CreatedBy.Type).To(Equal(wise.WebhookCreatorTypeUser))
+				Expect(sub.Scope.Domain).To(Equal(wise.WebhookScopeDomainProfile))
+				Expect(sub.Scope.ID).To(Equal("12345"))
+
+				Expect(requestBody["name"]).To(Equal("Payout watcher"))
+				Expect(requestBody["trigger_on"]).To(Equal("transfers#state-change"))
+				delivery, ok := requestBody["delivery"].(map[string]any)
+				Expect(ok).To(BeTrue(), "expected delivery object, got %T", requestBody["delivery"])
+				Expect(delivery["version"]).To(Equal("4.0.0"))
+				Expect(delivery["url"]).To(Equal("https://example.com/hooks/wise"))
+			})
+		})
+
+		Context("with a Wise validation rejection", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/2026Q4/profiles/12345/subscriptions",
+					errorHandler(http.StatusBadRequest, nil, "VALIDATION_ERROR", "trigger_on: unrecognized event type"))
+			})
+
+			It("should surface an APIError", func() {
+				_, err := client.CreateProfileWebhookSubscription(
+					context.Background(), wise.NewProfileID(12345), validCreateReq,
+				)
+				apiErr, ok := errors.AsType[*wise.APIError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.APIError, got %T: %v", err, err)
+				Expect(apiErr.StatusCode).To(Equal(http.StatusBadRequest))
+			})
+		})
+
+		Context("with an invalid API key", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/2026Q4/profiles/12345/subscriptions", unauthorizedHandler)
+			})
+
+			It("should surface an AuthError", func() {
+				_, err := client.CreateProfileWebhookSubscription(
+					context.Background(), wise.NewProfileID(12345), validCreateReq,
+				)
+				authErr, ok := errors.AsType[*wise.AuthError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.AuthError, got %T: %v", err, err)
+				Expect(authErr.StatusCode).To(Equal(http.StatusUnauthorized))
+			})
+		})
+	})
+
+	Describe("CreateProfileWebhookSubscription request validation", func() {
+		It("should reject malformed requests without calling the API", func() {
+			cases := []struct {
+				name    string
+				profile wise.ProfileID
+				req     wise.CreateWebhookSubscriptionRequest
+				message string
+			}{
+				{
+					"missing name", wise.NewProfileID(12345),
+					wise.CreateWebhookSubscriptionRequest{
+						TriggerOn: wise.WebhookEventTransfersStateChange,
+						Delivery:  wise.WebhookDelivery{Version: "4.0.0", URL: "https://example.com/h"},
+					},
+					"name is required",
+				},
+				{
+					"missing triggerOn", wise.NewProfileID(12345),
+					wise.CreateWebhookSubscriptionRequest{
+						Name:     "Payout watcher",
+						Delivery: wise.WebhookDelivery{Version: "4.0.0", URL: "https://example.com/h"},
+					},
+					"triggerOn is required",
+				},
+				{
+					"missing delivery version", wise.NewProfileID(12345),
+					wise.CreateWebhookSubscriptionRequest{
+						Name:      "Payout watcher",
+						TriggerOn: wise.WebhookEventTransfersStateChange,
+						Delivery:  wise.WebhookDelivery{URL: "https://example.com/h"},
+					},
+					"delivery.version is required",
+				},
+				{
+					"non-HTTPS delivery URL", wise.NewProfileID(12345),
+					wise.CreateWebhookSubscriptionRequest{
+						Name:      "Payout watcher",
+						TriggerOn: wise.WebhookEventTransfersStateChange,
+						Delivery:  wise.WebhookDelivery{Version: "4.0.0", URL: "http://example.com/h"},
+					},
+					"delivery.url must be an HTTPS URL",
+				},
+				{"zero profile ID", wise.NewProfileID(0), validCreateReq, "profileID is required"},
+			}
+
+			for _, tc := range cases {
+				_, err := client.CreateProfileWebhookSubscription(context.Background(), tc.profile, tc.req)
+				Expect(err).To(HaveOccurred(), tc.name)
+				Expect(err.Error()).To(ContainSubstring(tc.message), tc.name)
+			}
+		})
+	})
+
+	Describe("ListProfileWebhookSubscriptions", func() {
+		Context("with two subscriptions", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/2026Q4/profiles/12345/subscriptions", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Method).To(Equal(http.MethodGet))
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = w.Write([]byte(`[
+						{
+							"id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+							"name": "Payout watcher",
+							"trigger_on": "transfers#state-change",
+							"delivery": {"version": "4.0.0", "url": "https://example.com/hooks/wise"},
+							"created_at": "2026-09-13T10:00:00Z",
+							"created_by": {"id": "api-key-123", "type": "user"},
+							"scope": {"domain": "profile", "id": "12345"}
+						},
+						{
+							"id": "9c1f6c1a-39cb-4a4c-8f2e-cc9eef54c92b",
+							"name": "Balance alerts",
+							"trigger_on": "balances#credit",
+							"delivery": {"version": "4.0.0", "url": "https://example.com/hooks/balance"},
+							"created_at": "2026-09-13T09:00:00Z",
+							"created_by": {"id": "client-key-9", "type": "application"},
+							"scope": {"domain": "profile", "id": "12345"}
+						}
+					]`))
+				})
+			})
+
+			It("should return both subscriptions in order", func() {
+				subs, err := client.ListProfileWebhookSubscriptions(context.Background(), wise.NewProfileID(12345))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(subs).To(HaveLen(2))
+				Expect(subs[0].Name).To(Equal("Payout watcher"))
+				Expect(subs[1].Name).To(Equal("Balance alerts"))
+				Expect(subs[1].TriggerOn).To(Equal(wise.WebhookEventBalancesCredit))
+				Expect(subs[1].CreatedBy.Type).To(Equal(wise.WebhookCreatorTypeApplication))
+			})
+		})
+
+		Context("with no subscriptions", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/2026Q4/profiles/12345/subscriptions", func(w http.ResponseWriter, _ *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = w.Write([]byte(`[]`))
+				})
+			})
+
+			It("should return an empty slice", func() {
+				subs, err := client.ListProfileWebhookSubscriptions(context.Background(), wise.NewProfileID(12345))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(subs).To(BeEmpty())
+			})
+		})
+
+		Context("with a corrupt created_at timestamp", func() {
+			BeforeEach(func() {
+				mux.HandleFunc(
+					"/2026Q4/profiles/12345/subscriptions",
+					exemptResponseSchema(func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						_, _ = w.Write([]byte(`[{
+						"id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+						"name": "Payout watcher",
+						"trigger_on": "transfers#state-change",
+						"delivery": {"version": "4.0.0", "url": "https://example.com/hooks/wise"},
+						"created_at": "not-a-timestamp",
+						"created_by": {"id": "api-key-123", "type": "user"},
+						"scope": {"domain": "profile", "id": "12345"}
+					}]`))
+					}),
+				)
+			})
+
+			It("should classify the mapper failure as corruption", func() {
+				_, err := client.ListProfileWebhookSubscriptions(context.Background(), wise.NewProfileID(12345))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("parse created_at"))
+			})
+		})
+
+		Context("with an invalid API key", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/2026Q4/profiles/12345/subscriptions", unauthorizedHandler)
+			})
+
+			It("should surface an AuthError", func() {
+				_, err := client.ListProfileWebhookSubscriptions(context.Background(), wise.NewProfileID(12345))
+				authErr, ok := errors.AsType[*wise.AuthError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.AuthError, got %T: %v", err, err)
+				Expect(authErr.StatusCode).To(Equal(http.StatusUnauthorized))
+			})
+		})
+
+		Context("with a zero profile ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.ListProfileWebhookSubscriptions(context.Background(), wise.NewProfileID(0))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("profileID is required"))
+			})
+		})
+	})
+
+	Describe("GetProfileWebhookSubscription", func() {
+		Context("with an existing subscription", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/2026Q4/profiles/12345/subscriptions/72195556-e5cb-495e-a010-b37a4f2a3043",
+					func(w http.ResponseWriter, r *http.Request) {
+						Expect(r.Method).To(Equal(http.MethodGet))
+						w.Header().Set("Content-Type", "application/json")
+						_, _ = w.Write([]byte(validSubscriptionJSON))
+					})
+			})
+
+			It("should return the mapped subscription", func() {
+				sub, err := client.GetProfileWebhookSubscription(
+					context.Background(),
+					wise.NewProfileID(12345),
+					wise.NewWebhookSubscriptionID("72195556-e5cb-495e-a010-b37a4f2a3043"),
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(sub.Name).To(Equal("Payout watcher"))
+				Expect(sub.TriggerOn).To(Equal(wise.WebhookEventTransfersStateChange))
+			})
+		})
+
+		Context("with an unknown subscription", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/2026Q4/profiles/12345/subscriptions/72195556-e5cb-495e-a010-b37a4f2a3043",
+					errorHandler(http.StatusNotFound, nil, "NOT_FOUND", "Subscription not found"))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.GetProfileWebhookSubscription(
+					context.Background(),
+					wise.NewProfileID(12345),
+					wise.NewWebhookSubscriptionID("72195556-e5cb-495e-a010-b37a4f2a3043"),
+				)
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+
+		Context("with zero IDs", func() {
+			It("should reject a zero profile ID without calling the API", func() {
+				_, err := client.GetProfileWebhookSubscription(
+					context.Background(),
+					wise.NewProfileID(0),
+					wise.NewWebhookSubscriptionID("72195556-e5cb-495e-a010-b37a4f2a3043"),
+				)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("profileID is required"))
+			})
+
+			It("should reject a zero subscription ID without calling the API", func() {
+				_, err := client.GetProfileWebhookSubscription(
+					context.Background(),
+					wise.NewProfileID(12345),
+					wise.NewWebhookSubscriptionID(""),
+				)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("subscriptionID is required"))
+			})
+		})
+	})
+
+	Describe("DeleteProfileWebhookSubscription", func() {
+		Context("with an existing subscription", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/2026Q4/profiles/12345/subscriptions/72195556-e5cb-495e-a010-b37a4f2a3043",
+					func(w http.ResponseWriter, r *http.Request) {
+						Expect(r.Method).To(Equal(http.MethodDelete))
+						w.WriteHeader(http.StatusNoContent)
+					})
+			})
+
+			It("should acknowledge the delete without error", func() {
+				err := client.DeleteProfileWebhookSubscription(
+					context.Background(),
+					wise.NewProfileID(12345),
+					wise.NewWebhookSubscriptionID("72195556-e5cb-495e-a010-b37a4f2a3043"),
+				)
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+
+		Context("with an unknown subscription", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/2026Q4/profiles/12345/subscriptions/72195556-e5cb-495e-a010-b37a4f2a3043",
+					errorHandler(http.StatusNotFound, nil, "NOT_FOUND", "Subscription not found"))
+			})
+
+			It("should surface a NotFoundError", func() {
+				err := client.DeleteProfileWebhookSubscription(
+					context.Background(),
+					wise.NewProfileID(12345),
+					wise.NewWebhookSubscriptionID("72195556-e5cb-495e-a010-b37a4f2a3043"),
+				)
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+
+		Context("with zero IDs", func() {
+			It("should reject a zero subscription ID without calling the API", func() {
+				err := client.DeleteProfileWebhookSubscription(
+					context.Background(),
+					wise.NewProfileID(12345),
+					wise.NewWebhookSubscriptionID(""),
+				)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("subscriptionID is required"))
+			})
+		})
+	})
+
+	var transferStateChangeEventJSON string
+
+	BeforeEach(func() {
+		transferStateChangeEventJSON = `{
+		"schema_version": "4.0.0",
+		"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+		"event_type": "transfers#state-change",
+		"sent_at": "2020-01-01T12:34:56.123Z",
+		"data": {
+			"resource": {"id": 111, "profile_id": 222, "account_id": 333, "type": "transfer"},
+			"current_state": "processing",
+			"previous_state": "incoming_payment_waiting",
+			"occurred_at": "2020-01-01T12:34:00Z"
+		}
+	}`
+	})
+
+	Describe("ParseWebhookEvent", func() {
+		It("should decode the envelope and keep the data raw", func() {
+			event, err := wise.ParseWebhookEvent([]byte(transferStateChangeEventJSON))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(event.SchemaVersion).To(Equal("4.0.0"))
+			Expect(event.SubscriptionID.Get()).To(Equal("72195556-e5cb-495e-a010-b37a4f2a3043"))
+			Expect(event.EventType).To(Equal(wise.WebhookEventTransfersStateChange))
+			Expect(event.SentAt.Equal(time.Date(2020, 1, 1, 12, 34, 56, 123000000, time.UTC))).To(BeTrue())
+			Expect(string(event.Data)).To(ContainSubstring("incoming_payment_waiting"))
+		})
+
+		It("should accept unknown event types (forward compatibility)", func() {
+			payload := `{
+				"schema_version": "9.0.0",
+				"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+				"event_type": "newevents#something-new",
+				"sent_at": "2026-09-13 10:00:00",
+				"data": {"anything": true}
+			}`
+			event, err := wise.ParseWebhookEvent([]byte(payload))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(event.EventType).To(Equal(wise.WebhookEventType("newevents#something-new")))
+			Expect(event.SentAt.Equal(time.Date(2026, 9, 13, 10, 0, 0, 0, time.UTC))).To(BeTrue())
+		})
+
+		It("should tolerate the zoneless and space-separated timestamp layouts", func() {
+			payload := `{
+				"schema_version": "4.0.0",
+				"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+				"event_type": "balances#credit",
+				"sent_at": "2026-09-13T10:00:00",
+				"data": {}
+			}`
+			event, err := wise.ParseWebhookEvent([]byte(payload))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(event.SentAt.Equal(time.Date(2026, 9, 13, 10, 0, 0, 0, time.UTC))).To(BeTrue())
+		})
+
+		It("should classify undecodable envelopes as corruption", func() {
+			_, err := wise.ParseWebhookEvent([]byte(`{not json`))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("parse webhook event envelope"))
+		})
+
+		It("should classify a missing event type as corruption", func() {
+			payload := `{
+				"schema_version": "4.0.0",
+				"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+				"sent_at": "2020-01-01T12:34:56Z",
+				"data": {}
+			}`
+			_, err := wise.ParseWebhookEvent([]byte(payload))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("event_type is empty"))
+		})
+
+		It("should classify an unparseable sent_at as corruption", func() {
+			payload := `{
+				"schema_version": "4.0.0",
+				"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+				"event_type": "balances#credit",
+				"sent_at": "not-a-timestamp",
+				"data": {}
+			}`
+			_, err := wise.ParseWebhookEvent([]byte(payload))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("parse webhook sent_at"))
+		})
+	})
+
+	Describe("WebhookEvent.TransferStateChange", func() {
+		It("should decode the typed payload", func() {
+			event, err := wise.ParseWebhookEvent([]byte(transferStateChangeEventJSON))
+			Expect(err).ToNot(HaveOccurred())
+
+			data, err := event.TransferStateChange()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(data.Resource.Type).To(Equal("transfer"))
+			Expect(data.Resource.ID).To(Equal(int64(111)))
+			Expect(data.Resource.ProfileID).To(Equal(wise.NewProfileID(222)))
+			Expect(data.Resource.AccountID).ToNot(BeNil())
+			Expect(*data.Resource.AccountID).To(Equal(int64(333)))
+			Expect(data.CurrentState).To(Equal(wise.TransferStatus("processing")))
+			Expect(data.PreviousState).To(Equal(wise.TransferStatus("incoming_payment_waiting")))
+			Expect(data.OccurredAt.Equal(time.Date(2020, 1, 1, 12, 34, 0, 0, time.UTC))).To(BeTrue())
+		})
+
+		It("should classify undecodable payloads as corruption", func() {
+			event, err := wise.ParseWebhookEvent([]byte(`{
+				"schema_version": "4.0.0",
+				"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+				"event_type": "transfers#state-change",
+				"sent_at": "2020-01-01T12:34:56Z",
+				"data": {"current_state": ["not", "a", "string"]}
+			}`))
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = event.TransferStateChange()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("decode transfers#state-change payload"))
+		})
+
+		It("should classify an unparseable occurred_at as corruption", func() {
+			event, err := wise.ParseWebhookEvent([]byte(`{
+				"schema_version": "4.0.0",
+				"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+				"event_type": "transfers#state-change",
+				"sent_at": "2020-01-01T12:34:56Z",
+				"data": {
+					"resource": {"id": 1, "profile_id": 2, "type": "transfer"},
+					"current_state": "processing",
+					"previous_state": "incoming_payment_waiting",
+					"occurred_at": "not-a-timestamp"
+				}
+			}`))
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = event.TransferStateChange()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("parse transfers#state-change occurred_at"))
+		})
+	})
+
+	Describe("WebhookEvent.TransferPayoutFailure", func() {
+		It("should decode the typed payload", func() {
+			payload := `{
+				"schema_version": "5.0.0",
+				"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+				"event_type": "transfers#payout-failure",
+				"sent_at": "2023-08-10T10:17:28.123Z",
+				"data": {
+					"transfer_id": 111,
+					"profile_id": 222,
+					"failure_reason_code": "TECHNICAL_ISSUE_RETRYABLE",
+					"failure_description": "Payment failed due to a technical issue, Wise will retry",
+					"occurred_at": "2023-08-10T10:17:23.123Z"
+				}
+			}`
+			event, err := wise.ParseWebhookEvent([]byte(payload))
+			Expect(err).ToNot(HaveOccurred())
+
+			data, err := event.TransferPayoutFailure()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(data.TransferID.Get()).To(Equal(int64(111)))
+			Expect(data.ProfileID.Get()).To(Equal(int64(222)))
+			Expect(data.FailureReasonCode).To(Equal("TECHNICAL_ISSUE_RETRYABLE"))
+			Expect(data.FailureDescription).To(ContainSubstring("Wise will retry"))
+			Expect(data.OccurredAt.Equal(time.Date(2023, 8, 10, 10, 17, 23, 123000000, time.UTC))).To(BeTrue())
+		})
+
+		It("should classify undecodable payloads as corruption", func() {
+			event, err := wise.ParseWebhookEvent([]byte(`{
+				"schema_version": "5.0.0",
+				"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+				"event_type": "transfers#payout-failure",
+				"sent_at": "2023-08-10T10:17:28.123Z",
+				"data": {"transfer_id": "not-a-number"}
+			}`))
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = event.TransferPayoutFailure()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("decode transfers#payout-failure payload"))
+		})
+	})
+
+	Describe("WebhookEvent.BalanceCredit", func() {
+		It("should decode the typed payload with Money conversion", func() {
+			payload := `{
+				"schema_version": "4.0.0",
+				"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+				"event_type": "balances#credit",
+				"sent_at": "2020-01-01T12:34:56.123Z",
+				"data": {
+					"resource": {"id": 555, "profile_id": 222, "type": "balance-account"},
+					"amount": 100.5,
+					"currency": "EUR",
+					"post_transaction_balance_amount": 1100.25,
+					"occurred_at": "2020-01-01T12:34:00Z"
+				}
+			}`
+			event, err := wise.ParseWebhookEvent([]byte(payload))
+			Expect(err).ToNot(HaveOccurred())
+
+			data, err := event.BalanceCredit()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(data.Resource.Type).To(Equal("balance-account"))
+			Expect(data.Resource.ID).To(Equal(int64(555)))
+			Expect(data.Resource.AccountID).To(BeNil())
+			Expect(data.Amount.Cents).To(Equal(int64(10050)))
+			Expect(data.Amount.Currency).To(Equal(wise.Currency("EUR")))
+			Expect(data.PostTransactionBalance.Cents).To(Equal(int64(110025)))
+			Expect(data.OccurredAt.Equal(time.Date(2020, 1, 1, 12, 34, 0, 0, time.UTC))).To(BeTrue())
+		})
+
+		It("should classify an invalid currency as corruption", func() {
+			payload := `{
+				"schema_version": "4.0.0",
+				"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+				"event_type": "balances#credit",
+				"sent_at": "2020-01-01T12:34:56.123Z",
+				"data": {
+					"resource": {"id": 555, "profile_id": 222, "type": "balance-account"},
+					"amount": 100.5,
+					"currency": "not-a-currency",
+					"post_transaction_balance_amount": 1100.25,
+					"occurred_at": "2020-01-01T12:34:00Z"
+				}
+			}`
+			event, err := wise.ParseWebhookEvent([]byte(payload))
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = event.BalanceCredit()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("map balances#credit amount"))
 		})
 	})
 })

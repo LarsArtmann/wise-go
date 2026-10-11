@@ -30,8 +30,9 @@ type ListTransfersRequest struct {
 }
 
 // ListTransfers returns the transfers for a profile, automatically
-// paginating through the complete result set in transferPageSize chunks.
-// Results are ordered by creation date, newest first (Wise API order).
+// paginating through the complete result set in pages of 100 (Wise's
+// per-request maximum). Results are ordered by creation date, newest first
+// (Wise API order).
 //
 // Unlike balance statements, the transfers endpoint is not SCA-protected and
 // is available to personal API tokens in all regions.
@@ -67,11 +68,11 @@ func (c *Client) listTransfersPage(
 		}
 
 		if !req.From.IsZero() {
-			v.Set("createdDateStart", req.From.Format(time.RFC3339))
+			v.Set("createdDateStart", formatWiseTimestamp(req.From))
 		}
 
 		if !req.To.IsZero() {
-			v.Set("createdDateEnd", req.To.Format(time.RFC3339))
+			v.Set("createdDateEnd", formatWiseTimestamp(req.To))
 		}
 
 		if len(req.Status) > 0 {
@@ -118,67 +119,94 @@ func (c *Client) GetTransfer(ctx context.Context, transferID TransferID) (*Trans
 
 	var transfer raw.Transfer
 
-	if err := fetchByID(ctx, c, transferID.Get(), "transfer", path, &transfer); err != nil {
+	if err := fetchByID(ctx, c, transferID, "transfer", path, &transfer); err != nil {
 		return nil, err
 	}
 
-	result, mapErr := mapTransfer(transfer)
-	if mapErr != nil {
-		return nil, fmt.Errorf("map transfer %d: %w", transfer.ID, mapErr)
+	return toTransfer("map transfer", transfer)
+}
+
+// GetTransferReceipt downloads the branded confirmation receipt for a
+// transfer as a PDF (GET /v1/transfers/{transferId}/receipt.pdf) and returns
+// its raw bytes.
+//
+// Wise only issues receipts once a transfer has been paid out: for a
+// transfer that never reached the outgoing_payment_sent state (or an unknown
+// ID) the endpoint answers 404, classified as *NotFoundError. The endpoint
+// is not SCA-protected and is available to personal API tokens in all
+// regions.
+func (c *Client) GetTransferReceipt(ctx context.Context, transferID TransferID) ([]byte, error) {
+	if err := requireID(transferID, "wise.transfer.invalid_request", "transferID"); err != nil {
+		return nil, err
 	}
 
-	return &result, nil
+	path := fmt.Sprintf("/v1/transfers/%d/receipt.pdf", transferID.Get())
+
+	data, err := c.getRaw(ctx, path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("get receipt for transfer %d: %w", transferID.Get(), err)
+	}
+
+	return data, nil
+}
+
+// GetTransferPayoutInfo returns the banking-partner payout information for a
+// transfer (GET /v1/transfers/{transferId}/invoices/bankingpartner):
+// processor, delivery mode, the partner bank's tracking reference, and the
+// SWIFT MT103 message when the corridor produced one.
+//
+// MT103 is nil when no SWIFT message exists for the transfer. The endpoint
+// is not SCA-protected.
+func (c *Client) GetTransferPayoutInfo(ctx context.Context, transferID TransferID) (*TransferPayoutInfo, error) {
+	if err := requireID(transferID, "wise.transfer.invalid_request", "transferID"); err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/v1/transfers/%d/invoices/bankingpartner", transferID.Get())
+
+	var payout raw.PayoutInfo
+
+	if err := c.get(ctx, path, &payout); err != nil {
+		return nil, fmt.Errorf("get payout info for transfer %d: %w", transferID.Get(), err)
+	}
+
+	return &TransferPayoutInfo{
+		ProcessorName:           payout.ProcessorName,
+		DeliveryMode:            payout.DeliveryMode,
+		BankingPartnerReference: payout.BankingPartnerReference,
+		BankingPartnerName:      payout.BankingPartnerName,
+		MT103:                   payout.MT103,
+	}, nil
 }
 
 func (r CreateTransferRequest) validate() error {
-	if r.QuoteID.Get() == "" {
-		return errorfamily.NewRejection(
-			"wise.transfer.invalid_request",
-			"quoteID is required",
-		)
+	if err := requireID(r.QuoteID, "wise.transfer.invalid_request", "quoteID"); err != nil {
+		return err
 	}
 
-	if r.TargetAccount.Get() == 0 {
-		return errorfamily.NewRejection(
-			"wise.transfer.invalid_request",
-			"targetAccount is required",
-		)
+	if err := requireID(r.TargetAccount, "wise.transfer.invalid_request", "targetAccount"); err != nil {
+		return err
 	}
 
-	if r.CustomerTransactionID == "" {
-		return errorfamily.NewRejection(
-			"wise.transfer.invalid_request",
-			"customerTransactionId is required",
-		)
+	if err := requireID(r.CustomerTransactionID, "wise.transfer.invalid_request", "customerTransactionId"); err != nil {
+		return err
 	}
 
 	return nil
 }
 
+// detailsWire renders the request's optional details block through
+// TransferRequirementsDetails.toWire so the details wire keys have one
+// spelling across every endpoint that accepts a details block.
 func (r CreateTransferRequest) detailsWire() map[string]string {
-	details := make(map[string]string)
-
-	if r.Reference != "" {
-		details["reference"] = r.Reference
-	}
-
-	if r.SourceOfFunds != "" {
-		details["sourceOfFunds"] = r.SourceOfFunds
-	}
-
-	if r.TransferPurpose != "" {
-		details["transferPurpose"] = r.TransferPurpose
-	}
-
-	if r.TransferPurposeInvoiceNumber != "" {
-		details["transferPurposeInvoiceNumber"] = r.TransferPurposeInvoiceNumber
-	}
-
-	if r.TransferPurposeSubTransferPurpose != "" {
-		details["transferPurposeSubTransferPurpose"] = r.TransferPurposeSubTransferPurpose
-	}
-
-	return details
+	//nolint:exhaustruct_v5 // spec-verified: the create-transfer schema's details accept exactly these five keys; sourceOfFundsOther and transferNature are requirements-only
+	return TransferRequirementsDetails{
+		Reference:                         r.Reference,
+		SourceOfFunds:                     r.SourceOfFunds,
+		TransferPurpose:                   r.TransferPurpose,
+		TransferPurposeSubTransferPurpose: r.TransferPurposeSubTransferPurpose,
+		TransferPurposeInvoiceNumber:      r.TransferPurposeInvoiceNumber,
+	}.toWire()
 }
 
 // CreateTransfer creates a new transfer from a quote to a recipient account.
@@ -198,7 +226,7 @@ func (c *Client) CreateTransfer(
 	body := map[string]any{
 		"targetAccount":         req.TargetAccount.Get(),
 		"quoteUuid":             req.QuoteID.Get(),
-		"customerTransactionId": req.CustomerTransactionID,
+		"customerTransactionId": req.CustomerTransactionID.Get(),
 	}
 
 	if req.SourceAccount.Get() != 0 {
@@ -207,7 +235,7 @@ func (c *Client) CreateTransfer(
 
 	details := req.detailsWire()
 	if len(details) > 0 {
-		body["details"] = details
+		body[wireKeyDetails] = details
 	}
 
 	var transfer raw.Transfer
@@ -217,23 +245,15 @@ func (c *Client) CreateTransfer(
 		return nil, fmt.Errorf("create transfer for quote %s: %w", req.QuoteID.Get(), err)
 	}
 
-	result, mapErr := mapTransfer(transfer)
-	if mapErr != nil {
-		return nil, fmt.Errorf("map created transfer %d: %w", transfer.ID, mapErr)
-	}
-
-	return &result, nil
+	return toTransfer("map created transfer", transfer)
 }
 
 // CancelTransfer cancels a transfer by ID. A transfer can only be cancelled
 // if it has not been processed (not in funds_converted or later state) and
 // has no processing problems. Cancellation is final.
 func (c *Client) CancelTransfer(ctx context.Context, transferID TransferID) (*Transfer, error) {
-	if transferID.Get() == 0 {
-		return nil, errorfamily.NewRejection(
-			"wise.transfer.invalid_request",
-			"transferID is required",
-		)
+	if err := requireID(transferID, "wise.transfer.invalid_request", "transferID"); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/v1/transfers/%d/cancel", transferID.Get())
@@ -244,9 +264,107 @@ func (c *Client) CancelTransfer(ctx context.Context, transferID TransferID) (*Tr
 		return nil, fmt.Errorf("cancel transfer %d: %w", transferID.Get(), err)
 	}
 
-	result, mapErr := mapTransfer(transfer)
+	return toTransfer("map cancelled transfer", transfer)
+}
+
+// FundTransfer funds a created transfer from the profile's Wise balance
+// (POST /v1/profiles/{profileId}/transfers/{transferId}/payments), triggering
+// processing of the payout. This is the final step of the transfer flow:
+// quote, create recipient, create transfer, fund.
+//
+// Wise debits the transfer's source balance; the funding succeeds only if it
+// holds the full amount. An underfunded balance is not an error return but a
+// result with Status FundingStatusRejected and ErrorCode
+// FundingErrorCodeBalanceInsufficientFunds — top up and call FundTransfer
+// again.
+//
+// The endpoint is SCA-protected for profiles registered in the UK/EEA: without
+// approval it fails with *SCAChallengeError (see WithSCAApprovalToken).
+func (c *Client) FundTransfer(
+	ctx context.Context,
+	profileID ProfileID,
+	transferID TransferID,
+) (*FundTransferResult, error) {
+	// art-dupl:accept paired requireID guards and the per-endpoint path literal are the deliberate two-idiom validation convention; an abstraction would take more parameters than it saves lines
+	if err := requireID(profileID, "wise.transfer.invalid_request", "profileID"); err != nil {
+		return nil, err
+	}
+
+	if err := requireID(transferID, "wise.transfer.invalid_request", "transferID"); err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/v1/profiles/%d/transfers/%d/payments", profileID.Get(), transferID.Get())
+
+	var funding raw.FundingResponse
+
+	// The request body is optional; an empty body selects default balance funding.
+	if err := c.post(ctx, path, nil, &funding); err != nil {
+		return nil, fmt.Errorf("fund transfer %d: %w", transferID.Get(), err)
+	}
+
+	result, mapErr := mapFundTransferResult(funding)
 	if mapErr != nil {
-		return nil, fmt.Errorf("map cancelled transfer %d: %w", transfer.ID, mapErr)
+		return nil, fmt.Errorf("map funding result for transfer %d: %w", transferID.Get(), mapErr)
+	}
+
+	return &result, nil
+}
+
+// mapFundTransferResult converts a raw funding response into the parsed
+// FundTransferResult type.
+func mapFundTransferResult(funding raw.FundingResponse) (FundTransferResult, error) {
+	fundingType, err := parseEnum(map[string]FundingType{
+		string(FundingTypeBalance):            FundingTypeBalance,
+		string(FundingTypeTrustedPreFundBulk): FundingTypeTrustedPreFundBulk,
+		string(FundingTypeTrustedPreFundTx):   FundingTypeTrustedPreFundTx,
+	}, funding.Type, "funding type")
+	if err != nil {
+		return FundTransferResult{}, errorfamily.WrapCorruption(
+			err,
+			"wise.funding.parse_type",
+			fmt.Sprintf("parse funding type %q", funding.Type),
+		)
+	}
+
+	status, err := parseEnum(map[string]FundingStatus{
+		string(FundingStatusCreated):   FundingStatusCreated,
+		string(FundingStatusCompleted): FundingStatusCompleted,
+		string(FundingStatusRejected):  FundingStatusRejected,
+	}, funding.Status, "funding status")
+	if err != nil {
+		return FundTransferResult{}, errorfamily.WrapCorruption(
+			err,
+			"wise.funding.parse_status",
+			fmt.Sprintf("parse funding status %q (type %q)", funding.Status, funding.Type),
+		)
+	}
+
+	var balanceTransactionID *BalanceTransactionID
+
+	if funding.BalanceTransactionID != nil {
+		id := NewBalanceTransactionID(*funding.BalanceTransactionID)
+		balanceTransactionID = &id
+	}
+
+	return FundTransferResult{
+		Type:                 fundingType,
+		Status:               status,
+		ErrorCode:            FundingErrorCode(funding.ErrorCode),
+		ErrorMessage:         funding.ErrorMessage,
+		BalanceTransactionID: balanceTransactionID,
+		PartnerReference:     funding.PartnerReference,
+	}, nil
+}
+
+// toTransfer maps one raw transfer into the public type, wrapping mapping
+// failures with the given error label and the transfer ID ("map cancelled
+// transfer 42: ..."). Shared by the transfer endpoints so the map-and-wrap
+// discipline has one spelling.
+func toTransfer(label string, transfer raw.Transfer) (*Transfer, error) {
+	result, err := mapTransfer(transfer)
+	if err != nil {
+		return nil, fmt.Errorf("%s %d: %w", label, transfer.ID, err)
 	}
 
 	return &result, nil
@@ -291,7 +409,7 @@ func mapTransfer(t raw.Transfer) (Transfer, error) {
 		Target:                target,
 		Created:               created,
 		Reference:             reference,
-		CustomerTransactionID: t.CustomerTransactionID,
+		CustomerTransactionID: NewCustomerTransactionID(t.CustomerTransactionID),
 		HasActiveIssues:       t.HasActiveIssues,
 	}, nil
 }

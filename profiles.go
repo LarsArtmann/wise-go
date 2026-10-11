@@ -15,7 +15,7 @@ func (c *Client) GetProfile(ctx context.Context, profileID ProfileID) (*Profile,
 
 	var profile raw.Profile
 
-	if err := fetchByID(ctx, c, profileID.Get(), "profile", path, &profile); err != nil {
+	if err := fetchByID(ctx, c, profileID, "profile", path, &profile); err != nil {
 		return nil, err
 	}
 
@@ -75,6 +75,8 @@ func mapProfile(p raw.Profile) (Profile, error) {
 
 	return Profile{
 		ID:        id.NewID[ProfileBrand](p.ID),
+		UserID:    NewUserID(p.UserID),
+		PublicID:  p.PublicID,
 		Type:      profileType,
 		Name:      name,
 		Email:     p.Email,

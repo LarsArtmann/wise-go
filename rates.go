@@ -2,6 +2,9 @@ package wise
 
 import (
 	"context"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
+	"errors"
 	"fmt"
 	"net/url"
 	"time"
@@ -45,25 +48,73 @@ func (c *Client) GetExchangeRate(
 		v.Set("target", string(target))
 
 		if !atTime.IsZero() {
-			v.Set("time", atTime.Format(time.RFC3339))
+			v.Set("time", formatWiseTimestamp(atTime))
 		}
 
 		return v.Encode()
 	}
 
-	var rate raw.ExchangeRate
+	// The spec contract is an array of rate objects; capture the raw body so
+	// the legacy single-object shape some Wise surfaces served stays
+	// decodable without a second request (same tolerance doctrine as
+	// parseWiseTimestamp).
+	var payload jsontext.Value
 
-	err := c.getWithQuery(ctx, "/v1/rates", query, &rate)
+	err := c.getWithQuery(ctx, "/v1/rates", query, &payload)
 	if err != nil {
 		return nil, fmt.Errorf("get exchange rate %s-%s: %w", source, target, err)
 	}
 
-	result, mapErr := mapExchangeRate(rate)
+	chosen, decodeErr := decodeExchangeRates(payload, source, target)
+	if decodeErr != nil {
+		return nil, decodeErr
+	}
+
+	result, mapErr := mapExchangeRate(chosen)
 	if mapErr != nil {
 		return nil, fmt.Errorf("map exchange rate %s-%s: %w", source, target, mapErr)
 	}
 
 	return result, nil
+}
+
+// errEmptyRateList reports a rates payload that decoded to zero entries.
+var errEmptyRateList = errors.New("empty rate list")
+
+// decodeExchangeRates decodes the rates payload (spec array, legacy
+// single-object tolerated) and picks the entry for the requested pair.
+func decodeExchangeRates(
+	payload jsontext.Value,
+	source, target Currency,
+) (raw.ExchangeRate, error) {
+	var rates []raw.ExchangeRate
+	if unmarshalErr := json.Unmarshal(payload, &rates); unmarshalErr != nil {
+		var single raw.ExchangeRate
+		if singleErr := json.Unmarshal(payload, &single); singleErr != nil {
+			return raw.ExchangeRate{}, fmt.Errorf(
+				"decode exchange rate %s-%s: %w", source, target, unmarshalErr,
+			)
+		}
+
+		rates = []raw.ExchangeRate{single}
+	}
+
+	if len(rates) == 0 {
+		return raw.ExchangeRate{}, errorfamily.WrapCorruption(
+			errEmptyRateList,
+			"wise.rates.empty_response",
+			fmt.Sprintf("no rates for %s-%s", source, target),
+		)
+	}
+
+	chosen := rates[0]
+	for _, rate := range rates {
+		if rate.Source == string(source) && rate.Target == string(target) {
+			return rate, nil
+		}
+	}
+
+	return chosen, nil
 }
 
 func mapExchangeRate(r raw.ExchangeRate) (*ExchangeRate, error) {

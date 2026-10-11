@@ -11,40 +11,112 @@ library that is obviously correct, obviously typed, and obviously safe to depend
 Every monetary amount is `Money` (cents paired with `Currency`). Every entity ID is
 branded. Every error is typed and classifiable. Every API call retries intelligently.
 
-As of v0.5.0, the type-safety redesign is complete: paired `XxxCents`/`XxxCurrency`
-fields are collapsed into `Money`, raw wire types are hidden behind `internal/raw`,
-enum values are normalized, and `ListTransactionsRequest.Type` is now a typed
-`DetailType` enum. The SDK covers the read side of three resources (profiles,
-balances, transactions). The roadmap expands the surface along four axes —
-completeness, type-safety, observability, and scale — while preserving the
-architectural decisions that make the codebase maintainable.
+As of 2026-10-07 (v0.12.0), the type-safety redesign is complete, the core transfer
+flow is live END TO END (quotes, recipients, transfers, funding, delivery estimates,
+transfer-requirements and account-requirements validation, exchange rates),
+the tier-2 surface shipped: users, statement files in all six formats, webhook
+signature verification, balance lifecycle (create/direct-get/total-funds),
+Multi-Currency Account + bank details, and currency reference data — 41
+`*Client` methods across 16 resources, plus webhook subscriptions with typed
+event decoding, programmatic SCA challenge clearing (one-time-token endpoints),
+observability (WithLogger, per-request correlation IDs) and write helpers under
+the existing retry/error architecture. v0.9.0, v0.10.0, v0.11.0, and v0.12.0
+have shipped; the v1.0 audit (`docs/reviews/2026-08-21_v1.0-api-audit.md`) found
+nothing blocking the tag (re-audited 2026-09-13; the v0.11.0 OTT additions are
+covered by the audit's growth-lineage note). The roadmap expands the surface
+along four axes — completeness, type-safety, observability, and scale — while
+preserving the architectural decisions that make the codebase maintainable.
 
 ## Axis 1: Completeness (API surface)
 
-Today: read-only, 3 resources. The Wise API is much larger.
+Today: tiers 1 and 2 of
+`docs/planning/2026-08-19_wise-api-full-implementation-plan.md` are complete —
+41 `*Client` methods across 16 resources. The core transfer flow is live end to end:
+quotes (including account requirements and the two-pass refresh), recipients,
+transfers (including receipts and MT103 payout info), funding, delivery estimates,
+exchange rates, transfer-requirements validation — plus webhook subscription CRUD
+and typed event parsing on the quarterly surfaces (subscriptions 2026Q4,
+OTT 2026Q3 — each rolls over independently), and SCA one-time-token endpoints
+that clear challenges programmatically.
 
-### Near-term (post-v0.5.0)
+### Shipped 2026-08-21 (previously near-term)
 
-- **Write operations** — POST/PATCH/DELETE helpers in `client.go` mirroring
-  `get`/`getWithQuery`. First candidates: transfers, recipients.
-- **Quotes API** — `ListQuotes` / `CreateQuote`. Quotes are required before creating
-  transfers, so they unblock the transfers workstream.
-- **Recipients API** — `ListRecipients` / `CreateRecipient`. Required for transfers
-  to non-Wise accounts.
+- **`FundTransfer`** (`POST /v1/profiles/{id}/transfers/{id}/payments`) — the
+  money-movement loop is closed.
+- **`GetQuoteAccountRequirements`** — bridges quotes → recipients.
+- **`RefreshQuoteAccountRequirements`** — completes the recipient-side two-pass
+  flow: submit the in-progress form after a `RefreshRequirementsOnChange`
+  field changes, receive the revised field set (2026-08-21 hardening batch).
+- **Users read** — `GetMe` / `GetUser`.
+- **Balances expanded** — `CreateBalance`, direct `GetBalance` endpoint,
+  `GetTotalFunds`.
+- **MCA & bank details** — `GetBankAccountDetails`, `GetMultiCurrencyAccount`.
+- **Currencies** — `ListCurrencies`.
+- **Webhooks** — `VerifyWebhookSignature` (RSA-SHA256 over the raw body,
+  PKIX/PKCS#1 PEM keys).
+- **Statements** — `GetStatement` in all six formats (CSV, PDF, XLSX, CAMT.053,
+  MT940, QIF) via the raw-response path; 469-day interval enforced client-side,
+  `Locale` localizes the export.
+
+**Shipped v0.10.0 (2026-09-13), v0.11.0 (2026-09-14), and v0.12.0 (2026-10-07):**
+
+- **`GetTransferReceipt`** — branded PDF confirmation receipt for paid-out
+  transfers (404 = not yet paid out).
+- **`GetTransferPayoutInfo`** — banking-partner proof of payment with the
+  SWIFT MT103 message (`*string`, nil for non-SWIFT corridors).
+- **Profile webhook subscription CRUD** — create/list/get/delete against
+  `/2026Q4/profiles/{profileId}/subscriptions` (app-level scope deferred, see
+  below).
+- **Typed webhook event decoding** — `ParseWebhookEvent` envelope plus typed
+  payloads for `transfers#state-change`, `transfers#payout-failure`, and
+  `balances#credit`; unknown event types pass through.
+- **SCA one-time-token endpoints** — `GetOTTStatus`, `TriggerOTT`, `VerifyOTT`,
+  and the `ClearSCAChallenge` convenience loop (`/2026Q3/one-time-token/...`).
+- **`WithUserAgent`** + `Profile.UserID`/`PublicID` + client concurrency pinned
+  by test.
+- **v0.12.0 — correctness + conformance** — the OpenAPI spec-conformance gate
+  (every mock exchange validated against the vendored Wise spec),
+  `wise.Version`, `CreateBalanceRequest.IdempotencyKey`, spec-native
+  `StatementType` (COMPACT/FLAT), branded `CustomerTransactionID` /
+  `OTTStatus.UserID` / `WebhookResource.ProfileID`, the go-retry v0.6.0
+  executor (Wise's `Retry-After` now steers the delay), the `2026Q4` webhook
+  subscription surface, and the rates/timestamp parse fixes.
+
+**Release state:** shipped as **v0.9.0** (2026-08-21), **v0.10.0**
+(2026-09-13), **v0.11.0** (2026-09-14), and **v0.12.0** (2026-10-07; tags on
+origin and served by the module proxy, GitHub Release objects published
+2026-10-07). The v1.0 audit is
+green and re-audited 2026-09-13 at the 33-method surface
+(`docs/reviews/2026-08-21_v1.0-api-audit.md` — refreshed inventory, godoc pass,
+risk-register items 8–10, growth lineage through 41 methods); the v1.0.0 tag
+remains gated on the maintainer's explicit approval.
 
 ### Medium-term
 
-- **Webhooks** — `VerifyWebhookSignature` helper + typed webhook event structs.
-  Wise's webhook signature scheme is well-documented; the helper is high-value and
-  self-contained.
-- **Statements (CSV/PDF)** — `GetStatement` with format parameter. Today the SDK
-  consumes `statement.json`; the API also offers `statement.csv` and `statement.pdf`.
+- **Sandbox verification** — credentialed integration tests against
+  `api.wise-sandbox.com`. The workflow and test skeleton are in place
+  (manual dispatch, key-gated); blocked on a sandbox API key.
+
+- **Application-level webhook subscriptions (deferred 2026-09-13)** — the spec
+  also exposes `/applications/{clientKey}/subscriptions` (2 CRUD ops + GET +
+  `test-notifications`), but they require a **client-credentials token**
+  (`clientKey` provisioned by Wise tech support), while wise-go is
+  user-API-key-only. Options on the table: (a) stay user-token-only — zero
+  new auth surface, app-level endpoints stay out; (b) add a client-credentials
+  token mode — pulls OAuth `POST /oauth/token` into scope (tier-4 #36) plus a
+  second auth strategy in `setHeaders`. Consequence of (a): platform
+  integrators managing subscriptions per-customer keep using profile-level
+  subscriptions; consequence of (b): real auth-surface growth that the flat
+  v1.0 surface should not carry without a demand signal. `TestWebhookSubscription`
+  (spec: app-level only) ships with whichever option wins.
 
 ### Long-term
 
-- **Pagination support** — if Wise ever moves to cursor-based pagination for
-  transactions. The SDK can grow a `Page[Cursor]` type and `FetchMore` method
-  without breaking the existing API. Today there is no pagination.
+- **Tier 3/4 of the plan** — batch groups, direct debit, bulk settlement, cards,
+  KYC, SCA factors, disputes. Only as consumer demand justifies.
+- **Pagination generalization** — `ListRecipients` and `ListTransfers` hand-roll
+  page loops; a shared `Page[T]` abstraction becomes worthwhile once a third
+  paginated endpoint lands.
 
 ### Out of vision
 
@@ -84,7 +156,9 @@ full analysis lives at `docs/brainstorming/2026-07-18_data-model-review.html`.
 ### v1.0 — the API lock
 
 - **Lock the public API surface** — freeze exported symbols; future breaking changes
-  require v2. Needs a formal API audit and godoc review pass before tagging.
+  require v2. The formal API audit and godoc review pass are complete
+  (`docs/reviews/2026-08-21_v1.0-api-audit.md`, green). v0.9.0 shipped
+  2026-08-21; the v1.0.0 tag awaits the maintainer's explicit approval.
 
 ### Beyond
 
@@ -97,40 +171,47 @@ full analysis lives at `docs/brainstorming/2026-07-18_data-model-review.html`.
 
 ## Axis 3: Observability (operational hooks)
 
-Today the SDK is a black box: callers cannot inspect requests, responses, or retry
-decisions without wrapping the HTTP transport themselves (documented in README).
-
-### Near-term
-
-- **Request/response logging hook** — `WithLogger` option for structured request
-  logging (method, URL, status, duration, retry count).
-- **Per-request correlation ID** — `WithCorrelationID` now sets a client-wide
-  `X-External-Correlation-Id` header (shipped this session). The next step is
-  per-call override via context for request-level tracing.
-- **Context-aware retry** — thread `context.Context` cancellation through the retry
-  policy so callers can abort in-flight retries.
+Today the SDK is observable: `WithLogger` provides structured request logging
+(method, URL, status, duration, retry count), per-request correlation IDs flow
+through the context (`WithRequestCorrelationID`), and context cancellation aborts
+in-flight retries. Callers who need raw transport access can still wrap the HTTP
+transport themselves (documented in README).
 
 ### Medium-term
 
 - **Metrics hook** — `WithMetrics` option exposing counters/histograms for
   Prometheus or OpenTelemetry (request count, latency, retry count, error rate).
-- **mTLS documentation** — Wise documents mTLS endpoints
-  (`api-mtls.wise.com`, `api-mtls.wise-sandbox.com`). Transport wrapping is
-  documented but mTLS configuration is not. Add a dedicated section.
-- **Exchange rates** — `GET /v1/rates` is self-contained and high-value. Natural
-  first step beyond profiles/balances/transactions.
+
+### Shipped
+
+- **Request/response logging** — `WithLogger` + `RequestLog`/`RequestLogFunc`
+  (2026-08-21).
+- **Per-request correlation ID** — client-wide `WithCorrelationID` plus the
+  per-call context override `WithRequestCorrelationID` (2026-08-21).
+- **Context-aware retry** — cancellation propagates through the retry policy.
+- **mTLS documentation** — dedicated README section (`api-mtls.wise.com`,
+  `api-mtls.wise-sandbox.com`).
+- **Exchange rates** — `GetExchangeRate` (`GET /v1/rates`) shipped in v0.8.0 with
+  current and historical lookup.
 
 ## Axis 4: Scale (architecture)
 
 The flat-package design is correct for the present scope. The trigger for evolution
 is clear.
 
-### Trigger: resource count crosses ~6–8
+### Trigger: resource count crosses ~6–8 — REACHED
 
-When the SDK grows past profiles + balances + transactions + transfers + recipients
-
-- quotes + webhooks + one more, the flat `client.ListX` surface becomes noisy.
-  Move to a **service-client sub-structure**:
+The SDK now has 16 resources (profiles, users, balances, multi-currency account,
+bank details, transactions/statements, transfers/receipts, funding, quotes,
+recipients, exchange rates, delivery estimates, transfer requirements,
+currencies, webhooks, SCA one-time tokens) and 41 `*Client` methods on the flat
+`client.X` surface — the core
+flow including `FundTransfer` is complete (2026-08-21). The threshold documented
+here
+has been crossed; the open question is WHEN to pay the refactor cost. The
+recommended sequencing: v1.0 on the flat surface (the 2026-08-21 audit found
+no structural blocker), then move to a **service-client sub-structure** in
+one release cycle:
 
 ```go
 client.Profiles().List(ctx)
@@ -157,24 +238,70 @@ structs"); documented in README.
 - **Domain-core / infrastructure split** — one HTTP backend, one retry library.
   The seam would be unused.
 
+## Raw ideas (harvested from status reports, 2026-10-07)
+
+Routed here from `docs/status/archived/2026-05-17_18-48`,
+`2026-05-23_00-49`, `2026-08-21_20-57`, the `2026-09-13` reports, and the
+2026-09-16 → 2026-10-07 status reports — demand-gated raw ideas, not
+scheduled work:
+
+- **Typed `BadRequestError`** for 400 responses (design idea; today 400s are `*APIError`).
+- **Circuit breaker** — go-retry does not provide one; wiring one is new in-house code (or go-cqrs-lite middleware). Only with a consumer demand signal.
+- **`WithMetrics` hook** — Prometheus/OTel counters and histograms (Axis 3 medium-term).
+- **GoReleaser-style release automation** — tags are manual + annotated today.
+- **Webhook end-to-end README quickstart** — subscribe → verify → parse in one runnable block.
+- **`ParseWebhookEvent` RFC3339 fast path** — the bench shows the multi-layout timestamp trial loop dominates (34µs); one-line win if webhook volume ever matters.
+- **`nix flake check --all-systems`** — aarch64/darwin coverage for the consumer fleet.
+- **Decide `Authenticate()`'s future** now that `GetMe` exists (cheaper key check).
+- **2026Q4 bump ritual** — document the `webhookSubscriptionsAPIVersion`/`ottAPIVersion` upgrade path for when Wise moves the quarterly surfaces (they roll over independently; probe live before flipping).
+- **Go 1.27 migration plan** — toolchain + `GOTOOLCHAIN` policy bump (erraudit needs ≥ 1.27); today every 1.27-syntax push by the modernizer is reverted because the flake pins 1.26 (see AGENTS.md).
+- **BuildFlow `reinstall` no-op** — `nix run .#reinstall` prints REINSTALL-OK but never switches `~/.nix-profile`; manual `nix profile remove/add` of the store path is required. FILED upstream: [BuildFlow #35](https://github.com/LarsArtmann/BuildFlow/issues/35).
+- **BuildFlow `file-size-check` inert** — the step scans 0 files in root-package Go layouts (350 and 700-line thresholds both report zero), so `max_file_size` never fires. FILED upstream: [BuildFlow #36](https://github.com/LarsArtmann/BuildFlow/issues/36).
+- **Daemon/`go.mod` guard hook** — a session-start (or pre-commit) check that fails loudly when `.buildflow.yml` is deleted or `grep '^go ' go.mod` leaves the 1.26 line.
+- Wishlist-era leftovers (Postman collection, currency-conversion helpers, batch APIs, mock server): only with a real consumer ask. Response caching stays a non-goal (the SDK is stateless by design).
+
 ## Release strategy
 
 - **v0.x** — breaking changes accepted but coordinated. Each breaking release gets
   a migration table in CHANGELOG.md. v0.4.0 shipped the Money/Currency redesign;
-  v0.5.0 added the `DetailType` typed enum and test/CI hardening; v0.6.0+ will add
-  API surface (write operations, quotes, recipients).
+  v0.5.0 added the `DetailType` typed enum; v0.6.x SCA support; v0.7.0 transfers
+  read; v0.8.0 the full core transfer flow (quotes, recipients, transfers write,
+  rates); v0.8.1 the outgoing-timestamp wire fix; v0.9.0 funding + tier-2 reads +
+  observability; v0.10.0 receipts + MT103; v0.11.0 webhook subscriptions, typed
+  events, and SCA one-time-token endpoints; v0.12.0 the OpenAPI conformance
+  gate, spec-native statement types, branded idempotency keys, and the
+  go-retry executor.
 - **v1.0** — public API freeze. After v1.0, breaking changes require v2 and a
   deliberate migration path.
 
 ## Non-goals
 
 - **Supporting non-Go languages** — out of scope; this is a Go SDK.
-- **Re-implementing retries / circuit breakers** — `failsafe-go` does this well.
-  Do not replace it without cause.
-- **Auto-generation from OpenAPI** — Wise does not publish a complete OpenAPI spec.
-  Hand-written types are correct; auto-gen would lose the two-layer boundary.
+- **Re-implementing retries** — `go-retry` is the in-house home for retry logic
+  (ADR 003); extend it there, not per-consumer. Do not re-introduce a
+  third-party executor without cause.
+- **Auto-generation from OpenAPI** — Wise publishes an OpenAPI spec (downloaded to
+  `docs/reviews/wise-api-openapi.json`); use it as the authoritative reference when
+  hand-authoring types (it caught the UUID `QuoteID` mismatch). Auto-generating the
+  SDK from it remains a non-goal: generated types would lose the two-layer
+  raw/result boundary and branded-ID ergonomics.
 - **Caching / local state** — the SDK is stateless. Caching is the caller's job.
 - **`Money` arithmetic** — `Money` pairs cents+currency to prevent mismatched amounts
   at the serialization boundary. It is deliberately not a financial math library
   (`Add`/`Sub`/`IsNegative`/`Equal` etc. are out of scope). Arithmetic is the
   consumer's domain logic; the SDK is an anti-corruption layer, not a domain model.
+
+## From the OpenAPI conformance work (2026-09-16)
+
+- **Paginated recipient surface** — the bundled OpenAPI spec documents only
+  the NEW `/accounts` list shape (envelope with `content`,
+  `seekPositionForNext`, `seekPositionForCurrent`); the SDK targets the
+  legacy bare-array `/v2/accounts`. Migrate with pagination support once the
+  new surface is live-equivalent.
+- **Spec snapshot refresh tooling** — a documented command/app to re-download
+  the Wise OpenAPI bundle (docs.wise.com `index.yaml`), convert to JSON, and
+  diff paths/schemas against `docs/reviews/wise-api-openapi.json` so contract
+  drift is reviewed, not discovered.
+- **Raw-type field-coverage gate** — assert every spec-required response
+  field exists in the matching raw struct (second conformance axis beyond
+  wire-traffic validation).

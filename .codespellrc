@@ -1,0 +1,12 @@
+# codespell config.
+#
+# - "unparseable" is the repo's deliberate spelling (13+ consistent uses in
+#   code, comments, and docs); codespell's dictionary prefers "unparsable",
+#   which would churn every site.
+# - docs/reviews/ holds point-in-time review snapshots and the two vendored
+#   Wise OpenAPI JSON specs; their typos are upstream Wise content or
+#   historical record and must not be rewritten.
+
+[codespell]
+ignore-words-list = unparseable
+skip = *docs/reviews/*,*docs/status/*

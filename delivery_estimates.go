@@ -35,8 +35,8 @@ func (c *Client) GetDeliveryEstimate(
 	transferID TransferID,
 	timezone string,
 ) (*DeliveryEstimate, error) {
-	if transferID.Get() == 0 {
-		return nil, errTransferIDRequired()
+	if err := requireID(transferID, "wise.transfer.invalid_request", "transferID"); err != nil {
+		return nil, err
 	}
 
 	query := func() string {

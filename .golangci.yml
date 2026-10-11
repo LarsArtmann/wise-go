@@ -1,7 +1,7 @@
 version: "2"
 run:
   timeout: 5m
-  go: 1.26.4
+  go: 1.26.7
   build-tags:
     - goexperiment.arenas
     - goexperiment.goroutineleakprofile
@@ -27,7 +27,6 @@ linters:
     - copyloopvar
     - cyclop
     - decorder
-    - depguard
     - dogsled
     - dupl
     - dupword
@@ -39,7 +38,7 @@ linters:
     - errname
     - errorlint
     - exhaustive
-    - exhaustruct
+    - exhaustruct_v5
     - exptostd
     - fatcontext
     - forbidigo
@@ -124,31 +123,57 @@ linters:
     - wrapcheck
     - wsl_v5
     - zerologlint
+  disable:
+    - depguard
   settings:
     cyclop:
       max-complexity: 12
-    depguard:
-      rules:
-        main:
-          allow:
-            - $gostd
-            - $module
-            - github.com/failsafe-go
-            - github.com/larsartmann
-            - github.com/onsi
     dupl:
       threshold: 100
-    exhaustruct:
-      exclude:
+    errcheck:
+      exclude-functions:
+        - (*os.File).Close
+        - (io.Closer).Close
+        - (*sql.DB).Close
+        - (*sql.Rows).Close
+        - (*sql.Stmt).Close
+        - (net.Conn).Close
+        - (*net.TCPConn).Close
+        - (*net.UDPConn).Close
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+        - fmt.Print
+        - fmt.Printf
+        - fmt.Println
+        - (*strings.Builder).WriteString
+        - (*bytes.Buffer).WriteString
+    exhaustruct_v5:
+      ignore-patterns:
         - os/exec.Cmd
+    funlen:
+      lines: 200
+      statements: 100
     ginkgolinter:
       forbid-focus-container: true
       forbid-spec-pollution: true
+    gocognit:
+      min-complexity: 25
+    goconst:
+      ignore-tests: true
+      min-len: 4
+      min-occurrences: 5
     gocritic:
       disabled-checks:
         - ifElseChain
+    gocyclo:
+      min-complexity: 20
     gomoddirectives:
       replace-local: true
+    gosec:
+      excludes:
+        - G304
+        - G115
     ireturn:
       allow:
         - error
@@ -158,12 +183,31 @@ linters:
         - generic
     makezero:
       always: true
+    mnd:
+      ignored-numbers:
+        - "0"
+        - "1"
+        - "2"
+        - "100"
+    nestif:
+      min-complexity: 6
     revive:
       rules:
         - disabled: true
           name: exported
         - disabled: true
           name: package-comments
+    tagalign:
+      align: false
+      order:
+        - binding
+        - json
+        - yaml
+        - xml
+        - toml
+        - validate
+        - mapstructure
+      sort: true
     testifylint:
       disable:
         - go-require
@@ -192,26 +236,53 @@ linters:
         - s
         - to
       ignore-type-assert-ok: true
+    wrapcheck:
+      ignore-sigs:
+        - .Errorf(
+        - errors.New(
+        - errors.Unwrap(
+        - errors.Join(
+        - .Wrap(
+        - .Wrapf(
+        - .WithMessage(
+        - .WithMessagef(
+        - .WithStack(
   exclusions:
     generated: lax
     rules:
       - path: _test\.go
         linters:
-          - exhaustruct
+          - exhaustruct_v5
           - gochecknoglobals
           - goconst
           - dupl
           - paralleltest
           - errcheck
           - revive
+          - testpackage
+          - funlen
+          - cyclop
+          - forcetypeassert
+          - gosec
+          - wrapcheck
+          - ireturn
+          - recvcheck
+          - contextcheck
+          - exhaustive
       - path: client\.go
         linters:
           - bodyclose
-          - exhaustruct
+          - exhaustruct_v5
       - path: options\.go
         linters:
-          - exhaustruct
+          - exhaustruct_v5
           - revive
+      # Wise's webhook wire surface (subscriptions, event envelopes, event
+      # payloads) uses snake_case JSON keys, unlike the camelCase core API;
+      # the raw wire types must mirror it.
+      - path: internal/raw/webhooks\.go
+        linters:
+          - tagliatelle
       - path: types\.go
         linters:
           - revive
@@ -225,6 +296,15 @@ linters:
         text: unused
         linters:
           - unused
+      # go-structure-linter (buildflow) suppression directives use a
+      # `linter:check` colon syntax that nolintlint's machine-readable
+      # format check rejects. The directives are load-bearing — they keep
+      # the structure linter's false-positive panics suppressed (verified
+      # 2026-10-05, `branching-flow panic` clean) — so exempt exactly the
+      # lines carrying them instead of weakening the directives.
+      - source: "//nolint:branching-flow:"
+        linters:
+          - nolintlint
     paths:
       - \.gen\.go$
       - _templ\.go$

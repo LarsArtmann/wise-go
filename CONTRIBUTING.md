@@ -47,7 +47,7 @@ If you do not use Nix, see [Development Setup](#development-setup) for the manua
 | ------------- | ------- | ------------------------------------------------------- |
 | Go            | 1.26+   | Language runtime. Required for the `jsonv2` experiment. |
 | Nix (flakes)  | 2.18+   | Reproducible dev + CI environment (recommended)         |
-| golangci-lint | v2.12   | Linting (the `nix develop` shell provides this)         |
+| golangci-lint | v2.13   | Linting (the `nix develop` shell provides this)         |
 
 ### Recommended: Nix
 
@@ -64,7 +64,7 @@ Everything below works inside that shell without any prefix.
 export GOEXPERIMENT=jsonv2   # add to ~/.bashrc or ~/.zshrc
 
 # Tools
-go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.0
+go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.0
 ```
 
 ---
@@ -90,10 +90,23 @@ GOEXPERIMENT=jsonv2 golangci-lint run
 Where it is already wired in:
 
 - `flake.nix` — both devShells and the `buildGoModule` checkPhase.
+- `.envrc` — `use flake` + `use_go_env`; direnv applies it on `cd` (needs direnv + nix-direnv).
 - `.golangci.yml` — `run.build-tags: [goexperiment.jsonv2, ...]` so the analyzer sees the same code the compiler does.
 - `.github/workflows/ci.yml` — top-level `env: GOEXPERIMENT: "jsonv2"`, inherited by every job.
 
 `nix develop` sets it for you, so inside that shell plain `go test ./...` works.
+
+### Editor/LSP environments need it too
+
+Tools launched OUTSIDE the dev shell (IDE language servers, agent-launched
+LSPs, hooks) do not inherit the variable. Their package load fails with the
+same `build constraints exclude all Go files` error, and the degraded
+analysis surfaces as phantom diagnostics (false "unused import",
+`undefined: json`, bogus formatting findings) that the CLI does not show.
+Inject `GOEXPERIMENT=jsonv2` into the editor's LSP server environment; this
+repo's `.crushrc` does exactly that for Crush-launched `gopls` and
+`golangci_lint_ls`. Root-cause write-up: AGENTS.md, "LSP phantoms were an env
+problem" (2026-10-07).
 
 ---
 
@@ -122,14 +135,14 @@ Before contributing, read [AGENTS.md](AGENTS.md) — it documents the non-obviou
 - **Behavioral errors** — domain error types implement `go-error-family` interfaces (`ErrorCode()`, `ErrorFamily()`, `IsRetryable()`). Never construct `AuthError` / `NotFoundError` etc. directly outside `newAPIError()` in `errors.go`.
 - **Two-layer types** — raw wire structs (`raw.Profile`, `raw.Balance`, `raw.StatementTransaction` in `internal/raw`) match Wise's JSON exactly with primitives. Result types (`Profile`, `Balance`, `Transaction`) expose strong Go types (`Money`, branded IDs, enums). Mapping functions are the only bridge. Do not brand the JSON-decode layer.
 - **Error wrapping at call sites** uses `fmt.Errorf("context: %w", err)`; the inner error carries the classification.
-- **Retries** via `failsafe-go` — only 429, 5xx, and network errors are retried.
+- **Retries** via `go-retry` — only 429, 5xx, and network errors are retried; Wise's `Retry-After` hint is honored as the delay, capped at `WithRetry`'s max delay.
 
 ---
 
 ## Testing
 
 ```bash
-# Hermetic, includes race detector + coverage
+# Hermetic, includes race detector + coverage + the 90% coverage floor
 nix flake check
 
 # Or manually (remember GOEXPERIMENT)
@@ -137,13 +150,38 @@ go test -race -coverprofile=coverage.out -covermode=atomic ./...
 go tool cover -func=coverage.out | tail -1
 ```
 
-Tests use `net/http/httptest` to mock the Wise API — **no network access, no API key required**. Coverage is currently ~95%.
+Tests use `net/http/httptest` to mock the Wise API — **no network access, no API key required**. Coverage is currently ~90% (measured 90.1% on 2026-10-05 — keep an eye on it; the floor is close), and a **90% floor is enforced** in both the flake check and the CI coverage job: a silent drop below 90% fails the build.
 
 ### Test style
 
 - BDD-style with Ginkgo for `wise_test.go` (black-box `package wise_test`).
 - Internal unit tests in `internal_test.go` (white-box `package wise`).
 - Use the `Given..._When..._Should...` naming pattern.
+
+### Repeating specs
+
+`go test -count=N` re-runs the Ginkgo bootstrap and reports false failures
+(specs are not re-executed N times the way plain Go tests are). To repeat
+the suite, use separate runs instead:
+
+```bash
+go test -count=1 ./...
+go test -count=1 ./...   # each run is fresh; never stack -count
+```
+
+### Benchmarks
+
+The hot parsing/mapping paths are benchmarked in `bench_test.go`. A
+committed baseline lives in `docs/bench/` (`2026-10-07_v0120_baseline.txt`
+at the time of writing). Regenerate and compare:
+
+```bash
+GOEXPERIMENT=jsonv2 go test -bench . -benchmem -count=6 -run '^$' . > /tmp/new.txt
+benchstat docs/bench/2026-10-07_v0120_baseline.txt /tmp/new.txt
+```
+
+Commit a fresh baseline file (named `<date>_<label>.txt`) when benchmark
+names or shapes change, or after landing a change that moves the numbers.
 
 ---
 
@@ -169,6 +207,99 @@ Before pushing, all of these must pass:
 - [ ] `go test -race ./...`
 - [ ] `golangci-lint run` — 0 issues
 - [ ] `nix flake check` — all checks pass
+
+### Documentation & link checks
+
+`nix flake check` runs an **offline link check** over the living docs: every
+relative link in README.md must point at a file that exists **and** is listed
+in the `links` fileset union in `flake.nix` (around the `markdown-links`
+check). When you add a relative link to README, add its target to that union
+or the check fails with "File not found".
+
+Two README guardrails run with the test suite:
+
+- `readme_guard_test.go` parses every Go code fence in README.md and fails if
+  it references a `client.Method` or `wise.Symbol` that no longer exists —
+  stale examples become test failures, not reader surprises.
+- The coverage-badge CI job rewrites the README coverage percentage after
+  every push to master; expect the in-repo number to lag your local
+  measurement until the branch is pushed.
+
+For a local link check (including external URLs), run the same tool the flake
+check uses — `lychee` is in the devShell:
+
+```bash
+lychee --offline --no-progress README.md CONTRIBUTING.md
+```
+
+### Doc health & API-compat apps
+
+Two flake apps automate the doc/compat checks that are easy to forget:
+
+```bash
+nix run .#doc-verify   # godoc render + count claims in living docs + links
+nix run .#apidiff      # gorelease diff vs the latest tag (needs network)
+```
+
+`doc-verify` fails when any documented count claim (endpoint methods,
+`Example` funcs) no longer matches the compiled surface, or when the claim
+text has drifted so far the pattern extracts nothing. Run it after changing
+the public API or the godoc examples — the claim-staleness class ("33
+methods" outliving the 37-method surface) is exactly what it catches.
+`apidiff` reports removed or changed exported API against the latest tag;
+run it before any release.
+
+### Release gates
+
+```bash
+nix run .#release-notes-check   # split code spans + repo-relative links in docs/releases/*.md
+nix run .#pin-sync              # in-house flake pins match go.mod versions (needs network)
+nix run .#pre-release           # the whole release gate chain, one command
+nix run .#pre-release --shuffle # ...plus three randomized-order test passes, for tag day
+```
+
+`release-notes-check` fails on the two defect classes that shipped in the
+v0.12.0 release body: a code span split across lines by a markdown reflow,
+and repo-relative links (GitHub Release bodies cannot resolve repo-relative
+paths — use absolute URLs). Run it before `gh release create`.
+`pre-release` chains the full local gate sequence — dirty-tree check, build,
+vet, race tests, lint, `nix flake check`, `doc-verify`,
+`release-notes-check`, `pin-sync`, `apidiff` — so a release relies on one
+command instead of session discipline. Pass `--shuffle` on tag day: Ginkgo
+supports only `-count=1`, so repetition is three separate `-shuffle=on`
+passes, not a `-count` flag.
+
+**Flake-pin invariant.** A dependency version lives in two places — the
+`require` block of `go.mod` and the matching `flake.nix` input `rev`. A
+`go get` that bumps one without the other leaves `go test` and the hermetic
+`nix flake check` verifying DIFFERENT versions; because a pinned `rev` is
+immutable under `nix flake update`, the drift is silent (go-retry's pin
+lagged its `go.mod` tag for ten days). Any `go.mod` version bump MUST update
+the matching input `rev` in the same change. `checks.pin-sync` enforces this
+hermetically in `nix flake check`; `nix run .#pin-sync` additionally resolves
+each version tag on GitHub and fails on a stale rev.
+
+### Quarterly API-surface rollover ritual
+
+Wise versions some surfaces by quarter (`2026Q3`, `2026Q4`); the webhook
+subscription CRUD and the OTT endpoints roll over INDEPENDENTLY (see
+AGENTS.md). The 2026Q4 flip proved that a value-flip is not done until the
+straggler grep is clean — a stale path in a comment or doc survives every
+test. The ritual:
+
+1. **Probe** — confirm the new prefix answers non-404 on the surface.
+   Unauthenticated probes 404 on some surfaces even when live (e.g.
+   `one-time-token`); those need sandbox credentials (see TODO_LIST.md).
+2. **Flip** — change the version constant in `client.go`
+   (`webhookSubscriptionsAPIVersion` / `ottAPIVersion`). The two roll over
+   independently; never move both because one moved.
+3. **Straggler grep** — `grep -rn "2026Q3" --include='*.go' .` (the old
+   value) must come back empty outside changelog/history; update any
+   comment, test path, or doc that still names the old prefix.
+4. **Changelog** — record the flip under `[Unreleased]`.
+5. **Verify** — `go test ./...` and `nix run .#doc-verify` (the spec
+   conformance harness normalizes quarterly prefixes; a stale path fails
+   there).
 
 ---
 
@@ -284,6 +415,7 @@ updated CI
 
 - [AGENTS.md](AGENTS.md) — project gotchas and conventions
 - [README.md](README.md) — user-facing overview and API examples
+- [SECURITY.md](.github/SECURITY.md) — how to report vulnerabilities (never in public issues)
 - [Go documentation](https://go.dev/doc/)
 - [Effective Go](https://go.dev/doc/effective_go)
 

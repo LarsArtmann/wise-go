@@ -19,6 +19,38 @@ type Profile struct {
 	CreatedAt    string `json:"createdAt"`
 }
 
+// User from Wise API (/v1/me, /v1/users/{userId}).
+type User struct {
+	ID     int64       `json:"id"`
+	Name   string      `json:"name"`
+	Email  string      `json:"email"`
+	Active bool        `json:"active"`
+	Detail *UserDetail `json:"details"`
+}
+
+// UserDetail is the personal-details block of a User; null on the wire when
+// Wise has none on file.
+type UserDetail struct {
+	FirstName      string       `json:"firstName"`
+	LastName       string       `json:"lastName"`
+	PhoneNumber    string       `json:"phoneNumber"`
+	DateOfBirth    string       `json:"dateOfBirth"` // "1977-01-01" or empty
+	Occupation     string       `json:"occupation"`
+	Avatar         string       `json:"avatar"`
+	PrimaryAddress int64        `json:"primaryAddress"`
+	Address        *UserAddress `json:"address"`
+}
+
+// UserAddress is the address on file for a user.
+type UserAddress struct {
+	CountryCode string `json:"countryCode"`
+	FirstLine   string `json:"firstLine"`
+	PostCode    string `json:"postCode"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	Occupation  string `json:"occupation"`
+}
+
 // Balance from Wise API (/v4/profiles/{id}/balances).
 type Balance struct {
 	ID               int64         `json:"id"`
@@ -39,6 +71,71 @@ type Balance struct {
 type BalanceAmount struct {
 	Value    float64 `json:"value"`
 	Currency string  `json:"currency"`
+}
+
+// TotalFunds from Wise API (GET /v4/profiles/{id}/total-funds/{currency}).
+type TotalFunds struct {
+	TotalWorth     BalanceAmount `json:"totalWorth"`
+	TotalAvailable BalanceAmount `json:"totalAvailable"`
+}
+
+// MultiCurrencyAccount from Wise API
+// (GET /v1/profiles/{profileId}/multi-currency-account).
+type MultiCurrencyAccount struct {
+	ID               int64  `json:"id"`
+	ProfileID        int64  `json:"profileId"`
+	RecipientID      int64  `json:"recipientId"`
+	CreationTime     string `json:"creationTime"`
+	ModificationTime string `json:"modificationTime"`
+	Active           bool   `json:"active"`
+	Eligible         bool   `json:"eligible"`
+}
+
+// BankAccountDetails from Wise API
+// (GET /v1/profiles/{profileId}/account-details).
+type BankAccountDetails struct {
+	ID             *int64              `json:"id"` // nil for preview details
+	Currency       BankAccountCurrency `json:"currency"`
+	Title          string              `json:"title"`
+	Subtitle       string              `json:"subtitle"`
+	Status         string              `json:"status"` // "AVAILABLE" or "ACTIVE"
+	Deprecated     bool                `json:"deprecated"`
+	ReceiveOptions []BankReceiveOption `json:"receiveOptions"`
+}
+
+// BankAccountCurrency names the currency of a bank-account-details set.
+type BankAccountCurrency struct {
+	Code string `json:"code"`
+	Name string `json:"name"`
+}
+
+// BankReceiveOption is one receive route (local or SWIFT) of a details set.
+type BankReceiveOption struct {
+	Type        string                 `json:"type"` // "LOCAL" or "INTERNATIONAL"
+	Title       string                 `json:"title"`
+	Description *BankOptionDescription `json:"description"`
+}
+
+// BankOptionDescription carries the display text of a receive option.
+type BankOptionDescription struct {
+	Title string         `json:"title"`
+	Body  string         `json:"body"`
+	CTA   *BankOptionCTA `json:"cta"`
+}
+
+// BankOptionCTA labels the key value of a receive option (e.g. "IBAN").
+type BankOptionCTA struct {
+	Label   string `json:"label"`
+	Content string `json:"content"`
+}
+
+// CurrencyInfo from Wise API (GET /v1/currencies).
+type CurrencyInfo struct {
+	Code             string   `json:"code"`
+	Symbol           string   `json:"symbol"`
+	Name             string   `json:"name"`
+	CountryKeywords  []string `json:"countryKeywords"`
+	SupportsDecimals bool     `json:"supportsDecimals"`
 }
 
 // Cents converts a BalanceAmount to int64 minor units (cents).
@@ -173,6 +270,8 @@ type DeliveryEstimate struct {
 // Fields is a dynamic form description: each entry groups one or more form
 // controls (keyed by the JSON field name they map to) with validation
 // metadata and, for selects, the list of allowed values.
+//
+// art-dupl:accept wire types intentionally mirror the parsed domain types in the root wise package; the tag-free domain layer decouples callers from the JSON shapes
 type TransferRequirement struct {
 	Type   string                    `json:"type"`
 	Fields []TransferRequirementForm `json:"fields"`
@@ -191,18 +290,28 @@ type TransferRequirementField struct {
 	Type                        string                     `json:"type"`
 	RefreshRequirementsOnChange bool                       `json:"refreshRequirementsOnChange"`
 	Required                    bool                       `json:"required"`
-	DisplayFormat               *string                    `json:"displayFormat"`
-	Example                     *string                    `json:"example"`
-	MinLength                   *int32                     `json:"minLength"`
-	MaxLength                   *int32                     `json:"maxLength"`
-	ValidationRegexp            *string                    `json:"validationRegexp"`
-	ValuesAllowed               []TransferRequirementValue `json:"valuesAllowed"`
+	DisplayFormat               *string                    `json:"displayFormat,omitzero"`
+	Example                     *string                    `json:"example,omitzero"`
+	MinLength                   *int32                     `json:"minLength,omitzero"`
+	MaxLength                   *int32                     `json:"maxLength,omitzero"`
+	ValidationRegexp            *string                    `json:"validationRegexp,omitzero"`
+	ValuesAllowed               []TransferRequirementValue `json:"valuesAllowed,omitzero"`
 }
 
 // TransferRequirementValue is one allowed value of a select field.
 type TransferRequirementValue struct {
 	Key  string `json:"key"`
 	Name string `json:"name"`
+}
+
+// AccountRequirement from the account-requirements endpoint
+// (GET /v1/quotes/{quoteId}/account-requirements). One dynamic form per
+// available payout route; Fields reuses the transfer-requirements form shape.
+type AccountRequirement struct {
+	Type      string                    `json:"type"`
+	Title     string                    `json:"title"`
+	UsageInfo string                    `json:"usageInfo"`
+	Fields    []TransferRequirementForm `json:"fields"`
 }
 
 // ErrorResponse from Wise API.

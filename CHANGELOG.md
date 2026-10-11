@@ -6,6 +6,379 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Fuzz corpus seeds checked in under `testdata/fuzz/` for the webhook-key,
+  webhook-signature, and exchange-rates fuzz targets, plus a new
+  `FuzzParseWiseDate` target pinning the date parser's contract.
+- `docs/bench/README.md` — benchmark conventions, how to rerun and compare
+  against the committed benchstat baseline.
+- `checks.coverage-floor-parity` flake check: fails `nix flake check` when the
+  coverage floor differs between the flake test gate and the CI coverage gate
+  (negative-tested with a deliberate mismatch).
+- Gitleaks and codespell configs (`.gitleaks.toml`, `.codespellrc`): the
+  vendored Wise OpenAPI snapshot's documentation fixtures (example tokens,
+  keys, JWTs — 30 false positives) are allowlisted, `unparseable` is pinned as
+  the repo spelling, and historical/vendored doc trees are skipped. Both tools
+  plus markdownlint-cli joined the dev shell and verify clean.
+
+### Changed
+
+- Coverage floor raised from 90% to 92% (measured 92.8%), enforced identically
+  by the flake check and the CI coverage gate.
+- CI's nix job now runs the release-notes check (`nix run .#release-notes-check`)
+  alongside `nix flake check` (which already covers the markdown Go-snippet
+  gate).
+- Internal type tightening: the webhook event decoder and its helpers take
+  `WebhookEventType` instead of a bare string, and the account-requirements
+  get/refresh error-label verbs are typed constants. No public API change;
+  error messages are byte-identical (pinned by tests).
+- `docs/bench/README.md` rerun instructions verified by execution: the old
+  single `go test -count 6` command fails against the Ginkgo `-count>1` ban,
+  so the documented capture is now six separate `-count 1` invocations
+  (benchstat comparison re-run end to end, exit 0).
+
+### Fixed
+
+- The "93.1%" coverage figure recorded 2026-10-07 never existed in any
+  committed tree: measurement across the day's commits shows the white-box
+  test batch (`5e7430b`) took coverage 90.5% → 92.8%, where it has stayed
+  through HEAD under both plain and race/atomic modes. No coverage was lost;
+  docs now carry the real number.
+- One real typo in AGENTS.md ("re-declares" → "redeclares"), caught by the
+  newly installed codespell.
+
+## [0.13.0] - 2026-10-07
+
+### Added
+
+- `RequestLog.RetryAfterDelay`: when the retry loop delays because Wise answered
+  a 429 with a `Retry-After` hint, the client emits one extra `LogRequest` entry
+  describing that decision — `Status` 429, the honored wait in both `Duration`
+  and `RetryAfterDelay`, and empty `Method`/`URL` (no exchange happened). Purely
+  additive: a request without a usable hint (including `Retry-After: 0`) emits no
+  delay entry, and existing entries are unchanged.
+- `checks.pin-sync` (hermetic) and `nix run .#pin-sync` (network): assert every
+  in-house dependency is pinned in `flake.nix` to the exact commit of the
+  version `go.mod` requires, resolving the tags remotely to catch a stale pin.
+- Repository quality gates, no public API changes beyond the field above: a
+  one-command `nix run .#pre-release` release gate (dirty-tree check, build,
+  vet, race tests, lint, `nix flake check`, `doc-verify`, `release-notes-check`,
+  `pin-sync`, `apidiff`, with an optional `--shuffle` loop);
+  `nix run .#release-notes-check` for split code spans and repo-relative links
+  in `docs/releases/*.md`; a `checks.md-go-snippets` flake check that
+  parse-checks every fenced Go block in README and `docs/**`; and a
+  `meta.description` on each flake app.
+
+### Changed
+
+- Dependency flake pins realigned to `go.mod` and switched to commit SHAs
+  (`go-branded-id` v0.7.0, `go-error-family` v0.11.0, `go-retry` v0.7.1). The
+  inputs previously pointed at annotated *tag-object* IDs, and
+  `go-branded-id`/`go-error-family` had slipped two and one minor versions
+  behind `go.mod`, so `nix flake check` vendored older dependencies than
+  `go test` used — the split-brain the new `pin-sync` gate now makes visible.
+- `doc-verify` now also gates the latest release-notes client-method count; the
+  OpenAPI spec-conformance coverage guard asserts its floors in `TestMain` after
+  the suite completes, making it shuffle-proof; test coverage rose to 93.1%
+  (floor 90.0).
+
+### Fixed
+
+- Retry-After delay-entry coverage: a regression now pins that two consecutive
+  429s carrying a `Retry-After` hint emit exactly two delay-decision entries
+  (the `Retry-After: 0` no-entry case was already pinned).
+- CONTRIBUTING documents `--shuffle` on tag day and the flake-pin invariant
+  (a `go.mod` version bump must update the matching input `rev` in the same
+  change).
+
+## [0.12.0] - 2026-10-07
+
+### Added
+
+- `StatementType` (COMPACT / FLAT) with `StatementTypeCompact` and
+  `StatementTypeFlat` constants for the balance-statement `type` query
+  parameter, plus spec-native `DetailType` constants (CARD, DEPOSIT,
+  MONEY_ADDED, DIRECT_DEBIT, ACQUIRING_PAYMENT, CARD_CASHBACK).
+- `CreateBalanceRequest.IdempotencyKey`: optional caller-supplied
+  `X-idempotence-uuid` value. The header is required by Wise on balance
+  creation; when the field is empty the SDK generates a fresh v4 UUID
+  per call.
+- An automated OpenAPI spec-conformance gate: every mock exchange in the
+  test suite is validated against the vendored Wise OpenAPI 3.1 snapshot
+  (`docs/reviews/wise-api-openapi.json`) for route, parameter, header,
+  and response-schema conformance.
+- `wise.Version` constant (`"0.12.0"`): lets consumers identify
+  and report the SDK version they run (e.g. inside a User-Agent string
+  via `WithUserAgent`).
+- Webhook-signature verification is pinned to Wise's published test
+  vector (byte-exact sandbox signing key, payload, and signature from
+  `transferwise/digital-signatures-examples`), covering both the verify
+  and tamper paths.
+- A private vulnerability-reporting policy (`.github/SECURITY.md`):
+  GitHub security advisories, scope, and a 7-day triage commitment.
+
+### Changed
+
+- **Breaking:** `ListTransactionsRequest.Type` and
+  `GetStatementRequest.Type` are now `StatementType` instead of
+  `DetailType`. The wire contract accepts only COMPACT/FLAT on the
+  statement endpoints; transaction-type values (CARD_PAYMENT etc.)
+  belong to response classification and were rejected by the API.
+  Replace `Type: wise.DetailTypeX` with `Type: wise.StatementTypeFlat`
+  (or `StatementTypeCompact`).
+- **Breaking:** transfer idempotency keys and remaining webhook/profile
+  identifiers are branded. `CreateTransferRequest.CustomerTransactionID`,
+  `ValidateTransferRequirementsRequest.CustomerTransactionID`, and
+  `Transfer.CustomerTransactionID` are now `CustomerTransactionID`
+  (construct with `wise.NewCustomerTransactionID`); `OTTStatus.UserID` is
+  now `UserID` and `WebhookResource.ProfileID` is now `ProfileID`. Unwrap
+  values with `.Get()` as with the other branded IDs. CreateTransfer now
+  validates the idempotency key through the shared require-ID guard.
+- The retry executor is now [go-retry](https://github.com/larsartmann/go-retry)
+  v0.6.0 (in-house, zero-dependency) instead of `failsafe-go`. Retry
+  classification is unchanged (429/5xx/network retry; auth, not-found, SCA,
+  and other client errors fail immediately), and exhausted retries still
+  surface the final typed error — `errors.AsType` reaches `*RateLimitError` /
+  `*ServerError` through go-retry's `ErrExhausted` chain. New: Wise's
+  `Retry-After` hint (delta-seconds or HTTP-date) is honored as the retry
+  delay, capped at the `WithRetry` max delay. `WithRetry(maxRetries, min, max)`
+  keeps its semantics.
+- Test and CI hardening, no public API changes: statement download tests
+  assert content types exactly (PDF byte-for-byte; XLSX via the canonical
+  OOXML MIME type); gofumpt and govulncheck are version-pinned in CI (no
+  `@latest`); a warn-not-fail `erraudit` job checks coded-error hygiene;
+  the flake check now enforces the same 90% coverage floor as CI; the
+  apidiff app pins gorelease instead of floating `@latest`; doc-verify
+  fails on empty count-claim extraction; and the `//nolint:branching-flow:`
+  structure-linter directives are exempted from nolintlint (they are
+  load-bearing).
+- The webhook subscription endpoints now call the `2026Q4` surface
+  (`/2026Q4/profiles/{profileId}/subscriptions`), live-verified on
+  2026-10-05. The SCA one-time-token endpoints stay on `2026Q3` because
+  their Q4 surface could not be verified (probe-blind: 404 on every
+  prefix, including the known-good Q3). The two version constants
+  (`webhookSubscriptionsAPIVersion`, `ottAPIVersion`) roll over
+  independently.
+
+### Fixed
+
+- `GetExchangeRate` now parses the documented array response shape.
+  The legacy single-object shape is still tolerated without a second
+  request, and the entry matching the requested currency pair wins.
+  Empty rate lists surface as corruption instead of a zero-valued rate.
+- Timestamp parsing accepts Wise's no-millis numeric-zone shape
+  (`2026-10-07T00:17:01+0000`, live `/v1/rates` `time` field), which
+  RFC3339 parsers reject and which broke exchange-rate mapping in
+  production on 2026-10-07.
+- `CreateBalance` sends the required `X-idempotence-uuid` header; calls
+  without an explicit key previously failed against the live API with a
+  missing-parameter error.
+
+## [0.11.0] - 2026-09-14
+
+### Added
+
+- Strong Customer Authentication one-time-token (OTT) endpoints on the
+  quarterly versioned surface (`/2026Q3/one-time-token/...`, personal API
+  token): `GetOTTStatus` (challenge list, validity, action type), `TriggerOTT`
+  and `VerifyOTT` per phone channel (sms/whatsapp/voice), and the
+  `ClearSCAChallenge` convenience that triggers, asks a code provider for the
+  OTP, verifies, and repeats until every required challenge is passed.
+  Typed `OTTStatus`/`OTTChallenge`/`OTTChallengeView`/`OTTChannel` results;
+  challenge alternatives decode leniently (object or string form) because the
+  OpenAPI spec leaves their item shape untyped. PIN-over-JWE verification is
+  out of scope; a challenge no phone channel can clear surfaces as a
+  Rejection naming the available types.
+- Profile-level webhook subscription management: `CreateProfileWebhookSubscription`,
+  `ListProfileWebhookSubscriptions`, `GetProfileWebhookSubscription`, and
+  `DeleteProfileWebhookSubscription` (204 delete) against the quarterly
+  versioned surface (`/2026Q3/profiles/{profileId}/subscriptions`). Typed
+  `WebhookSubscription` result (UUID-branded `WebhookSubscriptionID`,
+  `WebhookDelivery`, `WebhookCreator`, `WebhookScope`), validated
+  `CreateWebhookSubscriptionRequest` (HTTPS-only delivery URL), and the
+  `WebhookEventType` open enum with the 33 documented event constants.
+  Application-level subscriptions stay deferred (client-credentials token
+  story — see ROADMAP).
+- Typed webhook event decoding: `ParseWebhookEvent` decodes the delivery
+  envelope (tolerant `sent_at` parsing; unknown event types pass through with
+  the payload left raw) and typed accessors decode the high-value payloads —
+  `WebhookEvent.TransferStateChange`, `WebhookEvent.TransferPayoutFailure`,
+  and `WebhookEvent.BalanceCredit` (with `Money` conversion). Malformed
+  envelopes/payloads are corruption-classified (`wise.webhook.decode`).
+- `WithUserAgent` client option: sets a custom `User-Agent` header on every
+  outgoing request (Wise asks integrations to identify themselves); defaults
+  to the SDK's own agent string.
+- `Profile.UserID` and `Profile.PublicID`: the user ID and public ID fields
+  returned by the profiles endpoints, now surfaced on the parsed `Profile`.
+- Client concurrency pinned by test: a shared `*Client` serves parallel
+  requests (headers, correlation IDs, response decoding) safely under
+  `-race`.
+
+### Changed
+
+- `SCAChallengeError.Error()` no longer embeds the raw one-time token: error
+  strings are the surface most likely to end up in logs, and the OTT
+  authorizes the challenge. It still reports `approval_result` and whether a
+  token was issued; the value is available via `TwoFAApprovalToken()`. The
+  "approve the challenge in the Wise app" wording (no such screen exists —
+  verified live 2026-09-14) now points at the one-time-token endpoints and
+  viewing a statement on wise.com.
+- Internal, no public API or error-message changes: the shared fetch-by-ID
+  helper takes branded IDs directly and routes through `requireID`
+  (callers no longer unwrap `.Get()` themselves); mapper errors carry the raw
+  offending values; `SCAChallengeError` gained an error context; benchmarks
+  for the hot mappers and parsers (`bench_test.go`) and raw wire-format
+  round-trip tests (`internal/raw`) lock the serialization contract.
+
+## [0.10.0] - 2026-09-13
+
+### Added
+
+- `GetTransferReceipt(transferID)` (`GET /v1/transfers/{transferId}/receipt.pdf`):
+  download the branded confirmation receipt for a paid-out transfer as raw
+  PDF bytes. Wise answers 404 until the transfer reached the
+  `outgoing_payment_sent` state, so `*NotFoundError` means "no receipt
+  (yet)", not a hard failure. Not SCA-protected.
+- `GetTransferPayoutInfo(transferID)`
+  (`GET /v1/transfers/{transferId}/invoices/bankingpartner`): banking-partner
+  payout information — processor, delivery mode, partner reference, and the
+  SWIFT MT103 message (`*string`, nil for non-SWIFT corridors) as
+  `*TransferPayoutInfo`. Accounting-grade proof-of-payment retrieval.
+
+### Changed
+
+- Go toolchain requirement bumped to **1.26.7** (`go.mod` `go` directive,
+  commit `14523ae`); nix flake inputs pinned and CI workflow file refreshed
+  (the workflow itself remains disabled on GitHub).
+
+## [0.9.0] - 2026-08-21
+
+> **Behavior changes** — review before upgrading:
+>
+> - **Retry exhaustion returns the final attempt's typed error** instead of an
+>   opaque "retries exceeded" wrapper. Code that string-matched the wrapper
+>   must switch to `errors.As`/`errors.Is` on `*RateLimitError` /
+>   `*ServerError` (details under Fixed).
+> - **`GetBalance` reads the direct per-balance endpoint** instead of scanning
+>   `ListBalances`. Hidden and invested balances — filtered out by the old
+>   list-based path — are now retrievable individually (details under Changed).
+
+### Added
+
+- `FundTransfer` (`POST /v1/profiles/{profileId}/transfers/{transferId}/payments`):
+  fund a created transfer from the profile's Wise balance, the final step of
+  the core transfer flow. Returns `*FundTransferResult` with typed
+  `FundingType`, `FundingStatus`, and `FundingErrorCode` (open enum, all 17
+  documented codes as constants). A declined funding (e.g. insufficient
+  balance) is a rejected *result*, not an error; `BalanceTransactionID`
+  identifies the debit applied to the balance. SCA-protected for UK/EEA
+  profiles.
+- `MissingTransferDetails(requirements, req)`: cross-reference a
+  transfer-requirements response against a prepared `CreateTransferRequest` to
+  learn which required fields are still unsatisfied before spending a
+  `customerTransactionId`. Select fields are checked against their allowed
+  values; keys outside the typed request surface are reported explicitly.
+- `GetQuoteAccountRequirements` (`GET /v1/quotes/{quoteId}/account-requirements`):
+  the recipient fields required for an authenticated quote's currency corridor,
+  one dynamic form per payout route (`AccountRequirement`). Bridges quotes to
+  `CreateRecipientRequest` (route Type + Details keys). Sends
+  `Accept-Minor-Version: 1` per Wise's recommendation for new integrations.
+- `RefreshQuoteAccountRequirements` (`POST /v1/quotes/{quoteId}/account-requirements`):
+  the second pass of the recipient requirements flow. When a returned field is
+  flagged `RefreshRequirementsOnChange`, submit the in-progress recipient form
+  with that field updated and Wise returns the revised field set for the route
+  (e.g. selecting `legalEntityType` reveals entity-type-specific fields). The
+  partial form is validated client-side (quote ID, currency, route type, at
+  least one Details key) and unset fields are omitted from the wire body.
+- `GetMe` / `GetUser` (`GET /v1/me`, `GET /v1/users/{userId}`): identity
+  reads for the token owner, with typed `UserID` and full personal-details
+  mapping (DOB parsed as UTC date; nullable details/address preserved).
+- `GetStatement` file download (statement files): download a balance statement as raw bytes
+  in CSV, PDF, XLSX, CAMT.053 XML, MT940, or QIF via a new binary-response
+  path (`getRaw`). Unknown formats and intervals beyond Wise's 469-day
+  statement limit are rejected client-side (split longer periods into
+  multiple requests); the interval and currency rules otherwise mirror
+  `ListTransactions`. `Locale` (optional 2-character language code)
+  localizes the statement.
+- `CreateBalance` (`POST /v4/profiles/{id}/balances`): open a new STANDARD or
+  SAVINGS balance (savings name enforced client-side).
+- `GetTotalFunds` (`GET /v4/profiles/{id}/total-funds/{currency}`): the
+  profile's Worth and Available Money per currency.
+- MCA and bank details: `GetMultiCurrencyAccount` (with the account's own
+  RecipientID for top-ups via transfer) and `GetBankAccountDetails` (every
+  receiving details set with LOCAL/INTERNATIONAL receive options and their
+  display text).
+- `AccountID` branded type: `MultiCurrencyAccount.ID` is now strongly typed
+  (construct with `NewAccountID`, unwrap with `.Get()`), keeping the
+  multi-currency-account ID space distinct from `RecipientID` and other
+  int64 IDs at compile time.
+- `wise.HeaderDeliveryID`: the `X-Delivery-Id` webhook header name as a
+  constant, for idempotent webhook processing alongside
+  `wise.HeaderWebhookSignature`.
+- `ListCurrencies` (`GET /v1/currencies`): public reference data for
+  currency pickers (code, symbol, name, country keywords, decimal support).
+- Webhook signature verification: `ParseWebhookPublicKey` (parse the
+  per-subscription PEM key once at startup) + `VerifyWebhookSignature`
+  (accept/reject per delivery) for Wise's `X-Signature-SHA256` RSA-SHA256
+  scheme, with README security guidance.
+- Observability: `WithLogger` (per-attempt RequestLog with method, URL,
+  status, duration, 1-based attempt number — retries visible) and per-request
+  correlation IDs via `WithRequestCorrelationID(ctx, id)` (derives a context
+  whose requests carry their own `X-External-Correlation-Id`, overriding the
+  client-wide `WithCorrelationID` value — one traceable ID per logical
+  operation on a shared client). README documents the observability patterns.
+- mTLS documentation: README section showing the `WithBaseURL` +
+  `WithHTTPClient` transport pattern for Wise's client-certificate endpoints
+  (`api-mtls.wise.com`) — no new API surface needed, the existing options
+  compose cleanly.
+- Error-path BDD coverage for every write endpoint plus `GetTransfer` and
+  `ListRecipients`: 400 validation, 401, 404, 409 conflict,
+  SCA-403 (`*SCAChallengeError` with one-time token), and
+  429-with-`Retry-After`/`X-Rate-Limited-By` exhaustion. Plus table-driven
+  unit tests for all three `validate()` functions (transfer, quote,
+  transfer-requirements) covering the missing-field and amount/currency
+  mismatch matrices, asserting Rejection classification.
+
+### Changed
+
+- Internal deduplication, no public API or error-message changes: all 22
+  branded-ID guards now go through one `requireID` helper (replacing the
+  per-endpoint `x.Get() == 0` rejection blocks and the one-off
+  `errTransferIDRequired`), the transfer endpoints map responses through one
+  `toTransfer` wrapper, and `CreateTransferRequest.detailsWire` renders via
+  `TransferRequirementsDetails.toWire` so the details wire keys have a single
+  spelling.
+
+- `GetBalance` (`GET /v4/profiles/{id}/balances/{id}`) now queries the direct
+  per-balance endpoint instead of scanning `ListBalances`. Consequence:
+  balances with `Visible: false` or a non-`NOT_INVESTED` investment state —
+  which the list endpoint filters out and the old scan therefore never
+  returned — are retrievable individually. `ListBalances` keeps its
+  visible/non-invested filtering; only the single-balance read changed.
+
+### Fixed
+
+- Exhausted retries now surface the typed error of the final attempt. When
+  the retry policy gave up on 429/5xx responses, failsafe-go's opaque
+  `retries exceeded` wrapper replaced the classification — consumers never
+  saw `*RateLimitError` (with `Retry-After`) or `*ServerError`, losing
+  `IsRetryable`/`ErrorFamily` semantics. `doRequest` now classifies the last
+  response carried by the exceeded-retries error.
+
+## [0.8.1] - 2026-08-21
+
+### Fixed
+
+- Outgoing query timestamps are normalized to UTC `Z` format. `ListTransfers`
+  (`createdDateStart`/`createdDateEnd`), `ListTransactions`
+  (`intervalStart`/`intervalEnd`), and exchange-rate lookups (`time`) previously
+  formatted caller-local `time.Time` values with their zone offset (e.g.
+  `+02:00`), which Wise rejects with HTTP 422 `wrong.date.format`. Live
+  regression 2026-08-19..21: every bank-sync Wise transfers call failed for
+  ~2.5 days because `To: time.Now()` carried CEST. New `formatWiseTimestamp`
+  mirrors `parseWiseTimestamp` for the wire-out side.
+
 ## [0.8.0] - 2026-08-20
 
 ### Added

@@ -3,39 +3,46 @@ package wise
 import (
 	"context"
 	"encoding/json/v2"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
+	id "github.com/larsartmann/go-branded-id"
 	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go/internal/raw"
 )
 
 const defaultRetryAfter = time.Second
 
+// Wire keys shared by request bodies and query parameters that carry the
+// same Wise identifiers (recipient-form bodies, balance creation, statement
+// queries). Named once so the wire format has one spelling.
+const (
+	wireKeyCurrency = "currency"
+	wireKeyType     = "type"
+	wireKeyDetails  = "details"
+)
+
 // fetchByID validates a non-zero ID and performs a GET for a single resource.
 // It centralises the boilerplate shared by GetProfile, GetTransfer, and future
 // get-by-id endpoints so the public methods stay short and resource-specific.
-func fetchByID[T any](
+func fetchByID[T any, B any, V comparable](
 	ctx context.Context,
 	client *Client,
-	id int64,
+	identifier id.ID[B, V],
 	resource string,
 	path string,
 	target *T,
 ) error {
-	if id == 0 {
-		return errorfamily.NewRejection(
-			"wise."+resource+".invalid_request",
-			resource+"ID is required",
-		)
+	if err := requireID(identifier, "wise."+resource+".invalid_request", resource+"ID"); err != nil {
+		return err
 	}
 
 	if err := client.get(ctx, path, target); err != nil {
-		return fmt.Errorf("get %s %d: %w", resource, id, err)
+		return fmt.Errorf("get %s %v: %w", resource, identifier.Get(), err)
 	}
 
 	return nil
@@ -98,19 +105,12 @@ func parseRetryAfter(value string) time.Duration {
 	return defaultRetryAfter
 }
 
-const cErrTransferIDRequired = "transferID is required"
-
-func errTransferIDRequired() error {
-	return errorfamily.NewRejection(
-		"wise.transfer.invalid_request",
-		cErrTransferIDRequired,
-	)
-}
-
 // parseWiseTimestamp parses a Wise API timestamp. Wise is inconsistent about
 // separators and zone designators across endpoints: some emit full RFC3339
-// ("2020-05-27T10:27:22Z"), others omit the zone ("2020-05-27T10:27:22") or
-// use a space separator ("2020-05-27 10:27:22"). Zoneless values are
+// ("2020-05-27T10:27:22Z"), others omit the zone ("2020-05-27T10:27:22"),
+// use a space separator ("2020-05-27 10:27:22"), or carry a numeric zone
+// without colon or milliseconds ("2026-10-07T00:17:01+0000", live /v1/rates).
+// Zoneless values are
 // interpreted as UTC. Callers comparing the resulting time.Time to a
 // local-time value must convert explicitly to avoid silent off-by-one-day
 // errors at boundaries.
@@ -122,20 +122,32 @@ func parseWiseTimestamp(s string) (time.Time, error) {
 		// without fractional-second tolerance rejects.
 		"2006-01-02T15:04:05.000-0700",
 		"2006-01-02T15:04:05.000Z0700",
+		// Live /v1/rates timestamps carry the numeric zone WITHOUT
+		// fractional seconds ("2026-10-07T00:17:01+0000") — RFC3339 demands
+		// a colon, the layouts above demand milliseconds.
+		"2006-01-02T15:04:05-0700",
 		"2006-01-02T15:04:05",
 		"2006-01-02 15:04:05",
 	}
 
-	var errs []error
-
 	for _, layout := range layouts {
-		t, err := time.Parse(layout, s)
-		if err == nil {
+		if t, err := time.Parse(layout, s); err == nil {
 			return t, nil
 		}
-
-		errs = append(errs, err)
 	}
 
-	return time.Time{}, errors.Join(errs...)
+	// One line naming the accepted layouts beats a dump of six near-identical
+	// time.Parse errors; the raw value is the part callers actually need.
+	//nolint:err113 // dynamic value in message; no sentinel to wrap
+	return time.Time{}, fmt.Errorf(
+		"parse Wise timestamp %q: matches none of the accepted layouts %s", s, strings.Join(layouts, ", "))
+}
+
+// formatWiseTimestamp renders a time.Time as a Wise query-parameter value.
+// Wise rejects zone offsets other than "Z" with HTTP 422
+// ("wrong.date.format"), so outgoing timestamps MUST be normalized to UTC
+// regardless of the caller's zone — mirror of parseWiseTimestamp, which
+// tolerates Wise's loose input formats.
+func formatWiseTimestamp(t time.Time) string {
+	return t.UTC().Format("2006-01-02T15:04:05Z")
 }

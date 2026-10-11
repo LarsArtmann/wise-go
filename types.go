@@ -10,9 +10,15 @@
 package wise
 
 import (
+	"encoding/json/jsontext"
 	"fmt"
 	"time"
 )
+
+// Version is the released version of this SDK, mirrored from the latest tag.
+// Useful in User-Agent strings (see WithUserAgent) and support diagnostics so
+// Wise can correlate behavior with a specific client release.
+const Version = "0.13.0"
 
 // API Base URLs.
 //
@@ -82,7 +88,12 @@ func (m Money) String() string {
 
 // Profile is the parsed representation of a Wise profile.
 type Profile struct {
-	ID        ProfileID
+	ID ProfileID
+	// UserID is the owning user account's ID (GetUser reads it).
+	UserID UserID
+	// PublicID is Wise's opaque public identifier for the profile (wire
+	// "publicId") — a reference string, distinct from the numeric ID.
+	PublicID  string
 	Type      ProfileType
 	Name      string
 	Email     string
@@ -183,7 +194,7 @@ type ListTransactionsRequest struct {
 	Currency  Currency
 	From      time.Time
 	To        time.Time
-	Type      DetailType // Optional filter by transaction type. See DetailType* constants.
+	Type      StatementType // Optional statement layout filter; see StatementType* constants.
 }
 
 // ListTransactionsResponse from listing transactions.
@@ -223,7 +234,7 @@ type Transfer struct {
 	Target                Money
 	Created               time.Time
 	Reference             string
-	CustomerTransactionID string
+	CustomerTransactionID CustomerTransactionID
 	HasActiveIssues       bool
 }
 
@@ -245,6 +256,95 @@ const (
 	TransferStatusCancelled              TransferStatus = "cancelled"
 	TransferStatusUnsuccessful           TransferStatus = "unsuccessful"
 	TransferStatusChargedBack            TransferStatus = "charged_back"
+)
+
+// TransferPayoutInfo is the banking-partner payout information for a
+// transfer: who processed the payment, how it was delivered, the partner
+// bank's tracking reference, and the SWIFT MT103 message when the corridor
+// produced one.
+//
+// MT103 is nil when no SWIFT message exists for the transfer (non-SWIFT
+// corridors, or the message is not yet available).
+type TransferPayoutInfo struct {
+	ProcessorName           string
+	DeliveryMode            string
+	BankingPartnerReference string
+	BankingPartnerName      string
+	MT103                   *string
+}
+
+// FundTransferResult is the parsed result of funding a transfer with
+// FundTransfer.
+//
+// Wise models the response as a oneOf discriminated by "type": the BALANCE
+// variant carries balanceTransactionId, the trusted-pre-fund variants carry
+// partnerReference. The SDK deliberately flattens the variants into this one
+// struct: the discriminated union has only three members, every member shares
+// Type and Status, and the member-specific fields are marked by which one is
+// set (nil / empty). A Go sum type here would force a type switch for a
+// two-field difference and give nothing back; revisit only if Wise grows the
+// union with structurally divergent variants.
+//
+// Status FundingStatusRejected reports a funding attempt the API refused (for
+// example an underfunded balance); the machine-readable reason is in ErrorCode
+// and a developer-facing explanation in ErrorMessage. This is a successful API
+// call that declined the funding — retry FundTransfer once the underlying
+// problem (e.g. balance top-up) is resolved, unless ErrorCode is
+// payment.exists, which means the transfer was already funded.
+type FundTransferResult struct {
+	Type                 FundingType
+	Status               FundingStatus
+	ErrorCode            FundingErrorCode      // Set only when Status is FundingStatusRejected.
+	ErrorMessage         string                // Developer-facing rejection explanation; not for end users.
+	BalanceTransactionID *BalanceTransactionID // Set for FundingTypeBalance: the debit applied to the balance.
+	PartnerReference     string                // Set for trusted pre-fund types: the echoed partner reference.
+}
+
+// FundingType identifies the funding model Wise used to pay for a transfer.
+type FundingType string
+
+// Funding types reported by the fund-transfer endpoint.
+const (
+	FundingTypeBalance            FundingType = "BALANCE"
+	FundingTypeTrustedPreFundBulk FundingType = "TRUSTED_PRE_FUND_BULK"
+	FundingTypeTrustedPreFundTx   FundingType = "TRUSTED_PRE_FUND_TX"
+)
+
+// FundingStatus is the outcome of a funding attempt.
+type FundingStatus string
+
+// Funding outcomes reported by the fund-transfer endpoint.
+const (
+	FundingStatusCreated   FundingStatus = "CREATED"
+	FundingStatusCompleted FundingStatus = "COMPLETED"
+	FundingStatusRejected  FundingStatus = "REJECTED"
+)
+
+// FundingErrorCode is the machine-readable reason for a rejected funding
+// attempt. Wise may add codes; unknown values flow through unmodified, so
+// switch on the constants for known cases and handle the default explicitly.
+type FundingErrorCode string
+
+// Documented funding error codes ("type" prefixes indicate which funding
+// models can produce them).
+const (
+	FundingErrorCodeTransferNotFound                FundingErrorCode = "transfer.not-found"
+	FundingErrorCodeTransferInvalidState            FundingErrorCode = "transfer.invalid-state"
+	FundingErrorCodePaymentExists                   FundingErrorCode = "payment.exists"
+	FundingErrorCodeTransferNotAccessibleForUser    FundingErrorCode = "transfer.not-accessible-for-user"
+	FundingErrorCodeBalanceMissingSecurityRole      FundingErrorCode = "balance.unauthorised.missing-security-role"
+	FundingErrorCodePaymentNotFound                 FundingErrorCode = "payment.not-found"
+	FundingErrorCodeInvalidRequest                  FundingErrorCode = "invalid.request"
+	FundingErrorCodeUnexpectedError                 FundingErrorCode = "unexpected.error"
+	FundingErrorCodePaymentOptionUnavailable        FundingErrorCode = "payment.option-unavailable"
+	FundingErrorCodeBalancePaymentOptionUnavailable FundingErrorCode = "balance.payment-option-unavailable"
+	FundingErrorCodeBalanceAccountNotFound          FundingErrorCode = "balance.account-not-found"
+	FundingErrorCodeBalanceAccountInactive          FundingErrorCode = "balance.account-inactive"
+	FundingErrorCodeBalanceInsufficientFunds        FundingErrorCode = "balance.insufficient-funds"
+	FundingErrorCodeBalanceNoBalanceForCurrency     FundingErrorCode = "balance.no-balance-for-currency"
+	FundingErrorCodeBalanceCurrencyUnsupported      FundingErrorCode = "balance.currency-unsupported"
+	FundingErrorCodePreFundBulkOptionUnavailable    FundingErrorCode = "trustedprefundbulk.payment-option-unavailable"
+	FundingErrorCodePreFundTxOptionUnavailable      FundingErrorCode = "trustedprefundtx.payment-option-unavailable"
 )
 
 // Quote is the parsed representation of a Wise quote — a locked exchange rate
@@ -417,7 +517,7 @@ type CreateTransferRequest struct {
 	QuoteID                           QuoteID
 	TargetAccount                     RecipientID
 	SourceAccount                     RecipientID // Optional refund recipient account.
-	CustomerTransactionID             string
+	CustomerTransactionID             CustomerTransactionID
 	Reference                         string
 	SourceOfFunds                     string
 	TransferPurpose                   string
@@ -437,7 +537,7 @@ type CreateTransferRequest struct {
 type ValidateTransferRequirementsRequest struct {
 	TargetAccount             RecipientID
 	QuoteID                   QuoteID
-	CustomerTransactionID     string
+	CustomerTransactionID     CustomerTransactionID
 	OriginatorLegalEntityType string
 	Details                   TransferRequirementsDetails // Optional; populated from the response.
 }
@@ -456,6 +556,8 @@ type TransferRequirementsDetails struct {
 
 // TransferRequirement is the parsed representation of one dynamic form from
 // the transfer-requirements response.
+//
+// art-dupl:accept parsed domain types intentionally mirror the tagged wire types in internal/raw; the tag-free domain layer decouples callers from the JSON shapes
 type TransferRequirement struct {
 	Type   string
 	Fields []TransferRequirementForm
@@ -487,4 +589,212 @@ type TransferRequirementField struct {
 type TransferRequirementValue struct {
 	Key  string
 	Name string
+}
+
+// AccountRequirement is the parsed form of one payout route's recipient
+// requirements from GetQuoteAccountRequirements. Type identifies the route
+// (e.g. "swift_code", "sort_code") and becomes CreateRecipientRequest.Type;
+// Title and UsageInfo are Wise's display strings for the route; Fields
+// reuses the dynamic-form shape shared with transfer requirements.
+type AccountRequirement struct {
+	Type      string
+	Title     string
+	UsageInfo string
+	Fields    []TransferRequirementForm
+}
+
+// QuoteAccountRequirementsRequest asks Wise which recipient-account fields
+// the quote's currency corridor requires. The corridor is fully determined
+// by the authenticated quote; OriginatorLegalEntityType is only needed for
+// Correspondent Send integrations (PRIVATE or BUSINESS).
+type QuoteAccountRequirementsRequest struct {
+	QuoteID                   QuoteID
+	OriginatorLegalEntityType string
+}
+
+// RefreshQuoteAccountRequirementsRequest completes the second pass of the
+// recipient requirements flow: when a field returned by
+// GetQuoteAccountRequirements is flagged RefreshRequirementsOnChange, submit
+// the in-progress recipient form with that field updated and Wise returns the
+// revised field set for the chosen route.
+type RefreshQuoteAccountRequirementsRequest struct {
+	QuoteID QuoteID
+
+	// Recipient is the in-progress create-recipient payload: the same shape
+	// CreateRecipient will eventually submit. Currency, Type, and the Details
+	// collected so far (at minimum the field that triggered the refresh) are
+	// required; AccountHolderName and ProfileID stay optional at this stage
+	// because Wise resolves the dependent form, not the recipient itself.
+	Recipient CreateRecipientRequest
+
+	// OriginatorLegalEntityType is only needed for Correspondent Send
+	// integrations (PRIVATE or BUSINESS); optional.
+	OriginatorLegalEntityType string
+}
+
+// WebhookEventType names the Wise event a webhook subscription listens for
+// (the create request's TriggerOn) or that a delivered event envelope
+// carries. The set is open: Wise adds event types over time, so any string
+// is representable and unknown values pass through unchanged.
+type WebhookEventType string
+
+// Documented Wise webhook event types (the trigger_on values), from the
+// OpenAPI spec and the live webhook-event reference. The list is a
+// convenience, not a constraint — subscriptions accept any event type string.
+const (
+	WebhookEventTransfersStateChange                    WebhookEventType = "transfers#state-change"
+	WebhookEventTransfersPayoutFailure                  WebhookEventType = "transfers#payout-failure"
+	WebhookEventTransfersActiveCases                    WebhookEventType = "transfers#active-cases"
+	WebhookEventTransfersRefund                         WebhookEventType = "transfers#refund"
+	WebhookEventTransfersCaseStateChange                WebhookEventType = "transfers#case-state-change"
+	WebhookEventBalancesCredit                          WebhookEventType = "balances#credit"
+	WebhookEventBalancesDebit                           WebhookEventType = "balances#debit"
+	WebhookEventBalancesThresholdMet                    WebhookEventType = "balances#threshold-met"
+	WebhookEventBalancesPendingTransactionStateChange   WebhookEventType = "balances#pending-transaction-state-change"
+	WebhookEventBatchPaymentInitiationsStateChange      WebhookEventType = "batch-payment-initiations#state-change"
+	WebhookEventBatchTransfersStateChange               WebhookEventType = "batch-transfers#state-change"
+	WebhookEventCards3DSChallenge                       WebhookEventType = "cards#3ds-challenge"
+	WebhookEventCardsCardProductionStatusChange         WebhookEventType = "cards#card-production-status-change"
+	WebhookEventCardsCardStatusChange                   WebhookEventType = "cards#card-status-change"
+	WebhookEventCardsTransactionStateChange             WebhookEventType = "cards#transaction-state-change"
+	WebhookEventCustomerAgreementsAgreementStatusChange WebhookEventType = "customer-agreements#agreement-status-change"
+	WebhookEventDirectDebitsStateChange                 WebhookEventType = "direct-debits#state-change"
+	WebhookEventProfilesDocumentStateChange             WebhookEventType = "profiles#document-state-change"
+	WebhookEventProfilesVerificationStateChange         WebhookEventType = "profiles#verification-state-change"
+	WebhookEventRecipientAccountsStateChange            WebhookEventType = "recipient-accounts#state-change"
+	WebhookEventSimulationsCardTransactionCreated       WebhookEventType = "simulations#card-transaction-created"
+	WebhookEventSimulationsCardTransactionCleared       WebhookEventType = "simulations#card-transaction-cleared"
+	WebhookEventSimulationsCardTransactionReversed      WebhookEventType = "simulations#card-transaction-reversed"
+	WebhookEventSpendTransactionStateChange             WebhookEventType = "spend#transaction-state-change"
+	WebhookEventSwiftInCredit                           WebhookEventType = "swift-in#credit"
+	WebhookEventTrustedPartiesStateChange               WebhookEventType = "trusted-parties#state-change"
+	WebhookEventVouchersStateChange                     WebhookEventType = "vouchers#state-change"
+	WebhookEventVouchersBatchStateChange                WebhookEventType = "vouchers#batch-state-change"
+	WebhookEventVouchersBalanceCheck                    WebhookEventType = "vouchers#balance-check"
+	WebhookEventVouchersRedemptionStatusChange          WebhookEventType = "vouchers#redemption-status-change"
+	WebhookEventVouchersRedemptionNotification          WebhookEventType = "vouchers#redemption-notification"
+	WebhookEventAccountDetailsOrderOrderStateChange     WebhookEventType = "account-details-order#order-state-change"
+	WebhookEventAccountDetailsPaymentStateChange        WebhookEventType = "account-details-payment#state-change"
+)
+
+// WebhookDelivery is the transport contract of a webhook subscription: the
+// HTTPS endpoint Wise POSTs event envelopes to, and the event-schema
+// semantic version (e.g. "4.0.0") those payloads use.
+type WebhookDelivery struct {
+	Version string
+	URL     string
+}
+
+// WebhookCreatorType identifies what created a webhook subscription. Open
+// string: unknown creator types pass through unchanged.
+type WebhookCreatorType string
+
+// Documented webhook subscription creator types.
+const (
+	WebhookCreatorTypeApplication WebhookCreatorType = "application"
+	WebhookCreatorTypeUser        WebhookCreatorType = "user"
+)
+
+// WebhookCreator identifies what created a webhook subscription.
+type WebhookCreator struct {
+	ID   string
+	Type WebhookCreatorType
+}
+
+// WebhookScopeDomain names the owning surface of a webhook subscription.
+// Open string: unknown domains pass through unchanged.
+type WebhookScopeDomain string
+
+// Documented webhook subscription scope domains.
+const (
+	WebhookScopeDomainApplication WebhookScopeDomain = "application"
+	WebhookScopeDomainProfile     WebhookScopeDomain = "profile"
+)
+
+// WebhookScope names the owning surface of a webhook subscription: the
+// client key (application scope) or the profile ID (profile scope).
+type WebhookScope struct {
+	Domain WebhookScopeDomain
+	ID     string
+}
+
+// WebhookSubscription is a registered webhook: the standing instruction for
+// Wise to POST an event envelope to Delivery.URL whenever the TriggerOn
+// event occurs. Subscriptions have no update operation — they are created,
+// listed, fetched, and deleted, never edited.
+type WebhookSubscription struct {
+	ID        WebhookSubscriptionID
+	Name      string
+	TriggerOn WebhookEventType
+	Delivery  WebhookDelivery
+	CreatedAt time.Time
+	CreatedBy WebhookCreator
+	Scope     WebhookScope
+}
+
+// CreateWebhookSubscriptionRequest registers a new webhook subscription.
+// Name, TriggerOn, and Delivery (version + URL) are required by Wise; they
+// are validated client-side so a malformed request never reaches the API.
+type CreateWebhookSubscriptionRequest struct {
+	Name      string
+	TriggerOn WebhookEventType
+	Delivery  WebhookDelivery
+}
+
+// WebhookEvent is the envelope Wise POSTs to a subscription's delivery URL
+// whenever a subscribed event occurs. Data stays raw (jsontext.Value): the
+// typed payload is decoded per event type via the accessor methods
+// (TransferStateChange, TransferPayoutFailure, BalanceCredit), so unknown
+// future event types parse without breaking. Compose with
+// VerifyWebhookSignature — verify the raw request bytes first, then parse
+// the same bytes; no combined helper is provided because a failed
+// verification is a transport-level rejection (answer 401/403), not a parse
+// error.
+type WebhookEvent struct {
+	SchemaVersion  string
+	SubscriptionID WebhookSubscriptionID
+	EventType      WebhookEventType
+	SentAt         time.Time
+	Data           jsontext.Value
+}
+
+// WebhookResource identifies the entity an event payload is about
+// (e.g. the transfer that changed state, or the balance account that was
+// credited). AccountID is only present for transfer events.
+type WebhookResource struct {
+	Type      string
+	ID        int64 // ID space varies by event type: a transfer ID on transfer events, a balance ID on account-details events.
+	ProfileID ProfileID
+	AccountID *int64 // ID space varies by event type: a recipient account ID on transfer events, a balance ID on swift-in credit events.
+}
+
+// TransferStateChangeData is the typed payload of transfers#state-change
+// events: the transfer's new and previous states. Wise recommends also
+// subscribing to transfers#payout-failure — a payout can fail without the
+// transfer state changing.
+type TransferStateChangeData struct {
+	Resource      WebhookResource
+	CurrentState  TransferStatus
+	PreviousState TransferStatus
+	OccurredAt    time.Time
+}
+
+// TransferPayoutFailureData is the typed payload of transfers#payout-failure
+// events (schema version 5.0.0). FailureReasonCode is an open set — Wise
+// adds new codes over time, so handle unrecognized codes defensively.
+type TransferPayoutFailureData struct {
+	TransferID         TransferID
+	ProfileID          ProfileID
+	FailureReasonCode  string
+	FailureDescription string
+	OccurredAt         time.Time
+}
+
+// BalanceCreditData is the typed payload of balances#credit events: the
+// credited amount and the resulting balance, as Money.
+type BalanceCreditData struct {
+	Resource               WebhookResource
+	Amount                 Money
+	PostTransactionBalance Money
+	OccurredAt             time.Time
 }

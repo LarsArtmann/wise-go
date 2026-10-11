@@ -1,39 +1,34 @@
 # BuildFlow Configuration
 # See: https://github.com/larsartmann/buildflow
+# GOEXPERIMENT=jsonv2 dropped 2026-10-07: go-branded-id v0.5.1 +
+# go-error-family v0.10.0 import encoding/json/v2, which BuildFlow
+# auto-detects (direct imports in this repo too) and sets for tool
+# subprocesses.
 
-# Environment variables injected into all tool subprocesses.
-# Required: go-branded-id v0.5.1 + go-error-family v0.10.0 import encoding/json/v2.
-env:
-  GOEXPERIMENT: jsonv2
+# go-version-auto-configure UNSKIPPED 2026-10-07: gvac v0.2.5's
+# respect_patch_floor makes the `go 1.26.0` pin policy instead of drift —
+# at or below the installed toolchain (1.26.7 fleet nixpkgs, 1.27.1
+# workstations) the directive is reported by no rule and never rewritten.
+# The go-version flipflop is structurally over.
+tool_options:
+  go-version-auto-configure:
+    respect_patch_floor: true
 
-# Build mode: full, fast, ci, dev, pre-commit
-build_mode: full
+skip_steps:
+# Embedded erraudit skip REMOVED 2026-10-07 (BuildFlow issue #34 fixed):
+# the embedded detector now runs the SAME legacyerrors engine as the
+# canonical standalone gate (`erraudit lint`), so verdicts agree by
+# construction. The 29 false positives (8x [ignored], 21x [context_loss])
+# came from the detector's old AST-analyzer path, which the CLI lint never
+# computed; that path remains available interactively via `erraudit
+# analyze`, no longer as a pipeline gate. Verified 0 error findings at
+# buildflow HEAD with the skip removed.
 
-# Parallel execution
-parallel: true
-max_concurrency: 4
-
-# File settings
+# file-size-check flags .go files over N lines (buildflow default 350). 700
+# keeps the signal on true outliers (types.go 800, internal_test.go 1078,
+# wise_test.go 4229) instead of flagging 11+ files — mostly large test
+# files — every run. The 2026-10-07 "scans 0 files" note is OBSOLETE:
+# buildflow's file-size-check fix (issue #36) makes the step scan root-
+# package layouts and report the scanned-file count; at 700 the gate now
+# flags exactly the documented true outliers.
 max_file_size: 700
-dupl_threshold: 30
-semantic: true
-
-# TODO comment severity: debug, info, warn, error
-todo_severity: info
-
-# Patterns to exclude from checks
-exclude:
-  - vendor
-  - .git
-  - node_modules
-  - .next
-  - dist
-  - "*.pb.go"
-  - "*.gen.go"
-
-# Auto-fix settings
-auto_fix: false
-
-# Logging
-verbose: false
-log_level: info

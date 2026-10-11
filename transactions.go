@@ -26,9 +26,9 @@ func (c *Client) ListTransactions(
 
 	query := func() string {
 		v := url.Values{}
-		v.Set("currency", string(req.Currency))
-		v.Set("intervalStart", req.From.Format(time.RFC3339))
-		v.Set("intervalEnd", req.To.Format(time.RFC3339))
+		v.Set(wireKeyCurrency, string(req.Currency))
+		v.Set("intervalStart", formatWiseTimestamp(req.From))
+		v.Set("intervalEnd", formatWiseTimestamp(req.To))
 
 		if req.Type != "" {
 			v.Set("type", string(req.Type))
@@ -86,11 +86,11 @@ func mapTransaction(
 				t.Date, profileID.Get(), balanceID.Get(), currency))
 	}
 
-	txType := classifyTransactionType(DetailType(t.Details.Type), t.Amount.Value)
+	txType := classifyTransactionType(DetailType(t.Details.Type), t.Amount.Cents())
 
 	total, err := toMoney(t.Amount)
 	if err != nil {
-		return Transaction{}, fmt.Errorf("total amount: %w", err)
+		return Transaction{}, fmt.Errorf("total amount %v %q: %w", t.Amount.Value, t.Amount.Currency, err)
 	}
 
 	amount := total
@@ -155,12 +155,34 @@ func mapExchange(ed *raw.ExchangeDetails) (*TransactionExchange, error) {
 	}, nil
 }
 
+// StatementType represents the layout variants of the balance statement
+// endpoints' type query parameter. The wire contract accepts COMPACT and
+// FLAT only (docs/reviews/wise-api-openapi.json); the DetailType values are
+// response-classification values, not statement filters.
+type StatementType string
+
+const (
+	StatementTypeCompact StatementType = "COMPACT"
+	StatementTypeFlat    StatementType = "FLAT"
+)
+
 // DetailType represents Wise's wire-format values for details.type.
-// Use the DetailType* constants as ListTransactionsRequest.Type filter values.
+// They classify transaction details in responses; statement request
+// filtering uses the StatementType* constants instead.
 type DetailType string
 
-// DetailType constants are Wise's wire-format values for details.type.
+// DetailType constants are Wise's wire-format values for details.type. The
+// first block reflects the balance-statement contract in
+// docs/reviews/wise-api-openapi.json; the second block carries the legacy
+// values from the earlier prose docs, kept mapped for compatibility.
 const (
+	DetailTypeCard             DetailType = "CARD"
+	DetailTypeDeposit          DetailType = "DEPOSIT"
+	DetailTypeMoneyAdded       DetailType = "MONEY_ADDED"
+	DetailTypeDirectDebit      DetailType = "DIRECT_DEBIT"
+	DetailTypeAcquiringPayment DetailType = "ACQUIRING_PAYMENT"
+	DetailTypeCardCashback     DetailType = "CARD_CASHBACK"
+
 	DetailTypeCardPayment DetailType = "CARD_PAYMENT"
 	DetailTypeCardRefund  DetailType = "CARD_REFUND"
 	DetailTypeTransfer    DetailType = "TRANSFER"
@@ -171,35 +193,46 @@ const (
 )
 
 // classifyTransactionType maps Wise detail types to SDK transaction types.
-// CARD_PAYMENT is always a card transaction (typically a debit, but the type
-// does not change with sign). CARD_REFUND is amount-dependent: positive amounts
-// are classified as refunds, non-positive fall back to card. See README for the
-// full contract.
-func classifyTransactionType(wiseType DetailType, amount float64) TransactionType {
+// Card values are always card transactions (typically debits, but the type
+// does not change with sign); CARD_CASHBACK and CARD_REFUND are
+// amount-dependent: positive amounts are classified as refunds, non-positive
+// fall back to card. Unmapped values default to a sign-based credit/debit.
+// See README for the full contract.
+func classifyTransactionType(wiseType DetailType, totalCents int64) TransactionType {
 	switch wiseType {
-	case DetailTypeCardPayment:
+	case DetailTypeCardPayment, DetailTypeCard:
 		return TransactionTypeCard
-	case DetailTypeCardRefund:
-		if amount > 0 {
+	case DetailTypeCardRefund, DetailTypeCardCashback:
+		if totalCents > 0 {
 			return TransactionTypeRefund
 		}
 
 		return TransactionTypeCard
 	case DetailTypeTransfer:
 		return TransactionTypeTransfer
-	case DetailTypePayment:
+	case DetailTypeDeposit, DetailTypeMoneyAdded:
+		// Money-in categories classify by amount sign like the default.
+		return creditOrDebit(totalCents)
+	case DetailTypePayment, DetailTypeAcquiringPayment, DetailTypeDirectDebit:
 		return TransactionTypePayment
 	case DetailTypeConversion, DetailTypeExchange:
 		return TransactionTypeExchange
 	case DetailTypeFee:
 		return TransactionTypeFee
 	default:
-		if amount > 0 {
-			return TransactionTypeCredit
-		}
-
-		return TransactionTypeDebit
+		return creditOrDebit(totalCents)
 	}
+}
+
+// creditOrDebit classifies by amount sign: a positive total is a credit,
+// anything else (negative or zero) is a debit. Shared by the money-in
+// detail types and the unmapped default, per the README contract.
+func creditOrDebit(totalCents int64) TransactionType {
+	if totalCents > 0 {
+		return TransactionTypeCredit
+	}
+
+	return TransactionTypeDebit
 }
 
 const invalidRequestCode = "wise.transactions.invalid_request"
@@ -215,6 +248,131 @@ func (r ListTransactionsRequest) validate() error {
 		return errorfamily.NewRejection(
 			invalidRequestCode,
 			"intervalStart must not be after intervalEnd",
+		)
+	}
+
+	return nil
+}
+
+// StatementFormat identifies a balance-statement file format. The format
+// selects the endpoint suffix; use ListTransactions for the parsed JSON form.
+type StatementFormat string
+
+// Statement file formats Wise serves for a balance.
+const (
+	StatementFormatCSV   StatementFormat = "csv"
+	StatementFormatPDF   StatementFormat = "pdf"  // Includes Wise branding.
+	StatementFormatXLSX  StatementFormat = "xlsx" // Excel.
+	StatementFormatCAMT  StatementFormat = "xml"  // CAMT.053 XML.
+	StatementFormatMT940 StatementFormat = "mt940"
+	StatementFormatQIF   StatementFormat = "qif"
+)
+
+// isKnownStatementFormat reports whether format is one the SDK can request
+// (kept in sync with the StatementFormat constants so an unknown format is
+// rejected client-side instead of 404ing server-side).
+//
+// art-dupl:accept idiomatic exhaustive-switch membership predicate; no shared domain concept with the OTT channel check
+func isKnownStatementFormat(format StatementFormat) bool {
+	switch format {
+	case StatementFormatCSV, StatementFormatPDF, StatementFormatXLSX,
+		StatementFormatCAMT, StatementFormatMT940, StatementFormatQIF:
+		return true
+	default:
+		return false
+	}
+}
+
+// maxStatementInterval is Wise's documented limit for statement downloads:
+// the From..To interval cannot exceed 469 days.
+const maxStatementInterval = 469 * 24 * time.Hour
+
+// GetStatementRequest parameters for downloading a balance statement as a
+// file. The interval From..To cannot exceed 469 days (Wise limit).
+type GetStatementRequest struct {
+	ProfileID ProfileID
+	BalanceID BalanceID
+	Currency  Currency
+	From      time.Time
+	To        time.Time
+	Type      StatementType // Optional statement layout filter; see StatementType* constants.
+	Format    StatementFormat
+
+	// Locale optionally localizes the statement (2-character language code,
+	// e.g. "en" or "de"); Wise defaults to the profile's language.
+	Locale string
+}
+
+// GetStatement downloads a balance statement as a file in the requested
+// format (CSV, PDF, XLSX, CAMT.053 XML, MT940, or QIF) and returns its raw
+// bytes. Use ListTransactions for the typed JSON statement instead.
+//
+// The endpoint is SCA-protected for UK/EEA profiles.
+func (c *Client) GetStatement(ctx context.Context, req GetStatementRequest) ([]byte, error) {
+	if err := req.validate(); err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/v1/profiles/%d/balance-statements/%d/statement.%s",
+		req.ProfileID.Get(), req.BalanceID.Get(), req.Format)
+
+	query := func() string {
+		v := url.Values{}
+		v.Set(wireKeyCurrency, string(req.Currency))
+		v.Set("intervalStart", formatWiseTimestamp(req.From))
+		v.Set("intervalEnd", formatWiseTimestamp(req.To))
+
+		if req.Type != "" {
+			v.Set("type", string(req.Type))
+		}
+
+		if req.Locale != "" {
+			v.Set("statementLocale", req.Locale)
+		}
+
+		return v.Encode()
+	}
+
+	data, err := c.getRaw(ctx, path, query)
+	if err != nil {
+		return nil, fmt.Errorf("get %s statement for profileID=%d balanceID=%d: %w",
+			req.Format, req.ProfileID.Get(), req.BalanceID.Get(), err)
+	}
+
+	return data, nil
+}
+
+func (r GetStatementRequest) validate() error {
+	if err := requireID(r.ProfileID, invalidRequestCode, "profileID"); err != nil {
+		return err
+	}
+
+	if err := requireID(r.BalanceID, invalidRequestCode, "balanceID"); err != nil {
+		return err
+	}
+
+	if r.Currency == "" {
+		return errorfamily.NewRejection(invalidRequestCode, "currency is required")
+	}
+
+	if r.From.After(r.To) {
+		return errorfamily.NewRejection(
+			invalidRequestCode,
+			"intervalStart must not be after intervalEnd",
+		)
+	}
+
+	if r.To.Sub(r.From) > maxStatementInterval {
+		return errorfamily.NewRejection(
+			invalidRequestCode,
+			"statement interval must not exceed 469 days; split longer periods into multiple requests",
+		)
+	}
+
+	if !isKnownStatementFormat(r.Format) {
+		return errorfamily.NewRejection(
+			invalidRequestCode,
+			fmt.Sprintf("unknown statement format %q (want csv, pdf, xlsx, xml, mt940, or qif)", r.Format),
 		)
 	}
 

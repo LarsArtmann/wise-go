@@ -1,0 +1,189 @@
+# wise-go Status Report — API Expansion Phase 1
+
+**Date:** 2026-08-19 17:14\
+**Branch:** master\
+**Latest commit:** `341bf37` feat(api): expand SDK with quotes, recipients, transfers, and rates endpoints\
+**Ahead of origin:** 5 commits (pushed)
+
+> **Follow-up (2026-08-21 docs-health pass):** Phase 1.5 continued this work —
+> see `2026-08-19_18-15_core-transfer-flow-completion.md`. Every still-open item
+> from sections b/c/e/f below was re-enumerated there and is now tracked in
+> `TODO_LIST.md`. Nothing here is lost; the annotations mark what shipped since.
+
+---
+
+## a) FULLY DONE
+
+1. **Comprehensive API implementation plan** at `docs/planning/2026-08-19_wise-api-full-implementation-plan.md`. Maps all ~135 endpoints across 29 Wise API categories, applies Pareto prioritisation (1% / 4% / 20% / 80%), and includes a Mermaid dependency graph.
+2. **Generic HTTP write helper** in `client.go`: `Client.request` + `Client.doRequest` support POST bodies, retries, auth headers, correlation ID, SCA token, and response decoding under the existing failsafe-go retry policy.
+3. **GetProfile** — `GET /v2/profiles/{id}` (`profiles.go`).
+4. **GetExchangeRate** — `GET /v1/rates` (`rates.go`) with current/historical query params and currency validation.
+5. **GetTransfer** — `GET /v1/transfers/{id}` (`transfers.go`).
+6. **Quotes API** — `CreateUnauthenticatedQuote`, `CreateQuote`, `GetQuote` (`quotes.go`). Includes `QuoteID` (UUID string), `Quote`, `CreateQuoteRequest`, `PayIn`/`PayOut` enums, `QuoteStatus`.
+7. **Recipients API** — `ListRecipients`, `GetRecipient`, `CreateRecipient` (`recipients.go`). Includes `Recipient`, `CreateRecipientRequest`, `ListRecipientsRequest` with automatic pagination.
+8. **CreateTransfer** — `POST /v1/transfers` (`transfers.go`). Includes `CreateTransferRequest` with idempotency key and optional transfer details.
+9. **`fetchByID` helper** in `helpers.go` to eliminate duplicated get-by-ID boilerplate.
+10. **BDD tests** for every new endpoint in `wise_test.go` using `httptest` mocks.
+11. **Documentation updates:** `CHANGELOG.md`, `FEATURES.md`, `TODO_LIST.md`, `AGENTS.md`.
+12. **Nix build updates:** added new `.go` files to `flake.nix` fileset, updated `vendorHash`.
+13. **Quality gates passed:** `go test -race ./...`, `golangci-lint run`, `nix flake check`.
+14. **Changes committed and pushed** to GitHub.
+
+---
+
+## b) PARTIALLY DONE
+
+1. **Full API coverage** — only the 1% Pareto core (transfer flow) is implemented. The plan documents the remaining ~130 endpoints.
+2. ~~**`Quote` type** — simplified to essential fields (ID, Source/Target Money, PayIn/PayOut, Rate, Created, ExpirationTime, Status, Profile). Does not yet expose `paymentOptions`, fees, notices, `guaranteedTargetAmount`, etc.~~ done at `607f17d`
+3. **`Recipient.Details`** — exposed as `map[string]string`. This is pragmatic but loses the typed, currency-specific shape Wise returns. Callers must know the required fields for their corridor. ← still the open design decision (TODO_LIST P2, carried through five reports as of 2026-09-13)
+4. **`CreateTransferRequest`** — covers the common case plus reference/source-of-funds/transfer-purpose fields. Does not yet model the full transfer-requirements validation flow.
+5. **OpenAPI spec** — discovered mid-implementation, downloaded to `docs/reviews/wise-api-openapi.json` and used to correct the quote-ID type. Not yet used to generate or validate all types.
+6. **Pagination** — implemented for `ListRecipients` and already existed for `ListTransfers`. No generic `Page[T]` abstraction yet.
+
+---
+
+## c) NOT STARTED
+
+### Core transfer flow completion
+
+- ~~`CancelTransfer` (`PUT /v1/transfers/{id}/cancel`)~~ done at `05ee22a`
+- ~~`GetDeliveryEstimate` (`GET /v1/delivery-estimates/{id}`)~~ done at `5ef7302`
+- ~~`ValidateTransferRequirements` (`POST /v1/transfer-requirements`)~~ done at `97c6379`
+- ~~Fund transfer (`POST /v1/profiles/{id}/transfers/{id}/payments`)~~ done at `e508572` (v0.9.0, 2026-08-21)
+
+### Statements
+
+- ~~CSV / PDF / XLSX / CAMT.053 / MT940 / QIF statement formats~~ done at `e508572` (v0.9.0 — all six formats via `getRaw`, 469-day client-side limit)
+
+### Users
+
+- ~~`GET /me`, `GET /users/{id}`~~ done at `e508572` (v0.9.0)
+
+### Balances expanded
+
+- ~~`CreateBalance`~~ done at `e508572` (v0.9.0)
+- ~~`GetBalance` via direct endpoint (`GET /v4/profiles/{id}/balances/{id}`)~~ done at `e508572` (v0.9.0)
+- ~~`GetTotalFunds`~~ done at `e508572` (v0.9.0)
+
+### Bank account details & MCA
+
+- ~~`GetBankAccountDetails`~~ done at `e508572` (v0.9.0)
+- ~~`GetMultiCurrencyAccount`~~ done at `e508572` (v0.9.0)
+
+### Webhooks
+
+- ~~Signature verification helper~~ done at `e508572` (v0.9.0)
+- ~~Subscription CRUD~~ done at `5a6448c` (v0.11.0, 2026-09-14 — profile-level; app-level deferred, ROADMAP)
+
+### Batch groups, direct debit, bulk settlement
+
+### Card issuance, KYC, SCA, disputes, digital wallets
+
+---
+
+## d) TOTALLY FUCKED UP
+
+Nothing is broken or shipped in a dangerous state. Honest missteps:
+
+1. **QuoteID started as `int64`** — I initially assumed quote IDs were numeric like other Wise IDs. The OpenAPI spec revealed they are UUID strings, requiring a mid-implementation type change in `ids.go`, `internal/raw/types.go`, `types.go`, `quotes.go`, and tests.
+2. **Linter churn** — `funlen`, `cyclop`, `unused`, `wrapcheck`, `gci`, and `varnamelen` warnings required several refactor rounds on `client.go`, `helpers.go`, and `quotes.go`. This was avoidable with closer attention to the existing `.golangci.yml` config up front.
+3. **Auto-commit granularity** — the auto-git daemon produced 5 commits for one logical work unit. The history is correct but noisier than a single curated commit would have been.
+4. **OpenAPI discovery timing** — finding the downloadable OpenAPI spec (`index.json`) after writing the first draft of types meant some rework. A quick check for machine-readable specs before hand-authoring types would have saved time.
+
+---
+
+## e) WHAT WE SHOULD IMPROVE
+
+1. **Start future endpoints from the OpenAPI spec** rather than the prose API reference. The spec is authoritative for field types, optionality, and ID formats.
+2. ~~**Expand `Quote` to include `paymentOptions`** and fee breakdowns — these are essential for consumers to present pay-in/pay-out choices.~~ done at `607f17d`
+3. **Add typed recipient-detail helpers** or at least currency-specific constants/docs so consumers are not guessing field names.
+4. **Add unit tests for validation edge cases** (e.g. mismatched quote currencies, missing customerTransactionId, empty recipient details).
+5. **Add error-response tests** for the new POST endpoints (400 validation, 409 duplicate transfer).
+6. ~~**Add README examples** showing the full flow: create quote → create recipient → create transfer.~~ done at `dcd1194`
+7. **Add sandbox integration tests** with real credentials to verify wire formats against Wise's sandbox.
+8. **Consider a service-client substructure** once the resource count clearly exceeds the ~8 threshold documented in `ROADMAP.md`.
+9. **Add per-request correlation ID support** (`WithRequestCorrelationID` via context or request option).
+10. **Run the full API surface through the OpenAPI spec** to identify any other ID-type mismatches or missing required fields.
+
+---
+
+## f) Up to 50 Things to Get Done Next
+
+### Immediate (core transfer flow — highest value)
+
+1. ~~`CancelTransfer`~~ **done at `05ee22a` (2026-08-19)**
+2. ~~`GetDeliveryEstimate`~~ **done at `5ef7302` (2026-08-19)**
+3. ~~`ValidateTransferRequirements`~~ **done at `97c6379` (2026-08-19)**
+4. ~~`FundTransfer` (balance funding)~~ done (done at e508572 (v0.9.0))
+5. ~~Expand `Quote` with `paymentOptions`, fees, and notices~~ **done at `607f17d` (2026-08-19)**
+6. ~~Add README example for quote → recipient → transfer~~ **done at `dcd1194` (2026-08-19)**
+7. ~~Add error-response BDD tests for POST endpoints~~ done (done at e508572 (400/401/404/409/SCA/429 matrix))
+8. ~~Add validation edge-case unit tests~~ done (done at e508572 (three validate() matrices))
+9. ~~Add `GetTransfer` error tests (404, auth, SCA)~~ done (done at e508572)
+10. ~~Add `CreateQuote` validation tests~~ done (done at e508572)
+
+### Near-term (high value, self-contained)
+
+11. ~~`GetMe` / `GetUser`~~ done (done at e508572)
+12. ~~`GetStatement` with format parameter (CSV/PDF/XLSX)~~ done (done at e508572 (six formats))
+13. ~~Webhook signature verification helper~~ done (done at e508572)
+14. ~~`CreateBalance`~~ done (done at e508572)
+15. ~~Direct `GetBalance` by ID (new endpoint)~~ done (done at e508572)
+16. ~~`GetTotalFunds`~~ done (done at e508572)
+17. ~~`GetBankAccountDetails`~~ done (done at e508572)
+18. ~~`GetMultiCurrencyAccount`~~ done (done at e508572)
+19. ~~`ListCurrencies`~~ done (done at e508572)
+20. ~~Per-request correlation ID override~~ done (done at e508572)
+
+### Medium-term (completeness)
+
+21. ~~`GetQuoteAccountRequirements`~~ done (done at e508572)
+22. `GetAccountRequirements` (recipient-first flow)
+23. `CreateRecipient` with refund and email recipient support
+24. `CheckAccountQuoteCompatibility`
+25. Batch groups API
+26. Direct debit accounts API
+27. Bulk settlement API
+28. Pay-in deposit details API
+29. Third-party transfers API
+30. Sandbox simulation helpers
+
+### Observability & quality
+
+31. ~~Sandbox integration tests workflow~~ done (workflow + key-gated tests shipped (ecdc738); live run needs the key)
+32. ~~Request/response logging hook (`WithLogger`)~~ done (done at e508572)
+33. Metrics hook (`WithMetrics`)
+34. ~~mTLS documentation / `WithMTLS` option~~ done (v0.9.0 README mTLS section)
+35. ~~Context-aware retry cancellation~~ done (done at e508572)
+36. ~~Add godoc examples for new public types~~ done (done at 20810a7)
+37. ~~API audit for exported symbols ahead of v1.0~~ done (done 2026-08-21 (docs/reviews/2026-08-21_v1.0-api-audit.md))
+38. Full OpenAPI-derived type review
+39. Add property-based tests for Money/Quote/Transfer mapping
+40. ~~CI speed: add Cachix binary cache~~ done (wired (ad2ddac); token user-gated)
+
+### Long-term / specialized
+
+41. Cards API
+42. Card orders API
+43. Card transactions API
+44. Spend limits & controls
+45. KYC review API
+46. SCA factor APIs (PIN, facemaps, device fingerprints, OTP)
+47. Disputes API
+48. Digital wallet push provisioning
+49. Cases / partner support API
+50. OAuth token helper
+
+---
+
+## g) Questions I Cannot Answer Without You
+
+1. **Should I continue expanding the core transfer flow next** (`CancelTransfer`, `GetDeliveryEstimate`, `ValidateTransferRequirements`) **or pivot to a different high-value area** like Webhooks, Statements, or Sandbox integration tests?
+
+2. **For the polymorphic `Recipient.Details` field, do you want typed currency-specific structs** (e.g. `GBPBankDetails`, `IBANDetails`) **or keep the `map[string]string` approach** for flexibility?
+
+3. **Should sandbox integration tests be written before adding more endpoints**, or should the SDK grow the mock-tested surface first and add live tests later?
+
+---
+
+_Report complete. Waiting for instructions._

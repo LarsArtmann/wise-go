@@ -3,6 +3,8 @@ package wise
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
 	"time"
 
 	id "github.com/larsartmann/go-branded-id"
@@ -10,8 +12,9 @@ import (
 	"github.com/larsartmann/wise-go/internal/raw"
 )
 
-// CreateUnauthenticatedQuote creates an illustrative quote without a user token.
-// The returned quote has no ID and cannot be used to create a transfer.
+// CreateUnauthenticatedQuote creates a quote without an API token — a public
+// rate preview. The returned quote has no ID and cannot be used to create a
+// transfer; use CreateQuote for that.
 func (c *Client) CreateUnauthenticatedQuote(
 	ctx context.Context,
 	req CreateQuoteRequest,
@@ -60,18 +63,13 @@ func (c *Client) GetQuote(
 	profileID ProfileID,
 	quoteID QuoteID,
 ) (*Quote, error) {
-	if profileID.Get() == 0 {
-		return nil, errorfamily.NewRejection(
-			"wise.quote.invalid_request",
-			"profileID is required",
-		)
+	// art-dupl:accept paired requireID guards and the per-endpoint path literal are the deliberate two-idiom validation convention; an abstraction would take more parameters than it saves lines
+	if err := requireID(profileID, "wise.quote.invalid_request", "profileID"); err != nil {
+		return nil, err
 	}
 
-	if quoteID.Get() == "" {
-		return nil, errorfamily.NewRejection(
-			"wise.quote.invalid_request",
-			"quoteID is required",
-		)
+	if err := requireID(quoteID, "wise.quote.invalid_request", "quoteID"); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/v3/profiles/%d/quotes/%s", profileID.Get(), quoteID.Get())
@@ -85,16 +83,190 @@ func (c *Client) GetQuote(
 	return mapQuote(quote, profileID)
 }
 
+// GetQuoteAccountRequirements returns the recipient-account fields required
+// for the currency corridor of an authenticated quote, one dynamic form per
+// available payout route. It bridges quotes to recipients: Type identifies
+// the route (CreateRecipientRequest.Type), and the Fields forms describe
+// which Details keys that route needs, with allowed select values and
+// validation metadata.
+//
+// The SDK sends Accept-Minor-Version: 1, as Wise recommends for all new
+// integrations, so recipient name and email fields are included.
+func (c *Client) GetQuoteAccountRequirements(
+	ctx context.Context,
+	req QuoteAccountRequirementsRequest,
+) ([]AccountRequirement, error) {
+	if err := requireID(req.QuoteID, "wise.quote.invalid_request", "quoteID"); err != nil {
+		return nil, err
+	}
+
+	return c.quoteAccountRequirements(ctx, req.QuoteID, req.OriginatorLegalEntityType,
+		http.MethodGet, nil, verbGetAccountRequirements)
+}
+
+// accountRequirementsQuery lazily renders the optional
+// originatorLegalEntityType query shared by the GET and refresh (POST)
+// account-requirements endpoints; an empty entity type sends no query.
+func accountRequirementsQuery(originatorLegalEntityType string) func() string {
+	return func() string {
+		if originatorLegalEntityType == "" {
+			return ""
+		}
+
+		return url.Values{"originatorLegalEntityType": []string{originatorLegalEntityType}}.Encode()
+	}
+}
+
+// mapAccountRequirement converts a raw account requirement into the parsed
+// AccountRequirement type, reusing the shared dynamic-form mappers. The wire
+// form contains only strings, so no parse failures are possible.
+func mapAccountRequirement(requirement raw.AccountRequirement) AccountRequirement {
+	fields := make([]TransferRequirementForm, 0, len(requirement.Fields))
+	for _, form := range requirement.Fields {
+		fields = append(fields, mapTransferRequirementForm(form))
+	}
+
+	return AccountRequirement{
+		Type:      requirement.Type,
+		Title:     requirement.Title,
+		UsageInfo: requirement.UsageInfo,
+		Fields:    fields,
+	}
+}
+
+// mapAccountRequirements maps every raw account requirement; used by the
+// shared account-requirements call for the GET and POST endpoints.
+func mapAccountRequirements(requirements []raw.AccountRequirement) []AccountRequirement {
+	result := make([]AccountRequirement, 0, len(requirements))
+	for _, requirement := range requirements {
+		result = append(result, mapAccountRequirement(requirement))
+	}
+
+	return result
+}
+
+// RefreshQuoteAccountRequirements completes the two-pass recipient flow:
+// after GetQuoteAccountRequirements returns a field with
+// RefreshRequirementsOnChange=true (e.g. legalEntityType or a country
+// selector), submit the recipient form with that field updated and Wise
+// returns the revised requirements for the chosen route — for example
+// selecting the US reveals the address.state field.
+//
+// The recipient payload does not need to be complete: Wise resolves the
+// dependent form, not the account. Like the GET, the SDK sends
+// Accept-Minor-Version: 1 so recipient name and email fields are included.
+func (c *Client) RefreshQuoteAccountRequirements(
+	ctx context.Context,
+	req RefreshQuoteAccountRequirementsRequest,
+) ([]AccountRequirement, error) {
+	if err := req.validate(); err != nil {
+		return nil, err
+	}
+
+	return c.quoteAccountRequirements(ctx, req.QuoteID, req.OriginatorLegalEntityType,
+		http.MethodPost, req.toWire(), verbRefreshAccountRequirements)
+}
+
+// accountRequirementsVerb labels which account-requirements variant a
+// wrapped error came from; it exists only to keep the two call sites from
+// drifting apart as bare string literals.
+type accountRequirementsVerb string
+
+const (
+	verbGetAccountRequirements     accountRequirementsVerb = "get"
+	verbRefreshAccountRequirements accountRequirementsVerb = "refresh"
+)
+
+// quoteAccountRequirements performs the account-requirements call shared by
+// the GET and refresh (POST) endpoints: the same path, originator query, and
+// Accept-Minor-Version negotiation. method and wireBody select the variant;
+// verb labels the wrapped error ("get" or "refresh").
+func (c *Client) quoteAccountRequirements(
+	ctx context.Context,
+	quoteID QuoteID,
+	originatorLegalEntityType string,
+	method string,
+	wireBody any,
+	verb accountRequirementsVerb,
+) ([]AccountRequirement, error) {
+	query := accountRequirementsQuery(originatorLegalEntityType)
+
+	path := fmt.Sprintf("/v1/quotes/%s/account-requirements", quoteID.Get())
+
+	var requirements []raw.AccountRequirement
+
+	err := c.request(ctx, method, path, query, wireBody, &requirements,
+		map[string]string{"Accept-Minor-Version": "1"})
+	if err != nil {
+		return nil, fmt.Errorf("%s account requirements for quote %s: %w", verb, quoteID.Get(), err)
+	}
+
+	return mapAccountRequirements(requirements), nil
+}
+
+func (r RefreshQuoteAccountRequirementsRequest) validate() error {
+	if err := requireID(r.QuoteID, "wise.quote.invalid_request", "quoteID"); err != nil {
+		return err
+	}
+
+	if r.Recipient.Currency == "" {
+		return errorfamily.NewRejection(
+			"wise.recipient.invalid_request",
+			"recipient currency is required",
+		)
+	}
+
+	if r.Recipient.Type == "" {
+		return errorfamily.NewRejection(
+			"wise.recipient.invalid_request",
+			"recipient type is required",
+		)
+	}
+
+	if len(r.Recipient.Details) == 0 {
+		return errorfamily.NewRejection(
+			"wise.recipient.invalid_request",
+			"recipient details are required (at least the field that triggered the refresh)",
+		)
+	}
+
+	return nil
+}
+
+// toWire renders the in-progress recipient form for the account-requirements
+// refresh endpoint. Unlike CreateRecipientRequest.toWire it omits fields the
+// caller has not filled in yet: an empty accountHolderName or zero profile
+// would misrepresent the form's state to Wise's dependent-field resolution.
+func (r RefreshQuoteAccountRequirementsRequest) toWire() map[string]any {
+	body := map[string]any{
+		wireKeyCurrency: string(r.Recipient.Currency),
+		wireKeyType:     r.Recipient.Type,
+		wireKeyDetails:  r.Recipient.Details,
+	}
+
+	if r.Recipient.ProfileID.Get() != 0 {
+		body["profile"] = r.Recipient.ProfileID.Get()
+	}
+
+	if r.Recipient.AccountHolderName != "" {
+		body["accountHolderName"] = r.Recipient.AccountHolderName
+	}
+
+	// art-dupl:accept ownedByCustomer is a two-line optional wire field per request type; each body builder owns its own field set
+	if r.Recipient.OwnedByCustomer {
+		body["ownedByCustomer"] = true
+	}
+
+	return body
+}
+
 func (r CreateQuoteRequest) validate() error {
 	return r.validateCommon()
 }
 
 func (r CreateQuoteRequest) validateAuthenticated(profileID ProfileID) error {
-	if profileID.Get() == 0 {
-		return errorfamily.NewRejection(
-			"wise.quote.invalid_request",
-			"profileID is required",
-		)
+	if err := requireID(profileID, "wise.quote.invalid_request", "profileID"); err != nil {
+		return err
 	}
 
 	return r.validateCommon()

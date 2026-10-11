@@ -1,0 +1,43 @@
+goos: linux
+goarch: amd64
+pkg: github.com/larsartmann/wise-go
+cpu: AMD RYZEN AI MAX+ 395 w/ Radeon 8060S          
+BenchmarkBalanceAmountCents-32         	1000000000	         0.3143 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBalanceAmountCents-32         	1000000000	         0.3014 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBalanceAmountCents-32         	1000000000	         0.2844 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBalanceAmountCents-32         	1000000000	         0.2758 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBalanceAmountCents-32         	1000000000	         0.2787 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBalanceAmountCents-32         	1000000000	         0.2794 ns/op	       0 B/op	       0 allocs/op
+BenchmarkClassifyTransactionType-32    	1000000000	         0.4854 ns/op	       0 B/op	       0 allocs/op
+BenchmarkClassifyTransactionType-32    	1000000000	         0.4850 ns/op	       0 B/op	       0 allocs/op
+BenchmarkClassifyTransactionType-32    	1000000000	         0.5100 ns/op	       0 B/op	       0 allocs/op
+BenchmarkClassifyTransactionType-32    	1000000000	         0.4929 ns/op	       0 B/op	       0 allocs/op
+BenchmarkClassifyTransactionType-32    	1000000000	         0.4873 ns/op	       0 B/op	       0 allocs/op
+BenchmarkClassifyTransactionType-32    	1000000000	         0.4692 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMapTransaction-32             	 2071447	       562.7 ns/op	     600 B/op	      15 allocs/op
+BenchmarkMapTransaction-32             	 2180074	       547.4 ns/op	     600 B/op	      15 allocs/op
+BenchmarkMapTransaction-32             	 2270941	       612.4 ns/op	     600 B/op	      15 allocs/op
+BenchmarkMapTransaction-32             	 2116134	       559.5 ns/op	     600 B/op	      15 allocs/op
+BenchmarkMapTransaction-32             	 2197402	       531.1 ns/op	     600 B/op	      15 allocs/op
+BenchmarkMapTransaction-32             	 2326930	       506.2 ns/op	     600 B/op	      15 allocs/op
+BenchmarkVerifyWebhookSignature-32     	   55423	     21621 ns/op	    1664 B/op	      10 allocs/op
+BenchmarkVerifyWebhookSignature-32     	   52588	     22476 ns/op	    1664 B/op	      10 allocs/op
+BenchmarkVerifyWebhookSignature-32     	   51542	     22619 ns/op	    1664 B/op	      10 allocs/op
+BenchmarkVerifyWebhookSignature-32     	   52782	     22204 ns/op	    1664 B/op	      10 allocs/op
+BenchmarkVerifyWebhookSignature-32     	   53307	     21572 ns/op	    1664 B/op	      10 allocs/op
+BenchmarkVerifyWebhookSignature-32     	   50876	     24577 ns/op	    1664 B/op	      10 allocs/op
+BenchmarkDecodeExchangeRates-32        	  846916	      1469 ns/op	     425 B/op	       4 allocs/op
+BenchmarkDecodeExchangeRates-32        	 1000000	      1252 ns/op	     425 B/op	       4 allocs/op
+BenchmarkDecodeExchangeRates-32        	  893002	      1413 ns/op	     425 B/op	       4 allocs/op
+BenchmarkDecodeExchangeRates-32        	  729529	      1522 ns/op	     425 B/op	       4 allocs/op
+BenchmarkDecodeExchangeRates-32        	  970845	      1221 ns/op	     425 B/op	       4 allocs/op
+BenchmarkDecodeExchangeRates-32        	 1000000	      1239 ns/op	     425 B/op	       4 allocs/op
+BenchmarkParseWebhookEvent-32          	  945411	      1262 ns/op	     578 B/op	       5 allocs/op
+BenchmarkParseWebhookEvent-32          	  977346	      1389 ns/op	     578 B/op	       5 allocs/op
+BenchmarkParseWebhookEvent-32          	  849031	      1435 ns/op	     578 B/op	       5 allocs/op
+BenchmarkParseWebhookEvent-32          	  844874	      1750 ns/op	     578 B/op	       5 allocs/op
+BenchmarkParseWebhookEvent-32          	  956268	      1564 ns/op	     578 B/op	       5 allocs/op
+BenchmarkParseWebhookEvent-32          	  759943	      1352 ns/op	     578 B/op	       5 allocs/op
+PASS
+spec conformance coverage: suite did not run (a -run filter likely excluded it); floors not asserted
+ok  	github.com/larsartmann/wise-go	34.567s

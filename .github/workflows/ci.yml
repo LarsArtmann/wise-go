@@ -10,6 +10,7 @@ on:
       - .gitignore
       - "**/*.svg"
       - "**/*.png"
+      - .github/badges/**
   pull_request:
     branches: [main, master]
     paths-ignore:
@@ -19,10 +20,17 @@ on:
       - .gitignore
       - "**/*.svg"
       - "**/*.png"
+      - .github/badges/**
 
 env:
   GO_VERSION: "1.26"
-  GOLANGCI_LINT_VERSION: v2.12
+  # v2.13+ is required: the exhaustruct_v5 linter (the forced replacement of
+  # the deprecated exhaustruct) only exists in golangci-lint v2.13.0+.
+  GOLANGCI_LINT_VERSION: v2.13
+  # Pinned tool versions: @latest would make formatting and vulnerability
+  # results drift between runs of the same commit (non-reproducible CI).
+  GOFUMPT_VERSION: v0.12.0
+  GOVULNCHECK_VERSION: v1.8.0
   # go-branded-id and go-error-family use encoding/json/v2, which requires
   # the jsonv2 experiment on Go 1.26. Inherited by all jobs below.
   GOEXPERIMENT: "jsonv2"
@@ -32,9 +40,9 @@ jobs:
     name: Build & Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
@@ -44,6 +52,18 @@ jobs:
 
       - name: Test
         run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+
+      # Gate, not just metric: a silent drop under 92% must fail the build.
+      # 92 leaves ~0.8pt headroom over the measured 92.8% (2026-10-11) so
+      # additive surface changes don't flake the job, but real test debt does.
+      - name: Coverage threshold
+        run: |
+          TOTAL=$(go tool cover -func=coverage.out | awk '/^total:/ {sub("%", "", $3); print $3}')
+          echo "Total coverage: ${TOTAL}%"
+          if awk -v p="$TOTAL" 'BEGIN { exit (p+0 < 92.0) ? 0 : 1 }'; then
+            echo "::error::Coverage ${TOTAL}% is below the 92% gate"
+            exit 1
+          fi
 
       - name: Check go mod tidy
         run: |
@@ -58,22 +78,22 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
       - name: Lint
-        uses: golangci/golangci-lint-action@9fae48acfc02a90574d7c304a1758ef9895495fa # v7
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version: ${{ env.GOLANGCI_LINT_VERSION }}
           args: --timeout=5m
 
       - name: Format check (gofumpt)
         run: |
-          go install mvdan.cc/gofumpt@latest
+          go install mvdan.cc/gofumpt@${{ env.GOFUMPT_VERSION }}
           if [ -n "$(gofumpt -l .)" ]; then
             echo "::error::Files need gofumpt formatting:"
             gofumpt -l .
@@ -85,31 +105,155 @@ jobs:
     name: Vulnerability Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
       - name: Run govulncheck
         run: |
-          go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck ./...
+          go install golang.org/x/vuln/cmd/govulncheck@${{ env.GOVULNCHECK_VERSION }}
+          govulncheck -show verbose ./... | tee govulncheck.txt
+
+      - name: Upload verbose output
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: govulncheck-report
+          path: govulncheck.txt
+    timeout-minutes: 15
+  erraudit:
+    # Error-handling audit (errors.As→AsType modernization + coded-error
+    # enforcement). Curated config: --type-aware plus --enforce-coded-errors;
+    # the other enforcement flags are deliberately off — see AGENTS.md
+    # "Dependencies → erraudit".
+    #
+    # WARN-not-fail: github.com/larsartmann/erraudit is a PRIVATE module, so
+    # the install needs ERRAUDIT_TOKEN (a PAT with read access to that repo)
+    # in the repo secrets. Until it is set the install step fails, the gate
+    # is skipped, and the job stays green (same pattern as the cachix step
+    # in the nix job). Make this job blocking by deleting the two
+    # continue-on-error / if lines once the token exists.
+    name: Error-Handling Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Install erraudit (private module)
+        id: install
+        continue-on-error: true
+        run: |
+          git config --global \
+            url."https://x-access-token:${ERRAUDIT_TOKEN}@github.com/".insteadOf \
+            "https://github.com/"
+          GOPRIVATE=github.com/larsartmann/erraudit GOTOOLCHAIN=auto \
+            go install github.com/larsartmann/erraudit/cmd/erraudit@v0.5.1-0.20260922174106-1c6809adf02e
+        env:
+          ERRAUDIT_TOKEN: ${{ secrets.ERRAUDIT_TOKEN }}
+
+      - name: Curated erraudit gate
+        if: steps.install.outcome == 'success'
+        run: |
+          erraudit lint ./... --type-aware --enforce-coded-errors
+    timeout-minutes: 15
+  coverage-badge:
+    # Generates coverage/badge.json so the README badge renders live data —
+    # kills badge drift (the 94.8%→84.2% hand-edit incident).
+    #
+    # Job-level concurrency: the badge job pushes to master, so two runs must
+    # never race the push. Queue instead of cancel — cancel-in-progress could
+    # abort mid-push and leave a rejected-push state behind.
+    name: Coverage Badge
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    permissions:
+      contents: write
+    concurrency:
+      group: coverage-badge-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.ref }}
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Test with coverage
+        run: go test -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: Write badge JSON
+        run: |
+          PERCENT=$(go tool cover -func=coverage.out | awk '/^total:/ {sub("%", "", $3); print $3}')
+          COLOR=$(awk -v p="$PERCENT" 'BEGIN {
+            if (p >= 90) print "brightgreen"; else if (p >= 75) print "yellowgreen";
+            else if (p >= 50) print "yellow"; else print "red"
+          }')
+          mkdir -p .github/badges
+          printf '{"schemaVersion": 1, "label": "coverage", "message": "%s%%", "color": "%s"}\n' \
+            "$PERCENT" "$COLOR" > .github/badges/coverage.json
+          cat .github/badges/coverage.json
+
+      - name: Commit badge if changed
+        run: |
+          git config user.name "coverage-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add .github/badges/coverage.json
+          git diff --cached --quiet || git commit -m "chore(coverage): update badge [skip ci]"
+          # Master may have moved since checkout (e.g. the auto-git daemon or
+          # a merge landed mid-run); rebase the badge commit on tip before push.
+          git pull --rebase --autostash
+          git push
     timeout-minutes: 15
   nix:
     name: Nix Flake Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install Nix
-        uses: cachix/install-nix-action@ba0dd844c9180cbf77aa72a116d6fbc515d0e87b # v27
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
+      # No SSH/deploy-key or token step is needed here: all flake inputs that
+      # used git+ssh URLs (go-nix-helpers, go-branded-id, go-error-family) are
+      # PUBLIC repos and were migrated to github: URLs pinned by rev, so
+      # `nix flake check` resolves them anonymously. If a dep ever goes
+      # private, add webfactory/ssh-agent with a read-only deploy key
+      # (libgit2-based Nix git fetches ignore git-config insteadOf).
       - name: Run nix flake check
         run: nix flake check
+
+      # release-notes-check is a flake app, not a check, so the flake check
+      # above does not run it (md-go-snippets IS covered there, as
+      # checks.md-go-snippets). Runs on the same nix install, no extra setup.
+      - name: Release notes check
+        run: nix run .#release-notes-check
+
+      # Binary cache: pushes build outputs so later runs (and contributors)
+      # skip the ~5min sandboxed test build. Public cache, no auth to read.
+      #
+      # WARN-not-fail: the cache name 'larsartmann' and CACHIX_AUTH_TOKEN are
+      # UNVERIFIED (open question g2 — does the cache exist? is the secret
+      # set?). Until that is answered this step degrades to a warning instead
+      # of failing the whole nix job. Flip continue-on-error to false once g2
+      # is resolved.
+      - name: Push to Cachix
+        if: github.ref == 'refs/heads/master'
+        uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
+        continue-on-error: true
+        with:
+          name: larsartmann
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
     timeout-minutes: 30
 concurrency:

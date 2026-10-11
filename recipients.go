@@ -25,11 +25,8 @@ func (c *Client) ListRecipients(
 	ctx context.Context,
 	req ListRecipientsRequest,
 ) ([]Recipient, error) {
-	if req.ProfileID.Get() == 0 {
-		return nil, errorfamily.NewRejection(
-			"wise.recipient.invalid_request",
-			"profileID is required",
-		)
+	if err := requireID(req.ProfileID, "wise.recipient.invalid_request", "profileID"); err != nil {
+		return nil, err
 	}
 
 	var all []Recipient
@@ -60,7 +57,7 @@ func (c *Client) listRecipientsPage(
 		v.Set("offset", strconv.Itoa(offset))
 
 		if req.Currency != "" {
-			v.Set("currency", string(req.Currency))
+			v.Set(wireKeyCurrency, string(req.Currency))
 		}
 
 		return v.Encode()
@@ -93,7 +90,7 @@ func (c *Client) GetRecipient(ctx context.Context, recipientID RecipientID) (*Re
 
 	var recipient raw.Recipient
 
-	if err := fetchByID(ctx, c, recipientID.Get(), "recipient", path, &recipient); err != nil {
+	if err := fetchByID(ctx, c, recipientID, "recipient", path, &recipient); err != nil {
 		return nil, err
 	}
 
@@ -132,11 +129,8 @@ func (c *Client) CreateRecipient(
 }
 
 func (r CreateRecipientRequest) validate() error {
-	if r.ProfileID.Get() == 0 {
-		return errorfamily.NewRejection(
-			"wise.recipient.invalid_request",
-			"profileID is required",
-		)
+	if err := requireID(r.ProfileID, "wise.recipient.invalid_request", "profileID"); err != nil {
+		return err
 	}
 
 	if r.Currency == "" {
@@ -173,12 +167,13 @@ func (r CreateRecipientRequest) validate() error {
 func (r CreateRecipientRequest) toWire() map[string]any {
 	body := map[string]any{
 		"profile":           r.ProfileID.Get(),
-		"currency":          string(r.Currency),
-		"type":              r.Type,
+		wireKeyCurrency:     string(r.Currency),
+		wireKeyType:         r.Type,
 		"accountHolderName": r.AccountHolderName,
-		"details":           r.Details,
+		wireKeyDetails:      r.Details,
 	}
 
+	// art-dupl:accept ownedByCustomer is a two-line optional wire field per request type; each body builder owns its own field set
 	if r.OwnedByCustomer {
 		body["ownedByCustomer"] = true
 	}

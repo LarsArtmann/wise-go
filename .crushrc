@@ -1,0 +1,16 @@
+# Project-local Crush config. Project settings merge over (and win against)
+# the global ~/.config/crush/crushrc.
+
+# This repo imports encoding/json/v2 (via go-branded-id + go-error-family),
+# which the Go 1.26 stdlib build-constrains behind GOEXPERIMENT=jsonv2. The
+# nix devShell sets that var; LSP servers launched by Crush do NOT inherit
+# it, so their package load fails ("build constraints exclude all Go files")
+# and both gopls and golangci_lint_ls emit phantom diagnostics (false
+# "bytes unused" on internal_test.go, "File is not properly formatted" on
+# webhooks.go:142). Root cause verified by A/B run 2026-10-07; env takes
+# effect on the next session start. stdversion stays disabled (the global
+# config's choice): gopls check flags json/v2 usage as "requires go1.27"
+# under this 1.26 pin even with the experiment on, and the suite compiles
+# and passes regardless.
+lsp add gopls --command gopls --timeout 60 --env GOTOOLCHAIN auto --env GOEXPERIMENT jsonv2 --init-options '{"analyses":{"stdversion":false}}' --options '{"analyses":{"stdversion":false}}'
+lsp add golangci_lint_ls --command "$HOME/.local/bin/golangci-lint-lsp-wrapper" --env GOTOOLCHAIN auto --env GOEXPERIMENT jsonv2

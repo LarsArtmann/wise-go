@@ -1,19 +1,29 @@
 # wise-go
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/larsartmann/wise-go.svg)](https://pkg.go.dev/github.com/larsartmann/wise-go)
-[![Coverage](https://img.shields.io/badge/coverage-94.8%25-success)](https://github.com/larsartmann/wise-go)
+[![Coverage](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Flarsartmann%2Fwise-go%2Fmaster%2F.github%2Fbadges%2Fcoverage.json&query=%24.message&label=coverage&color=%24.color)](https://github.com/larsartmann/wise-go/actions)
 [![Lint](https://img.shields.io/badge/lint-0%20issues-success)](https://github.com/larsartmann/wise-go)
 [![Go](https://img.shields.io/badge/Go-1.26+-00ADD8?logo=go&logoColor=white)](https://go.dev/)
+
+<!-- Coverage badge reads .github/badges/coverage.json, committed by the
+     coverage-badge CI job. Measurement basis: total statement coverage over
+     the whole module (GOEXPERIMENT=jsonv2 go test -coverprofile
+     -covermode=atomic ./... | go tool cover -func). Never edit by hand. -->
 
 The unofficial Go SDK for the [Wise](https://wise.com) (TransferWise) API.
 
 Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise's wire types directly — `float64` for money, untyped string IDs, inconsistent date formats. **wise-go fills that gap** with hand-written types that make invalid states hard to reach: monetary amounts as `int64` cents (never `float64`), branded IDs that prevent mixing `ProfileID` with `BalanceID` at compile time, and behavioral error classification so you can retry on intent rather than string-matching status codes.
 
-> **Status: active development (v0.8.0).** The core transfer flow is implemented
-> end-to-end: profiles, balances, transactions, exchange rates, quotes (with
-> `paymentOptions` + fees), recipients, transfers (create / get / list /
-> cancel), delivery estimates, and transfer-requirements validation. See
-> [ROADMAP.md](ROADMAP.md) for what's next.
+> **Status: active development (v0.13.0).** The core transfer flow is implemented
+> end-to-end — profiles, users, balances, transactions and statement file downloads
+> (CSV/PDF/XLSX/CAMT.053/MT940/QIF), exchange rates, quotes (with `paymentOptions`
+> fees), recipients, transfers (create / get / list / cancel / **fund** /
+> receipt / MT103 payout info), delivery estimates, and transfer-requirements
+> validation — plus webhook subscriptions with typed event decoding, webhook
+> signature verification, programmatic SCA challenge clearing (one-time-token
+> endpoints), observability hooks, and balance lifecycle management. See
+> [FEATURES.md](FEATURES.md) for the honest inventory and [ROADMAP.md](ROADMAP.md)
+> for what's next.
 
 > **Design story:** [I needed a Go SDK for Wise. Nobody built one.](https://larsartmann.com/blog/when-the-api-has-no-spec-your-types-are-the-spec)
 
@@ -26,15 +36,28 @@ Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise'
 - [API Reference](#api-reference)
   - [Authentication](#authentication)
   - [Profiles](#profiles)
+  - [Users](#users)
   - [Balances](#balances)
   - [Transactions](#transactions)
+  - [Statements](#statements)
+  - [Transfer receipts & MT103](#transfer-receipts--mt103)
+  - [Quotes](#quotes)
+  - [Recipients](#recipients)
+  - [Exchange rates](#exchange-rates)
   - [Transfers](#transfers)
   - [Core transfer flow](#core-transfer-flow-quote--recipient--transfer)
+  - [Multi-Currency Account & bank details](#multi-currency-account--bank-details)
+  - [Currencies](#currencies)
 - [Mocking the Client](#mocking-the-client)
 - [Request Middleware](#request-middleware)
 - [Error Handling](#error-handling)
+- [Strong Customer Authentication (SCA)](#strong-customer-authentication-sca)
+- [Webhooks](#webhooks)
+  - [Webhook subscriptions](#webhook-subscriptions)
+  - [Typed event decoding](#typed-event-decoding)
 - [Design Decisions](#design-decisions)
 - [Testing](#testing)
+  - [Sandbox verification](#sandbox-verification)
 - [Project Status](#project-status)
 - [Contributing](#contributing)
 - [License](#license)
@@ -43,12 +66,17 @@ Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise'
 
 - **Money is never `float64`** — Every amount is `int64` minor units (cents). No IEEE-754 representation error, ever.
 - **Branded IDs prevent entity-mixing bugs** — `ProfileID`, `BalanceID`, `TransactionID`, `TransferID`, `RecipientID`, and `QuoteID` are distinct types; passing one where another belongs is a compile error.
-- **Automatic retries with backoff** — Exponential backoff on 429 (rate limit), 5xx, and network errors via [failsafe-go](https://github.com/failsafe-go/failsafe-go). Auth, not-found, and client errors fail immediately.
+- **Automatic retries with backoff** — Exponential backoff with jitter on 429 (rate limit), 5xx, and network errors via [go-retry](https://github.com/larsartmann/go-retry), honoring Wise's `Retry-After` (capped at the configured max delay). Auth, not-found, and client errors fail immediately.
 - **Typed, classifiable errors** — `AuthError`, `RateLimitError` (with parsed `Retry-After`), `NotFoundError`, `ServerError`. Each carries its Wise API detail and implements `ErrorCode()` / `ErrorFamily()` / `IsRetryable()` from [go-error-family](https://github.com/larsartmann/go-error-family).
 - **Two-layer type system** — Raw wire types live in `internal/raw`; result types expose clean Go with `Money` value objects and branded `Currency`. The mapping is the only bridge.
-- **Write operations** — create quotes (authenticated and unauthenticated), recipients, and transfers; cancel transfers; validate transfer requirements; fetch delivery estimates.
+- **Write operations** — create quotes (authenticated and unauthenticated), recipients, and transfers; fund transfers from a balance; cancel transfers; validate transfer requirements; fetch delivery estimates.
+- **SCA challenge support** — SCA-protected endpoints (e.g. balance statements for UK/EEA profiles) surface as `*SCAChallengeError` with the one-time approval token; complete the challenge with `WithSCAApprovalToken` and retry. See [SCA](#strong-customer-authentication-sca).
+- **Statement & receipt downloads** — balance statements in CSV/PDF/XLSX/CAMT.053/MT940/QIF, transfer receipts (PDF), and MT103 payout proofs returned as raw bytes with client-side validation.
+- **Webhook subscriptions & typed events** — register, list, and delete profile webhook subscriptions, then parse deliveries with `ParseWebhookEvent`: typed payloads for transfer state changes, payout failures, and balance credits; unknown event types never break your handler.
+- **Identify your integration** — `WithUserAgent` replaces Go's default client agent with your own (`bank-sync/1.0`), as Wise recommends.
+- **Tolerant timestamp handling** — Wise emits four different timestamp formats. One parser accepts them all (zoneless = UTC), and outgoing query timestamps are normalized to UTC `Z` (Wise rejects zone offsets with 422).
 - **Sandbox support** — One-line switch to the Wise sandbox environment.
-- **Minimal dependencies** — Three focused production deps: `failsafe-go`, `go-branded-id`, `go-error-family`.
+- **Minimal dependencies** — Three focused production deps: `go-retry`, `go-branded-id`, `go-error-family`.
 
 ## Installation
 
@@ -157,6 +185,55 @@ client := wise.New("key",
 )
 ```
 
+### Observability
+
+```go
+// WithLogger observes every HTTP attempt, retries included — latency
+// tracking and retry visibility without wrapping the transport.
+client := wise.New("key", wise.WithLogger(wise.RequestLogFunc(func(e wise.RequestLog) {
+    slog.Info("wise request",
+        "method", e.Method, "url", e.URL, "status", e.Status,
+        "duration", e.Duration, "attempt", e.Attempt, "err", e.Error)
+})))
+
+// Per-request correlation ID: one traceable X-External-Correlation-Id per
+// logical operation, overriding the client-wide WithCorrelationID value.
+ctx := wise.WithRequestCorrelationID(ctx, "bank-sync-2026-08-21-run-42")
+_, err := client.ListTransfers(ctx, req)
+```
+
+`RequestLog.Attempt` is 1-based; a value above 1 means the request was retried.
+
+### mTLS (client-certificate authentication)
+
+Wise serves compliance-heavy integrations from dedicated mTLS endpoints
+(`api-mtls.wise.com`, sandbox `api-mtls.wise-sandbox.com`) that authenticate
+the client certificate in addition to the API token. The SDK supports this
+without a dedicated option: swap the base URL and inject a TLS-configured
+`http.Client` via `WithHTTPClient`:
+
+```go
+clientCert, err := tls.LoadX509KeyPair("client-cert.pem", "client-key.pem")
+if err != nil {
+    log.Fatal(err)
+}
+
+transport := &http.Transport{
+    TLSClientConfig: &tls.Config{
+        Certificates: []tls.Certificate{clientCert},
+        MinVersion:   tls.VersionTLS12,
+    },
+}
+
+client := wise.New("api-token",
+    wise.WithBaseURL("https://api-mtls.wise.com"),
+    wise.WithHTTPClient(&http.Client{Transport: transport, Timeout: 30 * time.Second}),
+)
+```
+
+The same `WithHTTPClient` pattern covers custom root CAs, corporate proxies,
+and connection-pool tuning; retries, logging, and typed errors work unchanged.
+
 ## API Reference
 
 ### Authentication
@@ -179,6 +256,24 @@ profiles, err := client.ListProfiles(ctx)
 // }
 ```
 
+### Users
+
+```go
+// The account behind the API token — the identity of ListProfiles' userId values
+me, err := client.GetMe(ctx)
+// me.ID, me.Name, me.Email, me.Active
+// me.Details → *UserDetails (nil when Wise has none on file):
+//   FirstName, LastName, PhoneNumber, DateOfBirth (UTC date; zero when unset),
+//   Occupation, Avatar, PrimaryAddress, Address (*UserAddress)
+
+// A user by ID — personal tokens may only read their own user
+user, err := client.GetUser(ctx, userID)
+```
+
+`Details` and `Details.Address` are pointers: nil means Wise has nothing on
+file, not an error. `DateOfBirth` is parsed from Wise's date-only wire format
+as a UTC midnight `time.Time`.
+
 ### Balances
 
 ```go
@@ -188,11 +283,28 @@ balances, err := client.ListBalances(ctx, profileID)
 //   {ID: 100, Currency: "EUR", Type: BalanceTypeStandard, Name: "Main Account", Amount.Cents: 123456, ...},
 // }
 
-// Get a specific balance by ID
+// Get a specific balance by ID (direct per-balance endpoint)
 balance, err := client.GetBalance(ctx, profileID, balanceID)
+
+// Open a new balance (savings balances require a name)
+created, err := client.CreateBalance(ctx, wise.CreateBalanceRequest{
+    ProfileID: profileID,
+    Currency:  wise.Currency("USD"),
+    Type:      wise.BalanceTypeSavings,
+    Name:      "Vacation",
+})
+
+// Profile-wide funds overview converted to one currency
+total, err := client.GetTotalFunds(ctx, profileID, wise.Currency("EUR"))
+// total.Worth     → cash + invested portfolio valuation (Money)
+// total.Available → cash + approved overdraft limit (Money)
 ```
 
-`ListBalances` filters to `Visible: true` and `InvestmentState == "NOT_INVESTED"` only. `GetBalance` delegates to `ListBalances` + linear scan (Wise has no single-balance endpoint).
+`ListBalances` filters to `Visible: true` and `InvestmentState == "NOT_INVESTED"`
+only. `GetBalance` reads the direct per-balance endpoint
+(`GET /v4/profiles/{id}/balances/{id}`) and does **not** filter — hidden and
+invested balances are retrievable individually even though `ListBalances`
+drops them.
 
 ### Transactions
 
@@ -203,7 +315,7 @@ resp, err := client.ListTransactions(ctx, wise.ListTransactionsRequest{
     Currency:  wise.Currency("EUR"),
     From:      time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
     To:        time.Date(2025, 1, 31, 23, 59, 59, 0, time.UTC),
-    Type:      wise.DetailTypeCardPayment, // optional filter
+    Type:      wise.StatementTypeFlat, // optional statement layout (COMPACT or FLAT)
 })
 // resp.Transactions → []Transaction
 ```
@@ -236,6 +348,56 @@ resp, err := client.ListTransactions(ctx, wise.ListTransactionsRequest{
 
 - Empty `Currency` → `"wise.transactions.invalid_request: currency is required"`
 - `From` after `To` → `"wise.transactions.invalid_request: intervalStart must not be after intervalEnd"`
+
+### Statements
+
+`GetStatement` downloads a balance statement as a **file** and returns its raw
+bytes — for imports, archival, or PDF rendering. Use `ListTransactions` for
+the typed JSON statement.
+
+```go
+pdf, err := client.GetStatement(ctx, wise.GetStatementRequest{
+    ProfileID: profileID,
+    BalanceID: balanceID,
+    Currency:  wise.Currency("EUR"),
+    From:      intervalStart, // UTC
+    To:        intervalEnd,   // UTC
+    Type:      wise.StatementTypeFlat,  // optional statement layout (COMPACT or FLAT)
+    Locale:    "de",                      // optional 2-char statement language
+    Format:    wise.StatementFormatPDF,
+})
+```
+
+Six formats: `StatementFormatCSV`, `StatementFormatPDF` (includes Wise
+branding), `StatementFormatXLSX` (Excel), `StatementFormatCAMT` (CAMT.053
+XML), `StatementFormatMT940`, and `StatementFormatQIF`. Unknown formats are
+rejected client-side. The interval rules mirror `ListTransactions`; the
+interval must not exceed **469 days** (Wise limit) — longer periods are
+rejected client-side with an actionable error, so split them into multiple
+requests. `Locale` (2-character language code) localizes column headers and
+descriptions. Like the JSON statement, the endpoint is **SCA-protected** for
+UK/EEA profiles — see
+[SCA](#strong-customer-authentication-sca).
+
+### Transfer receipts & MT103
+
+`GetTransferReceipt` downloads the branded confirmation receipt for a
+paid-out transfer as raw PDF bytes. Wise answers 404 until the transfer
+reached `outgoing_payment_sent` — treat `*wise.NotFoundError` as "no receipt
+(yet)", not a hard failure. Unlike statements, the endpoint is **not
+SCA-protected**.
+
+```go
+pdf, err := client.GetTransferReceipt(ctx, transferID)
+```
+
+`GetTransferPayoutInfo` returns the banking-partner proof of payment,
+including the SWIFT MT103 message (`MT103` is `*string`, `nil` for non-SWIFT
+corridors):
+
+```go
+info, err := client.GetTransferPayoutInfo(ctx, transferID)
+```
 
 ### Quotes
 
@@ -280,7 +442,27 @@ recipients, err := client.ListRecipients(ctx, wise.ListRecipientsRequest{
 ```
 
 `Recipient.Details` is a `map[string]string`; required keys vary by currency and
-route — use the account-requirements endpoint to discover them per corridor.
+route — use the account-requirements endpoint to discover them per corridor
+(the map is flat: corridors that require nested values such as an `address`
+object are outside what the map can express today):
+
+```go
+requirements, err := client.GetQuoteAccountRequirements(ctx, wise.QuoteAccountRequirementsRequest{
+    QuoteID: quote.ID,
+})
+
+// Second pass: when a returned field is flagged RefreshRequirementsOnChange,
+// submit the partial form with that field set and Wise returns the revised
+// field set for the route (e.g. legalEntityType reveals further fields).
+requirements, err = client.RefreshQuoteAccountRequirements(ctx, wise.RefreshQuoteAccountRequirementsRequest{
+    QuoteID: quote.ID,
+    Recipient: wise.CreateRecipientRequest{
+        Currency: quote.TargetCurrency,
+        Type:     requirements[0].Type,
+        Details:  map[string]string{"legalEntityType": "PRIVATE"},
+    },
+})
+```
 
 ### Exchange rates
 
@@ -309,6 +491,19 @@ Unlike balance statements, `GET /v1/transfers` is **not SCA-protected** and is a
 
 `Transfer.Created` is parsed tolerantly (RFC3339 or Wise's space-separated format; zoneless values are UTC).
 
+Funding a transfer from the profile's balance:
+
+```go
+funding, err := client.FundTransfer(ctx, profileID, transferID)
+// funding.Status → wise.FundingStatusCompleted / FundingStatusCreated / FundingStatusRejected
+// funding.BalanceTransactionID → the debit applied to the balance (BALANCE funding)
+```
+
+A rejected funding (e.g. `FundingErrorCodeBalanceInsufficientFunds`) is a
+_successful API call that declined_ — top up the balance and call `FundTransfer`
+again. `ErrorCode` is an open enum: known codes are constants, unknown codes
+pass through. The endpoint is SCA-protected for UK/EEA profiles.
+
 ### Core transfer flow: quote → recipient → transfer
 
 The 1% Pareto core. A consumer with `GetProfile`, `CreateQuote`, `CreateRecipient`,
@@ -331,15 +526,11 @@ if err != nil {
     log.Fatal(err)
 }
 
-// 1b. Optional: discover required details before creating the transfer.
-//     Fields flagged RefreshRequirementsOnChange mean re-calling this once the
-//     field is populated reveals lower-level required fields.
-requirements, err := client.ValidateTransferRequirements(ctx, wise.ValidateTransferRequirementsRequest{
-    TargetAccount: wise.NewRecipientID(recipient.ID.Get()),
-    QuoteID:       quote.ID,
-})
-if err != nil {
-    log.Fatal(err)
+// A BLOCKED notice means this quote must not back a transfer.
+for _, n := range quote.Notices {
+    if n.Type == wise.QuoteNoticeTypeBlocked {
+        log.Fatalf("quote blocked: %s", n.Text)
+    }
 }
 
 // 2. Recipient — a bank account to send to. Required details vary by currency
@@ -358,27 +549,61 @@ if err != nil {
     log.Fatal(err)
 }
 
+// 2b. Optional: discover required details before creating the transfer.
+//     Fields flagged RefreshRequirementsOnChange mean re-calling this once the
+//     field is populated reveals lower-level required fields.
+requirements, err := client.ValidateTransferRequirements(ctx, wise.ValidateTransferRequirementsRequest{
+    TargetAccount: recipient.ID,
+    QuoteID:       quote.ID,
+})
+if err != nil {
+    log.Fatal(err)
+}
+
+// Cross-reference the response against your prepared request to learn which
+// required fields are still unsatisfied (select choices are checked against
+// their allowed values):
+transferReq := wise.CreateTransferRequest{
+    QuoteID:               quote.ID,
+    TargetAccount:         recipient.ID,
+    CustomerTransactionID: wise.NewCustomerTransactionID("22244c35-9fe8-4c32-b7fd-d05c2a7734bf"),
+}
+if missing := wise.MissingTransferDetails(requirements, transferReq); len(missing) > 0 {
+    log.Fatalf("transfer details still missing: %v", missing)
+}
+
 // 3. Transfer — customerTransactionId is your idempotency key (a UUID).
 //    Reusing it with the same quote + targetAccount returns the existing
 //    transfer instead of creating a duplicate.
 transfer, err := client.CreateTransfer(ctx, wise.CreateTransferRequest{
     QuoteID:               quote.ID,
     TargetAccount:         recipient.ID,
-    CustomerTransactionID: "22244c35-9fe8-4c32-b7fd-d05c2a7734bf",
+    CustomerTransactionID: wise.NewCustomerTransactionID("22244c35-9fe8-4c32-b7fd-d05c2a7734bf"),
 })
 if err != nil {
     log.Fatal(err)
 }
 
-// 4. Track — poll GetTransfer until it leaves waiting_for_funds, then
-//    fund the transfer from a balance and poll until delivered.
+// 4. Fund — debit the balance to trigger processing of the payout. This is the
+//    final money-movement step; until it succeeds the transfer stays
+//    waiting_for_funds. An underfunded balance is not an error return but a
+//    rejected result — top up and call FundTransfer again.
+funding, err := client.FundTransfer(ctx, profile.ID, transfer.ID)
+if err != nil {
+    log.Fatal(err)
+}
+if funding.Status == wise.FundingStatusRejected {
+    log.Fatalf("funding rejected (%s): %s", funding.ErrorCode, funding.ErrorMessage)
+}
+
+// 5. Track — the delivery estimate for the now-funded transfer.
 estimate, err := client.GetDeliveryEstimate(ctx, transfer.ID, "Europe/Berlin")
 if err != nil {
     log.Fatal(err)
 }
 fmt.Printf("expected arrival: %s\n", estimate.EstimatedDeliveryDate)
 
-// 5. Cancel — only possible before the transfer is processed.
+// 6. Cancel — only possible before the transfer is processed.
 cancelled, err := client.CancelTransfer(ctx, transfer.ID)
 if err != nil {
     log.Fatal(err)
@@ -390,6 +615,47 @@ fmt.Printf("cancelled: %s\n", cancelled.Status)
 breakdown (`Fee.Total` is the value to display) and estimated delivery; a
 `QuoteNotice` of type `BLOCKED` means the quote must not be used to create a
 transfer.
+
+### Multi-Currency Account & bank details
+
+```go
+// The profile's account container: holder of the currency balances
+account, err := client.GetMultiCurrencyAccount(ctx, profileID)
+// account.RecipientID → the account's own recipient entry
+
+// Every set of receiving bank details (EUR IBAN, USD routing pair, ...)
+details, err := client.GetBankAccountDetails(ctx, profileID)
+// []BankAccountDetails{
+//   {Currency: "EUR", Status: AccountDetailsStatusActive, Deprecated: false, ...},
+// }
+```
+
+Two patterns worth knowing:
+
+- **Top up via transfer** — `MultiCurrencyAccount.RecipientID` is a real
+  recipient. Create a transfer to it (from an external-funded quote) and the
+  matching currency balance gets credited: the standard way to move money
+  _into_ the Multi-Currency Account.
+- **Read display text from `ReceiveOptions`** — each `BankAccountDetails` set
+  carries `LOCAL`/`INTERNATIONAL` receive options whose
+  `Description.CTA` pairs hold the labeled key values (e.g. Label `"IBAN"` →
+  the IBAN to print on an invoice). Prefer non-deprecated sets; a deprecated
+  set is Wise's replacement notice for earlier details.
+  `AccountDetailsStatusAvailable` means the details do not exist yet but can
+  be ordered via Wise's account-details-orders endpoint (not in the SDK yet).
+
+### Currencies
+
+```go
+// Public reference data — no authentication required
+currencies, err := client.ListCurrencies(ctx)
+// []CurrencyInfo{
+//   {Code: "EUR", Symbol: "€", Name: "Euro", CountryKeywords: [...], SupportsDecimals: true},
+// }
+```
+
+Populate currency pickers and validate corridor choices against Wise's list
+(code, symbol, name, country keywords, decimal support).
 
 ## Mocking the Client
 
@@ -456,7 +722,9 @@ import "errors"
 balances, err := client.ListBalances(ctx, profileID)
 if err != nil {
     if rl, ok := errors.AsType[*wise.RateLimitError](err); ok {
-        fmt.Printf("rate limited, retry after %s\n", rl.RetryAfter)
+        fmt.Printf("rate limited (scope: %s), retry after %s\n", rl.RateLimitedBy, rl.RetryAfter)
+    } else if sca, ok := errors.AsType[*wise.SCAChallengeError](err); ok {
+        fmt.Printf("SCA approval required, token: %s\n", sca.TwoFAApprovalToken())
     } else if auth, ok := errors.AsType[*wise.AuthError](err); ok {
         fmt.Printf("auth failed: %s\n", auth.Message)
     } else if nf, ok := errors.AsType[*wise.NotFoundError](err); ok {
@@ -469,13 +737,181 @@ if err != nil {
 }
 ```
 
-| HTTP Status   | Error Type       | Retried? |
-| ------------- | ---------------- | -------- |
-| 401, 403      | `AuthError`      | No       |
-| 404           | `NotFoundError`  | No       |
-| 429           | `RateLimitError` | Yes      |
-| 5xx           | `ServerError`    | Yes      |
-| Network error | Wrapped `error`  | Yes      |
+| HTTP Status            | Error Type          | Retried? |
+| ---------------------- | ------------------- | -------- |
+| 401, 403               | `AuthError`         | No       |
+| 403 + Wise 2FA headers | `SCAChallengeError` | No       |
+| 404                    | `NotFoundError`     | No       |
+| 429                    | `RateLimitError`    | Yes      |
+| 5xx                    | `ServerError`       | Yes      |
+| Network error          | Wrapped `error`     | Yes      |
+
+Mapper failures (unparseable timestamps, invalid currency codes in a response)
+carry `Corruption` classification — permanent, not retryable — so a blanket
+"retry on transient" wrapper fails fast instead of looping.
+
+## Strong Customer Authentication (SCA)
+
+Some Wise endpoints (balance statements for UK/EEA profiles among them) are
+SCA-protected: the API answers **HTTP 403 with an empty body**. The verdict and
+the one-time token live in the `x-2fa-approval-result` / `x-2fa-approval`
+response headers. The SDK detects this and returns `*SCAChallengeError` instead
+of a bare `AuthError`:
+
+```go
+// One correlation ID for the whole logical operation — the challenge and the
+// replay both carry it in X-External-Correlation-Id.
+ctx = wise.WithRequestCorrelationID(ctx, "bank-sync-2026-08-21-001")
+
+resp, err := client.ListTransactions(ctx, req)
+if err != nil {
+    if sca, ok := errors.AsType[*wise.SCAChallengeError](err); ok {
+        // 1. The one-time token (OTT) — fetch it explicitly; it never
+        //    appears in error messages.
+        ott := sca.TwoFAApprovalToken()
+
+        // 2. Clear the challenge over a phone channel: trigger the SMS,
+        //    prompt the user for the code it delivered, verify, repeat
+        //    until every required challenge is passed.
+        status, clearErr := client.ClearSCAChallenge(ctx, ott, wise.OTTChannelSMS,
+            func(ctx context.Context, challenge wise.OTTChallenge, channel wise.OTTChannel, phoneHint string) (string, error) {
+                fmt.Printf("code sent to %s — enter OTP: ", phoneHint)
+                var code string
+                if _, err := fmt.Scanln(&code); err != nil {
+                    return "", err
+                }
+                return code, nil
+            })
+        if clearErr != nil {
+            log.Fatal(clearErr)
+        }
+        fmt.Println("cleared:", status.Cleared())
+
+        // 3. Replay the request — with the same ctx so Wise support can
+        //    correlate both attempts:
+        scaClient := wise.New("api-key", wise.WithSCAApprovalToken(ott))
+        resp, err = scaClient.ListTransactions(ctx, req)
+    }
+}
+```
+
+The one-time-token endpoints (`GetOTTStatus`, `TriggerOTT`, `VerifyOTT`,
+`ClearSCAChallenge`) live on the quarterly versioned surface
+(`/2026Q3/one-time-token/...`) and authorize with the same personal API
+token. Challenges that no phone channel can clear (e.g. a PIN-only
+challenge) surface as a Rejection naming the available types — clear those by
+viewing a statement on wise.com instead.
+
+`GET /v1/transfers` (and the other transfer endpoints) are **not** SCA-protected,
+which is why `ListTransfers` is the reliable source for outgoing transfer
+history with personal API tokens.
+
+## Webhooks
+
+Wise signs every webhook delivery with `X-Signature-SHA256`: a Base64-encoded
+RSA-SHA256 signature of the raw request body, verifiable with the per-subscription
+public key Wise shows in the dashboard. Verify every delivery before trusting it:
+
+```go
+// Parse the key once when the handler is constructed; a bad key should fail
+// loudly there, not on the first delivery. Register the handler once:
+//
+//	http.HandleFunc("/webhooks/wise", newWebhookHandler(subscriptionPublicKeyPEM))
+func newWebhookHandler(subscriptionPublicKeyPEM string) http.HandlerFunc {
+    webhookKey, err := wise.ParseWebhookPublicKey([]byte(subscriptionPublicKeyPEM))
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    return func(w http.ResponseWriter, r *http.Request) {
+        body, err := io.ReadAll(r.Body)
+        if err != nil {
+            http.Error(w, "read body", http.StatusBadRequest)
+
+            return
+        }
+
+        // Verify the raw bytes exactly as received — before any re-marshalling,
+        // which would change the signed input.
+        if !wise.VerifyWebhookSignature(body, r.Header.Get(wise.HeaderWebhookSignature), webhookKey) {
+            http.Error(w, "invalid signature", http.StatusUnauthorized)
+
+            return
+        }
+
+        // Trustworthy delivery: parse the envelope and its typed payload —
+        // see [Typed event decoding](#typed-event-decoding) below.
+    }
+}
+```
+
+Reject deliveries with HTTP 401/403 when verification fails. Wise redelivers
+until you acknowledge, so process **idempotently**: `X-Delivery-Id` (unique
+per delivery attempt — exposed as `wise.HeaderDeliveryID`) is the
+deduplication key — record it and skip already-seen deliveries. Signature
+verification alone is not enough: a verified delivery can still be a
+redelivery of an event you already processed.
+
+### Webhook subscriptions
+
+Subscriptions are the standing instruction for Wise to deliver events to your
+HTTPS endpoint. The SDK covers the profile-level CRUD (user API token);
+application-level subscriptions need a client-credentials token and are
+deliberately out of scope (see ROADMAP):
+
+```go
+profileID := wise.NewProfileID(12345)
+
+sub, err := client.CreateProfileWebhookSubscription(ctx, profileID,
+    wise.CreateWebhookSubscriptionRequest{
+        Name:      "Payout watcher",
+        TriggerOn: wise.WebhookEventTransfersStateChange, // open enum; any event type string works
+        Delivery:  wise.WebhookDelivery{Version: "4.0.0", URL: "https://example.com/hooks/wise"},
+    })
+
+subs, err := client.ListProfileWebhookSubscriptions(ctx, profileID)
+sub, err := client.GetProfileWebhookSubscription(ctx, profileID, sub.ID)
+err := client.DeleteProfileWebhookSubscription(ctx, profileID, sub.ID)
+```
+
+Wise's subscription endpoints live on the quarterly versioned API surface
+(`/2026Q4/profiles/{profileId}/subscriptions`) — the SDK sends that path
+automatically. There is no update operation: subscriptions are created and
+deleted, never edited.
+
+### Typed event decoding
+
+`ParseWebhookEvent` decodes the envelope Wise POSTs (schema version,
+subscription ID, event type, sent-at) and keeps the payload raw. Typed
+accessors decode the payload per event type; unknown event types never fail —
+new Wise events parse with the data left raw for hand decoding:
+
+```go
+event, err := wise.ParseWebhookEvent(body) // body = the verified raw bytes
+if err != nil {
+    // Undecodable or malformed envelope: reject the delivery.
+    http.Error(w, "malformed event", http.StatusBadRequest)
+
+    return
+}
+
+switch event.EventType {
+case wise.WebhookEventTransfersStateChange:
+    state, err := event.TransferStateChange() // *TransferStateChangeData
+    // state.CurrentState / state.PreviousState are TransferStatus values.
+case wise.WebhookEventTransfersPayoutFailure:
+    failure, err := event.TransferPayoutFailure() // *TransferPayoutFailureData
+case wise.WebhookEventBalancesCredit:
+    credit, err := event.BalanceCredit() // *BalanceCreditData with Money amounts
+default:
+    // Unknown event type: log and acknowledge — Wise redelivers otherwise.
+}
+```
+
+Available typed payloads today: `transfers#state-change`,
+`transfers#payout-failure`, and `balances#credit`. Malformed envelopes and
+payloads are corruption-classified errors (`wise.webhook.decode`), so a
+broken sender is distinguishable from a routing mistake.
 
 ## Design Decisions
 
@@ -483,8 +919,8 @@ if err != nil {
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Monetary amounts as `int64` cents | `float64` causes precision loss (e.g., `0.1 + 0.2 ≠ 0.3`). Cents are safe for arithmetic and storage.                                                  |
 | Two-layer type system             | Raw wire types in `internal/raw` mirror JSON exactly. Result types expose clean Go with `Money` value objects. Mapping functions convert between them. |
-| `failsafe-go` for retries         | Purpose-built HTTP retry with backoff, not a generic CQRS middleware.                                                                                  |
-| Flat package structure            | Single `package wise` — no sub-packages for 8 files. Import path is the API.                                                                           |
+| `go-retry` for retries            | In-house, zero-dependency retry with backoff and jitter; the only executor that expresses Wise's `Retry-After` as first-class policy (ADR 003).        |
+| Flat package structure            | Single `package wise`; wire types hidden in `internal/raw`. The import path is the API.                                                                |
 | BDD tests with Ginkgo             | `httptest.Server` mock API responses. Tests verify both happy paths and error classification.                                                          |
 
 ## Testing
@@ -494,6 +930,40 @@ GOEXPERIMENT=jsonv2 go test ./...
 ```
 
 Tests use `net/http/httptest` to mock the Wise API — no network access required. The `GOEXPERIMENT=jsonv2` prefix is mandatory (see [Installation](#installation)).
+
+### Spec conformance
+
+Every mock exchange is also validated against Wise's machine-readable
+OpenAPI contract, vendored at `docs/reviews/wise-api-openapi.json`: the
+suite fails when a request path, required parameter, or response payload
+no longer matches what Wise documents. Deliberate divergences (Wise's
+loose live timestamp shapes, legacy wire surfaces the spec bundle does
+not describe) are exempted explicitly in `spec_conformance_test.go` with
+the reasoning inline. Refresh the snapshot from
+`https://docs.wise.com/_bundle/api-reference/@preview/index.yaml?download`
+to pick up contract changes.
+
+### Sandbox verification
+
+A small live-test suite (`sandbox_live_test.go`) exercises the real sandbox at
+`api.wise-sandbox.com`. It is **key-gated**: every test skips unless
+`WISE_SANDBOX_API_KEY` is set, so the default suite stays offline and CI never
+fails on a missing secret.
+
+Locally:
+
+```bash
+WISE_SANDBOX_API_KEY=<your-sandbox-key> GOEXPERIMENT=jsonv2 \
+  go test -run TestSandboxLive -v -count=1 ./...
+```
+
+In CI: the [Sandbox Live Tests](.github/workflows/sandbox-live.yml) workflow
+runs the same suite on manual dispatch (`workflow_dispatch`). Add the
+`WISE_SANDBOX_API_KEY` secret to the repository first; dispatching without it
+is a green no-op (all tests skip, visible as `SKIP` lines in the log). Current
+coverage is a `GetMe` smoke test — the natural place to grow credentialed
+scenarios (quote → recipient → transfer against sandbox data) once a key is
+available.
 
 ## Project Status
 
