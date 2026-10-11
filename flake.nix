@@ -139,7 +139,7 @@
         }:
         {
           # Hermetic test check with race detection and coverage output,
-          # matching the original buildGoModule test check. Mirrors the 90%
+          # matching the original buildGoModule test check. Mirrors the 92%
           # coverage gate from ci.yml — the flake check must enforce the same
           # floor, not just measure coverage (ci.yml is disabled on GitHub).
           checks.test = config.packages.default.overrideAttrs (_old: {
@@ -150,8 +150,8 @@
               GOEXPERIMENT=jsonv2 go test -race -coverprofile=coverage.out -covermode=atomic ./...
               TOTAL=$(go tool cover -func=coverage.out | awk '/^total:/ {sub("%", "", $3); print $3}')
               echo "coverage: $TOTAL%"
-              awk -v p="$TOTAL" 'BEGIN { if ((p+0) < 90.0) exit 1 }' || {
-                echo "FAIL: coverage $TOTAL% is below the 90% floor"
+              awk -v p="$TOTAL" 'BEGIN { if ((p+0) < 92.0) exit 1 }' || {
+                echo "FAIL: coverage $TOTAL% is below the 92% floor"
                 exit 1
               }
               runHook postCheck

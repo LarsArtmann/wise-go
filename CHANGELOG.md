@@ -8,11 +8,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- Nothing yet.
+- Fuzz corpus seeds checked in under `testdata/fuzz/` for the webhook-key,
+  webhook-signature, and exchange-rates fuzz targets, plus a new
+  `FuzzParseWiseDate` target pinning the date parser's contract.
+- `docs/bench/README.md` — benchmark conventions, how to rerun and compare
+  against the committed benchstat baseline.
 
 ### Changed
 
-- Nothing yet.
+- Coverage floor raised from 90% to 92% (measured 92.8%), enforced identically
+  by the flake check and the CI coverage gate.
+- CI's nix job now runs the release-notes check (`nix run .#release-notes-check`)
+  alongside `nix flake check` (which already covers the markdown Go-snippet
+  gate).
+- Internal type tightening: the webhook event decoder and its helpers take
+  `WebhookEventType` instead of a bare string, and the account-requirements
+  get/refresh error-label verbs are typed constants. No public API change;
+  error messages are byte-identical (pinned by tests).
 
 ### Fixed
 

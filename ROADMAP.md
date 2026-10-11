@@ -251,8 +251,6 @@ scheduled work:
 - **GoReleaser-style release automation** — tags are manual + annotated today.
 - **Webhook end-to-end README quickstart** — subscribe → verify → parse in one runnable block.
 - **`ParseWebhookEvent` RFC3339 fast path** — the bench shows the multi-layout timestamp trial loop dominates (34µs); one-line win if webhook volume ever matters.
-- **benchstat baseline file** committed so benchmark runs have a comparison point.
-- ~~**gopls/LSP config-skew fix**~~ RESOLVED 2026-10-07: root cause was Crush-launched LSP servers running outside the devShell without `GOEXPERIMENT=jsonv2` (json/v2 imports build-constraint-excluded → degraded analysis → phantom diagnostics). Project `.crushrc` injects the env; see the AGENTS.md LSP-phantom gotcha.
 - **`nix flake check --all-systems`** — aarch64/darwin coverage for the consumer fleet.
 - **Decide `Authenticate()`'s future** now that `GetMe` exists (cheaper key check).
 - **2026Q4 bump ritual** — document the `webhookSubscriptionsAPIVersion`/`ottAPIVersion` upgrade path for when Wise moves the quarterly surfaces (they roll over independently; probe live before flipping).

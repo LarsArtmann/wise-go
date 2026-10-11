@@ -53,15 +53,15 @@ jobs:
       - name: Test
         run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
 
-      # Gate, not just metric: a silent drop under 90% must fail the build.
-      # 90 leaves ~1.4pt headroom over the measured 91.4% (2026-09-13) so
+      # Gate, not just metric: a silent drop under 92% must fail the build.
+      # 92 leaves ~0.8pt headroom over the measured 92.8% (2026-10-11) so
       # additive surface changes don't flake the job, but real test debt does.
       - name: Coverage threshold
         run: |
           TOTAL=$(go tool cover -func=coverage.out | awk '/^total:/ {sub("%", "", $3); print $3}')
           echo "Total coverage: ${TOTAL}%"
-          if awk -v p="$TOTAL" 'BEGIN { exit (p+0 < 90.0) ? 0 : 1 }'; then
-            echo "::error::Coverage ${TOTAL}% is below the 90% gate"
+          if awk -v p="$TOTAL" 'BEGIN { exit (p+0 < 92.0) ? 0 : 1 }'; then
+            echo "::error::Coverage ${TOTAL}% is below the 92% gate"
             exit 1
           fi
 
@@ -232,6 +232,12 @@ jobs:
       # (libgit2-based Nix git fetches ignore git-config insteadOf).
       - name: Run nix flake check
         run: nix flake check
+
+      # release-notes-check is a flake app, not a check, so the flake check
+      # above does not run it (md-go-snippets IS covered there, as
+      # checks.md-go-snippets). Runs on the same nix install, no extra setup.
+      - name: Release notes check
+        run: nix run .#release-notes-check
 
       # Binary cache: pushes build outputs so later runs (and contributors)
       # skip the ~5min sandboxed test build. Public cache, no auth to read.
