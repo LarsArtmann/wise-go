@@ -15,14 +15,14 @@ tool_options:
     respect_patch_floor: true
 
 skip_steps:
-  # Embedded erraudit skip REMOVED 2026-10-07 (BuildFlow issue #34 fixed):
-  # the embedded detector now runs the SAME legacyerrors engine as the
-  # canonical standalone gate (`erraudit lint`), so verdicts agree by
-  # construction. The 29 false positives (8x [ignored], 21x [context_loss])
-  # came from the detector's old AST-analyzer path, which the CLI lint never
-  # computed; that path remains available interactively via `erraudit
-  # analyze`, no longer as a pipeline gate. Verified 0 error findings at
-  # buildflow HEAD with the skip removed.
+# Embedded erraudit skip REMOVED 2026-10-07 (BuildFlow issue #34 fixed):
+# the embedded detector now runs the SAME legacyerrors engine as the
+# canonical standalone gate (`erraudit lint`), so verdicts agree by
+# construction. The 29 false positives (8x [ignored], 21x [context_loss])
+# came from the detector's old AST-analyzer path, which the CLI lint never
+# computed; that path remains available interactively via `erraudit
+# analyze`, no longer as a pipeline gate. Verified 0 error findings at
+# buildflow HEAD with the skip removed.
 
 # file-size-check flags .go files over N lines (buildflow default 350). 700
 # keeps the signal on true outliers (types.go 800, internal_test.go 1078,

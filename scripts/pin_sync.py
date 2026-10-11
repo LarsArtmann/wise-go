@@ -41,7 +41,9 @@ FLAKE_INPUT_RE = re.compile(
     r"(?:/(?P<tag>v[0-9][^\"\s]*))?"
 )
 GO_MOD_RE = re.compile(
-    r"^\s*" + re.escape(GO_MOD_OWNER) + r"/(?P<name>[A-Za-z0-9._-]+)\s+(?P<version>v[0-9][^\s]*)",
+    r"^\s*"
+    + re.escape(GO_MOD_OWNER)
+    + r"/(?P<name>[A-Za-z0-9._-]+)\s+(?P<version>v[0-9][^\s]*)",
     re.MULTILINE,
 )
 
@@ -95,7 +97,9 @@ def remote_tag_rev(repo: str, tag: str) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--offline", action="store_true", help="skip remote tag resolution")
+    parser.add_argument(
+        "--offline", action="store_true", help="skip remote tag resolution"
+    )
     parser.add_argument("--root", default=".", help="repository root to inspect")
     args = parser.parse_args()
     root = pathlib.Path(args.root)
@@ -109,14 +113,18 @@ def main() -> None:
     for name, version in go_mod.items():
         inp = flake.get(name)
         if inp is None:
-            errors.append(f"{name}: go.mod requires {version} but flake.nix has no matching input")
+            errors.append(
+                f"{name}: go.mod requires {version} but flake.nix has no matching input"
+            )
             continue
 
         checked += 1
         rev, tag = inp["rev"], inp["tag"]
 
         if rev is None and tag is None:
-            errors.append(f"{name}: input is not immutably pinned (no ?rev= and no /vX.Y.Z)")
+            errors.append(
+                f"{name}: input is not immutably pinned (no ?rev= and no /vX.Y.Z)"
+            )
 
         if tag is not None and tag != version:
             errors.append(f"{name}: flake tag {tag} does not match go.mod {version}")
@@ -132,7 +140,9 @@ def main() -> None:
             try:
                 actual = remote_tag_rev(name, version)
             except RuntimeError as exc:
-                errors.append(f"{name}: could not resolve tag {version} on the remote: {exc}")
+                errors.append(
+                    f"{name}: could not resolve tag {version} on the remote: {exc}"
+                )
                 continue
             if actual != rev:
                 errors.append(
