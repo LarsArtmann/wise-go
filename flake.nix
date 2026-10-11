@@ -123,10 +123,15 @@
         shellExtraEnv.GOEXPERIMENT = "jsonv2";
 
         # Keep the extra tools from the original devShell (lychee for link
-        # checks, go-tools for staticcheck helpers).
+        # checks, go-tools for staticcheck helpers). gitleaks/codespell/
+        # markdownlint-cli are the three on-demand buildflow tools that
+        # otherwise report "unavailable (health check failed)" every run.
         devShellExtraPackages = pkgs: [
           pkgs.go-tools
           pkgs.lychee
+          pkgs.gitleaks
+          pkgs.codespell
+          pkgs.markdownlint-cli
         ];
       };
 
