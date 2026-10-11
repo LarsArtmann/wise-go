@@ -4,9 +4,9 @@ Performance baselines for the wise-go hot paths (parsers, mappers, signature
 verification). Each baseline file is a raw `go test -bench` output captured at
 a release tag, named `<date>_<tag>_baseline.txt`.
 
-| File | Captured at |
-| --- | --- |
-| [2026-10-07_v0120_baseline.txt](2026-10-07_v0120_baseline.txt) | v0.12.0 |
+| File                                                           | Captured at |
+| -------------------------------------------------------------- | ----------- |
+| [2026-10-07_v0120_baseline.txt](2026-10-07_v0120_baseline.txt) | v0.12.0     |
 
 ## Rerun and compare
 

@@ -75,32 +75,8 @@ Source: `docs/status/archived/2026-10-07_03-57_session-status-unblocked-prep-rel
 
 ### Open
 
-[ ] Wire `md-go-snippets` + `release-notes-check` into `.github/workflows/ci.yml`
-when CI re-enables — both are flake-local today and ran green inside
-`nix flake check` twice on 2026-10-07.
-Source: `docs/status/2026-10-07_07-09_p3-resume-execution-prerelease-green-status.md` §f18.
-
-[ ] Type the webhook label surface — `decodeWebhookEvent` takes `WebhookEventType`
-instead of `string`, and the `"get"`/`"refresh"` verbs become typed values
-(carried since 2026-09-27; `webhooks.go:360` still takes `eventType string`).
-Source: `docs/status/archived/2026-09-27_23-42_dedup-pass2-gomod-flipflop-rootcause-status.md` §b3/§f5.
-
-[ ] Promote the enforced coverage floor 90 → 92 — actual is 93.1%; pair with the
-CI re-enable so the gate also runs off-machine.
-Source: `docs/status/2026-10-07_06-07_p3-quality-tooling-sweep-status.md` §f13.
-
-[ ] Close the remaining 06-07 test gaps: checked-in `testdata/` seeds for the
-three fuzz targets; `FuzzParseWiseDate`; and a `docs/bench/README.md` one-pager.
-(The `Retry-After` delay-entry cases are covered — `Retry-After: 0` emits no
-entry, and two consecutive 429s emit two, both pinned 2026-10-07.)
-Source: `docs/status/2026-10-07_06-07_p3-quality-tooling-sweep-status.md` §f26–27, §f42–45.
-
 [ ] Consume the committed `benchstat` baseline
 (`docs/bench/2026-10-07_v0120_baseline.txt`) in the next perf-touching PR.
-
-[ ] De-duplicate the LSP-resolution narrative — the struck ROADMAP raw idea and
-the AGENTS.md gotcha should have one canonical home.
-Source: `docs/status/2026-10-07_07-09_p3-resume-execution-prerelease-green-status.md` §f20.
 
 ### Decisions (P3)
 
