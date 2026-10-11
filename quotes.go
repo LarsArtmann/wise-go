@@ -101,7 +101,7 @@ func (c *Client) GetQuoteAccountRequirements(
 	}
 
 	return c.quoteAccountRequirements(ctx, req.QuoteID, req.OriginatorLegalEntityType,
-		http.MethodGet, nil, "get")
+		http.MethodGet, nil, verbGetAccountRequirements)
 }
 
 // accountRequirementsQuery lazily renders the optional
@@ -164,8 +164,18 @@ func (c *Client) RefreshQuoteAccountRequirements(
 	}
 
 	return c.quoteAccountRequirements(ctx, req.QuoteID, req.OriginatorLegalEntityType,
-		http.MethodPost, req.toWire(), "refresh")
+		http.MethodPost, req.toWire(), verbRefreshAccountRequirements)
 }
+
+// accountRequirementsVerb labels which account-requirements variant a
+// wrapped error came from; it exists only to keep the two call sites from
+// drifting apart as bare string literals.
+type accountRequirementsVerb string
+
+const (
+	verbGetAccountRequirements     accountRequirementsVerb = "get"
+	verbRefreshAccountRequirements accountRequirementsVerb = "refresh"
+)
 
 // quoteAccountRequirements performs the account-requirements call shared by
 // the GET and refresh (POST) endpoints: the same path, originator query, and
@@ -177,7 +187,7 @@ func (c *Client) quoteAccountRequirements(
 	originatorLegalEntityType string,
 	method string,
 	wireBody any,
-	verb string,
+	verb accountRequirementsVerb,
 ) ([]AccountRequirement, error) {
 	query := accountRequirementsQuery(originatorLegalEntityType)
 

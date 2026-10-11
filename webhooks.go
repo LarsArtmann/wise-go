@@ -328,12 +328,12 @@ func ParseWebhookEvent(payload []byte) (*WebhookEvent, error) {
 // decode failures as corruption: the sender's bytes cannot be trusted. The
 // eventType labels the error context with the wire event name
 // (e.g. "transfers#state-change").
-func decodeWebhookPayload[T any](data jsontext.Value, eventType string) (*T, error) {
+func decodeWebhookPayload[T any](data jsontext.Value, eventType WebhookEventType) (*T, error) {
 	var payload T
 
 	if err := json.Unmarshal(data, &payload); err != nil {
 		return nil, errorfamily.WrapCorruption(err, "wise.webhook.decode",
-			"decode "+eventType+" payload")
+			"decode "+string(eventType)+" payload")
 	}
 
 	return &payload, nil
@@ -341,11 +341,11 @@ func decodeWebhookPayload[T any](data jsontext.Value, eventType string) (*T, err
 
 // parseWebhookOccurredAt parses an event payload's occurred_at timestamp,
 // wrapping failures as corruption under the same code as payload decoding.
-func parseWebhookOccurredAt(value string, eventType string) (time.Time, error) {
-	occurredAt, err := parseWiseTimestamp(value)
+func parseWebhookOccurredAt(rawOccurredAt string, eventType WebhookEventType) (time.Time, error) {
+	occurredAt, err := parseWiseTimestamp(rawOccurredAt)
 	if err != nil {
 		return time.Time{}, errorfamily.WrapCorruption(err, "wise.webhook.decode",
-			"parse "+eventType+" occurred_at")
+			"parse "+string(eventType)+" occurred_at")
 	}
 
 	return occurredAt, nil
@@ -359,7 +359,7 @@ type occurredAtPayload = raw.OccurredAtCarrier
 // decodeWebhookEvent decodes a timed event's payload and parses its
 // occurred_at in one step; both failures are corruption-classified under the
 // sender-untrusted error code, labeled with the wire event name.
-func decodeWebhookEvent[T occurredAtPayload](e *WebhookEvent, eventType string) (*T, time.Time, error) {
+func decodeWebhookEvent[T occurredAtPayload](e *WebhookEvent, eventType WebhookEventType) (*T, time.Time, error) {
 	payload, err := decodeWebhookPayload[T](e.Data, eventType)
 	if err != nil {
 		return nil, time.Time{}, err
@@ -382,7 +382,7 @@ func decodeWebhookEvent[T occurredAtPayload](e *WebhookEvent, eventType string) 
 // event. Calling it on an envelope of a different event type fails with a
 // corruption-classified error.
 func (e *WebhookEvent) TransferStateChange() (*TransferStateChangeData, error) {
-	payload, occurredAt, err := decodeWebhookEvent[raw.TransferStateChangeData](e, "transfers#state-change")
+	payload, occurredAt, err := decodeWebhookEvent[raw.TransferStateChangeData](e, WebhookEventTransfersStateChange)
 	if err != nil {
 		return nil, err
 	}
@@ -399,7 +399,7 @@ func (e *WebhookEvent) TransferStateChange() (*TransferStateChangeData, error) {
 // event. Calling it on an envelope of a different event type fails with a
 // corruption-classified error.
 func (e *WebhookEvent) TransferPayoutFailure() (*TransferPayoutFailureData, error) {
-	payload, occurredAt, err := decodeWebhookEvent[raw.TransferPayoutFailureData](e, "transfers#payout-failure")
+	payload, occurredAt, err := decodeWebhookEvent[raw.TransferPayoutFailureData](e, WebhookEventTransfersPayoutFailure)
 	if err != nil {
 		return nil, err
 	}
@@ -417,7 +417,7 @@ func (e *WebhookEvent) TransferPayoutFailure() (*TransferPayoutFailureData, erro
 // it on an envelope of a different event type fails with a
 // corruption-classified error.
 func (e *WebhookEvent) BalanceCredit() (*BalanceCreditData, error) {
-	payload, occurredAt, err := decodeWebhookEvent[raw.BalanceCreditData](e, "balances#credit")
+	payload, occurredAt, err := decodeWebhookEvent[raw.BalanceCreditData](e, WebhookEventBalancesCredit)
 	if err != nil {
 		return nil, err
 	}
