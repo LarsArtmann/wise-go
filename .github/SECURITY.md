@@ -21,6 +21,19 @@ Include what you can of:
 - The impact you see (what an attacker could do, what data is exposed)
 - Any workaround you have verified
 
+## Security Practices
+
+- Secrets stay out of the repo and out of logs: the API key is supplied per
+  client (`WithAPIKey`) and never rendered into error strings; SCA one-time
+  tokens are exposed only via `TwoFAApprovalToken()`, and `SCAChallengeError`
+  reports `token issued: true/false` — never the token itself.
+- Webhook deliveries must be authenticated with `VerifyWebhookSignature`
+  (RSA signature over the raw request bytes) before parsing; malformed
+  envelopes are rejected as corruption-classified errors rather than trusted.
+- Every change is gated by `go test -race`, `golangci-lint`, and the hermetic
+  `nix flake check`; govulncheck runs in CI once re-enabled. Live-API tests
+  execute only against the sandbox and only when a key is explicitly provided.
+
 ## What to report
 
 Anything that would let an attacker or a malicious response compromise a
