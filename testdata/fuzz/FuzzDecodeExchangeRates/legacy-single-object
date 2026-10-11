@@ -1,0 +1,4 @@
+go test fuzz v1
+[]byte("{\"source\":\"EUR\",\"target\":\"USD\",\"rate\":1.0854,\"time\":\"2026-10-07T00:17:01+0000\"}")
+string("EUR")
+string("USD")

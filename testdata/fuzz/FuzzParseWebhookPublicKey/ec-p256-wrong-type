@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE38+S8HttE/dOaoUbZteRjnRXmdTH\ntWf8M8nWsw1Eltj1454A0Rrkysx30kZ6lzsETgV1MyU1nSJ4n0YEi2S43Q==\n-----END PUBLIC KEY-----\n")

@@ -465,6 +465,43 @@ func FuzzParseWiseTimestamp(f *testing.F) {
 	})
 }
 
+// FuzzParseWiseDate pins the date parser's contract: it never panics, an
+// error never comes with a non-zero time, the empty string yields the zero
+// time, and every accepted value parses as the documented UTC date layout.
+func FuzzParseWiseDate(f *testing.F) {
+	f.Add("1977-01-31")
+	f.Add("")
+	f.Add("2024-02-29") // leap day — must be accepted
+	f.Add("2026-02-29") // not a leap year — must be rejected
+	f.Add("2020-05-27 10:27:22")
+	f.Add("garbage")
+
+	f.Fuzz(func(t *testing.T, s string) {
+		got, err := parseWiseDate(s)
+		if err != nil {
+			if !got.IsZero() {
+				t.Fatalf("parseWiseDate(%q) returned %v alongside an error", s, got)
+			}
+
+			return
+		}
+
+		if s == "" && !got.IsZero() {
+			t.Fatalf(`parseWiseDate("") = %v, want the zero time`, got)
+		}
+
+		if want, wantErr := time.Parse(wiseDateFormat, s); wantErr == nil {
+			if !got.Equal(want) {
+				t.Fatalf("parseWiseDate(%q) = %v, want %v", s, got, want)
+			}
+
+			if got.Location() != time.UTC {
+				t.Fatalf("parseWiseDate(%q) must be UTC, got %v", s, got.Location())
+			}
+		}
+	})
+}
+
 // FuzzNewCurrency pins the currency validator's contract: it accepts exactly
 // three uppercase ASCII letters and nothing else.
 func FuzzNewCurrency(f *testing.F) {
