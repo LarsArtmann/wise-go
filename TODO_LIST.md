@@ -75,44 +75,11 @@ Source: `docs/status/archived/2026-10-07_03-57_session-status-unblocked-prep-rel
 
 ### Open
 
-[ ] Verify the `benchstat` command in `docs/bench/README.md` runs in the
-devShell (it was written this session without executing it); fix or annotate.
-Source: `docs/status/2026-10-11_18-34_p3-unblocked-sweep-typing-fuzz-coverage-floor-status.md` §e4.
-
-[ ] Bisect the 93.1% → 92.8% coverage drop (2026-10-07 → 2026-10-11, daemon
-commits in between); recover the point or record the cause.
-Source: same report §e9.
-
-[ ] Add a floor-parity check: the coverage floor must match between
-`flake.nix` `checks.test` and the ci.yml coverage gate (two-place split brain,
-manually mirrored today).
-Source: same report §e3.
-
-[ ] Remove the two remaining struck resolved ROADMAP lines (art-dupl DECIDED,
-erraudit RESOLVED) — finish the de-dup the LSP entry started.
-Source: same report §e8.
-
-[ ] Live-fuzz the three seeded fuzz targets (5s each) — the checked-in corpus
-has only run in seed-execution mode.
-Source: same report §b1.
-
-[ ] Run `buildflow doctor` and disposition the 9 "tools unavailable
-(health check failed)" entries.
-Source: same report §e5.
-
-[ ] Triage statix's 27 flake.nix warnings and vulnix's 21 toolchain-drv
-advisories (warning-severity, not gate-tripping) — fix or record as
-deliberate non-fixes.
-Source: same report §e6.
-
-[ ] Add the "pipes mask gate exit codes" gotcha (capture exit before piping,
-or `set -o pipefail`) to AGENTS.md; consider a periodic
-`buildflow --build-mode full --fix` cadence note (pin_sync/securitymd rot
-went unnoticed for 4 days).
-Source: same report §d1–d3, §e1–e2.
-
 [ ] Consume the committed `benchstat` baseline
 (`docs/bench/2026-10-07_v0120_baseline.txt`) in the next perf-touching PR.
+Note: the README rerun commands are now execution-verified (six separate
+`-count 1` invocations; Ginkgo bans `-count>1`), and benchstat is NOT in the
+devShell — install with `go install golang.org/x/perf/cmd/benchstat@latest`.
 
 ### Decisions (P3)
 

@@ -13,6 +13,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `FuzzParseWiseDate` target pinning the date parser's contract.
 - `docs/bench/README.md` — benchmark conventions, how to rerun and compare
   against the committed benchstat baseline.
+- `checks.coverage-floor-parity` flake check: fails `nix flake check` when the
+  coverage floor differs between the flake test gate and the CI coverage gate
+  (negative-tested with a deliberate mismatch).
+- Gitleaks and codespell configs (`.gitleaks.toml`, `.codespellrc`): the
+  vendored Wise OpenAPI snapshot's documentation fixtures (example tokens,
+  keys, JWTs — 30 false positives) are allowlisted, `unparseable` is pinned as
+  the repo spelling, and historical/vendored doc trees are skipped. Both tools
+  plus markdownlint-cli joined the dev shell and verify clean.
 
 ### Changed
 
@@ -25,10 +33,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `WebhookEventType` instead of a bare string, and the account-requirements
   get/refresh error-label verbs are typed constants. No public API change;
   error messages are byte-identical (pinned by tests).
+- `docs/bench/README.md` rerun instructions verified by execution: the old
+  single `go test -count 6` command fails against the Ginkgo `-count>1` ban,
+  so the documented capture is now six separate `-count 1` invocations
+  (benchstat comparison re-run end to end, exit 0).
 
 ### Fixed
 
-- Nothing yet.
+- The "93.1%" coverage figure recorded 2026-10-07 never existed in any
+  committed tree: measurement across the day's commits shows the white-box
+  test batch (`5e7430b`) took coverage 90.5% → 92.8%, where it has stayed
+  through HEAD under both plain and race/atomic modes. No coverage was lost;
+  docs now carry the real number.
+- One real typo in AGENTS.md ("re-declares" → "redeclares"), caught by the
+  newly installed codespell.
 
 ## [0.13.0] - 2026-10-07
 
