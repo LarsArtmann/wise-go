@@ -88,6 +88,7 @@
         ./zz_spec_conformance_coverage_test.go
         ./docs/reviews/wise-api-openapi.json
         ./README.md
+        ./testdata
       ];
       src = fs.toSource {
         root = ./.;
