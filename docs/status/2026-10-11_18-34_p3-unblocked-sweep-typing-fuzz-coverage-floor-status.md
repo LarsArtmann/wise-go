@@ -34,7 +34,7 @@
 
 ## c) NOT STARTED
 
-*(session-scope: items visible in TODO_LIST this session but blocked or untouched — nothing unblocked was skipped)*
+_(session-scope: items visible in TODO_LIST this session but blocked or untouched — nothing unblocked was skipped)_
 
 1. Sandbox live-verification pass + OTT `2026Q3→2026Q4` flip probe — **blocked: `WISE_SANDBOX_API_KEY`**.
 2. Sandbox integration-test first recorded run — blocked: same key.
@@ -68,19 +68,20 @@
 
 ## f) Up to 50 things we should get done next
 
-*(honest count: 30; not padded to 50 — the remaining 20 slots would be invention)*
+_(honest count: 30; not padded to 50 — the remaining 20 slots would be invention)_
 
 **Unblocked, bounded (start here):**
+
 1. Verify the `benchstat` command in `docs/bench/README.md` actually runs in the devShell; fix or annotate.
-4. Bisect the 93.1→92.8 coverage drop to a commit; recover or record.
-5. Add a floor-parity check (flake.nix vs ci.yml coverage gate values must match).
-6. Remove the two remaining struck resolved ROADMAP lines (art-dupl, erraudit) — finish the de-dup.
-7. Live-fuzz the three seeded targets (5s each) to prove corpus+harness under mutation.
-8. Run `buildflow doctor`; disposition the 9 unavailable tools.
-9. Triage statix's 27 flake.nix warnings (likely generated-pattern false positives; document as deliberate non-fix if so).
-10. Record the vulnix 21-advisory set's disposition (toolchain drvs, not repo code) in AGENTS.md or a review note.
-11. Cross-repo: record the go-retry drift + Ginkgo `-count>1` + `gh --body-file` lessons in crush-config `references/lessons.md`.
-12. Cross-repo: fix the `check-skill-fanout.sh` path/doc mismatch (crush-config).
+2. Bisect the 93.1→92.8 coverage drop to a commit; recover or record.
+3. Add a floor-parity check (flake.nix vs ci.yml coverage gate values must match).
+4. Remove the two remaining struck resolved ROADMAP lines (art-dupl, erraudit) — finish the de-dup.
+5. Live-fuzz the three seeded targets (5s each) to prove corpus+harness under mutation.
+6. Run `buildflow doctor`; disposition the 9 unavailable tools.
+7. Triage statix's 27 flake.nix warnings (likely generated-pattern false positives; document as deliberate non-fix if so).
+8. Record the vulnix 21-advisory set's disposition (toolchain drvs, not repo code) in AGENTS.md or a review note.
+9. Cross-repo: record the go-retry drift + Ginkgo `-count>1` + `gh --body-file` lessons in crush-config `references/lessons.md`.
+10. Cross-repo: fix the `check-skill-fanout.sh` path/doc mismatch (crush-config).
 
 **User-gated (one approval unblocks each):**
 13. Provide `WISE_SANDBOX_API_KEY` → runs items 14–16.
@@ -114,4 +115,4 @@
 
 ---
 
-*Point-in-time snapshot per session scope. Section (f) items 1–12 and 29–30 are new since TODO_LIST was last maintained this session; a HARVEST pass folded the bounded ones in. WAITING FOR INSTRUCTIONS.*
+_Point-in-time snapshot per session scope. Section (f) items 1–12 and 29–30 are new since TODO_LIST was last maintained this session; a HARVEST pass folded the bounded ones in. WAITING FOR INSTRUCTIONS._
