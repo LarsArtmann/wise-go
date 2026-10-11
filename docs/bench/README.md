@@ -10,16 +10,27 @@ a release tag, named `<date>_<tag>_baseline.txt`.
 
 ## Rerun and compare
 
+`benchstat` is not in the devShell (nixpkgs does not package it); install it
+once with `go install golang.org/x/perf/cmd/benchstat@latest` (lands in
+`~/go/bin`, which is on PATH).
+
 Capture the current numbers, then let `benchstat` diff them against the last
-baseline:
+baseline. Ginkgo rejects `go test -count>1`, so the six samples must come from
+six separate invocations (verified 2026-10-11):
 
 ```sh
-go test -bench . -count 6 -benchtime 1s > /tmp/current.txt
+: > /tmp/current.txt
+for i in 1 2 3 4 5 6; do
+  go test -run '^$' -bench . -benchtime 1s -count 1 >> /tmp/current.txt
+done
 benchstat docs/bench/2026-10-07_v0120_baseline.txt /tmp/current.txt
 ```
 
-`-count 6` matters: benchstat needs multiple samples per benchmark to compute
-variance, and single-run comparisons are noise.
+Six samples per benchmark matter: benchstat needs multiple samples to compute
+variance, and single-run comparisons are noise. `-run '^$'` skips the unit
+suite so only benchmarks run. Benchmarks added after a baseline's date simply
+have no baseline column — benchstat shows them one-sided (expected, not an
+error).
 
 ## Conventions
 

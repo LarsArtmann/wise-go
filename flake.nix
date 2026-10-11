@@ -164,6 +164,38 @@
             '';
           });
 
+          # The coverage floor is enforced in two places — checks.test above
+          # and the ci.yml coverage gate — that must never drift apart. This
+          # check greps both floors and fails on any mismatch (or on a floor
+          # going missing entirely), so a single-site promotion breaks the
+          # build instead of silently splitting the gates.
+          checks.coverage-floor-parity =
+            pkgs.runCommand "coverage-floor-parity"
+              {
+                nativeBuildInputs = [
+                  pkgs.gnugrep
+                  pkgs.coreutils
+                ];
+                flakeNix = ./flake.nix;
+                ciYml = ./.github/workflows/ci.yml;
+              }
+              ''
+                FLOOR_FLAKE=$(grep -oE '\(p\+0\) < [0-9]+(\.[0-9]+)?' "$flakeNix" | grep -oE '[0-9]+(\.[0-9]+)?$' | sort -u)
+                FLOOR_CI=$(grep -oE 'p\+0 < [0-9]+(\.[0-9]+)?' "$ciYml" | grep -oE '[0-9]+(\.[0-9]+)?$' | sort -u)
+                if [ -z "$FLOOR_FLAKE" ] || [ -z "$FLOOR_CI" ]; then
+                  echo "FAIL: coverage floor not found (flake.nix: '$FLOOR_FLAKE', ci.yml: '$FLOOR_CI')"
+                  echo "The floor lives in the checks.test checkPhase (flake.nix) and the coverage gate (ci.yml); both must carry the same value."
+                  exit 1
+                fi
+                if [ "$FLOOR_FLAKE" != "$FLOOR_CI" ]; then
+                  echo "FAIL: coverage floor split brain: flake.nix enforces $FLOOR_FLAKE, ci.yml enforces $FLOOR_CI"
+                  echo "Promote both sites together — a one-sided change leaves a silent mismatch."
+                  exit 1
+                fi
+                echo "coverage-floor-parity OK: both gates enforce $FLOOR_FLAKE"
+                touch $out
+              '';
+
           # Offline link check over the living docs: catches ghost file
           # references (relative links) without network access.
           checks.links =
