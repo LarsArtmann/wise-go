@@ -102,7 +102,7 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 
 | Method | Path                                                      | Status           | wise-go                                            |
 | ------ | --------------------------------------------------------- | ---------------- | -------------------------------------------------- |
-| GET    | `/balances/account-details/{id}` (2027Q1)                 | FULLY_FUNCTIONAL | `GetBankAccountDetails` (`account_details.go:159`) |
+| GET    | `/balances/account-details/{id}` (2027Q1)                 | FULLY_FUNCTIONAL | `GetBankAccountDetails` (`account_details.go:158`) |
 | POST   | `/v1/profiles/{id}/bank-details`                          | PLANNED          | issue local+international details                  |
 | POST   | `/v1/profiles/{id}/account-details-orders`                | PLANNED          | order account details                              |
 | GET    | `/v1/profiles/{id}/account-details-orders`                | PLANNED          | list orders                                        |

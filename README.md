@@ -802,6 +802,8 @@ if err != nil {
         fmt.Printf("auth failed: %s\n", auth.Message)
     } else if nf, ok := errors.AsType[*wise.NotFoundError](err); ok {
         fmt.Printf("not found: %s\n", nf.Message)
+    } else if br, ok := errors.AsType[*wise.BadRequestError](err); ok {
+        fmt.Printf("rejected (%d): %s\n", br.StatusCode, br.Message)
     } else if srv, ok := errors.AsType[*wise.ServerError](err); ok {
         fmt.Printf("server error (%d): %s\n", srv.StatusCode, srv.Message)
     } else if apiErr, ok := errors.AsType[*wise.APIError](err); ok {
@@ -812,6 +814,7 @@ if err != nil {
 
 | HTTP Status            | Error Type          | Retried? |
 | ---------------------- | ------------------- | -------- |
+| 400                    | `BadRequestError`   | No       |
 | 401, 403               | `AuthError`         | No       |
 | 403 + Wise 2FA headers | `SCAChallengeError` | No       |
 | 404                    | `NotFoundError`     | No       |
@@ -823,23 +826,85 @@ Mapper failures (unparseable timestamps, invalid currency codes in a response)
 carry `Corruption` classification — permanent, not retryable — so a blanket
 "retry on transient" wrapper fails fast instead of looping.
 
-Every error the SDK emits is named in one central catalog (`errors.go`): the
-typed errors above with their `ErrorCode()` values, one named constant per
-`errorfamily` error code, and exported sentinel errors for distinct
-response-shape failures. The sentinels are always returned wrapped but stay
-matchable with `errors.Is`:
+### How to match an error
+
+Three matchers, one decision tree:
+
+1. **Need the error's fields?** (status code, `RetryAfter`, rate-limit scope,
+   the SCA token) — extract the type with `errors.AsType`.
+2. **Branching on a Wise granular code with a curated sentinel?** (`not.valid`,
+   `resource_not_found`, `rate_limit_exceeded`, ...) — match by value with
+   `errors.Is`. This works through **any** `fmt.Errorf("%w")` wrap chain: the
+   SDK's contextual wraps ("create transfer for quote ...: ...") never break
+   the match.
+3. **Any other granular code?** (the open enum — Wise adds codes over time) —
+   read the structured details with `APIError.Details` or branch with
+   `APIError.HasCode`.
 
 ```go
-if errors.Is(err, wise.ErrEmptyRateList) {
-    fmt.Println("the rates response decoded to zero entries")
+transfers, err := client.ListTransfers(ctx, listReq)
+if err != nil {
+    // Curated Wise codes match by value through any wrap chain:
+    if errors.Is(err, wise.ErrRateLimitExceeded) {
+        fmt.Println("wise throttled us; back off and retry")
+    } else if errors.Is(err, wise.ErrResourceNotFound) {
+        fmt.Println("resource gone; refresh before retrying")
+    }
+
+    // Any code (curated or not) branches on the structured details:
+    if apiErr, ok := errors.AsType[*wise.APIError](err); ok {
+        for _, detail := range apiErr.Details {
+            fmt.Printf("wise says %q: %s\n", detail.Code, detail.Message)
+        }
+
+        if apiErr.HasCode(wise.WiseErrorCodeNotValid) {
+            fmt.Println("wise rejected a value as not valid; do not retry")
+        }
+    }
 }
 ```
 
-The sentinels: `ErrEmptyRateList` (rates payload with zero entries),
-`ErrAccountIdentificationCardinality` (account details `accountIdentification`
-not exactly one member), `ErrOTTAlternativesShape` (SCA challenge alternatives
-neither object nor string form), and `ErrTransferRefundAmountMissing`
-(`transfers#refund` webhook payload without amount/currency).
+`errors.AsType` and `errors.Is` are complementary, not competing: types carry
+the fields, sentinels carry the codes. A 429 whose body says
+`rate_limit_exceeded` satisfies both; a 5xx whose body says `system_error` is
+still a retryable `*ServerError` — the status drives the type, the body code
+drives the match.
+
+Every error the SDK emits is named in one central catalog (`errors.go`): the
+typed errors above with their `ErrorCode()` values, one named constant per
+`errorfamily` error code, the `WiseErrorCode` constants for Wise's granular
+wire codes, and exported sentinel errors. Two sentinel families exist:
+
+- **Wise code sentinels** (wave 1): `ErrNotValid`, `ErrInvalidValue`,
+  `ErrParameterMissing`, `ErrParameterInvalid`, `ErrInvalidRequest`,
+  `ErrUnauthorized`, `ErrForbidden`, `ErrResourceNotFound`,
+  `ErrOperationNotSupported`, `ErrRateLimitExceeded`, `ErrSystemError`. An
+  `APIError` matches one when any structured detail carries the wire code the
+  sentinel stands for:
+
+  ```go
+  if errors.Is(err, wise.ErrNotValid) {
+      fmt.Println("wise rejected a value as not valid")
+  }
+  ```
+
+- **Response-shape sentinels**: `ErrEmptyRateList` (rates payload with zero
+  entries), `ErrAccountIdentificationCardinality` (account details
+  `accountIdentification` not exactly one member), `ErrOTTAlternativesShape`
+  (SCA challenge alternatives neither object nor string form), and
+  `ErrTransferRefundAmountMissing` (`transfers#refund` webhook payload without
+  amount/currency). The SDK returns these wrapped but always matchable:
+
+  ```go
+  if errors.Is(err, wise.ErrEmptyRateList) {
+      fmt.Println("the rates response decoded to zero entries")
+  }
+  ```
+
+Every error also exposes `ErrorContext()` for log pipelines; `APIError`-family
+errors include `status_code` and, when Wise sent its structured envelope, the
+first granular code as `wise_code`. The full reference of granular codes lives
+in [docs/error-codes.md](docs/error-codes.md).
 
 ## Strong Customer Authentication (SCA)
 

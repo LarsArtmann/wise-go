@@ -1,0 +1,1 @@
+{"nodes":{"root":{"inputs":{"go-branded-id":["go-branded-id"],"go-retry":["go-retry"]}},"go-branded-id":{"locked":{"type":"github","owner":"LarsArtmann","repo":"go-branded-id","rev":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}},"go-retry":{"locked":{"type":"github","owner":"LarsArtmann","repo":"go-retry","rev":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}},"version":7}

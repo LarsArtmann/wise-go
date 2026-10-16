@@ -312,6 +312,35 @@
                 touch $out
               '';
 
+          # Negative fixtures for the python gates (scripts/negative_fixtures.py):
+          # pin-sync's stale-lock/tag-mismatch/missing-input/unpinned shapes and
+          # spec-drift's broken-spec/missing-endpoint/--fail-on-drift postures,
+          # each asserted on exit code AND output substring. Hermetic — every
+          # case passes --offline or --spec-file, nothing is fetched.
+          checks.script-fixtures =
+            pkgs.runCommand "script-fixtures"
+              {
+                nativeBuildInputs = [ pkgs.python3 ];
+                src = lib.fileset.toSource {
+                  root = ./.;
+                  fileset = lib.fileset.unions [
+                    ./scripts/negative_fixtures.py
+                    ./scripts/pin_sync.py
+                    ./scripts/spec_drift.py
+                    ./scripts/testdata
+                    ./go.mod
+                    ./docs/reviews/wise-api-openapi.json
+                    (lib.fileset.fileFilter (file: file.hasExt "go") ./.)
+                  ];
+                };
+              }
+              ''
+                cd $src
+                export PYTHONDONTWRITEBYTECODE=1
+                python3 scripts/negative_fixtures.py --repo-root .
+                touch $out
+              '';
+
           # Curated-lister gate: the enabled set in .golangci.yml must equal
           # the allowlist below. buildflow's auto-configure re-added `lll`
           # twice on 2026-10-16 alone; this turns the curated-list policy
