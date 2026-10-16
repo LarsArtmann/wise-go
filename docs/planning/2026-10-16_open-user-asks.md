@@ -68,3 +68,38 @@ Note: at the moment the release was cut, HEAD (f045de1) carried the parallel
 session's committed-but-unformatted OTT change — that is why the tag points
 at 1271562. If pushing master now, confirm `golangci-lint run ./...` is clean
 first.
+
+## 6. CI token secrets (cachix + erraudit)
+
+Two jobs in `ci.yml` degrade to `continue-on-error` without their secrets:
+
+- `CACHIX_AUTH_TOKEN` — enables the nix cache push (faster CI, no behavior
+  change without it). `cachix authtoken <token>` → `gh secret set CACHIX_AUTH_TOKEN`.
+- `ERRAUDIT_TOKEN` — the private `erraudit` job (warn-not-fail). With
+  `GOPRIVATE=github.com/larsartmann/erraudit`:
+  `gh secret set ERRAUDIT_TOKEN <PAT-with-repo-read>`.
+
+Without them the first green run is still meaningful; set them any time before
+treating CI as the release gate.
+
+## 7. x86_64-darwin matrix decision
+
+`nix flake check --all-systems` fails EXTERNALLY: nixpkgs-26.11 dropped
+x86_64-darwin (2026-10-07). Pick one:
+
+```sh
+# Option A: pin a nixpkgs-26.05-darwin input and keep the system
+# Option B: drop x86_64-darwin from the check matrix (aarch64-darwin stays)
+```
+
+Until decided, `nix flake check` (default systems) stays the gate and
+`--all-systems` stays advisory.
+
+## 8. v1.0.0 timing
+
+46 exported methods, apidiff-clean against v0.14.0, coverage 93.5% vs the 92
+floor. v1.0.0 is a `git tag` away whenever you call it; the pre-release chain
+(`nix run .#pre-release -- --shuffle`) is the only gate. Open question only
+you can answer: tag now on the 46-method surface, or after the error-system
+plan lands its breaking surface (`APIError.Details`, `WiseErrorCode`) so v1.0
+consumers get the structured errors from day one.

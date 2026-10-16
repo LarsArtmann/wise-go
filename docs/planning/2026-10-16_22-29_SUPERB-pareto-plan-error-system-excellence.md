@@ -310,3 +310,82 @@ Critical path: **M2 → M1 → M3 → M4 → M5 → M8 → M21 → M25.**
 
 _Plan is a snapshot; living rows go to `TODO_LIST.md` (added as P1 error-system
 epic). Annotate, never rewrite, when bringing this plan current._
+
+---
+
+## Execution errata (2026-10-16, same-evening execution run)
+
+All 25 medium tasks executed 2026-10-16 22:40-23:35 CEST against master.
+Every gate green at close: `go test -race ./...`, `golangci-lint run` (0
+issues), `erraudit lint ./... --type-aware --enforce-coded-errors` (exit 0),
+`nix flake check`, `nix run .#doc-verify`, `nix run .#anchor-check` (101
+anchors), `nix run .#release-notes-check`.
+
+**Shipped:**
+
+- M1/M2/M3 (the 1%): `APIError.Details []WiseErrorDetail`, `WiseErrorCode`
+  open enum (14 constants, census re-verified against the vendored snapshot:
+  all 14 present), 11 wave-1 sentinels + `APIError.Is` (lookup map keyed by
+  sentinel identity, so look-alikes never match) + `HasCode`. The `Message`
+  join stays byte-identical; fuzz-pinned.
+- M4: shape guard covers all 15 sentinels; `TestCodeSentinelsMapCuratedCodes`
+  pins the map at exactly 11; `TestAsTypeAndIsAreComplementary` pins the
+  idiom split; captures + fuzz pin no-context-loss and order.
+- M5: `TestErrorSurfaceMappingMatrix` (11 status x shape rows; assertion
+  helpers keep it readable).
+- M6: `BadRequestError` (`wise.bad_request`); the status switch moved into
+  `classifyAPIError` (cyclop); 5 Ginkgo specs migrated to the new type;
+  ROADMAP's typed-400 idea resolved inline.
+- M7: `wise_code` (first detail's code) in the APIError and RateLimitError
+  contexts.
+- M8 + M14: README decision tree, wrap-safety, both sentinel families, SCA/
+  OTT cross-link.
+- M9: all error snippets compile against master (exit 0); against v0.13.0/
+  v0.14.0 the granular surface is absent BY DESIGN (it ships in the next
+  release) — recorded, with a cross-repo note for bank-sync in AGENTS.
+- M10: four godoc examples; FEATURES Example count 32 -> 36.
+- M11: `docs/error-codes.md` reference, wired into both lychee gates.
+- M12: `FuzzParseErrorResponse` + `FuzzNewAPIError` (Details-Message
+  invariant + determinism); 20 s live fuzz, 1.75M execs, 0 failures; corpus
+  checked in under `testdata/fuzz/`.
+- M13: `TestSpecConformanceErrorEnvelopeValidation` pins the armed-vs-vacuous
+  boundary: 55 error responses declare real schemas (malformed envelopes are
+  REJECTED there), while examples-only error docs (e.g. the rates 400) are
+  vacuous by design — the granular fixtures cannot rot silently either way.
+- M15 decision: wave-2 DECLINED. `missing_value` (parameter_missing's story),
+  `invalid_file_extension` (upload-only), `unexpected.error` (no branching
+  story beyond IsRetryable/type) get no sentinels; the 11-entry map pin
+  forces a conscious update before wave-2 ever lands.
+- M16 decision: Ginkgo consolidation SKIPPED. The matrix is a pure mapping
+  table; stdlib table tests read better; the BDD suite stays for client
+  behavior. Decision recorded here per the plan's rules.
+- M17-M19: FEATURES error rows (8 new) + anchors green; AGENTS
+  matching-contract bullet; CHANGELOG structured-surface entry;
+  release-notes-check + doc-verify green.
+- M20: bank-sync recipe subsection in README ("Consumer recipe: transfer
+  with funding fallback"), compile-verified against master; covers both
+  surfaces (APIError codes for transport, `FundingErrorCode` for pay-in).
+- M21: full battery green (header).
+- M22: claims verified by grep — 58 errorCode constants, 15 sentinels
+  (4 shape + 11 code), 14 enum constants, 0 runtime-assembled codes,
+  `Is`/`HasCode` exported.
+- M23 memo: status drives the TYPE and the FAMILY; the body code drives only
+  the MATCH. A 5xx carrying `system_error` stays a retryable `*ServerError`;
+  a 400 carrying it stays a `*BadRequestError` while `errors.Is` still
+  matches `ErrSystemError`. Pinned twice (matrix 500-row; impersonation row)
+  and documented in `classifyAPIError` godoc + AGENTS.
+- M25 no-regression verdict: every declined disposition holds. No per-method
+  concrete error-return types; contextual wraps stay anonymous; all 15
+  sentinels interface-typed and shape-guarded; catalog central; no
+  `interface{ Is(error) bool }` hand-rolling — `APIError.Is` is structured-
+  data matching (grpc/status pattern), distinct from and documented beside
+  the declined pattern; pinned tests extended, never weakened (the 400
+  classification row changed with the deliberate BadRequest contract).
+
+**Incidents during execution:** (a) the auto-commit daemon re-added `lll` a
+THIRD time (23:16, commit ae22b89) minutes after the curated-allowlist gate
+landed — removed again; with `checks.linter-allowlist` in place the
+recurrence is now structural, not memory. (b) erraudit flagged the
+`errors.Is(err, nil)` negative pin; suppressed with an ON-CALL-LINE
+`//nolint:legacyerrors` + reason — a directive on the line ABOVE does not
+suppress (verified live, matching the skill's placement rule).
