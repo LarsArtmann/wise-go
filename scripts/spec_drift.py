@@ -45,10 +45,10 @@ SPRINTF_OPEN_RE = re.compile(r'path\s*:?=\s*fmt\.Sprintf\(\s*$')
 LITERAL_PATH_RE = re.compile(r'path\s*:?=\s*"(/[^"]*)"')
 CALL_WINDOW_PATH_RE = re.compile(r'"(/[^"]*)"')
 FORMAT_VERB_RE = re.compile(r"%[-#0 +]*\d*(?:\.\d+)?[a-zA-Z]")
-VERSION_PREFIX_RE = re.compile(r"^/(?:v\d+|\d{4}Q[1-4]|\{\})(?=/)")
+VERSION_PREFIX_RE = re.compile(r"^/(?:v\d+|\d{4}Q[1-4]|\{s\})(?=/)")
 
 KNOWN_EXEMPTIONS = {
-    "/profiles/{}/balance-statements/{}/statement.{}": "spec declares only the .json variant (same exemption as the spec-conformance gate)",
+    "/profiles/{d}/balance-statements/{d}/statement.{s}": "spec declares only the .json variant (same exemption as the spec-conformance gate)",
 }
 
 
@@ -69,7 +69,6 @@ def extract_sdk_endpoints(repo: pathlib.Path) -> list[dict]:
             continue
         lines = go_file.read_text(encoding="utf-8").splitlines()
         last_path: str | None = None
-        last_path_line = -100
         enclosing = ""
         pending: list[dict] = []
         for lineno, line in enumerate(lines, 1):
@@ -79,12 +78,10 @@ def extract_sdk_endpoints(repo: pathlib.Path) -> list[dict]:
             m = SPRINTF_PATH_RE.search(line) or LITERAL_PATH_RE.search(line)
             if m:
                 last_path = m.group(1)
-                last_path_line = lineno
             elif SPRINTF_OPEN_RE.search(line):
                 ahead = CALL_WINDOW_PATH_RE.search("\n".join(lines[lineno : lineno + 2]))
                 if ahead:
                     last_path = ahead.group(1)
-                    last_path_line = lineno
             method = request_method(line)
             if method is None:
                 if REQUEST_CALL_RE.search(line):
@@ -94,7 +91,7 @@ def extract_sdk_endpoints(repo: pathlib.Path) -> list[dict]:
                     if template:
                         literal = HTTP_METHOD_RE.search(window)
                         entry = {
-                            "method": literal.group(1) if literal else None,
+                            "method": literal.group(1).upper() if literal else None,
                             "template": template,
                             "file": go_file.name,
                             "line": lineno,
@@ -127,7 +124,7 @@ def extract_sdk_endpoints(repo: pathlib.Path) -> list[dict]:
             for i, line in enumerate(lines):
                 if re.search(r"\b" + re.escape(entry["enclosing"]) + r"\(", line):
                     window = "\n".join(lines[i : i + WRAPPER_WINDOW_LINES])
-                    methods.update(mm.group(1) for mm in HTTP_METHOD_RE.finditer(window))
+                    methods.update(mm.group(1).upper() for mm in HTTP_METHOD_RE.finditer(window))
             for resolved in sorted(methods) or ["UNRESOLVED"]:
                 endpoints.append({**entry, "method": resolved})
     return endpoints
@@ -155,28 +152,31 @@ def request_method(line: str) -> str | None:
 
 
 FUNC_DEF_RE = re.compile(r"^func (?:\([^)]*\) )?([A-Za-z_][A-Za-z0-9_]*)")
-HTTP_METHOD_RE = re.compile(r"http\.Method([A-Z]+)\b")
+HTTP_METHOD_RE = re.compile(r"http\.Method([A-Za-z]+)\b")
 REQUEST_CALL_RE = re.compile(r"\bc\.request\(")
 WRAPPER_WINDOW_LINES = 9
 
 
+def format_verb_marker(m: re.Match) -> str:
+    return "{d}" if m.group(0).endswith("d") else "{s}"
+
+
 def normalize_sdk_path(template: str) -> str:
     path = template.split("?", 1)[0]
-    path = FORMAT_VERB_RE.sub("{}", path)
+    path = FORMAT_VERB_RE.sub(format_verb_marker, path)
     return VERSION_PREFIX_RE.sub("", path)
 
 
 def normalize_spec_path(path: str) -> str:
-    return re.sub(r"\{[^}]*\}", "{}", path)
+    return re.sub(r"\{[^}]*\}", "{p}", path)
 
 
 def segments_match(a: str, b: str) -> bool:
-    return a == b or a == "{}" or b == "{}"
-
-
-def paths_match(sdk_norm: str, spec_norm: str) -> bool:
-    a, b = sdk_norm.split("/"), spec_norm.split("/")
-    return len(a) == len(b) and all(segments_match(x, y) for x, y in zip(a, b))
+    if a == b:
+        return True
+    if a == "{p}" or b == "{p}":
+        return "{d}" in (a, b) or "{s}" in (a, b) or a == b
+    return a == "{s}" or b == "{s}"
 
 
 def build_spec_index(spec: dict) -> dict[str, set[str]]:
@@ -189,13 +189,30 @@ def build_spec_index(spec: dict) -> dict[str, set[str]]:
 
 
 def match_endpoint(index: dict[str, set[str]], method: str, sdk_norm: str) -> tuple[str, list[str]]:
-    """Return (verdict, matched spec paths): 'ok' | 'method' | 'missing'."""
+    """Return (verdict, matched spec paths): 'ok' | 'method' | 'missing'.
+
+    A numeric SDK param ({d}) only matches a spec parameter, never a literal
+    segment, so a removed ID endpoint is not silently absorbed by a literal
+    sibling path like /balances/hold-limit-breach.
+    """
     exact = index.get(sdk_norm)
     if exact is not None:
         return ("ok", [sdk_norm]) if method in exact else ("method", [sdk_norm])
-    structural = [
-        path for path, methods in index.items() if paths_match(sdk_norm, normalize_spec_path(path))
-    ]
+    aligned: list[str] = []
+    loose: list[str] = []
+    for path in index:
+        spec_norm = normalize_spec_path(path)
+        a, b = sdk_norm.split("/"), spec_norm.split("/")
+        if len(a) != len(b):
+            continue
+        pairs = list(zip(a, b))
+        if not all(segments_match(x, y) for x, y in pairs):
+            continue
+        if all(x == y or "{p}" in (x, y) for x, y in pairs):
+            aligned.append(path)
+        else:
+            loose.append(path)
+    structural = aligned or loose
     if not structural:
         return "missing", []
     if any(method in index[path] for path in structural):
@@ -258,14 +275,14 @@ def main() -> int:
     failures: list[str] = []
     for method, norm in sorted(unique):
         verdict, matched = match_endpoint(index, method, norm)
+        if verdict == "missing" and norm in KNOWN_EXEMPTIONS:
+            if args.verbose:
+                print(f"  [EXEMPT] {method} {norm} - {KNOWN_EXEMPTIONS[norm]}")
+            continue
         if args.verbose:
             tag = "OK" if verdict == "ok" else "PROBLEM"
             print(f"  [{tag}] {method} {norm}" + (f"  ->  {', '.join(matched)}" if verdict != "ok" else ""))
         if verdict == "missing":
-            if norm in KNOWN_EXEMPTIONS:
-                if args.verbose:
-                    print(f"  [EXEMPT] {method} {norm} - {KNOWN_EXEMPTIONS[norm]}")
-                continue
             failures.append(f"MISSING: {method} {norm} matches no path in the live spec")
         elif verdict == "method":
             offered = sorted(set().union(*(index[p] for p in matched))) if matched else []

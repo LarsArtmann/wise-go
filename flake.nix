@@ -448,6 +448,31 @@
               meta.description = "Pre-flight release-notes files for split code spans and repo-relative links";
             };
 
+          # SDK surface vs live Wise API reference (scripts/spec_drift.py):
+          # every (method, path) the SDK calls must still exist in the live
+          # spec, and vendored-snapshot drift is reported (breaking drift for
+          # the SDK = exit 1). Needs network, so it is an app (nix run),
+          # never a sandboxed check. Run from the repo root:
+          # nix run .#spec-drift
+          apps.spec-drift =
+            let
+              spec-drift = pkgs.writeShellApplication {
+                name = "spec-drift";
+                runtimeInputs = [
+                  pkgs.python3
+                  pkgs.git
+                ];
+                text = ''
+                  exec python3 ${./scripts/spec_drift.py} --repo "$(git rev-parse --show-toplevel 2>/dev/null || pwd)" "$@"
+                '';
+              };
+            in
+            {
+              type = "app";
+              program = pkgs.lib.getExe spec-drift;
+              meta.description = "Check SDK endpoints against the live Wise API spec and report vendored-snapshot drift (needs network)";
+            };
+
           # Full dependency-pin verification (needs network): resolves each
           # go.mod version tag on GitHub and asserts it points at the pinned
           # rev. Part of `nix run .#pre-release`.
@@ -534,6 +559,9 @@
                   echo "==> pin-sync (needs network)"
                   nix run .#pin-sync
 
+                  echo "==> spec-drift (needs network)"
+                  nix run .#spec-drift -- --fail-on-drift
+
                   echo "==> apidiff (needs network)"
                   nix run .#apidiff
 
@@ -544,7 +572,7 @@
             {
               type = "app";
               program = pkgs.lib.getExe pre-release;
-              meta.description = "Run the full local release gate (build, vet, race, lint, flake check, docs, apidiff)";
+              meta.description = "Run the full local release gate (build, vet, race, lint, flake check, docs, spec-drift, pin-sync, apidiff)";
             };
         };
     };
