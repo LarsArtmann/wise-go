@@ -110,6 +110,76 @@ var (
 	)
 )
 
+// Curated wave-1 code sentinels: the Wise wire codes with a consumer
+// branching story, matchable through any wrap chain via errors.Is on an
+// *APIError (APIError.Is compares the structured Details codes — never
+// message text). Declared with the error interface type like every sentinel
+// in this file: they are matched by value, never by type. Codes without a
+// sentinel (open-enum passthrough) stay reachable via [APIError.HasCode].
+var (
+	// ErrNotValid reports Wise rejecting a value as not valid (wire code
+	// "not.valid") — typically a malformed amount or field value.
+	ErrNotValid error = errors.New("wise: not valid")
+
+	// ErrInvalidValue reports Wise rejecting a field value (wire code
+	// "invalid_value").
+	ErrInvalidValue error = errors.New("wise: invalid value")
+
+	// ErrParameterMissing reports a required request parameter Wise did not
+	// receive (wire code "parameter_missing").
+	ErrParameterMissing error = errors.New("wise: parameter missing")
+
+	// ErrParameterInvalid reports a request parameter whose value Wise
+	// rejected (wire code "parameter_invalid").
+	ErrParameterInvalid error = errors.New("wise: parameter invalid")
+
+	// ErrInvalidRequest reports a generic malformed request (wire code
+	// "invalid_request").
+	ErrInvalidRequest error = errors.New("wise: invalid request")
+
+	// ErrUnauthorized reports missing or invalid credentials (wire code
+	// "unauthorized").
+	ErrUnauthorized error = errors.New("wise: unauthorized")
+
+	// ErrForbidden reports credentials without permission for the operation
+	// (wire code "forbidden").
+	ErrForbidden error = errors.New("wise: forbidden")
+
+	// ErrResourceNotFound reports that the addressed resource does not exist
+	// (wire code "resource_not_found").
+	ErrResourceNotFound error = errors.New("wise: resource not found")
+
+	// ErrOperationNotSupported reports that the API surface does not support
+	// the requested operation (wire code "operation_not_supported").
+	ErrOperationNotSupported error = errors.New("wise: operation not supported")
+
+	// ErrRateLimitExceeded reports that Wise throttled the request (wire
+	// code "rate_limit_exceeded") — back off and retry.
+	ErrRateLimitExceeded error = errors.New("wise: rate limit exceeded")
+
+	// ErrSystemError reports a Wise-side system failure (wire code
+	// "system_error") — typically transient.
+	ErrSystemError error = errors.New("wise: system error")
+)
+
+// codeSentinels maps the curated code sentinels to the Wise wire code each
+// stands for; [APIError.Is] consults it. Keyed by sentinel identity (each is
+// a distinct errors.New value), so lookup is pointer comparison and a
+// look-alike error never matches by accident.
+var codeSentinels = map[error]WiseErrorCode{
+	ErrNotValid:              WiseErrorCodeNotValid,
+	ErrInvalidValue:          WiseErrorCodeInvalidValue,
+	ErrParameterMissing:      WiseErrorCodeParameterMissing,
+	ErrParameterInvalid:      WiseErrorCodeParameterInvalid,
+	ErrInvalidRequest:        WiseErrorCodeInvalidRequest,
+	ErrUnauthorized:          WiseErrorCodeUnauthorized,
+	ErrForbidden:             WiseErrorCodeForbidden,
+	ErrResourceNotFound:      WiseErrorCodeResourceNotFound,
+	ErrOperationNotSupported: WiseErrorCodeOperationNotSupported,
+	ErrRateLimitExceeded:     WiseErrorCodeRateLimitExceeded,
+	ErrSystemError:           WiseErrorCodeSystemError,
+}
+
 // WiseErrorCode is Wise's own granular, machine-readable error code from the
 // errors[].code field of a non-2xx response body (for example
 // resource_not_found on a 404 or rate_limit_exceeded on a 429). It is an open
@@ -198,6 +268,43 @@ func (e *APIError) ErrorContext() map[string]string {
 	return map[string]string{
 		"status_code": strconv.Itoa(e.StatusCode),
 	}
+}
+
+// HasCode reports whether any structured error detail carries the given Wise
+// wire code. This is the matcher for codes without a curated sentinel (and a
+// convenience for the curated ones); unknown codes work because WiseErrorCode
+// is an open enum.
+func (e *APIError) HasCode(code WiseErrorCode) bool {
+	if e == nil {
+		return false
+	}
+
+	for _, detail := range e.Details {
+		if detail.Code == code {
+			return true
+		}
+	}
+
+	return false
+}
+
+// Is reports whether the error carries the Wise wire code represented by a
+// curated code sentinel (see codeSentinels), so errors.Is matches through
+// arbitrary fmt.Errorf("%w") wrap chains and through every typed subtype
+// that embeds APIError. It compares structured Details codes only — never
+// message text — and deliberately returns false for everything else: type
+// extraction stays the job of errors.AsType.
+func (e *APIError) Is(target error) bool {
+	if e == nil {
+		return false
+	}
+
+	want, ok := codeSentinels[target]
+	if !ok {
+		return false
+	}
+
+	return e.HasCode(want)
 }
 
 // RateLimitError is returned when the Wise API returns HTTP 429.

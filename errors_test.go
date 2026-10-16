@@ -904,6 +904,17 @@ func TestSentinelsStayInterfaceTyped(t *testing.T) {
 		"ErrAccountIdentificationCardinality",
 		"ErrOTTAlternativesShape",
 		"ErrTransferRefundAmountMissing",
+		"ErrNotValid",
+		"ErrInvalidValue",
+		"ErrParameterMissing",
+		"ErrParameterInvalid",
+		"ErrInvalidRequest",
+		"ErrUnauthorized",
+		"ErrForbidden",
+		"ErrResourceNotFound",
+		"ErrOperationNotSupported",
+		"ErrRateLimitExceeded",
+		"ErrSystemError",
 	} {
 		declared := regexp.MustCompile(`(?m)^\t` + name + ` error = errors\.New\(`).MatchString(text)
 		if !declared {
@@ -939,5 +950,167 @@ func TestSentinelsMatchThroughProductionWraps(t *testing.T) {
 	fmtWrapped := fmt.Errorf("%w: %s", ErrOTTAlternativesShape, `{"not":"an array"}`)
 	if !errors.Is(fmtWrapped, ErrOTTAlternativesShape) {
 		t.Error("fmt.Errorf wrap lost sentinel match for ErrOTTAlternativesShape")
+	}
+}
+
+// TestCodeSentinelsMapCuratedCodes pins the codeSentinels mapping: exactly
+// the eleven wave-1 sentinels, each bound to its documented wire code.
+func TestCodeSentinelsMapCuratedCodes(t *testing.T) {
+	t.Parallel()
+
+	want := map[error]WiseErrorCode{
+		ErrNotValid:              WiseErrorCodeNotValid,
+		ErrInvalidValue:          WiseErrorCodeInvalidValue,
+		ErrParameterMissing:      WiseErrorCodeParameterMissing,
+		ErrParameterInvalid:      WiseErrorCodeParameterInvalid,
+		ErrInvalidRequest:        WiseErrorCodeInvalidRequest,
+		ErrUnauthorized:          WiseErrorCodeUnauthorized,
+		ErrForbidden:             WiseErrorCodeForbidden,
+		ErrResourceNotFound:      WiseErrorCodeResourceNotFound,
+		ErrOperationNotSupported: WiseErrorCodeOperationNotSupported,
+		ErrRateLimitExceeded:     WiseErrorCodeRateLimitExceeded,
+		ErrSystemError:           WiseErrorCodeSystemError,
+	}
+
+	if len(codeSentinels) != len(want) {
+		t.Fatalf("codeSentinels has %d entries, want %d — update this pin when curating wave-2", len(codeSentinels), len(want))
+	}
+
+	for sentinel, wantCode := range want {
+		gotCode, ok := codeSentinels[sentinel]
+		if !ok {
+			t.Errorf("codeSentinels is missing a curated sentinel (%v)", sentinel)
+
+			continue
+		}
+
+		if gotCode != wantCode {
+			t.Errorf("codeSentinels[%v] = %q, want %q", sentinel, gotCode, wantCode)
+		}
+	}
+}
+
+// TestAPIErrorMatchesCuratedCodeSentinels pins the Is contract end-to-end:
+// structured-code matching works bare, through fmt.Errorf chains, through
+// Corruption wraps, and through every subtype that embeds APIError — and
+// never fires without the wire code or for non-sentinel targets.
+func TestAPIErrorMatchesCuratedCodeSentinels(t *testing.T) {
+	t.Parallel()
+
+	notFoundBody := `{"errors":[{"code":"resource_not_found","message":"profile not found"}]}`
+
+	t.Run("bare APIError matches", func(t *testing.T) {
+		t.Parallel()
+
+		err := newAPIError(http.StatusNotFound, notFoundBody, nil, 0, "")
+		if !errors.Is(err, ErrResourceNotFound) {
+			t.Errorf("errors.Is(err, ErrResourceNotFound) = false, want true")
+		}
+	})
+
+	t.Run("fmt.Errorf wrap chain still matches", func(t *testing.T) {
+		t.Parallel()
+
+		err := newAPIError(http.StatusNotFound, notFoundBody, nil, 0, "")
+		wrapped := fmt.Errorf("get transfer: %w", err)
+		if !errors.Is(wrapped, ErrResourceNotFound) {
+			t.Errorf("wrapped error lost ErrResourceNotFound match")
+		}
+	})
+
+	t.Run("Corruption wrap still matches", func(t *testing.T) {
+		t.Parallel()
+
+		err := newAPIError(http.StatusNotFound, notFoundBody, nil, 0, "")
+		wrapped := errorfamily.WrapCorruption(err, errorCodeResponseDecode, "decode context")
+		if !errors.Is(wrapped, ErrResourceNotFound) {
+			t.Errorf("Corruption-wrapped error lost ErrResourceNotFound match")
+		}
+	})
+
+	t.Run("subtype promotion: AuthError matches ErrForbidden", func(t *testing.T) {
+		t.Parallel()
+
+		err := newAPIError(http.StatusForbidden,
+			`{"errors":[{"code":"forbidden","message":"insufficient permissions"}]}`, nil, 0, "")
+		if _, ok := errors.AsType[*AuthError](err); !ok {
+			t.Fatalf("expected *AuthError, got %T", err)
+		}
+
+		if !errors.Is(err, ErrForbidden) {
+			t.Errorf("AuthError did not match ErrForbidden through promotion")
+		}
+	})
+
+	t.Run("429 matches ErrRateLimitExceeded when the body says so", func(t *testing.T) {
+		t.Parallel()
+
+		err := newAPIError(http.StatusTooManyRequests,
+			`{"errors":[{"code":"rate_limit_exceeded","message":"slow down"}]}`, nil, time.Second, "ip")
+		if !errors.Is(err, ErrRateLimitExceeded) {
+			t.Errorf("RateLimitError did not match ErrRateLimitExceeded")
+		}
+	})
+
+	t.Run("different sentinel does not match", func(t *testing.T) {
+		t.Parallel()
+
+		err := newAPIError(http.StatusNotFound, notFoundBody, nil, 0, "")
+		if errors.Is(err, ErrRateLimitExceeded) {
+			t.Errorf("resource_not_found error matched ErrRateLimitExceeded")
+		}
+	})
+
+	t.Run("no envelope means no code-sentinel match", func(t *testing.T) {
+		t.Parallel()
+
+		err := newAPIError(http.StatusNotFound, "plain 404", nil, 0, "")
+		if errors.Is(err, ErrResourceNotFound) {
+			t.Errorf("error without structured details matched ErrResourceNotFound")
+		}
+	})
+
+	t.Run("non-sentinel targets stay unmatched", func(t *testing.T) {
+		t.Parallel()
+
+		err := newAPIError(http.StatusNotFound, notFoundBody, nil, 0, "")
+		if errors.Is(err, ErrEmptyRateList) {
+			t.Errorf("APIError matched the response-shape sentinel ErrEmptyRateList")
+		}
+
+		if errors.Is(err, errors.New("wise: resource not found")) {
+			t.Errorf("look-alike error matched by message text")
+		}
+
+		if errors.Is(err, nil) {
+			t.Errorf("errors.Is(err, nil) = true, want false")
+		}
+	})
+}
+
+// TestAPIErrorHasCode pins the open-enum matcher: any wire code works,
+// curated or not, and errors without details never do.
+func TestAPIErrorHasCode(t *testing.T) {
+	t.Parallel()
+
+	err := newAPIError(http.StatusBadRequest,
+		`{"errors":[{"code":"brand_new_code","message":"from the future"}]}`, nil, 0, "")
+
+	apiErr, ok := errors.AsType[*APIError](err)
+	if !ok {
+		t.Fatalf("expected *APIError, got %T", err)
+	}
+
+	if !apiErr.HasCode(WiseErrorCode("brand_new_code")) {
+		t.Errorf("HasCode(brand_new_code) = false, want true (open enum)")
+	}
+
+	if apiErr.HasCode(WiseErrorCodeResourceNotFound) {
+		t.Errorf("HasCode(resource_not_found) = true, want false")
+	}
+
+	empty := &APIError{StatusCode: http.StatusBadRequest}
+	if empty.HasCode(WiseErrorCodeNotValid) {
+		t.Errorf("HasCode on details-less error = true, want false")
 	}
 }
