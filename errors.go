@@ -145,9 +145,11 @@ func (e *SCAChallengeError) Error() string {
 }
 
 // TwoFAApprovalToken returns the one-time token (OTT) this challenge was
-// issued with, for the retry request's x-2fa-approval header.
-func (e *SCAChallengeError) TwoFAApprovalToken() string {
-	return e.Headers.Get(HeaderTwoFAApproval)
+// issued with, for the retry request's x-2fa-approval header. The zero
+// value means Wise issued a tokenless (PSD2 flavor) challenge — nothing to
+// clear programmatically, but the request is still SCA-blocked.
+func (e *SCAChallengeError) TwoFAApprovalToken() OneTimeToken {
+	return OneTimeToken(e.Headers.Get(HeaderTwoFAApproval))
 }
 
 // NotFoundError is returned when the Wise API returns HTTP 404.

@@ -48,7 +48,7 @@ type Client struct {
 	baseURL          string
 	userAgent        string
 	correlationID    string
-	scaApprovalToken string
+	scaApprovalToken OneTimeToken
 	httpClient       Doer
 	logger           Logger
 	retryConfig      retry.Config
@@ -435,7 +435,7 @@ func (c *Client) setHeaders(ctx context.Context, req *http.Request) {
 	}
 
 	if c.scaApprovalToken != "" {
-		req.Header.Set(HeaderTwoFAApproval, c.scaApprovalToken)
+		req.Header.Set(HeaderTwoFAApproval, string(c.scaApprovalToken))
 	}
 }
 

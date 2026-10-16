@@ -6,6 +6,7 @@ import (
 	"encoding/json/v2"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	errorfamily "github.com/larsartmann/go-error-family"
@@ -18,6 +19,36 @@ import (
 // Header.Get/Set use as map keys; on the wire HTTP header names are
 // case-insensitive).
 const HeaderOneTimeToken = "One-Time-Token"
+
+// OneTimeToken is the opaque credential Wise issues in the x-2fa-approval
+// header of an SCA challenge: proof that the holder (or their user) cleared
+// the challenge's requirements. It is a SECRET — never log it, never put it
+// in an error message; pass it to the OTT endpoints and to
+// [WithSCAApprovalToken], and prefer reporting only whether one was issued
+// ([OneTimeToken.IsZero]). The zero value means "no token" (Wise's PSD2
+// flavor issues tokenless challenges — blocked, but with nothing to clear).
+//
+// It is a distinct type so an OTT can never be accidentally passed where an
+// OTP code (the 6-digit user entry), an API key, or any other string is
+// expected — the surrounding signatures would otherwise all be bare strings.
+type OneTimeToken string
+
+// NewOneTimeToken validates and returns a OneTimeToken. It rejects empty and
+// whitespace-only values: a usable OTT is always non-blank, and an opaque
+// credential must never be silently trimmed.
+func NewOneTimeToken(value string) (OneTimeToken, error) {
+	if strings.TrimSpace(value) == "" {
+		return "", errorfamily.NewRejection("wise.ott.invalid_request",
+			"one-time token is required — the OTT issued in the x-2fa-approval header "+
+				"of the SCA challenge")
+	}
+
+	return OneTimeToken(value), nil
+}
+
+// IsZero reports whether the token is absent — either Wise issued a
+// tokenless challenge, or no challenge was seen at all.
+func (t OneTimeToken) IsZero() bool { return t == "" }
 
 // OTTChannel is the phone-based delivery channel of a one-time password for
 // an OTT challenge. Wise serves a trigger and a verify endpoint per channel.
@@ -118,6 +149,11 @@ func (c OTTChallenge) Supports(channel OTTChannel) bool {
 	return false
 }
 
+// OTTAction names the action a one-time token authorizes, e.g.
+// "BALANCE__GET_STATEMENT" for a balance statement download. It is an open
+// enum: Wise adds actions, so unknown values pass through.
+type OTTAction string
+
 // OTTStatus is the parsed state of a one-time token: its challenges, the
 // remaining validity, the action the token authorizes (e.g.
 // BALANCE__GET_STATEMENT), and the user who created it.
@@ -127,7 +163,7 @@ type OTTStatus struct {
 	Validity time.Duration
 	// ActionType names the action the token authorizes, e.g.
 	// "BALANCE__GET_STATEMENT" for a balance statement download.
-	ActionType string
+	ActionType OTTAction
 	UserID     UserID
 }
 
@@ -178,8 +214,8 @@ const maxOTTClearRounds = 5
 
 // ottHeaders builds the extra-headers map the OTT endpoints require. The OTT
 // travels in a header, never in a URL, body, or error message.
-func ottHeaders(ott string) map[string]string {
-	return map[string]string{HeaderOneTimeToken: ott}
+func ottHeaders(ott OneTimeToken) map[string]string {
+	return map[string]string{HeaderOneTimeToken: string(ott)}
 }
 
 // GetOTTStatus retrieves the challenge state of a one-time token
@@ -187,7 +223,7 @@ func ottHeaders(ott string) map[string]string {
 // clear it, their types and alternatives, the remaining validity, and the
 // authorized action. The personal API token authorizes the call; the OTT is
 // the one issued in the x-2fa-approval header of an [SCAChallengeError].
-func (c *Client) GetOTTStatus(ctx context.Context, ott string) (*OTTStatus, error) {
+func (c *Client) GetOTTStatus(ctx context.Context, ott OneTimeToken) (*OTTStatus, error) {
 	if err := requireOTT(ott); err != nil {
 		return nil, err
 	}
@@ -208,7 +244,7 @@ func (c *Client) GetOTTStatus(ctx context.Context, ott string) (*OTTStatus, erro
 // The OTP arrives out of band; submit it with [Client.VerifyOTT]. Triggering
 // is required before verifying. On the sandbox no real SMS is sent and the
 // OTP is always "111111".
-func (c *Client) TriggerOTT(ctx context.Context, ott string, channel OTTChannel) (*OTTTriggerResult, error) {
+func (c *Client) TriggerOTT(ctx context.Context, ott OneTimeToken, channel OTTChannel) (*OTTTriggerResult, error) {
 	if err := requireOTT(ott); err != nil {
 		return nil, err
 	}
@@ -236,7 +272,7 @@ func (c *Client) TriggerOTT(ctx context.Context, ott string, channel OTTChannel)
 // OTT in the x-2fa-approval header via [WithSCAApprovalToken].
 func (c *Client) VerifyOTT(
 	ctx context.Context,
-	ott string,
+	ott OneTimeToken,
 	channel OTTChannel,
 	otpCode string,
 ) (*OTTStatus, error) {
@@ -285,7 +321,7 @@ func (c *Client) VerifyOTT(
 // statement instead.
 func (c *Client) ClearSCAChallenge(
 	ctx context.Context,
-	ott string,
+	ott OneTimeToken,
 	channel OTTChannel,
 	code OTTCodeProvider,
 ) (*OTTStatus, error) {
@@ -354,9 +390,9 @@ func rejectionUnsupportedChallenge(challenge OTTChallenge, channel OTTChannel) *
 			challenge.Primary.Type, channel, types))
 }
 
-// requireOTT rejects an empty one-time token before any request is made.
-func requireOTT(ott string) error {
-	if ott == "" {
+// requireOTT rejects an absent one-time token before any request is made.
+func requireOTT(ott OneTimeToken) error {
+	if ott.IsZero() {
 		return errorfamily.NewRejection("wise.ott.invalid_request",
 			"ott is required — the one-time token issued in the x-2fa-approval header of the SCA challenge")
 	}
@@ -392,7 +428,7 @@ func toOTTStatus(response raw.OTTResponse) (*OTTStatus, error) {
 	return &OTTStatus{
 		Challenges: challenges,
 		Validity:   time.Duration(properties.Validity) * time.Second,
-		ActionType: properties.ActionType,
+		ActionType: OTTAction(properties.ActionType),
 		UserID:     NewUserID(properties.UserID),
 	}, nil
 }

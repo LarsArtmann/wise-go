@@ -16,7 +16,7 @@ type config struct {
 	retryMax         time.Duration
 	httpClient       Doer
 	correlationID    string
-	scaApprovalToken string
+	scaApprovalToken OneTimeToken
 	logger           Logger
 }
 
@@ -158,7 +158,7 @@ func correlationIDFromContext(ctx context.Context) string {
 // per ~90 days for SCA-protected endpoints such as balance statements on
 // UK/EEA profiles). Once the challenge window is satisfied, remove the token
 // again.
-func WithSCAApprovalToken(token string) Option {
+func WithSCAApprovalToken(token OneTimeToken) Option {
 	return func(c *config) {
 		c.scaApprovalToken = token
 	}
