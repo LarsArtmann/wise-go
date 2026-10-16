@@ -74,58 +74,58 @@ Nothing at HEAD is broken — tree clean, every gate green. The honest failures 
 
 ## f) UP TO 50 THINGS TO GET DONE NEXT (brainstorm — most are ROADMAP fuel, not commitments)
 
-| # | Task | Lane |
-|---|------|------|
-| 1 | Enable CI (`gh workflow enable ci`) + watch first run | user word |
-| 2 | Post-first-green: art-dupl blocking decision (warn-first 2 weeks vs promote) | user word |
-| 3 | Set `CACHIX_AUTH_TOKEN` secret (commands in asks doc) | user word |
-| 4 | Set `ERRAUDIT_TOKEN` secret | user word |
-| 5 | Push master when tree is clean + lint-green | user word |
-| 6 | Execute darwin decision (D5): drop x86_64-darwin or pin 26.05 | user word |
-| 7 | Tag v1.0.0 on your word (pre-release `--shuffle` chain first) | user word |
-| 8 | Finish AGENTS prune <30 KB (dedicated bullet-by-bullet session) | wise-go |
-| 9 | HARVEST both status reports' §f (22:44's 50 items + this one) into TODO_LIST/ROADMAP | docs-health |
-| 10 | `WISE_SANDBOX_API_KEY` lane: 5-assumption live pass | blocked on key |
-| 11 | OTT `2026Q4` probe; flip `ottAPIVersion` if non-404 | blocked on key |
-| 12 | First recorded sandbox-live workflow run + CHANGELOG entry | blocked on key |
-| 13 | bank-sync redeploy + FX footer verify (host config bump) | consumer |
-| 14 | Health P1b: implement `VerifyCredentials` in v1.1 after design word | user word |
-| 15 | Scheduled spec-drift `--fail-on-drift` CI job (weekly) | needs CI |
-| 16 | BuildFlow #64 fix: statix `--json`/`--oneline` dedicated parser | BuildFlow repo |
-| 17 | BuildFlow #65 fix: applicability filter for health checks | BuildFlow repo |
-| 18 | BuildFlow #63 fix: auto-configure `WithUserDisabled` (stops lll fleet recurrence) | BuildFlow repo |
-| 19 | Rebuild buildflow binary (manual profile swap per #35) | BuildFlow repo |
-| 20 | spec_drift extractor rewrite on `go/parser` | wise-go long-arc |
-| 21 | `nix flake update nixpkgs` window + vendorHash cascade (also the vulnix lever) | quiet window |
-| 22 | Verify coverage badge unfreezes on first master push post-enable | needs CI |
-| 23 | apidiff re-check now that the error-system surface landed post-tag | wise-go |
-| 24 | CHANGELOG entries for tonight's gate work (script-fixtures, linter-allowlist, `--min-endpoints`) | wise-go |
-| 25 | Verify the error-plan's "snippets compile vs v0.13.0 AND master" mechanical check actually landed | wise-go |
-| 26 | Validate the bank-sync consumer recipe against the NEW error surface (`APIError.Details`, `WiseErrorCode`) | consumer |
-| 27 | Disposition buildflow's bundled art-dupl step (warned 20 findings at its own threshold) — skip_steps like erraudit, or accept as noise | wise-go |
-| 28 | TODO rows per filed upstream issue (#64/#65/#63) so responses get noticed | wise-go |
-| 29 | Drop the volatile art-dupl group count from AGENTS (keep the gate command) | wise-go |
-| 30 | Fixture README for `scripts/testdata/spec_drift/` (case → expected exit table) | wise-go |
-| 31 | benchstat into the devShell | wise-go |
-| 32 | go.mod guard step: assert `grep '^go '` stays 1.26.x until the 1.27 flip (cheap daemon-sweep tripwire) | wise-go |
-| 33 | pin-sync app on a CI schedule (currently dispatch/pre-release only) | needs CI |
-| 34 | Negative fixture: spec_drift METHOD-GONE case (only MISSING is covered) | wise-go |
-| 35 | Negative fixture: pin-sync rev-pinned-but-lock-entry-missing | wise-go |
-| 36 | Normalize the narratives file into titled sections | wise-go |
-| 37 | Archive the 21:45 plan when M4/M22/M23/M25/M27 close (fully struck) | docs-health |
-| 38 | Annotate + archive the 23:30 error-system status report when its tail ships | docs-health |
-| 39 | ROADMAP: error-system wave-2 items (their decision-gated tier) | docs-health |
-| 40 | ROADMAP: post-probe OTT rollover follow-up | docs-health |
-| 41 | Spot-check the `jwsjwe` method-change FEATURES row reflects POST post-2027Q1 | wise-go |
-| 42 | Consider `--fail-on-findings` CI posture experiment after CI settles | needs CI |
-| 43 | Backport the linter-allowlist gate pattern to sibling repos (fleet) | fleet |
-| 44 | crush-config lesson: daemon-mixed-authority commits during parallel buildflow runs | crush-config |
-| 45 | Discoverability: link decision memos + open asks from README or CONTRIBUTING | wise-go |
-| 46 | coverage-floor-parity: confirm belt-and-braces role is documented where a stranger would look | wise-go |
-| 47 | Gitleaks allowlist: re-verify after next spec re-vendor (new fixtures may add example secrets) | wise-go |
-| 48 | Decide LSP tripwire institutionalization (crushrc guard already warns; document the restart remedy in AGENTS — done tonight — and stop) | wise-go |
-| 49 | v0.14.1 decision: does the post-tag error-surface + gate work warrant a patch release before v1.0? | user word |
-| 50 | Retire this session's own scratch: `/tmp` evidence files are ephemeral — the durable repro evidence for #64/#65 lives in the issues; nothing to do, recorded for honesty | none |
+| #  | Task                                                                                                                                                                     | Lane             |
+| -- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------- |
+| 1  | Enable CI (`gh workflow enable ci`) + watch first run                                                                                                                    | user word        |
+| 2  | Post-first-green: art-dupl blocking decision (warn-first 2 weeks vs promote)                                                                                             | user word        |
+| 3  | Set `CACHIX_AUTH_TOKEN` secret (commands in asks doc)                                                                                                                    | user word        |
+| 4  | Set `ERRAUDIT_TOKEN` secret                                                                                                                                              | user word        |
+| 5  | Push master when tree is clean + lint-green                                                                                                                              | user word        |
+| 6  | Execute darwin decision (D5): drop x86_64-darwin or pin 26.05                                                                                                            | user word        |
+| 7  | Tag v1.0.0 on your word (pre-release `--shuffle` chain first)                                                                                                            | user word        |
+| 8  | Finish AGENTS prune <30 KB (dedicated bullet-by-bullet session)                                                                                                          | wise-go          |
+| 9  | HARVEST both status reports' §f (22:44's 50 items + this one) into TODO_LIST/ROADMAP                                                                                     | docs-health      |
+| 10 | `WISE_SANDBOX_API_KEY` lane: 5-assumption live pass                                                                                                                      | blocked on key   |
+| 11 | OTT `2026Q4` probe; flip `ottAPIVersion` if non-404                                                                                                                      | blocked on key   |
+| 12 | First recorded sandbox-live workflow run + CHANGELOG entry                                                                                                               | blocked on key   |
+| 13 | bank-sync redeploy + FX footer verify (host config bump)                                                                                                                 | consumer         |
+| 14 | Health P1b: implement `VerifyCredentials` in v1.1 after design word                                                                                                      | user word        |
+| 15 | Scheduled spec-drift `--fail-on-drift` CI job (weekly)                                                                                                                   | needs CI         |
+| 16 | BuildFlow #64 fix: statix `--json`/`--oneline` dedicated parser                                                                                                          | BuildFlow repo   |
+| 17 | BuildFlow #65 fix: applicability filter for health checks                                                                                                                | BuildFlow repo   |
+| 18 | BuildFlow #63 fix: auto-configure `WithUserDisabled` (stops lll fleet recurrence)                                                                                        | BuildFlow repo   |
+| 19 | Rebuild buildflow binary (manual profile swap per #35)                                                                                                                   | BuildFlow repo   |
+| 20 | spec_drift extractor rewrite on `go/parser`                                                                                                                              | wise-go long-arc |
+| 21 | `nix flake update nixpkgs` window + vendorHash cascade (also the vulnix lever)                                                                                           | quiet window     |
+| 22 | Verify coverage badge unfreezes on first master push post-enable                                                                                                         | needs CI         |
+| 23 | apidiff re-check now that the error-system surface landed post-tag                                                                                                       | wise-go          |
+| 24 | CHANGELOG entries for tonight's gate work (script-fixtures, linter-allowlist, `--min-endpoints`)                                                                         | wise-go          |
+| 25 | Verify the error-plan's "snippets compile vs v0.13.0 AND master" mechanical check actually landed                                                                        | wise-go          |
+| 26 | Validate the bank-sync consumer recipe against the NEW error surface (`APIError.Details`, `WiseErrorCode`)                                                               | consumer         |
+| 27 | Disposition buildflow's bundled art-dupl step (warned 20 findings at its own threshold) — skip_steps like erraudit, or accept as noise                                   | wise-go          |
+| 28 | TODO rows per filed upstream issue (#64/#65/#63) so responses get noticed                                                                                                | wise-go          |
+| 29 | Drop the volatile art-dupl group count from AGENTS (keep the gate command)                                                                                               | wise-go          |
+| 30 | Fixture README for `scripts/testdata/spec_drift/` (case → expected exit table)                                                                                           | wise-go          |
+| 31 | benchstat into the devShell                                                                                                                                              | wise-go          |
+| 32 | go.mod guard step: assert `grep '^go '` stays 1.26.x until the 1.27 flip (cheap daemon-sweep tripwire)                                                                   | wise-go          |
+| 33 | pin-sync app on a CI schedule (currently dispatch/pre-release only)                                                                                                      | needs CI         |
+| 34 | Negative fixture: spec_drift METHOD-GONE case (only MISSING is covered)                                                                                                  | wise-go          |
+| 35 | Negative fixture: pin-sync rev-pinned-but-lock-entry-missing                                                                                                             | wise-go          |
+| 36 | Normalize the narratives file into titled sections                                                                                                                       | wise-go          |
+| 37 | Archive the 21:45 plan when M4/M22/M23/M25/M27 close (fully struck)                                                                                                      | docs-health      |
+| 38 | Annotate + archive the 23:30 error-system status report when its tail ships                                                                                              | docs-health      |
+| 39 | ROADMAP: error-system wave-2 items (their decision-gated tier)                                                                                                           | docs-health      |
+| 40 | ROADMAP: post-probe OTT rollover follow-up                                                                                                                               | docs-health      |
+| 41 | Spot-check the `jwsjwe` method-change FEATURES row reflects POST post-2027Q1                                                                                             | wise-go          |
+| 42 | Consider `--fail-on-findings` CI posture experiment after CI settles                                                                                                     | needs CI         |
+| 43 | Backport the linter-allowlist gate pattern to sibling repos (fleet)                                                                                                      | fleet            |
+| 44 | crush-config lesson: daemon-mixed-authority commits during parallel buildflow runs                                                                                       | crush-config     |
+| 45 | Discoverability: link decision memos + open asks from README or CONTRIBUTING                                                                                             | wise-go          |
+| 46 | coverage-floor-parity: confirm belt-and-braces role is documented where a stranger would look                                                                            | wise-go          |
+| 47 | Gitleaks allowlist: re-verify after next spec re-vendor (new fixtures may add example secrets)                                                                           | wise-go          |
+| 48 | Decide LSP tripwire institutionalization (crushrc guard already warns; document the restart remedy in AGENTS — done tonight — and stop)                                  | wise-go          |
+| 49 | v0.14.1 decision: does the post-tag error-surface + gate work warrant a patch release before v1.0?                                                                       | user word        |
+| 50 | Retire this session's own scratch: `/tmp` evidence files are ephemeral — the durable repro evidence for #64/#65 lives in the issues; nothing to do, recorded for honesty | none             |
 
 ## g) THREE QUESTIONS I CANNOT FIGURE OUT MYSELF
 

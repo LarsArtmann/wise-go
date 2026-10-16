@@ -12,6 +12,7 @@ a `//go:build live` file tag (excluded from default builds) and an
 env-gated skip (`t.Skip` when the key is absent) inside the normal surface.
 
 **Options.**
+
 - (a) `//go:build live` — explicit, zero runtime cost, but the tagged file
   is INVISIBLE to default `go test ./...`, IDE runs, and `nix flake check`;
   it rots unless a dedicated step compiles it (fleet lesson: unverified
@@ -35,6 +36,7 @@ semantics honest and pinned the typed-error contract. The open question is
 whether the CODE should also offer a cheaper probe.
 
 **Options.**
+
 - (a) Status quo — `Health` stays the deep readiness probe; docs tell the
   consumer to wrap it with their own timeout.
 - (b) Fail-fast variant — a `VerifyCredentials(ctx)`-style alias that does
@@ -55,6 +57,7 @@ is currently report-only everywhere; `--fail-on-drift` exists but nothing
 wires it.
 
 **Options.**
+
 - (a) Fail the pre-release chain on drift — guarantees the vendored spec
   is fresh at every release; blocks a release on upstream's cadence.
 - (b) Keep pre-release report-only; run `--fail-on-drift` on a schedule
@@ -76,6 +79,7 @@ flake rev == go.mod tag commit. The 2026-10-07 audit found tag-object pins
 and two-minors-of-drift exactly where this gate was missing.
 
 **Options.**
+
 - (a) Status quo — rev pins + pin-sync gate; every dep bump touches go.mod
   AND flake.nix in one change.
 - (b) Tag pins (`github:.../v0.11.0`) — the flake input tracks the tag
@@ -96,6 +100,7 @@ narHash-locked refs — unchanged.
 evaluate clean). No known consumer builds wise-go on x86_64-darwin.
 
 **Options.**
+
 - (a) Pin a `nixpkgs-26.05-darwin` input for the darwin leg — keeps the
   system, adds a second nixpkgs input to update and vendorHash-shift.
 - (b) Drop x86_64-darwin from the matrix — `--all-systems` covers
