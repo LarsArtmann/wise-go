@@ -59,6 +59,7 @@
         ./client.go
         ./transactions.go
         ./transfers.go
+        ./third_party_transfers.go
         ./types.go
         ./rates.go
         ./quotes.go
