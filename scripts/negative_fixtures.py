@@ -67,7 +67,7 @@ PIN_SYNC_CASES = {
     ),
     "missing_input": (
         GO_MOD,
-        "{\n  input-unrelated = \"github:LarsArtmann/some-other-repo?rev=%s\";\n}\n"
+        '{\n  input-unrelated = "github:LarsArtmann/some-other-repo?rev=%s";\n}\n'
         % REV_A,
         FLAKE_LOCK_FMT.format(rev=REV_A),
         1,
@@ -84,7 +84,13 @@ PIN_SYNC_CASES = {
 
 # name -> (inline spec content or None, extra args, expected exit, expected substring)
 SPEC_DRIFT_CASES = [
-    ("broken_json", "not json {{{", ["--spec-file", "@broken@"], 3, "could not load live spec"),
+    (
+        "broken_json",
+        "not json {{{",
+        ["--spec-file", "@broken@"],
+        3,
+        "could not load live spec",
+    ),
     ("missing_endpoint", None, ["--spec-file", "@minimal@"], 1, "problem(s)"),
     (
         "stale_snapshot_failing",
@@ -142,11 +148,7 @@ def main() -> int:
         if args.testdata_dir
         else scripts_dir / "testdata"
     )
-    repo_root = (
-        pathlib.Path(args.repo_root)
-        if args.repo_root
-        else scripts_dir.parent
-    )
+    repo_root = pathlib.Path(args.repo_root) if args.repo_root else scripts_dir.parent
 
     with tempfile.TemporaryDirectory() as tmp:
         tmpdir = pathlib.Path(tmp)
@@ -205,9 +207,7 @@ def run_all(
         spec_args = [
             a.replace("@minimal@", str(minimal))
             .replace("@broken@", str(spec_file))
-            .replace(
-                "@plus_one@", str(testdata / "spec_drift" / "plus_one.json")
-            )
+            .replace("@plus_one@", str(testdata / "spec_drift" / "plus_one.json"))
             for a in extra
         ]
         result = subprocess.run(

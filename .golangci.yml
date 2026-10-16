@@ -72,6 +72,7 @@ linters:
     - intrange
     - iotamixing
     - ireturn
+    - lll
     - loggercheck
     - maintidx
     - makezero
@@ -293,7 +294,7 @@ linters:
         text: unused
         linters:
           - unused
-      - source: '//nolint:branching-flow:'
+      - source: "//nolint:branching-flow:"
         linters:
           - nolintlint
     paths:

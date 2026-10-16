@@ -912,6 +912,44 @@ codes. Clear the challenge through the one-time-token endpoints, then retry
 with the token from `TwoFAApprovalToken()`; the full flow is in
 [Strong Customer Authentication](#strong-customer-authentication-sca).
 
+### Consumer recipe: transfer with funding fallback
+
+The pattern bank-sync runs in production: branch on the typed error for
+transport decisions, on the granular codes for Wise's reasons, and on the
+funding result's own `FundingErrorCode` for pay-in problems.
+
+```go
+transfer, err := client.CreateTransfer(ctx, createReq)
+if err != nil {
+    switch {
+    case errors.Is(err, wise.ErrNotValid):
+        // Wise rejected a value; retrying identical input will fail again.
+        return fmt.Errorf("fix the transfer request, do not retry: %w", err)
+    case errors.Is(err, wise.ErrResourceNotFound):
+        // The quote or recipient vanished; refresh, then build a new request.
+        return fmt.Errorf("refresh the referenced resource: %w", err)
+    case errors.Is(err, wise.ErrRateLimitExceeded):
+        // Transient; the SDK's retry path honors Retry-After automatically.
+        return fmt.Errorf("throttled, retry later: %w", err)
+    default:
+        return fmt.Errorf("create transfer: %w", err)
+    }
+}
+
+funded, err := client.FundTransfer(ctx, profileID, transfer.ID)
+if err != nil {
+    return fmt.Errorf("fund transfer: %w", err)
+}
+
+if funded.Status == wise.FundingStatusRejected {
+    if funded.ErrorCode == wise.FundingErrorCodeBalanceInsufficientFunds {
+        // Top up the balance, then fund the same transfer again; the
+        // transfer itself was created fine.
+        return ErrTopUpRequired
+    }
+}
+```
+
 ## Strong Customer Authentication (SCA)
 
 Some Wise endpoints (balance statements for UK/EEA profiles among them) are

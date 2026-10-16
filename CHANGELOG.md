@@ -8,6 +8,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Structured error surface** (`errors.go`): non-2xx responses no longer
+  discard Wise's structured error envelope. `APIError.Details` carries every
+  `errors[].code` / `errors[].message` entry in wire order, typed as
+  `WiseErrorDetail{Code WiseErrorCode, Message string}`; `Message` keeps its
+  historical flattened join byte-for-byte. `WiseErrorCode` is an open enum
+  (14 documented codes from the spec census; unknown wire values pass
+  through), matchable three ways: `errors.AsType` for the typed error's
+  fields, `errors.Is(err, wise.ErrX)` for the 11 curated wave-1 code
+  sentinels (`ErrNotValid`, `ErrInvalidValue`, `ErrParameterMissing`,
+  `ErrParameterInvalid`, `ErrInvalidRequest`, `ErrUnauthorized`,
+  `ErrForbidden`, `ErrResourceNotFound`, `ErrOperationNotSupported`,
+  `ErrRateLimitExceeded`, `ErrSystemError`) — wrap-proof through any
+  `fmt.Errorf("%w")` chain — and `APIError.HasCode` for everything else.
+  `ErrorContext()` now includes the first granular code as `wise_code`.
+- **`BadRequestError`** (`wise.bad_request`): HTTP 400 responses are now a
+  first-class typed error (promoted Rejection family, non-retryable) instead
+  of a bare `*APIError`; Wise's granular reason codes arrive in `Details`.
+- **`docs/error-codes.md`**: reference for every granular code — sentinel,
+  typical HTTP status, retry guidance, and matching recipes.
 - **Central, named error catalog** (`errors.go`): every error code the SDK
   emits is a named constant (51 domain codes alongside the six typed-error
   codes) — call sites reference the constant, tests pin the wire value. The

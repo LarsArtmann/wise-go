@@ -273,7 +273,7 @@ Routed here from `docs/status/archived/2026-05-17_18-48`,
 2026-09-16 → 2026-10-07 status reports — demand-gated raw ideas, not
 scheduled work:
 
-- **Typed `BadRequestError`** for 400 responses (design idea; today 400s are `*APIError`).
+- ~~**Typed `BadRequestError`** for 400 responses~~ SHIPPED 2026-10-16 (error-system execution): 400s surface `*BadRequestError` (`wise.bad_request`) with Wise's granular reason codes in `APIError.Details`.
 - **Circuit breaker** — go-retry does not provide one; wiring one is new in-house code (or go-cqrs-lite middleware). Only with a consumer demand signal.
 - **`WithMetrics` hook** — Prometheus/OTel counters and histograms (Axis 3 medium-term).
 - **GoReleaser-style release automation** — tags are manual + annotated today.
