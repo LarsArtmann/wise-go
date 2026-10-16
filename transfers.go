@@ -495,3 +495,47 @@ func mapTransferPayment(payment raw.TransferPayment) (TransferPayment, error) {
 		Updated:        updated,
 	}, nil
 }
+
+// GetUSCombinedReceipt downloads the US combined disclosure receipt for a
+// transfer (GET /v3/transfers/{transferId}/us-combined-receipt.pdf). US
+// retail consumers must use this receipt instead of the standard
+// GetTransferReceipt; note the /v3/ version prefix Wise puts on this path.
+//
+// The document becomes available at incoming_payment_initiated and again at
+// outgoing_payment_sent; a 404 (*NotFoundError) before that means "not
+// issued yet", not a hard failure.
+func (c *Client) GetUSCombinedReceipt(ctx context.Context, transferID TransferID) ([]byte, error) {
+	if err := requireID(transferID, "wise.transfer.invalid_request", "transferID"); err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/v3/transfers/%d/us-combined-receipt.pdf", transferID.Get())
+
+	data, err := c.getRaw(ctx, path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("get US combined receipt for transfer %d: %w", transferID.Get(), err)
+	}
+
+	return data, nil
+}
+
+// GetTransferNOC downloads the no-objection certificate for a transfer
+// (GET /v1/transfers/{transferId}/documents/noc) — the document INR
+// recipients use to obtain a FIRC from their bank.
+//
+// The endpoint answers 404 (*NotFoundError) until the transfer reaches
+// outgoing_payment_sent; treat that as "not issued yet", not a hard failure.
+func (c *Client) GetTransferNOC(ctx context.Context, transferID TransferID) ([]byte, error) {
+	if err := requireID(transferID, "wise.transfer.invalid_request", "transferID"); err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/v1/transfers/%d/documents/noc", transferID.Get())
+
+	data, err := c.getRaw(ctx, path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("get NOC for transfer %d: %w", transferID.Get(), err)
+	}
+
+	return data, nil
+}
