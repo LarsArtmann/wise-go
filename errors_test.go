@@ -716,6 +716,32 @@ func TestErrorContexts(t *testing.T) {
 		}
 	})
 
+	t.Run("APIError context carries the first granular wise_code when details exist", func(t *testing.T) {
+		t.Parallel()
+
+		apiErr := &APIError{
+			StatusCode: http.StatusBadRequest,
+			Details: []WiseErrorDetail{
+				{Code: WiseErrorCodeParameterMissing, Message: "source is required"},
+				{Code: WiseErrorCodeNotValid, Message: "amount is invalid"},
+			},
+		}
+
+		ctx := apiErr.ErrorContext()
+		if got := ctx["wise_code"]; got != "parameter_missing" {
+			t.Errorf("wise_code = %q, want the first detail's code parameter_missing", got)
+		}
+	})
+
+	t.Run("APIError context omits wise_code without details", func(t *testing.T) {
+		t.Parallel()
+
+		apiErr := &APIError{StatusCode: http.StatusConflict}
+		if _, present := apiErr.ErrorContext()["wise_code"]; present {
+			t.Errorf("wise_code present without details, want absent")
+		}
+	})
+
 	t.Run("RateLimitError context carries retry-after and scope", func(t *testing.T) {
 		t.Parallel()
 
@@ -732,6 +758,22 @@ func TestErrorContexts(t *testing.T) {
 
 		if ctx["rate_limited_by"] != "ip" {
 			t.Errorf("ErrorContext = %v, want rate_limited_by ip", ctx)
+		}
+	})
+
+	t.Run("RateLimitError context carries the granular wise_code", func(t *testing.T) {
+		t.Parallel()
+
+		rateLimitErr := &RateLimitError{
+			APIError: APIError{
+				StatusCode: http.StatusTooManyRequests,
+				Details:    []WiseErrorDetail{{Code: WiseErrorCodeRateLimitExceeded, Message: "slow down"}},
+			},
+			RetryAfter: time.Second,
+		}
+
+		if got := rateLimitErr.ErrorContext()["wise_code"]; got != "rate_limit_exceeded" {
+			t.Errorf("wise_code = %q, want rate_limit_exceeded", got)
 		}
 	})
 
@@ -1462,24 +1504,35 @@ func assertMatrixClassification(t *testing.T, tt errorMatrixRow, err error) {
 // embeddedAPIError reaches the APIError value embedded in whichever typed
 // wrapper newAPIError produced.
 func embeddedAPIError(err error) *APIError {
-	switch typed := err.(type) {
-	case *APIError:
+	if typed, ok := errors.AsType[*APIError](err); ok {
 		return typed
-	case *RateLimitError:
-		return &typed.APIError
-	case *AuthError:
-		return &typed.APIError
-	case *SCAChallengeError:
-		return &typed.APIError
-	case *NotFoundError:
-		return &typed.APIError
-	case *BadRequestError:
-		return &typed.APIError
-	case *ServerError:
-		return &typed.APIError
-	default:
-		return nil
 	}
+
+	if typed, ok := errors.AsType[*RateLimitError](err); ok {
+		return &typed.APIError
+	}
+
+	if typed, ok := errors.AsType[*AuthError](err); ok {
+		return &typed.APIError
+	}
+
+	if typed, ok := errors.AsType[*SCAChallengeError](err); ok {
+		return &typed.APIError
+	}
+
+	if typed, ok := errors.AsType[*NotFoundError](err); ok {
+		return &typed.APIError
+	}
+
+	if typed, ok := errors.AsType[*BadRequestError](err); ok {
+		return &typed.APIError
+	}
+
+	if typed, ok := errors.AsType[*ServerError](err); ok {
+		return &typed.APIError
+	}
+
+	return nil
 }
 
 // assertMatrixMatching checks the structured-details and code-sentinel

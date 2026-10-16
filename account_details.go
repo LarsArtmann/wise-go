@@ -108,6 +108,8 @@ type AccountDetails struct {
 
 // AccountIdentification is the country/scheme-specific account number block.
 // Exactly one member is present; anything else is a corrupt response.
+//
+// art-dupl:accept parsed domain types intentionally mirror the tagged wire types in internal/raw; the tag-free domain layer decouples callers from the JSON shapes
 type AccountIdentification struct {
 	BE *BEAccountIdentification
 	GB *GBAccountIdentification

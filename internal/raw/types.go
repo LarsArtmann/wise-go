@@ -104,6 +104,8 @@ type AccountDetails struct {
 
 // AccountIdentification is the country/scheme-specific account number block
 // of an account-details set: a spec oneOf, so exactly one member is present.
+//
+// art-dupl:accept wire types intentionally mirror the parsed domain types in the root wise package; the tag-free domain layer decouples callers from the JSON shapes
 type AccountIdentification struct {
 	BE *BEAccountIdentification `json:"beAccountIdentification,omitempty"`
 	GB *GBAccountIdentification `json:"gbAccountIdentification,omitempty"`

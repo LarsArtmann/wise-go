@@ -268,9 +268,15 @@ func (e *APIError) ErrorFamily() errorfamily.Family {
 }
 
 func (e *APIError) ErrorContext() map[string]string {
-	return map[string]string{
+	ctx := map[string]string{
 		"status_code": strconv.Itoa(e.StatusCode),
 	}
+
+	if len(e.Details) > 0 {
+		ctx["wise_code"] = string(e.Details[0].Code)
+	}
+
+	return ctx
 }
 
 // HasCode reports whether any structured error detail carries the given Wise
@@ -331,6 +337,11 @@ func (e *RateLimitError) ErrorContext() map[string]string {
 		"status_code": strconv.Itoa(e.StatusCode),
 		"retry_after": e.RetryAfter.String(),
 	}
+
+	if len(e.Details) > 0 {
+		ctx["wise_code"] = string(e.Details[0].Code)
+	}
+
 	if e.RateLimitedBy != "" {
 		ctx["rate_limited_by"] = e.RateLimitedBy
 	}

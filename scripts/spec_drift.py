@@ -53,6 +53,14 @@ KNOWN_EXEMPTIONS = {
     "/profiles/{d}/balance-statements/{d}/statement.{s}": "spec declares only the .json variant (same exemption as the spec-conformance gate)",
 }
 
+# Extraction floor: a call-shape change (new wrapper idiom the regexes do not
+# know) silently shrinks the extracted surface and the check would then pass
+# while comparing far fewer endpoints than the SDK really has. 43 endpoints at
+# the 46-method surface (2026-10-16); fail well below that, and only ever
+# tighter as the surface grows. --min-endpoints overrides it for intentional
+# surface changes.
+EXTRACTION_FLOOR = 40
+
 
 def load_spec(spec_file: str | None, url: str) -> dict:
     if spec_file:
@@ -268,6 +276,13 @@ def main() -> int:
         help="exit 2 when the vendored snapshot is stale",
     )
     parser.add_argument(
+        "--min-endpoints",
+        type=int,
+        default=None,
+        metavar="N",
+        help="override the extraction floor (intentional surface changes)",
+    )
+    parser.add_argument(
         "--verbose",
         action="store_true",
         help="list every extracted endpoint and its match",
@@ -309,16 +324,12 @@ def main() -> int:
     unresolved = sorted(norm for method, norm in unique if method == "UNRESOLVED")
     unique = {(method, norm) for method, norm in unique if method != "UNRESOLVED"}
 
-    # Extraction-floor guard: a call-shape change (new wrapper idiom the
-    # regexes do not know) silently shrinks the extracted surface and the
-    # check would then pass while comparing far fewer endpoints than the SDK
-    # really has. 43 endpoints at the 46-method surface (2026-10-16); fail
-    # well below that, and only ever tighter as the surface grows.
-    EXTRACTION_FLOOR = 40
-    if len(unique) < EXTRACTION_FLOOR:
+    # Extraction-floor guard: see EXTRACTION_FLOOR above the module constants.
+    floor = args.min_endpoints if args.min_endpoints is not None else EXTRACTION_FLOOR
+    if len(unique) < floor:
         print(
             f"FAIL: extraction floor broken: {len(unique)} resolved endpoints "
-            f"extracted, expected >= {EXTRACTION_FLOOR}; the SDK grew or the "
+            f"extracted, expected >= {floor}; the SDK grew or the "
             f"extractor lost call shapes (check new request-helper idioms)",
             file=sys.stderr,
         )
