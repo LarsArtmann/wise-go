@@ -50,6 +50,7 @@ Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise'
   - [Currencies](#currencies)
 - [Mocking the Client](#mocking-the-client)
 - [Request Middleware](#request-middleware)
+- [Dependency Injection & Health Checks](#dependency-injection--health-checks)
 - [Error Handling](#error-handling)
 - [Strong Customer Authentication (SCA)](#strong-customer-authentication-sca)
 - [Webhooks](#webhooks)
@@ -718,6 +719,71 @@ client := wise.New("key", wise.WithHTTPClient(&http.Client{
     Transport: &loggingTransport{next: http.DefaultTransport},
 }))
 ```
+
+## Dependency Injection & Health Checks
+
+wise-go is a plain-Go library: it imports no DI framework and owns no
+resources (no goroutines, no `Shutdown`). That makes it a drop-in for any
+composition root. Below is the compile-verified recipe for
+[samber/do](https://github.com/samber/do) v2, including the two-line adapter
+that plugs the readiness probe into `do`'s health-check interface:
+
+```go
+package main
+
+import (
+    "context"
+    "log/slog"
+    "os"
+
+    "github.com/larsartmann/wise-go"
+    "github.com/samber/do/v2"
+)
+
+// healthAdapter adapts the SDK's Health method to samber/do's health-check
+// interface. The adapter is needed because the SDK method is named Health,
+// not HealthCheck (wise-go deliberately imports no DI framework).
+type healthAdapter struct{ client *wise.Client }
+
+func (h healthAdapter) HealthCheck(ctx context.Context) error {
+    return h.client.Health(ctx)
+}
+
+func main() {
+    injector := do.New()
+
+    do.Provide(injector, func(i do.Injector) (*wise.Client, error) {
+        return wise.New(os.Getenv("WISE_API_KEY"), wise.WithSandbox()), nil
+    })
+
+    do.ProvideNamed(injector, "wise.health", func(i do.Injector) (do.HealthcheckerWithContext, error) {
+        return healthAdapter{client: do.MustInvoke[*wise.Client](i)}, nil
+    })
+
+    client, err := do.Invoke[*wise.Client](injector)
+    if err != nil {
+        slog.Error("wise client unavailable", "err", err)
+        os.Exit(1)
+    }
+
+    checker := healthAdapter{client: client}
+    if err := checker.HealthCheck(context.Background()); err != nil {
+        slog.Warn("wise API not ready", "err", err)
+    }
+}
+```
+
+`Health` is a readiness probe, not a cheap liveness check: it runs an
+authenticated `ListProfiles` through the retry executor, so a
+`*RateLimitError` means the API answered under throttling, an `*AuthError`
+means bad credentials, and the worst case spends the full retry budget
+(~2 min). Wrap the adapter with your own timeout or retry policy if your
+orchestrator expects sub-second probes.
+
+> Naming note: whether the SDK should also expose a `HealthCheck(ctx)` alias
+> (so `do.HealthcheckerWithContext` containers satisfy the interface without
+> an adapter) is a tracked open decision; the recipe above works unchanged
+> either way.
 
 ## Error Handling
 
