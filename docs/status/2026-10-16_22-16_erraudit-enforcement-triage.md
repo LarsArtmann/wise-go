@@ -40,12 +40,17 @@ fact; the session was interrupted mid-report by a new directive (see NOT STARTED
 
 ## c) NOT STARTED
 
-- **NEW DIRECTIVE (received 22:16, after this session's triage)**: "all my errors
-  should have names and be defined in a central location (as it makes sense)" —
-  i.e., name + centralize the error catalog (typed structs are already central in
-  `errors.go`; the 4 sentinels are scattered per-file and unexported; ~130 wrap
-  sites wrap unnamed class instances). Design + implementation begins immediately
-  after this report. NOT the per-method return-type regime — that stays declined.
+- ~~**NEW DIRECTIVE (received 22:16, after this session's triage)**: "all my errors
+  should have names and be defined in a central location (as it makes sense)"~~
+  done in the same session: 57 named error-code constants + the 4 sentinels
+  exported (`ErrEmptyRateList`, `ErrAccountIdentificationCardinality`,
+  `ErrOTTAlternativesShape`, `ErrTransferRefundAmountMissing`) and centralized
+  in `errors.go` (interface-typed per the sentinel contract); `fetchByID`'s
+  runtime `"wise."+resource+…` assembly replaced with named codes (it had left
+  `wise.user.invalid_request` invisible to every literal grep); 3 new guard
+  tests; 14 drifted FEATURES.md anchors fixed (anchor-check gate green). All
+  gates green: test, lint, erraudit canonical, doc-verify, flake check. NOT
+  the per-method return-type regime — that stays declined.
 - Owner decision pending: adopt the verified-clean enforcement flags into the
   canonical erraudit gate + CI job, or keep the minimal pinned invocation.
 

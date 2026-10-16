@@ -1,5 +1,11 @@
 # Status Report — buildflow red → green repair (wise-go)
 
+> **Fully resolved 2026-10-16 (maximalist pass):** every §b–§g item carries an
+> inline verdict — the erraudit divergence was filed (BuildFlow #34), closed,
+> and the skip removed on verified evidence; the toolchain question is answered
+> by the condition-gated migration plan; the rest is done, routed, or
+> documented as open upstream work. Archived per the annotate-then-archive rule.
+
 > **Superseded (2026-10-07 docs-health pass):** the repair held — the repo builds green on `go 1.26` with the restored `.buildflow.yml`, and the same-night follow-up `2026-10-07_04-20_dual-phase-repair-and-tool-reevaluation-status.md` supersedes this file for current state (~~its §a9 "exit 0" measurement~~ corrected there: the first full run's exit code was mis-read via `tail`). The three BuildFlow upstream defects it surfaced are documented in AGENTS.md and routed to TODO_LIST.md. Retained (not archived) because its §b/§c/§f items remain open.
 
 - **Date:** 2026-10-07 03:45 CEST
@@ -50,22 +56,22 @@ Key detection signal worth remembering: gopls/compiler errors of the form `use o
 
 | # | Item                                            | State                                                         | Gap                                                                                                                                                                                                    |
 | - | ----------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1 | **erraudit divergence upstream**                | Skipped + documented repo-side                                | The embedded analyzer's false positives (AsType `_, ok :=`, cleanup Close) are not reported/fixed in the BuildFlow repo; the skip is pinned to binary 3bb229e and must be re-evaluated after a rebuild |
-| 2 | **New SECURITY.md link under lychee**           | Fixed + manually verified 200 via fetch                       | Never isolated lychee's own verdict on the new URL inside a buildflow run (final run's warning-level findings were not itemized in the captured tail)                                                  |
-| 3 | **Session follow-up harvest into TODO_LIST.md** | This report's section (f) is harvest-ready                    | TODO_LIST.md has **uncommitted concurrent-session changes** (release-notes drafting) — touching it now risks clobbering the other session; harvest deferred until that lands                           |
-| 4 | **Buildflow binary freshness**                  | Advisory diagnosed (3bb229e vs b85901d), triage hint recorded | Rebuild + reinstall not executed (BuildFlow-repo task, deliberately out of scope here)                                                                                                                 |
-| 5 | **Go 1.27 pressure**                            | Every occurrence reverted; policy re-asserted                 | The underlying question — when does the toolchain line actually move to 1.27 — is unanswered; the modernizer will keep re-asking (see question g1)                                                     |
+| ~~1~~ | ~~**erraudit divergence upstream**~~ done — superseded: filed as BuildFlow #34, closed 2026-10-07, skip removal verified correct | ~~Skipped + documented repo-side~~ | ~~The embedded analyzer's false positives (AsType `_, ok :=`, cleanup Close) are not reported/fixed in the BuildFlow repo; the skip is pinned to binary 3bb229e and must be re-evaluated after a rebuild~~ |
+| ~~2~~ | ~~**New SECURITY.md link under lychee**~~ done — doc-verify (lychee) green 2026-10-16 with the new link in tree | ~~Fixed + manually verified 200 via fetch~~ | ~~Never isolated lychee's own verdict on the new URL inside a buildflow run (final run's warning-level findings were not itemized in the captured tail)~~ |
+| ~~3~~ | ~~**Session follow-up harvest into TODO_LIST.md**~~ done — harvested since; the 2026-10-16 plan reconciled the whole backlog | ~~This report's section (f) is harvest-ready~~ | ~~TODO_LIST.md has **uncommitted concurrent-session changes** (release-notes drafting) — touching it now risks clobbering the other session; harvest deferred until that lands~~ |
+| 4 | **Buildflow binary freshness** **→ BuildFlow-repo task; #35 (reinstall no-op) still open** | Advisory diagnosed (3bb229e vs b85901d), triage hint recorded | Rebuild + reinstall not executed (BuildFlow-repo task, deliberately out of scope here)                                                                                                                 |
+| ~~5~~ | ~~**Go 1.27 pressure**~~ done — answered by docs/planning/2026-10-07_go-1.27-migration-plan.md (condition-gated) | ~~Every occurrence reverted; policy re-asserted~~ | ~~The underlying question — when does the toolchain line actually move to 1.27 — is unanswered; the modernizer will keep re-asking (see question g1)~~ |
 
 ## c) NOT STARTED (observed this session, not begun)
 
-1. Rebuild/reinstall buildflow (`nix build . && nix run .#reinstall` in /home/lars/projects/BuildFlow) — advisory, blocks nothing today.
-2. Re-test buildflow's embedded erraudit at a current binary; lift the skip if the false positives are fixed upstream.
-3. File the embedded-erraudit false positives (with the client.go:135–155 evidence) upstream in the BuildFlow repo.
-4. vulnix: 20 advisories across nix store toolchain drvs (binutils 2.46/2.47, bison, coreutils, gcc 10.4 — several high). Needs a nixpkgs input bump carrying patches; not project-code actionable.
-5. lychee private-links policy: GITHUB_TOKEN vs `exclude` regex — fleet decision recorded as undecided; every run keeps warning.
-6. Identify the "9 tools unavailable" (interrogate confirmed missing; other 8 unknown — `buildflow doctor --verbose` never run this session).
-7. CI re-enable on GitHub (workflow `disabled_manually` — pre-existing documented blocker, noticed via AGENTS.md context; untouched).
-8. CHANGELOG/release-notes coordination: this session's user-facing change (SECURITY.md link) vs the concurrent release-notes session (untracked `docs/releases/v0.11.0-release-notes.md` + modified TODO_LIST.md).
+1. Rebuild/reinstall buildflow (`nix build . && nix run .#reinstall` in /home/lars/projects/BuildFlow) — advisory, blocks nothing today. **→ BuildFlow-repo task; #35 tracks the reinstall defect**
+2. ~~Re-test buildflow's embedded erraudit at a current binary; lift the skip if the false positives are fixed upstream.~~ done — skip removed 2026-10-16 after the #34 closure was verified
+3. ~~File the embedded-erraudit false positives (with the client.go:135–155 evidence) upstream in the BuildFlow repo.~~ done — filed as BuildFlow #34 and closed 2026-10-07
+4. vulnix: 20 advisories across nix store toolchain drvs (binutils 2.46/2.47, bison, coreutils, gcc 10.4 — several high). Needs a nixpkgs input bump carrying patches; not project-code actionable. **→ pinned-toolchain advisories; lever is the scheduled nixpkgs bump**
+5. lychee private-links policy: GITHUB_TOKEN vs `exclude` regex — fleet decision recorded as undecided; every run keeps warning. **→ fleet decision, still open**
+6. Identify the "9 tools unavailable" (interrogate confirmed missing; other 8 unknown — `buildflow doctor --verbose` never run this session). **→ documented 2026-10-11 as an upstream display artifact; filing pending**
+7. CI re-enable on GitHub (workflow `disabled_manually` — pre-existing documented blocker, noticed via AGENTS.md context; untouched). **→ CI resurrection; enable is the remaining user step**
+8. ~~CHANGELOG/release-notes coordination: this session's user-facing change (SECURITY.md link) vs the concurrent release-notes session (untracked `docs/releases/v0.11.0-release-notes.md` + modified TODO_LIST.md).~~ done — releases shipped with the security link; coordination resolved
 
 ## d) TOTALLY FUCKED UP
 
@@ -86,82 +92,82 @@ Key detection signal worth remembering: gopls/compiler errors of the form `use o
 5. **Could have run `buildflow doctor --verbose` first.** The 9 unavailable tools were visible as a one-line advisory all session and never identified; doctor up front would have turned "unknown environment gaps" into a concrete list in one step.
 6. **AGENTS.md already contained the map — I walked past it once.** The erraudit bullet documented "CI-only, warn-not-fail" as the canonical gate; when 29 error findings appeared under a tool with that name, the split-brain hypothesis should have been my first reflex, not something reached after running both binaries.
 7. **gopls hygiene.** Restarted the LSP mid-session but never re-confirmed diagnostics cleared; I leaned on `go vet` (authoritative) but left a stale-error state that could confuse a later tool reading diagnostics.
-8. **HARVEST not executed.** The skill contract says section (f) belongs in TODO_LIST.md; I deferred because TODO_LIST.md carries another session's uncommitted work. Correct call, but it means the loop is explicitly open — whoever picks up next must harvest first.
+8. ~~**HARVEST not executed.** The skill contract says section (f) belongs in TODO_LIST.md; I deferred because TODO_LIST.md carries another session's uncommitted work. Correct call, but it means the loop is explicitly open — whoever picks up next must harvest first.~~ done — harvested the same day and in every sweep since
 
 ## f) NEXT TASKS (brainstorm — up to 50, impact-ordered; NOT a commitment list)
 
 **P0 — keep the gate green and honest**
 
-1. Harvest this report's (b)/(c)/(f) into TODO_LIST.md once the concurrent release-notes edit lands (docs-health HARVEST).
-2. Rebuild + reinstall buildflow at ≥ b85901d; re-run full mode; confirm nothing regresses under the current binary.
-3. Re-test buildflow's embedded erraudit on the fresh binary against client.go:135–155 + the cleanup-Close sites; lift or keep the skip on evidence.
-4. If still false-positive upstream: file the embedded-erraudit findings in the BuildFlow repo (verify-before-filing gate already satisfied — evidence captured this session).
-5. Capture lychee's explicit verdict on the new `bugcrowd.com/wise` link inside a buildflow run (`buildflow -s lychee --format finding`).
-6. Run `buildflow doctor --verbose`; enumerate the 9 unavailable tools; fix or consciously accept each (interrogate confirmed missing).
-7. Decide the vulnix posture: nixpkgs input bump for the patched binutils/bison/coreutils/gcc, or documented accept-until-flake-update (20 advisories, several high, toolchain-level).
-8. Sweep green-run warnings into an itemized log once (one-shot `--format finding` per remaining tool) so "exit 0 with warnings" has a known, finite list.
+1. ~~Harvest this report's (b)/(c)/(f) into TODO_LIST.md once the concurrent release-notes edit lands (docs-health HARVEST).~~ done — harvested repeatedly; the 2026-10-16 plan reconciled the backlog
+2. Rebuild + reinstall buildflow at ≥ b85901d; re-run full mode; confirm nothing regresses under the current binary. **→ BuildFlow repo; #35 open**
+3. ~~Re-test buildflow's embedded erraudit on the fresh binary against client.go:135–155 + the cleanup-Close sites; lift or keep the skip on evidence.~~ done — skip removed 2026-10-16 after the #34 closure verified
+4. ~~If still false-positive upstream: file the embedded-erraudit findings in the BuildFlow repo (verify-before-filing gate already satisfied — evidence captured this session).~~ done — filed and closed as BuildFlow #34
+5. Capture lychee's explicit verdict on the new `bugcrowd.com/wise` link inside a buildflow run (`buildflow -s lychee --format finding`). **→ lychee in-run verdict idea, open**
+6. Run `buildflow doctor --verbose`; enumerate the 9 unavailable tools; fix or consciously accept each (interrogate confirmed missing). **→ upstream display artifact; filing pending**
+7. Decide the vulnix posture: nixpkgs input bump for the patched binutils/bison/coreutils/gcc, or documented accept-until-flake-update (20 advisories, several high, toolchain-level). **→ vulnix posture rides the nixpkgs bump cadence**
+8. Sweep green-run warnings into an itemized log once (one-shot `--format finding` per remaining tool) so "exit 0 with warnings" has a known, finite list. **→ warning-itemization idea, open**
 
 **P1 — prevent recurrence of tonight's failure class**
-9. Make the flipflop self-healing: a preflight/CI check that fails loudly when `.buildflow.yml` is missing or `grep '^go ' go.mod` ≠ 1.26.x (tonight's damage was silent for 7 minutes).
-10. Investigate WHO deleted `.buildflow.yml` (BuildFlow step? daemon sweep? concurrent session) — root cause of the deletion itself is still unattributed.
-11. Consider a buildflow upstream guard: a step that refuses to run when its own config file is absent in a repo that documents one.
-12. Ask upstream about daemon commit hygiene: "chore: auto-commit 1 changed file(s)" bundled a config deletion + go.mod corruption; message gave zero signal (AGENTS.md already documents daemon races; this is a new severity example).
-13. Add the promoted-field syntax signature (`requires go1.27 or later` on struct literals) to the flipflop gotcha's detection one-liner if gopls wording differs across versions.
-14. Re-check `git log -S'go 1.27'` history: commits 62d3330/436b659 also matched — confirm no older 1.27 stragglers exist in files I didn't inspect.
+9. Make the flipflop self-healing: a preflight/CI check that fails loudly when `.buildflow.yml` is missing or `grep '^go ' go.mod` ≠ 1.26.x (tonight's damage was silent for 7 minutes). **→ self-healing guard idea, open (skip_steps carries it today)**
+10. ~~Investigate WHO deleted `.buildflow.yml` (BuildFlow step? daemon sweep? concurrent session) — root cause of the deletion itself is still unattributed.~~ done — attributed: the modernizer sweep; incident recorded in AGENTS
+11. Consider a buildflow upstream guard: a step that refuses to run when its own config file is absent in a repo that documents one. **→ upstream guard proposal, open**
+12. Ask upstream about daemon commit hygiene: "chore: auto-commit 1 changed file(s)" bundled a config deletion + go.mod corruption; message gave zero signal (AGENTS.md already documents daemon races; this is a new severity example). **→ daemon-hygiene ask, routed to ROADMAP raw ideas**
+13. ~~Add the promoted-field syntax signature (`requires go1.27 or later` on struct literals) to the flipflop gotcha's detection one-liner if gopls wording differs across versions.~~ done — the flipflop gotcha carries the syntax signature
+14. ~~Re-check `git log -S'go 1.27'` history: commits 62d3330/436b659 also matched — confirm no older 1.27 stragglers exist in files I didn't inspect.~~ done — steady state held: go directive 1.26 through v0.14.0
 
 **P2 — release coordination (concurrent session active)**
-15. Coordinate with the v0.11.0 release-notes session: decide whether the SECURITY.md link fix is release-notes-worthy or infra-only.
-16. After their commit lands: re-run `nix flake check` (links fileset must still cover SECURITY.md — file unchanged in place, so expected green; verify anyway).
-17. Confirm the release-notes session's TODO_LIST.md closure doesn't conflict with harvest items from this report (no double-bookkeeping).
-18. Leave `docs/releases/v0.11.0-release-notes.md` untouched until its author commits it.
+15. ~~Coordinate with the v0.11.0 release-notes session: decide whether the SECURITY.md link fix is release-notes-worthy or infra-only.~~ done — resolved: releases shipped with the link
+16. ~~After their commit lands: re-run `nix flake check` (links fileset must still cover SECURITY.md — file unchanged in place, so expected green; verify anyway).~~ done — flake check green repeatedly since
+17. ~~Confirm the release-notes session's TODO_LIST.md closure doesn't conflict with harvest items from this report (no double-bookkeeping).~~ done — TODO reconciled by later sweeps
+18. ~~Leave `docs/releases/v0.11.0-release-notes.md` untouched until its author commits it.~~ done — published 2026-10-07
 
 **P3 — toolchain endgame (needs operator input, see g1)**
-19. Decide the Go 1.27 migration plan: conditions + date for flake toolchain bump, GOTOOLCHAIN policy change, and erraudit local-install enablement.
-20. If 1.27 adoption is planned: inventory the modernizer's pushed changes (promoted-field literals etc.) as the migration's first commit instead of repeated revert cycles.
-21. If 1.26 stays: consider a buildflow upstream request to make go-version-auto-configure respect `skip_steps` semantics even when its config file was deleted mid-run (defense in depth).
-22. Track nixpkgs go_1_26 patch releases (1.26.8 current) — bump the flake input when security patches land (pairs with vulnix item 7).
+19. ~~Decide the Go 1.27 migration plan: conditions + date for flake toolchain bump, GOTOOLCHAIN policy change, and erraudit local-install enablement.~~ done — the plan doc exists, condition-gated
+20. If 1.27 adoption is planned: inventory the modernizer's pushed changes (promoted-field literals etc.) as the migration's first commit instead of repeated revert cycles. **→ flip-day step per the plan**
+21. If 1.26 stays: consider a buildflow upstream request to make go-version-auto-configure respect `skip_steps` semantics even when its config file was deleted mid-run (defense in depth). **→ upstream request idea, open**
+22. Track nixpkgs go_1_26 patch releases (1.26.8 current) — bump the flake input when security patches land (pairs with vulnix item 7). **→ patch-tracking cadence, open**
 
 **P4 — quality-gate hygiene**
-23. Reconcile the split brain permanently: either buildflow's embedded erraudit becomes flag-compatible with the canonical gate, or the fleet documents which of the two is authoritative per repo class.
-24. Verify `exhaustruct_v5.ignore-patterns` actually suppresses what `exclude` used to (no `os/exec.Cmd` composite literals exist in the repo today, so the pattern is currently untested either way).
-25. Consider anchoring the pattern (`\.Cmd$`) if v5 semantics differ from v3 — one-line change, only when evidence appears.
-26. Audit other repos in the fleet for the same `.buildflow.yml`-deletion signature tonight (`git log --diff-filter=D -- .buildflow.yml`) — if one sweep did it here, siblings may share it.
-27. Check whether buildflow's `nix-hash-fix` 10/10 failure streak (reported in preflight) clears now that go.mod is sane; if it still fails, that's an upstream bug worth a report.
-28. Confirm result-cache invalidation: the green run showed 0% hit rate; a repeat run should show hits — if not, cache keys are churning (buildflow upstream signal).
+23. ~~Reconcile the split brain permanently: either buildflow's embedded erraudit becomes flag-compatible with the canonical gate, or the fleet documents which of the two is authoritative per repo class.~~ done — #34 closed; the standalone gate governs by policy
+24. Verify `exhaustruct_v5.ignore-patterns` actually suppresses what `exclude` used to (no `os/exec.Cmd` composite literals exist in the repo today, so the pattern is currently untested either way). **→ untested either way, open**
+25. Consider anchoring the pattern (`\.Cmd$`) if v5 semantics differ from v3 — one-line change, only when evidence appears. **→ open on evidence**
+26. Audit other repos in the fleet for the same `.buildflow.yml`-deletion signature tonight (`git log --diff-filter=D -- .buildflow.yml`) — if one sweep did it here, siblings may share it. **→ fleet sweep idea on ROADMAP**
+27. Check whether buildflow's `nix-hash-fix` 10/10 failure streak (reported in preflight) clears now that go.mod is sane; if it still fails, that's an upstream bug worth a report. **→ upstream signal check, open**
+28. Confirm result-cache invalidation: the green run showed 0% hit rate; a repeat run should show hits — if not, cache keys are churning (buildflow upstream signal). **→ cache-churn check, open**
 
 **P5 — environment / advisories**
-29. lychee private-links fleet decision: GITHUB_TOKEN vs exclude regex — close the undecided policy so the warning stops recurring fleet-wide.
-30. Install `interrogate` (or exclude it) — one of the 9 unavailable tools, confirmed missing.
-31. Identify the remaining 8 unavailable tools via doctor; likely devShell gaps (dprint was also running via `nix run nixpkgs#dprint` — add to devShells.default as the warning suggested).
-32. CI re-enable on GitHub (pre-existing documented path: push + enable + first green run) — tonight's local-gate green is a precondition met; the SSH blocker was resolved 2026-09-13.
-33. After CI enablement: confirm the erraudit CI job (warn-not-fail) still passes with the canonical invocation, and that the coverage badge job unfreezes.
-34. Set `GITHUB_TOKEN` for authenticated lychee runs in CI once policy (29) is decided.
+29. lychee private-links fleet decision: GITHUB_TOKEN vs exclude regex — close the undecided policy so the warning stops recurring fleet-wide. **→ fleet decision, open**
+30. Install `interrogate` (or exclude it) — one of the 9 unavailable tools, confirmed missing. **→ devShell tooling gap, open**
+31. Identify the remaining 8 unavailable tools via doctor; likely devShell gaps (dprint was also running via `nix run nixpkgs#dprint` — add to devShells.default as the warning suggested). **→ doctor enumeration, open**
+32. CI re-enable on GitHub (pre-existing documented path: push + enable + first green run) — tonight's local-gate green is a precondition met; the SSH blocker was resolved 2026-09-13. **→ CI enable pending user step**
+33. After CI enablement: confirm the erraudit CI job (warn-not-fail) still passes with the canonical invocation, and that the coverage badge job unfreezes. **→ post-enable follow-up**
+34. Set `GITHUB_TOKEN` for authenticated lychee runs in CI once policy (29) is decided. **→ post-policy follow-up**
 
 **P6 — documentation/memory**
-35. Mirror the "deleted config bundled with corruption" lesson into `references/lessons.md` (crush-config repo, commit — cross-project lesson, not repo-local).
-36. Consider an AGENTS.md one-liner pointing new sessions at `git log --diff-filter=D -- .buildflow.yml` as a health check.
-37. Cross-check FEATURES.md/CHANGELOG: no feature changes this session, but the SECURITY.md link change is user-visible — decide its changelog home (pairs with 15).
-38. After the skip proves stable for a few runs, note the re-evaluation date for the erraudit skip in TODO_LIST (skips rot silently).
+35. Mirror the "deleted config bundled with corruption" lesson into `references/lessons.md` (crush-config repo, commit — cross-project lesson, not repo-local). **→ cross-repo lesson lane**
+36. Consider an AGENTS.md one-liner pointing new sessions at `git log --diff-filter=D -- .buildflow.yml` as a health check. **→ AGENTS one-liner idea, open**
+37. ~~Cross-check FEATURES.md/CHANGELOG: no feature changes this session, but the SECURITY.md link change is user-visible — decide its changelog home (pairs with 15).~~ done — shipped with the release docs
+38. ~~After the skip proves stable for a few runs, note the re-evaluation date for the erraudit skip in TODO_LIST (skips rot silently).~~ done — the skip was removed outright; no re-eval date needed
 
 **P7 — smaller items surfaced mid-session (lower impact)**
-39. `agentic_fetch` of wise.com pages returns enormous payloads — a targeted HEAD-style check would have been cheaper; note for future link verification.
-40. dprint `**/CHANGELOG.md` exclusion + changelog-only commits failing pre-commit (documented gotcha) — verify the release-notes session doesn't hit it tonight.
-41. gopls version pinning vs go directive: gopls flagged 1.27 features as errors while vet passed post-restore — confirm the LSP config tracks the go directive dynamically (it does via go.mod, but the stale-cache window was minutes).
-42. BuildFlow repo: `git log 3bb229e..HEAD --oneline` review — know what the stale binary was missing before trusting tonight's verdicts for anything subtle.
-43. Consider pinning `nix build` result (`./result` symlink hygiene) — buildflow's fod-freshness check cross-checks vendorHash vs lock; keep both fresh after every go.mod change (AGENTS.md convention, re-validated tonight).
-44. The untracked release-notes file is a daemon-sweep magnet — if its author doesn't commit soon it lands as a daemon "heuristic" commit (anti-pattern #seen-before).
-45. If P0-3 lifts the erraudit skip, delete the now-stale rationale from `.buildflow.yml` in the same commit (skips with dead rationale mislead).
-46. Re-verify `nix run .#doc-verify` after the release session lands (count-claims freshness — release notes may change method counts).
-47. When the next modernizer sweep happens, diff driven by `git log --stat` on config files FIRST — tonight the 1.27 signal in go.mod was visible in `git log -S` within seconds.
-48. Fleet-wide: whether other repos pin GOTOOLCHAIN=local the same way — the `.buildflow.yml` env-vs-shell precedence ("caller wins") made GOEXPERIMENT injection informational tonight; confirm that's understood fleet-wide.
-49. Optional: name the daemon-commit bundle pattern in AGENTS.md ("config-deletion + policy-violation in one heuristic commit") for faster recognition.
-50. Defer: promoted-field syntax adoption anywhere outside tests — not until g1 is answered.
+39. `agentic_fetch` of wise.com pages returns enormous payloads — a targeted HEAD-style check would have been cheaper; note for future link verification. **→ minor tooling note, open**
+40. ~~dprint `**/CHANGELOG.md` exclusion + changelog-only commits failing pre-commit (documented gotcha) — verify the release-notes session doesn't hit it tonight.~~ done — the trap is documented and was handled through the v0.14.0 cycle
+41. ~~gopls version pinning vs go directive: gopls flagged 1.27 features as errors while vet passed post-restore — confirm the LSP config tracks the go directive dynamically (it does via go.mod, but the stale-cache window was minutes).~~ done — resolved by the .crushrc env fix and the stdversion note
+42. BuildFlow repo: `git log 3bb229e..HEAD --oneline` review — know what the stale binary was missing before trusting tonight's verdicts for anything subtle. **→ BuildFlow-repo review, open**
+43. Consider pinning `nix build` result (`./result` symlink hygiene) — buildflow's fod-freshness check cross-checks vendorHash vs lock; keep both fresh after every go.mod change (AGENTS.md convention, re-validated tonight). **→ result-hygiene idea, open**
+44. ~~The untracked release-notes file is a daemon-sweep magnet — if its author doesn't commit soon it lands as a daemon "heuristic" commit (anti-pattern #seen-before).~~ done — release notes were committed properly
+45. ~~If P0-3 lifts the erraudit skip, delete the now-stale rationale from `.buildflow.yml` in the same commit (skips with dead rationale mislead).~~ done — skip removed with rationale cleanup
+46. ~~Re-verify `nix run .#doc-verify` after the release session lands (count-claims freshness — release notes may change method counts).~~ done — doc-verify green 2026-10-16
+47. When the next modernizer sweep happens, diff driven by `git log --stat` on config files FIRST — tonight the 1.27 signal in go.mod was visible in `git log -S` within seconds. **→ standing practice note**
+48. Fleet-wide: whether other repos pin GOTOOLCHAIN=local the same way — the `.buildflow.yml` env-vs-shell precedence ("caller wins") made GOEXPERIMENT injection informational tonight; confirm that's understood fleet-wide. **→ fleet understanding, open**
+49. Optional: name the daemon-commit bundle pattern in AGENTS.md ("config-deletion + policy-violation in one heuristic commit") for faster recognition. **→ naming idea, open**
+50. ~~Defer: promoted-field syntax adoption anywhere outside tests — not until g1 is answered.~~ done — deferred correctly; flip day owns syntax adoption
 
 ## g) QUESTIONS I CANNOT FIGURE OUT MYSELF (3)
 
-1. **Toolchain endgame:** What is the actual plan for Go 1.27 — is there a condition or date for moving the flake toolchain + `GOTOOLCHAIN` policy off the 1.26 pin? Every modernizer run re-asks this question and tonight I answered it by reverting (per documented policy); if the migration is planned, the reverts are fighting the future, and if it is not, the modernizer steps pushing 1.27 syntax should be skip-listed fleet-wide rather than reverted per-incident.
-2. **Release coordination:** The concurrent session is drafting `docs/releases/v0.11.0-release-notes.md` with uncommitted TODO_LIST.md changes — should this session's user-visible fix (SECURITY.md reporting link) be folded into those release notes/CHANGELOG, or is tonight's work infra-only and excluded from the release?
-3. **Upstream erraudit:** Should I file the embedded-analyzer false positives (AsType `_, ok :=` misread + cleanup-Close, evidence at client.go:135–155/189/394) as a BuildFlow repo issue now, or do you want to rebuild the binary to current HEAD and re-test first so the report reflects the current analyzer?
+1. ~~**Toolchain endgame:** What is the actual plan for Go 1.27 — is there a condition or date for moving the flake toolchain + `GOTOOLCHAIN` policy off the 1.26 pin? Every modernizer run re-asks this question and tonight I answered it by reverting (per documented policy); if the migration is planned, the reverts are fighting the future, and if it is not, the modernizer steps pushing 1.27 syntax should be skip-listed fleet-wide rather than reverted per-incident.~~ done — answered: the condition-gated migration plan at docs/planning/2026-10-07_go-1.27-migration-plan.md
+2. ~~**Release coordination:** The concurrent session is drafting `docs/releases/v0.11.0-release-notes.md` with uncommitted TODO_LIST.md changes — should this session's user-visible fix (SECURITY.md reporting link) be folded into those release notes/CHANGELOG, or is tonight's work infra-only and excluded from the release?~~ done — resolved: the releases shipped with the security link
+3. ~~**Upstream erraudit:** Should I file the embedded-analyzer false positives (AsType `_, ok :=` misread + cleanup-Close, evidence at client.go:135–155/189/394) as a BuildFlow repo issue now, or do you want to rebuild the binary to current HEAD and re-test first so the report reflects the current analyzer?~~ done — filed as BuildFlow #34 same day; closed; class-wide policy recorded
 
 ---
 
