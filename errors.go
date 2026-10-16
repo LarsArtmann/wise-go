@@ -21,6 +21,7 @@ const (
 	errorCodeRateLimit = "wise.rate_limit"
 	errorCodeAuth      = "wise.auth"
 	errorCodeNotFound  = "wise.not_found"
+	errorCodeBadRequest = "wise.bad_request"
 	errorCodeServer    = "wise.server"
 	errorCodeSCA       = "wise.sca_challenge"
 )
@@ -403,6 +404,19 @@ func (e *NotFoundError) ErrorCode() string {
 	return errorCodeNotFound
 }
 
+// BadRequestError is returned when the Wise API returns HTTP 400: the
+// request was malformed or failed Wise-side validation. Wise's granular
+// reason codes (parameter_missing, not.valid, and friends) arrive in the
+// structured details; match them with errors.Is on the curated code
+// sentinels or with [APIError.HasCode].
+type BadRequestError struct {
+	APIError
+}
+
+func (e *BadRequestError) ErrorCode() string {
+	return errorCodeBadRequest
+}
+
 // ServerError is returned when the Wise API returns HTTP 5xx.
 type ServerError struct {
 	APIError
@@ -468,6 +482,8 @@ func newAPIError(
 		return &SCAChallengeError{APIError: base}
 	case statusCode == http.StatusUnauthorized || statusCode == http.StatusForbidden:
 		return &AuthError{APIError: base}
+	case statusCode == http.StatusBadRequest:
+		return &BadRequestError{APIError: base}
 	case statusCode == http.StatusNotFound:
 		return &NotFoundError{APIError: base}
 	case statusCode >= http.StatusInternalServerError:

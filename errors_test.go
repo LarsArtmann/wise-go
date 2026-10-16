@@ -1117,3 +1117,62 @@ func TestAPIErrorHasCode(t *testing.T) {
 		t.Errorf("HasCode on details-less error = true, want false")
 	}
 }
+
+// TestAsTypeAndIsAreComplementary pins the matching-idiom split the error
+// system commits to: error TYPES (with their fields) extract via
+// errors.AsType, curated Wise wire CODES match via errors.Is, and neither
+// substitutes for the other. This is the contract the README decision tree
+// teaches, so a regression here invalidates the docs.
+func TestAsTypeAndIsAreComplementary(t *testing.T) {
+	t.Parallel()
+
+	limitedBody := `{"errors":[{"code":"rate_limit_exceeded","message":"slow down"}]}`
+
+	t.Run("429 extracts the type and matches the code", func(t *testing.T) {
+		t.Parallel()
+
+		err := newAPIError(http.StatusTooManyRequests, limitedBody, nil, 7*time.Second, "ip")
+
+		rateLimited, ok := errors.AsType[*RateLimitError](err)
+		if !ok {
+			t.Fatalf("AsType[*RateLimitError] = false, want true")
+		}
+
+		if rateLimited.RetryAfter != 7*time.Second {
+			t.Errorf("RetryAfter = %v, want 7s (type carries the fields)", rateLimited.RetryAfter)
+		}
+
+		if !errors.Is(err, ErrRateLimitExceeded) {
+			t.Errorf("Is(ErrRateLimitExceeded) = false, want true (code matches by value)")
+		}
+	})
+
+	t.Run("type extracts even without the body code", func(t *testing.T) {
+		t.Parallel()
+
+		err := newAPIError(http.StatusTooManyRequests, "{}", nil, 5*time.Second, "profile")
+
+		if _, ok := errors.AsType[*RateLimitError](err); !ok {
+			t.Fatalf("AsType[*RateLimitError] = false, want true regardless of body codes")
+		}
+
+		if errors.Is(err, ErrRateLimitExceeded) {
+			t.Errorf("Is(ErrRateLimitExceeded) = true without the wire code, want false")
+		}
+	})
+
+	t.Run("a code never impersonates a type", func(t *testing.T) {
+		t.Parallel()
+
+		err := newAPIError(http.StatusBadRequest,
+			`{"errors":[{"code":"system_error","message":"wise is sad"}]}`, nil, 0, "")
+
+		if _, ok := errors.AsType[*ServerError](err); ok {
+			t.Errorf("AsType[*ServerError] = true on a 400, want false (status drives the type)")
+		}
+
+		if !errors.Is(err, ErrSystemError) {
+			t.Errorf("Is(ErrSystemError) = false, want true (body code matches regardless of type)")
+		}
+	})
+}
