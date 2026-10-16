@@ -52,12 +52,16 @@ type WebhookEventEnvelope struct {
 
 // WebhookEventResource is the resource block carried by event payloads
 // (transfers#state-change, balances#credit). AccountID is only present for
-// transfer events.
+// transfer events; the refund fields only for transfers#refund.
 type WebhookEventResource struct {
 	Type      string `json:"type"`
 	ID        int64  `json:"id"`
 	ProfileID int64  `json:"profile_id"`
 	AccountID *int64 `json:"account_id"`
+	// Refund fields ride on the resource block of transfers#refund events
+	// only; nil/empty for every other event type.
+	RefundAmount   *float64 `json:"refund_amount,omitempty"`
+	RefundCurrency string   `json:"refund_currency,omitempty"`
 }
 
 // TransferStateChangeData is the wire payload of transfers#state-change
@@ -105,9 +109,44 @@ func (d TransferPayoutFailureData) webhookOccurredAt() string { return d.Occurre
 
 func (d BalanceCreditData) webhookOccurredAt() string { return d.OccurredAt }
 
+// TransferActiveCasesData is the wire payload of transfers#active-cases
+// events (schema version 4.0.0), raised whenever a transfer's list of active
+// cases changes. The payload carries no occurred_at.
+type TransferActiveCasesData struct {
+	Resource    WebhookEventResource `json:"resource"`
+	ActiveCases []string             `json:"active_cases"`
+}
+
+// TransferRefundData is the wire payload of transfers#refund events (schema
+// version 4.0.0), raised when a transfer's status becomes funds_refunded.
+// The refunded amount and currency ride on the resource block.
+type TransferRefundData struct {
+	Resource   WebhookEventResource `json:"resource"`
+	OccurredAt string               `json:"occurred_at"`
+}
+
+func (d TransferRefundData) webhookOccurredAt() string { return d.OccurredAt }
+
 // WebhookOccurredAt reads a timed payload's occurred_at for the shared
 // decoder; the unexported accessor keeps carrier status sealed to this
 // package.
 func WebhookOccurredAt[T OccurredAtCarrier](payload T) string {
 	return payload.webhookOccurredAt()
 }
+
+// TransferActiveCasesData is the wire payload of transfers#active-cases
+// events (schema version 4.0.0). The payload carries no occurred_at.
+type TransferActiveCasesData struct {
+	Resource    WebhookEventResource `json:"resource"`
+	ActiveCases []string             `json:"active_cases"`
+}
+
+// TransferRefundData is the wire payload of transfers#refund events (schema
+// version 4.0.0), raised when a transfer's status becomes funds_refunded.
+// The refunded amount rides on the resource block.
+type TransferRefundData struct {
+	Resource   WebhookEventResource `json:"resource"`
+	OccurredAt string               `json:"occurred_at"`
+}
+
+func (d TransferRefundData) webhookOccurredAt() string { return d.OccurredAt }

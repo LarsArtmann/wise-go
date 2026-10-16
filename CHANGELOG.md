@@ -34,9 +34,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   keys, JWTs — 30 false positives) are allowlisted, `unparseable` is pinned as
   the repo spelling, and historical/vendored doc trees are skipped. Both tools
   plus markdownlint-cli joined the dev shell and verify clean.
+- `nix run .#spec-drift` (`scripts/spec_drift.py`): extracts every
+  `(method, path)` the SDK calls from the Go sources and structurally matches
+  them against the live Wise spec bundle; wired into the pre-release chain
+  before apidiff. Its first run caught a live spec roll (2026Q3 → 2027Q1,
+  188 vs 173 vendored paths) and the removed profile-keyed account-details
+  read (see the breaking change below) on the day it was written.
+- `ExampleClient_GetTransfer` and `ExampleClient_ListTransfers` godoc
+  examples (compile-only, repo convention) — the single most-used read
+  method previously had no example, the vacuum behind a months-long broken
+  consumer snippet (2026-10-16 incident; AGENTS.md now carries the
+  compile-snippets-against-the-pinned-tag rule).
+- Transfer-category live re-audit recorded at
+  `docs/reviews/2026-10-16_transfer-category-reaudit.md` (true category
+  ~15 operations; originator transfers are a dedicated
+  `third-party-transfers` family, not a `POST /transfers` variant).
 
 ### Changed
 
+- **Breaking / migration:** `GetBankAccountDetails` migrated to Wise's 2027Q1
+  surface — `GET /balances/account-details/{id}`, keyed by the new
+  `AccountDetailsID` brand (`NewAccountDetailsID`), replacing the removed
+  `GET /v1/profiles/{profileId}/account-details` (live 404 since the roll,
+  probed 2026-10-16). The response `identification` is now a typed oneOf
+  (BE IBAN / GB sort-code pair / US routing pair) with the
+  exactly-one-member invariant enforced as a corruption error. The vendored
+  OpenAPI snapshot was re-vendored (173 → 188 paths) and the spec-conformance
+  floors re-baselined; `nix run .#spec-drift` is exit 0 again.
 - **Breaking / migration:** wrap OTT strings in `wise.OneTimeToken(...)` (or
   validate with `wise.NewOneTimeToken`) at the five typed surfaces above;
   `ActionType` comparisons against string literals still compile via untyped
@@ -58,6 +82,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `WebhookEventType` instead of a bare string, and the account-requirements
   get/refresh error-label verbs are typed constants. No public API change;
   error messages are byte-identical (pinned by tests).
+- README fenced Go blocks verified identifier-by-identifier against
+  `types.go` (33 blocks, 2026-10-16 sweep): fixed the quick-start's
+  loop-scoped `balances` bug and a never-introduced `profile` identifier.
+  The parse-shape gate (`checks.md-go-snippets`) does not catch wrong
+  identifiers — this was the identifier-level pass.
 - `docs/bench/README.md` rerun instructions verified by execution: the old
   single `go test -count 6` command fails against the Ginkgo `-count>1` ban,
   so the documented capture is now six separate `-count 1` invocations
@@ -70,6 +99,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   test batch (`5e7430b`) took coverage 90.5% → 92.8%, where it has stayed
   through HEAD under both plain and race/atomic modes. No coverage was lost;
   docs now carry the real number.
+- Eight drifted `file.go:NN` evidence anchors in the FEATURES.md client-core
+  table re-verified against the actual declarations (the anchor-drift class
+  is now an AGENTS.md gotcha: doc-verify gates counts, not line anchors).
 - One real typo in AGENTS.md ("re-declares" → "redeclares"), caught by the
   newly installed codespell.
 

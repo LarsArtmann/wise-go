@@ -7,14 +7,18 @@ Completed work lives in [CHANGELOG.md](CHANGELOG.md), never here.
 
 ## P1 — Release readiness
 
-[x] Migrate `GetBankAccountDetails` to the 2027Q1 endpoint shape — the live spec
-removed `GET /profiles/{profileId}/account-details`; Wise moved it to
-`GET /balances/account-details/{id}` (same operationId, now keyed by an
-account-details ID instead of profileId). DONE 2026-10-16: account_details.go
-reworked (`AccountDetailsID` brand, `accountDetailsAPIVersion = "2027Q1"` pinned
-after a live 401-vs-404 probe, typed oneOf identification), spec re-vendored
-(173 → 188 paths), README/FEATURES updated; `nix run .#spec-drift` exit 0.
-Source: scripts/spec_drift.py first run, 2026-10-16.
+[ ] Execute the remaining SUPERB Pareto plan items
+(`docs/planning/2026-10-16_19-45_SUPERB-pareto-plan-transfer-truth-close-and-fleet-hygiene.md`;
+M1/M2/M3/M6/M7 already shipped 2026-10-16): M5
+`GET /transfers/{id}/payments`, M8 US combined receipt, M9 NOC document,
+M10 typed `transfers#active-cases`/`transfers#refund` payloads, M12 README
+SCA/OTP endpoint matrix, M13 inventory-honesty sweep (FEATURES gaps +
+count-claim updates), M14 live-smoke harness, M15 originator transfers.
+Source: transfer-category re-audit
+`docs/reviews/2026-10-16_transfer-category-reaudit.md` (true category ~15
+ops: 9 shipped, 4 planned, deposit-details pay-in already DEMAND_GATED;
+the re-audit's "banking-partner invoice" row was a false gap — it IS
+`GetTransferPayoutInfo`).
 
 [ ] Run the sandbox live-verification pass (`WISE_SANDBOX_API_KEY`) against the
 five spec-vs-live assumptions settled by the conformance work: statement
@@ -108,11 +112,17 @@ devShell — install with `go install golang.org/x/perf/cmd/benchstat@latest`.
 `Health` as the retried readiness probe as-is, give it a fail-fast path
 (`MaxAttempts=1`-style, health probes should not spend ~2 min in the retry
 executor), and/or add a `VerifyCredentials` alias if any consumer depends on
-the current retried semantics. A true cheap liveness probe additionally needs
+the current retried semantics; consider a `HealthCheck(ctx)` name-alias so
+consumer `do.HealthcheckerWithContext` containers satisfy the interface
+directly. Also extend the `wise_test.go` `Describe("Health")` context to pin
+the typed-error distinction (429 → `*RateLimitError` proves reachability;
+bad key → `*AuthError`). A true cheap liveness probe additionally needs
 an endpoint choice verified against the live API (no ping/health endpoint is
-documented in the vendored snapshot).
+documented in the vendored snapshot). The docs-half (godoc + README +
+FEATURES wording) shipped 2026-10-16; the optional consumer-side DI recipe
+(README vs `docs/recipes/`) is also yours to place.
 **BLOCKED: user design decision.** Source: 2026-10-16 samber/do + health
-architecture review, finding F-1.
+architecture review, finding F-1; `docs/architecture-understanding/2026-10-16_19-59_samber-do-health-architecture-review.md`.
 
 [ ] `nix flake check --all-systems` — verified 2026-10-07: aarch64-linux and
 aarch64-darwin evaluate clean; x86_64-darwin FAILS EXTERNALLY (nixpkgs-26.11
