@@ -7,15 +7,13 @@ Completed work lives in [CHANGELOG.md](CHANGELOG.md), never here.
 
 ## P1 — Release readiness
 
-[ ] Migrate `GetBankAccountDetails` to the 2027Q1 endpoint shape — the live spec
+[x] Migrate `GetBankAccountDetails` to the 2027Q1 endpoint shape — the live spec
 removed `GET /profiles/{profileId}/account-details`; Wise moved it to
 `GET /balances/account-details/{id}` (same operationId, now keyed by an
-account-details ID instead of profileId). Check the live preview reference
-(docs.wise.com/api-reference/preview) for the request/response contract, rework
-account_details.go (path, branded ID, sandbox fixtures), and re-vendor
-`docs/reviews/wise-api-openapi.json` (173 → 188 paths, 2026Q3 → 2027Q1) in the
-same or a follow-up change. `nix run .#spec-drift` gates the fix (currently
-exit 1 MISSING).
+account-details ID instead of profileId). DONE 2026-10-16: account_details.go
+reworked (`AccountDetailsID` brand, `accountDetailsAPIVersion = "2027Q1"` pinned
+after a live 401-vs-404 probe, typed oneOf identification), spec re-vendored
+(173 → 188 paths), README/FEATURES updated; `nix run .#spec-drift` exit 0.
 Source: scripts/spec_drift.py first run, 2026-10-16.
 
 [ ] Run the sandbox live-verification pass (`WISE_SANDBOX_API_KEY`) against the

@@ -96,10 +96,13 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
 
 ### Bank account details (5 operations)
 
+Wise's 2027Q1 roll removed `GET /v1/profiles/{id}/account-details` and relocated
+the read to `GET /balances/account-details/{id}`, keyed by the details' own ID;
+wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
+
 | Method | Path                                                      | Status           | wise-go                                            |
 | ------ | --------------------------------------------------------- | ---------------- | -------------------------------------------------- |
 | GET    | `/balances/account-details/{id}` (2027Q1)                 | FULLY_FUNCTIONAL | `GetBankAccountDetails` (`account_details.go:156`) |
-| GET    | `/v1/profiles/{id}/account-details` (removed by Wise)     | REMOVED_UPSTREAM | superseded by the row above in the 2027Q1 roll     |
 | POST   | `/v1/profiles/{id}/bank-details`                          | PLANNED          | issue local+international details                  |
 | POST   | `/v1/profiles/{id}/account-details-orders`                | PLANNED          | order account details                              |
 | GET    | `/v1/profiles/{id}/account-details-orders`                | PLANNED          | list orders                                        |

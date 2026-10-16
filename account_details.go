@@ -2,6 +2,7 @@ package wise
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -153,6 +154,10 @@ type ISO20022Address struct {
 	AddressLines       []string
 }
 
+// errAccountIdentificationCardinality marks a wire accountIdentification that
+// carries zero or several oneOf members; the detail message holds the count.
+var errAccountIdentificationCardinality = errors.New("accountIdentification member count is not exactly one")
+
 // GetBankAccountDetails returns one set of receiving bank details by its own
 // ID (GET /{version}/balances/account-details/{id}; the 2027Q1 shape that
 // replaced GET /v1/profiles/{profileId}/account-details).
@@ -184,9 +189,9 @@ func mapAccountDetails(detail raw.AccountDetails) (AccountDetails, error) {
 	members := countIdentificationMembers(detail.AccountIdentification)
 	if members != 1 {
 		return AccountDetails{}, errorfamily.WrapCorruption(
-			fmt.Errorf("expected exactly one identification member, found %d", members),
+			errAccountIdentificationCardinality,
 			"wise.account_details.parse_identification",
-			fmt.Sprintf("country %q", detail.Country),
+			fmt.Sprintf("expected exactly one identification member, found %d (country %q)", members, detail.Country),
 		)
 	}
 
@@ -202,6 +207,7 @@ func mapAccountDetails(detail raw.AccountDetails) (AccountDetails, error) {
 
 func countIdentificationMembers(ident raw.AccountIdentification) int {
 	count := 0
+
 	for _, present := range []bool{ident.BE != nil, ident.GB != nil, ident.US != nil} {
 		if present {
 			count++
@@ -212,7 +218,7 @@ func countIdentificationMembers(ident raw.AccountIdentification) int {
 }
 
 func mapAccountIdentification(ident raw.AccountIdentification) AccountIdentification {
-	result := AccountIdentification{}
+	result := AccountIdentification{BE: nil, GB: nil, US: nil}
 
 	if ident.BE != nil {
 		result.BE = &BEAccountIdentification{
