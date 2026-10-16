@@ -1604,7 +1604,8 @@ func TestParseOTTAlternatives(t *testing.T) {
 		t.Errorf("string form = %v, %v, want two views without viewData", strings, err)
 	}
 
-	if views, err := parseOTTAlternatives(jsontext.Value(`{"not":"an array"}`)); views != nil || !errors.Is(err, errOTTAlternativesShape) {
+	if views, err := parseOTTAlternatives(jsontext.Value(`{"not":"an array"}`)); views != nil ||
+		!errors.Is(err, errOTTAlternativesShape) {
 		t.Errorf("non-array = %v, %v, want nil and errOTTAlternativesShape", views, err)
 	}
 }
@@ -1705,14 +1706,17 @@ func TestMapAccountIdentification(t *testing.T) {
 	if result.BE == nil || result.BE.IBAN != "BE68539007547034" || result.BE.InstitutionAddress == nil {
 		t.Fatalf("BE mapping wrong: %+v", result.BE)
 	}
+
 	if result.US == nil || result.US.RoutingNumber != "021000021" || result.US.InstitutionAddress != nil {
 		t.Fatalf("US mapping wrong: %+v", result.US)
 	}
+
 	if result.GB != nil {
 		t.Errorf("GB set without input: %+v", result.GB)
 	}
 
-	if empty := mapAccountIdentification(raw.AccountIdentification{}); empty.BE != nil || empty.GB != nil || empty.US != nil {
+	if empty := mapAccountIdentification(raw.AccountIdentification{}); empty.BE != nil ||
+		empty.GB != nil || empty.US != nil {
 		t.Errorf("empty identification mapped to %+v", empty)
 	}
 }
