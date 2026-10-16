@@ -1605,8 +1605,8 @@ func TestParseOTTAlternatives(t *testing.T) {
 	}
 
 	if views, err := parseOTTAlternatives(jsontext.Value(`{"not":"an array"}`)); views != nil ||
-		!errors.Is(err, errOTTAlternativesShape) {
-		t.Errorf("non-array = %v, %v, want nil and errOTTAlternativesShape", views, err)
+		!errors.Is(err, ErrOTTAlternativesShape) {
+		t.Errorf("non-array = %v, %v, want nil and ErrOTTAlternativesShape", views, err)
 	}
 }
 

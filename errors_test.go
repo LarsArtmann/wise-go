@@ -3,8 +3,11 @@ package wise
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -691,5 +694,141 @@ func TestIsRetryableContract(t *testing.T) {
 		if !implements || !retryable.IsRetryable() {
 			t.Errorf("%T should implement IsRetryable()=true", err)
 		}
+	}
+}
+
+// TestErrorCodesUniqueAndWellFormed pins the central error-code catalog:
+// one entry per code, every code a lowercase dotted wise.* identifier. The
+// list is exhaustive on purpose — adding a code constant without listing it
+// here breaks the catalog's completeness contract.
+func TestErrorCodesUniqueAndWellFormed(t *testing.T) {
+	t.Parallel()
+
+	codes := []string{
+		errorCodeAPI,
+		errorCodeRateLimit,
+		errorCodeAuth,
+		errorCodeNotFound,
+		errorCodeServer,
+		errorCodeSCA,
+		errorCodeAccountInvalidRequest,
+		errorCodeAccountParseCreationTime,
+		errorCodeAccountParseModificationTime,
+		errorCodeAccountDetailsInvalidRequest,
+		errorCodeAccountDetailsParseIdentification,
+		errorCodeBalanceInvalidRequest,
+		errorCodeBalanceParseCreationTime,
+		errorCodeBalanceParseCurrency,
+		errorCodeBalanceParseType,
+		errorCodeDeliveryEstimateParseDate,
+		errorCodeFundingParseStatus,
+		errorCodeFundingParseType,
+		errorCodeMoneyParse,
+		errorCodeOTTChannelUnsupported,
+		errorCodeOTTDecode,
+		errorCodeOTTInvalidRequest,
+		errorCodeOTTUncleared,
+		errorCodeProfileInvalidRequest,
+		errorCodeProfileParseCreatedAt,
+		errorCodeProfileParseType,
+		errorCodeQuoteInvalidRequest,
+		errorCodeQuoteParseCreated,
+		errorCodeQuoteParseExpiration,
+		errorCodeQuoteParsePaymentOptionDelivery,
+		errorCodeQuoteParsePaymentOptionSource,
+		errorCodeQuoteParsePaymentOptionTarget,
+		errorCodeQuoteParseSourceCurrency,
+		errorCodeQuoteParseTargetCurrency,
+		errorCodeRatesEmptyResponse,
+		errorCodeRatesInvalidRequest,
+		errorCodeRatesParseSource,
+		errorCodeRatesParseTarget,
+		errorCodeRatesParseTime,
+		errorCodeRecipientInvalidRequest,
+		errorCodeRecipientMap,
+		errorCodeRecipientParseCurrency,
+		errorCodeResponseDecode,
+		errorCodeTotalFundsInvalidRequest,
+		errorCodeTransactionParseDate,
+		errorCodeTransactionsInvalidRequest,
+		errorCodeTransferInvalidRequest,
+		errorCodeTransferMap,
+		errorCodeTransferParseCreated,
+		errorCodeTransferParseCurrency,
+		errorCodeTransferParsePaymentCreated,
+		errorCodeTransferParsePaymentCurrency,
+		errorCodeTransferParsePaymentUpdated,
+		errorCodeUserInvalidRequest,
+		errorCodeUserParseDateOfBirth,
+		errorCodeWebhookDecode,
+		errorCodeWebhookInvalidRequest,
+	}
+
+	wellFormed := regexp.MustCompile(`^wise\.[a-z0-9_]+(\.[a-z0-9_]+)*$`)
+	seen := make(map[string]bool, len(codes))
+	for _, code := range codes {
+		if !wellFormed.MatchString(code) {
+			t.Errorf("code %q is not a lowercase dotted wise.* identifier", code)
+		}
+		if seen[code] {
+			t.Errorf("code %q is listed/declared more than once in the catalog", code)
+		}
+		seen[code] = true
+	}
+}
+
+// TestSentinelsStayInterfaceTyped pins the sentinel declaration contract:
+// package-level sentinels live in errors.go's central var block, declared
+// with the error interface type so they are matched by value (errors.Is),
+// never by type.
+func TestSentinelsStayInterfaceTyped(t *testing.T) {
+	t.Parallel()
+
+	source, err := os.ReadFile("errors.go")
+	if err != nil {
+		t.Fatalf("read errors.go: %v", err)
+	}
+
+	text := string(source)
+	for _, name := range []string{
+		"ErrEmptyRateList",
+		"ErrAccountIdentificationCardinality",
+		"ErrOTTAlternativesShape",
+		"ErrTransferRefundAmountMissing",
+	} {
+		declared := regexp.MustCompile(`(?m)^\t` + name + ` error = errors\.New\(`).MatchString(text)
+		if !declared {
+			t.Errorf("sentinel %s must stay declared as `%s error = errors.New(...)` in errors.go", name, name)
+		}
+	}
+}
+
+// TestSentinelsMatchThroughProductionWraps pins that every sentinel stays
+// matchable with errors.Is through the exact wrap shapes the SDK produces.
+func TestSentinelsMatchThroughProductionWraps(t *testing.T) {
+	t.Parallel()
+
+	wrapped := errorfamily.WrapCorruption(ErrEmptyRateList, errorCodeRatesEmptyResponse, "no rates")
+	if !errors.Is(wrapped, ErrEmptyRateList) {
+		t.Error("WrapCorruption wrap lost sentinel match for ErrEmptyRateList")
+	}
+
+	wrapped = errorfamily.WrapCorruption(
+		ErrAccountIdentificationCardinality,
+		errorCodeAccountDetailsParseIdentification,
+		"found 2",
+	)
+	if !errors.Is(wrapped, ErrAccountIdentificationCardinality) {
+		t.Error("WrapCorruption wrap lost sentinel match for ErrAccountIdentificationCardinality")
+	}
+
+	wrapped = errorfamily.WrapCorruption(ErrTransferRefundAmountMissing, errorCodeWebhookDecode, "refund")
+	if !errors.Is(wrapped, ErrTransferRefundAmountMissing) {
+		t.Error("WrapCorruption wrap lost sentinel match for ErrTransferRefundAmountMissing")
+	}
+
+	fmtWrapped := fmt.Errorf("%w: %s", ErrOTTAlternativesShape, `{"not":"an array"}`)
+	if !errors.Is(fmtWrapped, ErrOTTAlternativesShape) {
+		t.Error("fmt.Errorf wrap lost sentinel match for ErrOTTAlternativesShape")
 	}
 }

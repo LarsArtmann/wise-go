@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json/jsontext"
 	"encoding/json/v2"
-	"errors"
 	"fmt"
 	"net/url"
 	"time"
@@ -78,9 +77,6 @@ func (c *Client) GetExchangeRate(
 	return result, nil
 }
 
-// errEmptyRateList reports a rates payload that decoded to zero entries.
-var errEmptyRateList = errors.New("empty rate list")
-
 // decodeExchangeRates decodes the rates payload (spec array, legacy
 // single-object tolerated) and picks the entry for the requested pair.
 func decodeExchangeRates(
@@ -101,7 +97,7 @@ func decodeExchangeRates(
 
 	if len(rates) == 0 {
 		return raw.ExchangeRate{}, errorfamily.WrapCorruption(
-			errEmptyRateList,
+			ErrEmptyRateList,
 			errorCodeRatesEmptyResponse,
 			fmt.Sprintf("no rates for %s-%s", source, target),
 		)

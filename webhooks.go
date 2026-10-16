@@ -443,10 +443,6 @@ func (e *WebhookEvent) BalanceCredit() (*BalanceCreditData, error) {
 	}, nil
 }
 
-// errTransferRefundAmountMissing marks a transfers#refund payload whose
-// resource block lacks the refund amount/currency pair.
-var errTransferRefundAmountMissing = errors.New("refund amount or currency missing from resource block")
-
 // TransferActiveCases decodes the data payload of a transfers#active-cases
 // event. The payload carries no occurred_at, so nothing is parsed beyond the
 // case list. Calling it on an envelope of a different event type fails with
@@ -480,7 +476,7 @@ func (e *WebhookEvent) TransferRefund() (*TransferRefundData, error) {
 
 	if payload.Resource.RefundAmount == nil || payload.Resource.RefundCurrency == "" {
 		return nil, errorfamily.WrapCorruption(
-			errTransferRefundAmountMissing,
+			ErrTransferRefundAmountMissing,
 			errorCodeWebhookDecode,
 			"decode transfers#refund payload",
 		)

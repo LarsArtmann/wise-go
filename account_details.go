@@ -2,7 +2,6 @@ package wise
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -154,10 +153,6 @@ type ISO20022Address struct {
 	AddressLines       []string
 }
 
-// errAccountIdentificationCardinality marks a wire accountIdentification that
-// carries zero or several oneOf members; the detail message holds the count.
-var errAccountIdentificationCardinality = errors.New("accountIdentification member count is not exactly one")
-
 // GetBankAccountDetails returns one set of receiving bank details by its own
 // ID (GET /{version}/balances/account-details/{id}; the 2027Q1 shape that
 // replaced GET /v1/profiles/{profileId}/account-details).
@@ -189,7 +184,7 @@ func mapAccountDetails(detail raw.AccountDetails) (AccountDetails, error) {
 	members := countIdentificationMembers(detail.AccountIdentification)
 	if members != 1 {
 		return AccountDetails{}, errorfamily.WrapCorruption(
-			errAccountIdentificationCardinality,
+			ErrAccountIdentificationCardinality,
 			errorCodeAccountDetailsParseIdentification,
 			fmt.Sprintf("expected exactly one identification member, found %d (country %q)", members, detail.Country),
 		)

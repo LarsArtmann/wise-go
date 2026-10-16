@@ -1,6 +1,6 @@
 # Status Report — v0.12.0 release session (wise-go)
 
-> **Resolved (2026-10-07 docs-health pass):** ~~ROADMAP release-state clause "GitHub Release objects pending user approval" was stale~~ **fixed** in ROADMAP.md (now "published 2026-10-07"). ~~broken code span in the published v0.12.0 release notes~~ **fixed** in `docs/releases/v0.12.0-release-notes.md` (single-line `Type: wise.StatementTypeFlat` span). The report's (f) release follow-ups (apidiff archive, pre-release gate app, markdown lint, Go 1.27 plan, daemon/go.mod guard, spec-conformance shuffle assertion) are routed into TODO_LIST.md / ROADMAP.md. Retained (not archived) because §b/§c/§f items remain open.
+> **Resolved (2026-10-07 docs-health pass):** ~~ROADMAP release-state clause "GitHub Release objects pending user approval" was stale~~ **fixed** in ROADMAP.md (now "published 2026-10-07"). ~~broken code span in the published v0.12.0 release notes~~ **fixed** in `docs/releases/v0.12.0-release-notes.md` (single-line `Type: wise.StatementTypeFlat` span). The report's (f) release follow-ups (apidiff archive, pre-release gate app, markdown lint, Go 1.27 plan, daemon/go.mod guard, spec-conformance shuffle assertion) are routed into TODO_LIST.md / ROADMAP.md. **Fully resolved 2026-10-16 (maximalist pass): every §b–§g item now carries an inline verdict; archived per the annotate-then-archive rule.**
 
 - **Date:** 2026-10-07 04:57 CEST
 - **Scope:** This session only (≈04:30–04:57): full release of **wise-go v0.12.0**
@@ -35,34 +35,34 @@
 
 ## b) PARTIALLY DONE
 
-1. **Post-tag commits are local-only.** `c6c01a9` (daemon sweep of the
-   concurrent session's doc edits) and `b0ec651` (my cleanup) are committed on
-   local master but **not pushed** — pushing requires an explicit ask. The
-   release itself (tag + `220e2c8`) IS pushed.
-2. **`apidiff` never ran.** The API-compat gate (`nix run .#apidiff`,
-   gorelease vs latest tag) was skipped; this release carries two breaking
-   changes and there is no recorded public-surface delta report. Post-tag it
-   still has documentation value, but its pre-push gate value was lost.
-3. **CI-green-on-tagged-commit check consciously skipped** (skill Phase 4.4):
+1. ~~**Post-tag commits are local-only.** `c6c01a9` (daemon sweep of the~~ done — push authorized and executed 2026-10-16; origin/master current
+   ~~concurrent session's doc edits) and `b0ec651` (my cleanup) are committed on~~
+   ~~local master but **not pushed** — pushing requires an explicit ask. The~~
+   ~~release itself (tag + `220e2c8`) IS pushed.~~
+2. ~~**`apidiff` never ran.** The API-compat gate (`nix run .#apidiff`,~~ done — apidiff runs in the pre-release chain and ran 2026-10-16 vs v0.13.0
+   ~~gorelease vs latest tag) was skipped; this release carries two breaking~~
+   ~~changes and there is no recorded public-surface delta report. Post-tag it~~
+   ~~still has documentation value, but its pre-push gate value was lost.~~
+3. **CI-green-on-tagged-commit check consciously skipped** (skill Phase 4.4): **→ CI resurrection lane; the server-side enable is the remaining user step**
    the GitHub CI workflow is documented as `disabled_manually`, so local gates
    substituted. I did not re-verify the disabled state this session (`gh run
    list` was not run) — I relied on the AGENTS.md record.
-4. **v0.10.0/v0.11.0 release notes published on trust.** I skimmed headers but
-   did not re-verify the drafted note bodies against the actual tag contents
-   before publishing (drafting was a prior session's work, re-verified there).
-5. **ROADMAP release-state paragraph is now stale in one clause**: the
-   concurrent session's in-flight edit says "GitHub Release objects pending
-   user approval" — false since my publishes. Left untouched because the file
-   was actively being edited by another session.
+4. ~~**v0.10.0/v0.11.0 release notes published on trust.** I skimmed headers but~~ **Won't implement — accepted — both note bodies proved correct in retrospect.**
+   ~~did not re-verify the drafted note bodies against the actual tag contents~~
+   ~~before publishing (drafting was a prior session's work, re-verified there).~~
+5. ~~**ROADMAP release-state paragraph is now stale in one clause**: the~~ done — banner: fixed in ROADMAP.md
+   ~~concurrent session's in-flight edit says "GitHub Release objects pending~~
+   ~~user approval" — false since my publishes. Left untouched because the file~~
+   ~~was actively being edited by another session.~~
 
 ## c) NOT STARTED (known release-adjacent items, deliberately untouched)
 
-1. `ottAPIVersion` 2026Q3 → 2026Q4 flip — probe-blind without credentials.
-2. Credentialed sandbox-live tests (`WISE_SANDBOX_API_KEY` missing).
-3. v1.0.0 API-freeze tag — user-gated approval.
-4. GitHub CI re-enable (push + enable + first green run).
-5. Typed recipient `Details` (per-corridor structs).
-6. docs-health HARVEST of this report's section (f) into TODO_LIST/ROADMAP.
+1. `ottAPIVersion` 2026Q3 → 2026Q4 flip — probe-blind without credentials. **→ key-gated sandbox lane (OTT 2026Q4 probe + flip)**
+2. Credentialed sandbox-live tests (`WISE_SANDBOX_API_KEY` missing). **→ key-gated sandbox-live suite**
+3. v1.0.0 API-freeze tag — user-gated approval. **→ user-gated v1.0.0 decision**
+4. GitHub CI re-enable (push + enable + first green run). **→ CI resurrection lane; enable pending user step**
+5. Typed recipient `Details` (per-corridor structs). **→ open in TODO_LIST**
+6. ~~docs-health HARVEST of this report's section (f) into TODO_LIST/ROADMAP.~~ done — banner: routed same day
 
 ## d) TOTALLY FUCKED UP
 
@@ -70,41 +70,41 @@ Nothing destroyed, poisoned, or irreversible — the immutable artifact (the
 tag) is correct, content-verified pre-push, and consumer-verified post-push.
 Two genuine defects, both small and fixable:
 
-1. **Broken inline code span in the published v0.12.0 release notes** — I
-   reflowed a line so `` `Type: … ` `` splits across a newline
-   ("with `Type:\n  wise.StatementTypeFlat`"); Markdown cannot span code
-   fences over newlines, so the GitHub release page renders that as broken
-   formatting. Published ≠ immutable here (release bodies are editable), one
-   `gh release edit --notes-file` fixes it.
-2. **The inherited CHANGELOG was missing the cycle's worst production
-   regression** (the no-millis timestamp fix). I caught it, but only because a
-   commit message mentioned FX — luck, not process. A systematic
-   commit-vs-changelog audit would have found it deterministically.
+1. ~~**Broken inline code span in the published v0.12.0 release notes** — I~~ done — banner: fixed via gh release edit
+   ~~reflowed a line so `` `Type: … ` `` splits across a newline~~
+   ~~("with `Type:\n  wise.StatementTypeFlat`"); Markdown cannot span code~~
+   ~~fences over newlines, so the GitHub release page renders that as broken~~
+   ~~formatting. Published ≠ immutable here (release bodies are editable), one~~
+   ~~`gh release edit --notes-file` fixes it.~~
+2. ~~**The inherited CHANGELOG was missing the cycle's worst production~~ done — the v0.14.0 cycle ran the systematic commit-vs-CHANGELOG diff as release ritual
+   ~~regression** (the no-millis timestamp fix). I caught it, but only because a~~
+   ~~commit message mentioned FX — luck, not process. A systematic~~
+   ~~commit-vs-changelog audit would have found it deterministically.~~
 
 ## e) WHAT WE SHOULD IMPROVE
 
-1. **Systematic Phase-2 audit**: enumerate non-daemon commits since the last
+1. **Systematic Phase-2 audit**: enumerate non-daemon commits since the last **→ partially covered by the pre-release chain; full per-commit audit still an idea**
    tag and diff each non-doc file against the CHANGELOG before cutting the
    section (scriptable; would have made fix #3 in (a) deterministic).
-2. **apidiff BEFORE tag push**, archived to `docs/releases/vX.Y.Z-apidiff.md`
-   — breaking changes deserve a recorded delta at gate time, not after.
-3. **A `nix run .#pre-release` flake app** chaining the local gates (build,
-   vet, race test, lint, flake check, doc-verify, apidiff, dirty-tree check)
-   — the manual gate list relies on session discipline.
-4. **Spec-conformance coverage guard under `-shuffle`**: the guard can SKIP
-   if shuffled before the recorder (documented); I never explicitly ran the
-   guard to confirm the floors (25/60/3) held on the tagged tree.
-5. **Release-notes lint**: a tiny checker for code spans/links in
-   `docs/releases/*.md` before `gh release create` — the broken span proves
-   reflowed prose needs a gate, and `gh release edit` cannot unring the bell
-   for anyone who read it.
-6. **Record the CI-disabled exception in the release ritual** (AGENTS.md
-   Build section): state explicitly that Phase 4.4's CI check substitutes
-   local gates until the workflow is re-enabled.
-7. **Concurrent-session protocol**: I detected the other session via mtimes
-   and avoided its files — a lightweight claim convention (or simply a
-   session-start check of `git status` for in-flight foreign edits) would
-   make that collision-safe by default instead of by luck.
+2. ~~**apidiff BEFORE tag push**, archived to `docs/releases/vX.Y.Z-apidiff.md`~~ done — apidiff runs before tag in the pre-release chain
+   ~~— breaking changes deserve a recorded delta at gate time, not after.~~
+3. ~~**A `nix run .#pre-release` flake app** chaining the local gates (build,~~ done — nix run .#pre-release shipped in v0.13.0
+   ~~vet, race test, lint, flake check, doc-verify, apidiff, dirty-tree check)~~
+   ~~— the manual gate list relies on session discipline.~~
+4. ~~**Spec-conformance coverage guard under `-shuffle`**: the guard can SKIP~~ done — shuffle-proof TestMain guard landed 2026-10-07
+   ~~if shuffled before the recorder (documented); I never explicitly ran the~~
+   ~~guard to confirm the floors (25/60/3) held on the tagged tree.~~
+5. ~~**Release-notes lint**: a tiny checker for code spans/links in~~ done — nix run .#release-notes-check shipped in v0.13.0
+   ~~`docs/releases/*.md` before `gh release create` — the broken span proves~~
+   ~~reflowed prose needs a gate, and `gh release edit` cannot unring the bell~~
+   ~~for anyone who read it.~~
+6. ~~**Record the CI-disabled exception in the release ritual** (AGENTS.md~~ done — AGENTS Build and Dev records the CI-disabled substitution
+   ~~Build section): state explicitly that Phase 4.4's CI check substitutes~~
+   ~~local gates until the workflow is re-enabled.~~
+7. ~~**Concurrent-session protocol**: I detected the other session via mtimes~~ done — AGENTS carries the anchor-drift and daemon-race gotchas; sessions run the lane protocol
+   ~~and avoided its files — a lightweight claim convention (or simply a~~
+   ~~session-start check of `git status` for in-flight foreign edits) would~~
+   ~~make that collision-safe by default instead of by luck.~~
 
 ## f) UP TO 50 THINGS TO GET DONE NEXT
 
@@ -180,14 +180,14 @@ Quality / infrastructure:
 
 ## g) QUESTIONS I CANNOT FIGURE OUT MYSELF
 
-1. **Push approval:** local master is 2 commits ahead of origin (`c6c01a9`
-   daemon doc-sweep, `b0ec651` my release-cleanup docs). Both are docs-only,
-   post-tag. Push them now?
-2. **Concurrent session:** another session was actively editing
-   AGENTS.md/FEATURES.md/ROADMAP.md at 04:52 (timestamps interleaved with my
-   edits; the daemon swept an intermediate state at `c6c01a9`). Is it still
-   running, and should I hold off those three files until it lands its work?
-3. **v1.0.0 timing:** the API audit is green at the 41-method surface and
+1. ~~**Push approval:** local master is 2 commits ahead of origin (`c6c01a9`~~ done — answered — push authorized and executed 2026-10-16
+   ~~daemon doc-sweep, `b0ec651` my release-cleanup docs). Both are docs-only,~~
+   ~~post-tag. Push them now?~~
+2. ~~**Concurrent session:** another session was actively editing~~ done — answered — lane protocol adopted (AGENTS gotchas; sessions check git status before edits)
+   ~~AGENTS.md/FEATURES.md/ROADMAP.md at 04:52 (timestamps interleaved with my~~
+   ~~edits; the daemon swept an intermediate state at `c6c01a9`). Is it still~~
+   ~~running, and should I hold off those three files until it lands its work?~~
+3. **v1.0.0 timing:** the API audit is green at the 41-method surface and **→ still user-gated v1.0.0 decision**
    v0.12.0 is shipped. Freeze the public API now (tag v1.0.0), or only after
    CI is re-enabled and the sandbox-live runs have happened?
 
