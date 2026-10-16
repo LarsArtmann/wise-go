@@ -108,16 +108,6 @@
         inherit src;
         vendorHash = import ./vendorHash.nix;
 
-        # Tools the buildflow pipeline expects in the project devShell;
-        # without these it nix-runs them ad hoc on every run with a
-        # "binary X not in project devShell ... WITHOUT project deps"
-        # warning (dprint/ruff/vulnix, observed 2026-10-17).
-        devShellExtraPackages = pkgs: [
-          pkgs.dprint
-          pkgs.ruff
-          pkgs.vulnix
-        ];
-
         deps = {
           "github.com/larsartmann/go-branded-id" = inputs.go-branded-id;
           "github.com/larsartmann/go-error-family" = inputs.go-error-family;
@@ -137,12 +127,18 @@
         # checks, go-tools for staticcheck helpers). gitleaks/codespell/
         # markdownlint-cli are the three on-demand buildflow tools that
         # otherwise report "unavailable (health check failed)" every run.
+        # dprint/ruff/vulnix are pipeline tools buildflow otherwise nix-runs
+        # ad hoc with a "not in project devShell" warning on every run
+        # (observed 2026-10-17).
         devShellExtraPackages = pkgs: [
           pkgs.go-tools
           pkgs.lychee
           pkgs.gitleaks
           pkgs.codespell
           pkgs.markdownlint-cli
+          pkgs.dprint
+          pkgs.ruff
+          pkgs.vulnix
         ];
       };
 
