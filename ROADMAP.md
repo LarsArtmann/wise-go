@@ -141,6 +141,23 @@ full analysis lives at `docs/brainstorming/2026-07-18_data-model-review.html`.
 - **CI hardening** — `nix flake check` no longer skips the build; gofumpt format
   check added to the lint job.
 
+### Shipped (unreleased, 2026-10-16)
+
+- **`OneTimeToken` typed credential + `OTTAction` open enum** — every
+  OTT-taking surface (`GetOTTStatus`, `TriggerOTT`, `VerifyOTT`,
+  `ClearSCAChallenge`, `WithSCAApprovalToken`, `TwoFAApprovalToken`) is typed;
+  an OTT can no longer stand where an OTP code or API key belongs. Tokenless
+  PSD2 challenges pinned. Review:
+  `docs/reviews/2026-10-16_sca-auth-data-model.html`.
+- **SCA factor module decision (defer, with trigger)** — no
+  `wise-go/sca` go.mod today: every consumer imports the domain together with
+  the client (no composability payoff) and the endpoints are Client methods.
+  TRIGGER: when a JOSE factor (PIN / FaceMap / device-fingerprint verify —
+  all `application/jose+json`) is built, extract `wise-go/sca-jose` as its
+  own module so the go-jose dependency stays out of every API-key+OTP
+  consumer's graph. The SCA-session concept (5-minute window) gets its type
+  only when that endpoint ships.
+
 ### Shipped in v0.4.0
 
 - **`Money` value object** — paired `XxxCents int64` / `XxxCurrency string` collapsed
