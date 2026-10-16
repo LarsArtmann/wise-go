@@ -28,7 +28,7 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
 - **215 documented REST operations** across **51 reference categories**, plus
   **29 webhook-event definitions** in the preview sweep (**31** distinct event
   types counting the settlement and Swift events from the webhook-event index).
-- **wise-go ships 44 of those documented operations** through **41 of the 44
+- **wise-go ships 46 of those documented operations** through **43 of the 46
   public `*Client` methods** — the other three are `Authenticate`/`Health`
   (convenience wrappers) and `ClearSCAChallenge` (a multi-call loop);
   `TriggerOTT`/`VerifyOTT` each cover three channel paths. The count is
