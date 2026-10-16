@@ -99,7 +99,7 @@ the three completed transfer-category endpoints is staged in `[Unreleased]`.
 The v1.0 audit is
 green and re-audited 2026-09-13 at the 33-method surface
 (`docs/reviews/2026-08-21_v1.0-api-audit.md` — refreshed inventory, godoc pass,
-risk-register items 8–10, growth lineage through 41 methods); the v1.0.0 tag
+risk-register items 8–10, growth lineage through 44 methods as of 2026-10-16); the v1.0.0 tag
 remains gated on the maintainer's explicit approval.
 
 ### Medium-term
