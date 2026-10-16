@@ -237,10 +237,10 @@ Everything user-gated, correctly untouched:
 
 ## Session commit ledger
 
-| Repo | Commit | Content |
-| --- | --- | --- |
-| crush-config | `0607ed3` | two lessons (pin-drift + Ginkgo count ban), message amended over daemon sweep `0a5cc09` |
-| crush-config | `9eb3cab` | dprint code-span nit fix in an older lesson (from the executed format verification) |
-| wise-go | `7c13bbb` | TODO_LIST.md cross-repo section removed (daemon commit of my edit) |
-| wise-go | `d8e28b5` | revert `lll` + restore two rationale comments after buildflow auto-configure |
-| wise-go | `1cf83ab` | daemon commit of buildflow's ci.yml/.golangci.yml/flake.lock (kept, partially reverted by `d8e28b5`) |
+| Repo         | Commit    | Content                                                                                              |
+| ------------ | --------- | ---------------------------------------------------------------------------------------------------- |
+| crush-config | `0607ed3` | two lessons (pin-drift + Ginkgo count ban), message amended over daemon sweep `0a5cc09`              |
+| crush-config | `9eb3cab` | dprint code-span nit fix in an older lesson (from the executed format verification)                  |
+| wise-go      | `7c13bbb` | TODO_LIST.md cross-repo section removed (daemon commit of my edit)                                   |
+| wise-go      | `d8e28b5` | revert `lll` + restore two rationale comments after buildflow auto-configure                         |
+| wise-go      | `1cf83ab` | daemon commit of buildflow's ci.yml/.golangci.yml/flake.lock (kept, partially reverted by `d8e28b5`) |
