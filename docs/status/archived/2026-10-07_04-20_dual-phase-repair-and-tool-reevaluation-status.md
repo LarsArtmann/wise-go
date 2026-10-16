@@ -1,6 +1,6 @@
 # Status Report — dual-phase repair & tool re-evaluation (wise-go)
 
-> **Superseded (2026-10-07 docs-health pass):** this is the current state for the buildflow repair thread. The gate is green on `go 1.26`; ~~`findings: null` misread as a clean pass~~ corrected in-session (documented in AGENTS.md and §d). The three upstream BuildFlow defects are documented in AGENTS.md and routed to TODO_LIST.md. Retained (not archived) because its §b/§c/§f items remain open.
+> **Superseded (2026-10-07 docs-health pass):** this is the current state for the buildflow repair thread. The gate is green on `go 1.26`; ~~`findings: null` misread as a clean pass~~ corrected in-session (documented in AGENTS.md and §d). The three upstream BuildFlow defects are documented in AGENTS.md and routed to TODO_LIST.md. Retained (not archived) because its §b/§c/§f items remain open. **Fully resolved 2026-10-16 (maximalist pass): the three defects were filed (#34 closed, #35/#36 open), the toolchain question is answered by the migration plan, and every remaining item carries an inline verdict; archived per the annotate-then-archive rule.**
 
 - **Date:** 2026-10-07 04:20 CEST
 - **Scope:** This session only. Phase 1 (03:17–03:45): buildflow exit 69 → green repair. Phase 2 (03:50–04:15): operator challenged three judgment calls (upgrades, erraudit, max_file_size); all three re-verified with evidence. No unrelated research.
@@ -94,70 +94,70 @@ Three new upstream BuildFlow bugs are evidenced and queued: (a) embedded erraudi
 
 **P0 — lock in tonight's state**
 
-1. Harvest both status reports' (b)/(c)/(f) into TODO_LIST.md once the concurrent release-notes edit lands (docs-health HARVEST).
-2. File upstream: embedded erraudit false positives at HEAD (evidence: client.go:135–155/189/394 finding set, identical at 3bb229e + 202b114; canonical standalone gate clean on identical tree) — pending g2.
-3. File upstream: `nix run .#reinstall` leaves the nix profile locked at the old rev (profile entry `rev=3bb229e` untouched after REINSTALL-OK; manual `nix profile remove/add` of the store path required).
-4. File upstream: file-size-check scans 0 files in root-package Go repos (0 findings at 350 AND 700; `filesScanned: 0` in summary; affects every repo with root .go files).
-5. File upstream (minor): `-s <skipped-tool> --format finding` emits `findings: null` with no skipped marker — jq `null | length` masquerades as 0 findings; emit `.summary.total=0` + `skipped: true` instead.
-6. Re-run `buildflow doctor`: binary-freshness check should now be OK on 202b114; enumerate the 9 unavailable tools by name while there.
-7. Verify gopls diagnostics are clean post-restart (the six stale 1.27 `UnsupportedFeature` errors should be gone).
-8. Isolate lychee's verdict on `bugcrowd.com/wise` (`buildflow -s lychee --format finding`).
-9. One-shot sweep: `-s <tool> --format finding` per remaining warning-class tool (vulnix, go-auto-upgrade, lychee) → itemized log so "exit 0 with warnings" has a finite known list.
-10. Watch one more full run for result-cache behavior (two consecutive runs tonight showed 0% hit rate — if it persists at unchanged trees, that's another upstream signal).
+1. ~~Harvest both status reports' (b)/(c)/(f) into TODO_LIST.md once the concurrent release-notes edit lands (docs-health HARVEST).~~ done — harvested by later sweeps
+2. ~~File upstream: embedded erraudit false positives at HEAD (evidence: client.go:135–155/189/394 finding set, identical at 3bb229e + 202b114; canonical standalone gate clean on identical tree) — pending g2.~~ done — filed as #34, closed 2026-10-07
+3. ~~File upstream: `nix run .#reinstall` leaves the nix profile locked at the old rev (profile entry `rev=3bb229e` untouched after REINSTALL-OK; manual `nix profile remove/add` of the store path required).~~ done — filed as #35 (still open upstream)
+4. ~~File upstream: file-size-check scans 0 files in root-package Go repos (0 findings at 350 AND 700; `filesScanned: 0` in summary; affects every repo with root .go files).~~ done — filed as #36 (still open upstream)
+5. File upstream (minor): `-s <skipped-tool> --format finding` emits `findings: null` with no skipped marker — jq `null | length` masquerades as 0 findings; emit `.summary.total=0` + `skipped: true` instead. **→ rides the display-defect filing lane**
+6. Re-run `buildflow doctor`: binary-freshness check should now be OK on 202b114; enumerate the 9 unavailable tools by name while there. **→ doctor enumeration, open**
+7. ~~Verify gopls diagnostics are clean post-restart (the six stale 1.27 `UnsupportedFeature` errors should be gone).~~ done — root-caused same day: env divergence; .crushrc fix
+8. Isolate lychee's verdict on `bugcrowd.com/wise` (`buildflow -s lychee --format finding`). **→ superseded: doc-verify lychee covers the link every run**
+9. One-shot sweep: `-s <tool> --format finding` per remaining warning-class tool (vulnix, go-auto-upgrade, lychee) → itemized log so "exit 0 with warnings" has a finite known list. **→ itemization idea, open**
+10. Watch one more full run for result-cache behavior (two consecutive runs tonight showed 0% hit rate — if it persists at unchanged trees, that's another upstream signal). **→ cache-watch idea, open**
 
 **P1 — prevent recurrence**
-11. Fleet sweep for tonight's failure signature: `git log --diff-filter=D -- .buildflow.yml` across ~/projects (if one sweep deleted it here, siblings may share it).
-12. Root-cause WHO deleted `.buildflow.yml` (buildflow step vs daemon sweep vs concurrent session) — still unattributed.
-13. Upstream guard request: buildflow refuses to run (or warns loudly) when its own config file is absent in a repo whose AGENTS.md documents one.
-14. Guard request #2: a preflight/CI check that fails when `grep '^go ' go.mod` ≠ the repo's documented pin (tonight's damage was silent for 7 minutes).
-15. Ask upstream about daemon commit message hygiene: "auto-commit 1 changed file(s)" bundled config deletion + go.mod corruption with zero signal.
-16. Consider anchoring the `exhaustruct_v5.ignore-patterns` entry (`\.Cmd$`) if v5 pattern semantics differ from v3 — currently untestable either way (no `exec.Cmd{` literals exist).
-17. Re-check the max_file_size threshold (and the 3 violating files) after upstream fixes file-size-check's scanning — the 700-vs-350 rationale is written for that day.
-18. Confirm `nix-hash-fix` clears now that go.mod is sane (preflight had it at 10/10 failures during the broken window).
+11. Fleet sweep for tonight's failure signature: `git log --diff-filter=D -- .buildflow.yml` across ~/projects (if one sweep deleted it here, siblings may share it). **→ fleet sweep idea on ROADMAP**
+12. ~~Root-cause WHO deleted `.buildflow.yml` (buildflow step vs daemon sweep vs concurrent session) — still unattributed.~~ done — attributed: the modernizer sweep; incident in AGENTS
+13. Upstream guard request: buildflow refuses to run (or warns loudly) when its own config file is absent in a repo whose AGENTS.md documents one. **→ upstream guard proposal, open**
+14. Guard request #2: a preflight/CI check that fails when `grep '^go ' go.mod` ≠ the repo's documented pin (tonight's damage was silent for 7 minutes). **→ guard proposal, open**
+15. Ask upstream about daemon commit message hygiene: "auto-commit 1 changed file(s)" bundled config deletion + go.mod corruption with zero signal. **→ daemon-hygiene ask on ROADMAP**
+16. Consider anchoring the `exhaustruct_v5.ignore-patterns` entry (`\.Cmd$`) if v5 pattern semantics differ from v3 — currently untestable either way (no `exec.Cmd{` literals exist). **→ open on evidence**
+17. Re-check the max_file_size threshold (and the 3 violating files) after upstream fixes file-size-check's scanning — the 700-vs-350 rationale is written for that day. **→ post-upstream-fix**
+18. Confirm `nix-hash-fix` clears now that go.mod is sane (preflight had it at 10/10 failures during the broken window). **→ open check**
 
 **P2 — release coordination (concurrent session active)**
-19. Decide whether the SECURITY.md link fix is release-notes-worthy or infra-only (g3).
-20. After the release session lands: `nix flake check` (links fileset still covers SECURITY.md) + `nix run .#doc-verify` (count-claims freshness).
-21. Verify the release-notes session's TODO_LIST closure doesn't conflict with harvest items (no double-bookkeeping).
-22. Confirm changelog-only-commit gotcha doesn't bite their release-notes commit (dprint excludes CHANGELOG.md).
+19. ~~Decide whether the SECURITY.md link fix is release-notes-worthy or infra-only (g3).~~ done — shipped with the releases
+20. ~~After the release session lands: `nix flake check` (links fileset still covers SECURITY.md) + `nix run .#doc-verify` (count-claims freshness).~~ done — flake check and doc-verify green 2026-10-16
+21. ~~Verify the release-notes session's TODO_LIST closure doesn't conflict with harvest items (no double-bookkeeping).~~ done — TODO reconciled by later sweeps
+22. ~~Confirm changelog-only-commit gotcha doesn't bite their release-notes commit (dprint excludes CHANGELOG.md).~~ done — handled through the v0.14.0 cycle
 
 **P3 — toolchain endgame (needs operator, g1)**
-23. Decide the Go 1.27 plan: conditions + date for flake toolchain + GOTOOLCHAIN policy change; the modernizer's pushed changes become the migration's first commit.
-24. If 1.26 stays: fleet-wide decision to skip-list the 1.27-pushing dispositions rather than revert per incident.
-25. Track nixpkgs go_1_26 patches; bump flake input when security patches land (pairs with P0 vulnix posture).
-26. erraudit local install becomes possible at 1.27 (requires go ≥ 1.27) — if the toolchain moves, revisit the CI-only constraint.
+23. ~~Decide the Go 1.27 plan: conditions + date for flake toolchain + GOTOOLCHAIN policy change; the modernizer's pushed changes become the migration's first commit.~~ done — the migration plan exists, condition-gated
+24. ~~If 1.26 stays: fleet-wide decision to skip-list the 1.27-pushing dispositions rather than revert per incident.~~ done — the deliberate-non-fixes policy is documented
+25. Track nixpkgs go_1_26 patches; bump flake input when security patches land (pairs with P0 vulnix posture). **→ patch cadence, open**
+26. erraudit local install becomes possible at 1.27 (requires go ≥ 1.27) — if the toolchain moves, revisit the CI-only constraint. **→ condition-gated on the toolchain**
 
 **P4 — upstream BuildFlow quality (beyond the three filed bugs)**
-27. Reconcile embedded-erraudit vs standalone gate permanently: flag-compatible flags, or per-repo-class documentation of which gate is authoritative.
-28. Note the summary-count quirk: erraudit reported `filesScanned: 0` while `filesAffected: 9` — field semantics are inconsistent in the finding JSON.
-29. Check whether the embedded analyzer's `context_loss` rule has an exclusion mechanism the repo could use in lieu of skip (preferred if it exists — narrower than a step skip).
-30. `gomod_tidy_pregate` (the file the concurrent session was refactoring) — after it lands, review whether it interacts with wise-go's go.mod pin the way go-version-auto-configure does.
-31. BuildFlow repo: review `git log 3bb229e..HEAD` highlights eventually — 160 commits of behavior drift tonight only surfaced through failures.
+27. ~~Reconcile embedded-erraudit vs standalone gate permanently: flag-compatible flags, or per-repo-class documentation of which gate is authoritative.~~ done — #34 closed; the standalone gate governs
+28. Note the summary-count quirk: erraudit reported `filesScanned: 0` while `filesAffected: 9` — field semantics are inconsistent in the finding JSON. **→ upstream display artifact; filing lane**
+29. Check whether the embedded analyzer's `context_loss` rule has an exclusion mechanism the repo could use in lieu of skip (preferred if it exists — narrower than a step skip). **→ exclusion-mechanism idea, open**
+30. `gomod_tidy_pregate` (the file the concurrent session was refactoring) — after it lands, review whether it interacts with wise-go's go.mod pin the way go-version-auto-configure does. **→ upstream review, open**
+31. BuildFlow repo: review `git log 3bb229e..HEAD` highlights eventually — 160 commits of behavior drift tonight only surfaced through failures. **→ upstream review, open**
 
 **P5 — environment / advisories**
-32. Install `interrogate` (or consciously exclude); identify the other 8 unavailable tools (see P0-6).
-33. Add dprint to devShells.default (warning: running via `nix run nixpkgs#dprint` without project deps).
-34. lychee private-links fleet decision (GITHUB_TOKEN vs exclude regex).
-35. CI re-enable on GitHub: push + enable + first green run (preconditions met tonight).
-36. After CI enablement: coverage-badge job unfreezes; erraudit CI job re-checked against the canonical invocation.
-37. Set GITHUB_TOKEN for CI lychee once policy lands.
+32. Install `interrogate` (or consciously exclude); identify the other 8 unavailable tools (see P0-6). **→ tooling gap, open**
+33. Add dprint to devShells.default (warning: running via `nix run nixpkgs#dprint` without project deps). **→ devShell idea, open**
+34. lychee private-links fleet decision (GITHUB_TOKEN vs exclude regex). **→ fleet decision, open**
+35. CI re-enable on GitHub: push + enable + first green run (preconditions met tonight). **→ CI enable pending user step**
+36. After CI enablement: coverage-badge job unfreezes; erraudit CI job re-checked against the canonical invocation. **→ post-enable follow-up**
+37. Set GITHUB_TOKEN for CI lychee once policy lands. **→ post-policy follow-up**
 
 **P6 — docs / memory**
-38. Cross-project lesson (crush-config `references/lessons.md`, by commit): "bundled-analyzer vs canonical-gate divergence + jq null-length trap + reinstall-doesn't-switch-profile" — generalizes beyond this repo.
-39. AGENTS.md one-liner: health check `git log --diff-filter=D -- .buildflow.yml` for new sessions.
-40. Confirm no feature changes this session need FEATURES.md/CHANGELOG entries beyond the SECURITY.md link (none expected).
-41. If the erraudit skip ever lifts, delete its rationale from `.buildflow.yml` in the same commit (skips with dead rationale mislead).
-42. Name the daemon-commit pattern in AGENTS.md ("config-deletion + policy-violation bundled in one heuristic commit") for faster recognition next time.
+38. Cross-project lesson (crush-config `references/lessons.md`, by commit): "bundled-analyzer vs canonical-gate divergence + jq null-length trap + reinstall-doesn't-switch-profile" — generalizes beyond this repo. **→ cross-repo lesson lane**
+39. AGENTS.md one-liner: health check `git log --diff-filter=D -- .buildflow.yml` for new sessions. **→ AGENTS one-liner idea, open**
+40. ~~Confirm no feature changes this session need FEATURES.md/CHANGELOG entries beyond the SECURITY.md link (none expected).~~ done — no feature changes; the link shipped
+41. ~~If the erraudit skip ever lifts, delete its rationale from `.buildflow.yml` in the same commit (skips with dead rationale mislead).~~ done — skip removed with rationale cleanup 2026-10-16
+42. ~~Name the daemon-commit pattern in AGENTS.md ("config-deletion + policy-violation bundled in one heuristic commit") for faster recognition next time.~~ done — the daemon-race gotchas carry the pattern
 
 **P7 — smaller / deferred**
-43. wise_test.go (4229 lines) is the elephant for any future file-size enforcement — eventual split candidate list: wise_test, internal_test, types.go (800).
-44. `agentic_fetch` of Wise pages returns huge payloads; prefer targeted HEAD-style checks for link verification.
-45. Never let formatter commands sit between a tool and `$?` when measuring exit codes (PIPESTATUS unavailable in this shell) — personal habit, already applied.
-46. When duplicating findings JSON for comparison, strip ANSI + keep stderr out (`2>/dev/null`) — the 2>&1 merge broke jq once tonight.
-47. OTT 2026Q4 rollover probe (documented flip procedure) — parked, pre-existing.
-48. Sandbox-key pass (paired with 47 per TODO_LIST) — parked, pre-existing.
-49. After erraudit upstream fix lands someday: re-diff the 29 vs canonical gate output and document the delta in AGENTS.md before lifting the skip.
-50. Keep lo decision parked: revisit only if the fleet converges on samber/lo as standard (currently 34/322).
+43. wise_test.go (4229 lines) is the elephant for any future file-size enforcement — eventual split candidate list: wise_test, internal_test, types.go (800). **→ split candidate list, open**
+44. `agentic_fetch` of Wise pages returns huge payloads; prefer targeted HEAD-style checks for link verification. **→ minor idea**
+45. ~~Never let formatter commands sit between a tool and `$?` when measuring exit codes (PIPESTATUS unavailable in this shell) — personal habit, already applied.~~ done — the unpiped-exit rule is in AGENTS and the plan guards
+46. When duplicating findings JSON for comparison, strip ANSI + keep stderr out (`2>/dev/null`) — the 2>&1 merge broke jq once tonight. **→ minor idea**
+47. OTT 2026Q4 rollover probe (documented flip procedure) — parked, pre-existing. **→ key-gated sandbox lane**
+48. Sandbox-key pass (paired with 47 per TODO_LIST) — parked, pre-existing. **→ key-gated sandbox lane**
+49. ~~After erraudit upstream fix lands someday: re-diff the 29 vs canonical gate output and document the delta in AGENTS.md before lifting the skip.~~ done — moot: the skip was removed outright after the #34 closure
+50. ~~Keep lo decision parked: revisit only if the fleet converges on samber/lo as standard (currently 34/322).~~ **Won't implement — parked by decision; fleet adoption 34/322.**
 
 ## g) QUESTIONS I CANNOT FIGURE OUT MYSELF (3)
 

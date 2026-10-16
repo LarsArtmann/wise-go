@@ -29,22 +29,22 @@
 
 ## b) PARTIALLY DONE (what works, what remains)
 
-1. **Inline-strikethrough depth on the KEPT reports.** Works: every kept report carries a resolution banner with inline `~~…~~` markers. Remains: the interior `§b/§c/§f` item lists are resolved at **banner granularity**, not item-by-item. The archive-candidate reports I moved relied on their pre-existing banners (plus the manifest) rather than a fresh per-row strike.
-2. **ARCHIVE admission test was banner-trust, not byte-verification.** I read 09-27×2, 09-29, 10-05×2, 10-06, 03-57 fully and confirmed their subject work shipped, but for their long `§f` brainstorm tails I accepted the banner's "routed to TODO_LIST/ROADMAP" claim. A strict reading ("every item resolved") would demand per-item verdicts; I matched the project's established convention (the already-archived 09-16 files are banner-only).
-3. **`ROADMAP.md` got no new raw ideas this session.** The genuinely-open decisions I harvested went to TODO_LIST (P3 decisions + Cross-repo) instead; a couple of 07-35 raw ideas (pin-sync upstream proposal, "last verified" dates on AGENTS dep entries) are arguably ROADMAP fuel and were not added.
-4. **`docs/drafts/*.md` (4 filed issue drafts) untouched.** They are a paper trail, not status/planning history; I judged them out of the historical-doc model and left them (their content is filed upstream).
-5. **HTML/D2/SVG artifacts not annotated.** Classified LEAVE-ALONE by policy and left alone (the producing skill supersedes them).
-6. **The LSP-resolution narrative de-dup** (struck ROADMAP idea vs AGENTS gotcha) was harvested to TODO_LIST but not performed.
-7. **`AGENTS.md` size (42 KB) not pruned.** Flagged, deliberately not addressed (see (d)/(g)).
+1. ~~**Inline-strikethrough depth on the KEPT reports.** Works: every kept report carries a resolution banner with inline `~~…~~` markers. Remains: the interior `§b/§c/§f` item lists are resolved at **banner granularity**, not item-by-item. The archive-candidate reports I moved relied on their pre-existing banners (plus the manifest) rather than a fresh per-row strike.~~ done — the 2026-10-16 pass is the maximalist item-level strike
+2. ~~**ARCHIVE admission test was banner-trust, not byte-verification.** I read 09-27×2, 09-29, 10-05×2, 10-06, 03-57 fully and confirmed their subject work shipped, but for their long `§f` brainstorm tails I accepted the banner's "routed to TODO_LIST/ROADMAP" claim. A strict reading ("every item resolved") would demand per-item verdicts; I matched the project's established convention (the already-archived 09-16 files are banner-only).~~ done — today's archives carry per-item verdicts
+3. ~~**`ROADMAP.md` got no new raw ideas this session.** The genuinely-open decisions I harvested went to TODO_LIST (P3 decisions + Cross-repo) instead; a couple of 07-35 raw ideas (pin-sync upstream proposal, "last verified" dates on AGENTS dep entries) are arguably ROADMAP fuel and were not added.~~ done — ROADMAP gained the raw ideas in the 2026-10-16 pass
+4. ~~**`docs/drafts/*.md` (4 filed issue drafts) untouched.** They are a paper trail, not status/planning history; I judged them out of the historical-doc model and left them (their content is filed upstream).~~ **Won't implement — deliberate: drafts are a paper trail, not history.**
+5. ~~**HTML/D2/SVG artifacts not annotated.** Classified LEAVE-ALONE by policy and left alone (the producing skill supersedes them).~~ **Won't implement — policy: leave-alone, the producing skill supersedes them.**
+6. **The LSP-resolution narrative de-dup** (struck ROADMAP idea vs AGENTS gotcha) was harvested to TODO_LIST but not performed. **→ small dedup task, open**
+7. **`AGENTS.md` size (42 KB) not pruned.** Flagged, deliberately not addressed (see (d)/(g)). **→ the prune is plan task M24 (48.6 KB now)**
 
 ## c) NOT STARTED (observed/deliberately untouched)
 
-1. **Item-by-item `done at <hash>` strikethrough** on the 9 kept reports' `§f` tables (the maximalist ANNOTATE pass).
-2. **`AGENTS.md` prune** to the skill's 5–15 KB budget (>30 KB = "bloated").
-3. **ROADMAP raw-idea additions** from this session's harvest.
-4. **Any Go source change** — none; docs-only session as scoped.
-5. **Verification of the concurrent session's `.buildflow.yml` GOEXPERIMENT removal** — I documented its effect in AGENTS but cannot exercise buildflow from this shell to prove BuildFlow's auto-detect is real.
-6. **`nix flake check --all-systems`** — pre-existing x86_64-darwin blocker (nixpkgs-26.11 dropped it); a user decision.
+1. ~~**Item-by-item `done at <hash>` strikethrough** on the 9 kept reports' `§f` tables (the maximalist ANNOTATE pass).~~ done — by the 2026-10-16 pass
+2. **`AGENTS.md` prune** to the skill's 5–15 KB budget (>30 KB = "bloated"). **→ plan task M24**
+3. ~~**ROADMAP raw-idea additions** from this session's harvest.~~ done — ROADMAP updated 2026-10-16
+4. ~~**Any Go source change** — none; docs-only session as scoped.~~ done — scoped out by design
+5. ~~**Verification of the concurrent session's `.buildflow.yml` GOEXPERIMENT removal** — I documented its effect in AGENTS but cannot exercise buildflow from this shell to prove BuildFlow's auto-detect is real.~~ done — verified: buildflow steps ran green since with the env key absent
+6. **`nix flake check --all-systems`** — pre-existing x86_64-darwin blocker (nixpkgs-26.11 dropped it); a user decision. **→ darwin matrix decision pending**
 
 ## d) TOTALLY FUCKED UP (radical honesty — this session's failures)
 
@@ -67,51 +67,51 @@
 
 **This session's direct follow-ups**
 
-1. Item-by-item `~~item~~ done at <hash>` pass on the 9 kept reports' `§f` tables (maximalist ANNOTATE).
-2. Decide whether the 8 newly-archived reports should also carry the "Archived as fully resolved." banner clause for parity with the 09-16 set.
-3. Add the 07-35 raw ideas + this session's cross-repo lessons to ROADMAP raw ideas.
-4. Verify the `.buildflow.yml` GOEXPERIMENT removal is safe (run one buildflow step) or restore the `env:` key.
-5. Prune `AGENTS.md` toward the 15 KB budget (or consciously accept the 42 KB density).
+1. ~~Item-by-item `~~item~~ done at <hash>` pass on the 9 kept reports' `§f` tables (maximalist ANNOTATE).~~ done — by this pass
+2. ~~Decide whether the 8 newly-archived reports should also carry the "Archived as fully resolved." banner clause for parity with the 09-16 set.~~ done — manifests carry classifications; banners updated
+3. ~~Add the 07-35 raw ideas + this session's cross-repo lessons to ROADMAP raw ideas.~~ done — ROADMAP updated 2026-10-16
+4. ~~Verify the `.buildflow.yml` GOEXPERIMENT removal is safe (run one buildflow step) or restore the `env:` key.~~ done — verified green through later buildflow runs
+5. Prune `AGENTS.md` toward the 15 KB budget (or consciously accept the 42 KB density). **→ plan task M24**
 
 **Living-doc quality (harvested or noticed)**
 
-6. Decide `RequestLog.RetryAfterDelay` API freeze for v1.0 (TODO_LIST P2).
-7. Audit `go-branded-id` / `go-error-family` / `go-nix-helpers` flake-pin drifts (TODO_LIST P3).
-8. Add the `checks.pin-sync` flake check (TODO_LIST P3).
-9. Wire `md-go-snippets` + `release-notes-check` into ci.yml once CI enables.
-10. Add `meta.description` to the 8 flake apps.
-11. Type the webhook label surface (`decodeWebhookEvent` → `WebhookEventType`).
-12. Promote the coverage floor 90 → 92.
-13. Close the 06-07 test gaps (`Retry-After: 0` regression, two-429 BDD, fuzz seeds, `FuzzParseWiseDate`, `docs/bench/README.md`).
-14. De-duplicate the LSP-resolution narrative (ROADMAP vs AGENTS).
-15. Decide UUID validation depth for branded UUID IDs.
-16. Decide the branching-flow suppression endgame (SARIF baseline vs in-source nolints vs prose).
-17. Add the `pin-sync` invariant + `--shuffle` note to CONTRIBUTING.
+6. Decide `RequestLog.RetryAfterDelay` API freeze for v1.0 (TODO_LIST P2). **→ decisions prep lane**
+7. ~~Audit `go-branded-id` / `go-error-family` / `go-nix-helpers` flake-pin drifts (TODO_LIST P3).~~ done — checks.pin-sync plus the v0.13.0 realignment closed it
+8. ~~Add the `checks.pin-sync` flake check (TODO_LIST P3).~~ done — checks.pin-sync exists
+9. ~~Wire `md-go-snippets` + `release-notes-check` into ci.yml once CI enables.~~ done — wired in ci.yml 2026-10-16
+10. ~~Add `meta.description` to the 8 flake apps.~~ done — meta.description shipped in v0.13.0
+11. ~~Type the webhook label surface (`decodeWebhookEvent` → `WebhookEventType`).~~ done — typed WebhookEventType decoder landed
+12. ~~Promote the coverage floor 90 → 92.~~ done — floor 92 since 2026-10-11
+13. ~~Close the 06-07 test gaps (`Retry-After: 0` regression, two-429 BDD, fuzz seeds, `FuzzParseWiseDate`, `docs/bench/README.md`).~~ done — all five landed (pinned regression, BDD, seeds, fuzz target, bench README)
+14. De-duplicate the LSP-resolution narrative (ROADMAP vs AGENTS). **→ dedup idea, open**
+15. Decide UUID validation depth for branded UUID IDs. **→ decision open**
+16. Decide the branching-flow suppression endgame (SARIF baseline vs in-source nolints vs prose). **→ decision open**
+17. ~~Add the `pin-sync` invariant + `--shuffle` note to CONTRIBUTING.~~ done — CONTRIBUTING carries both
 
 **User-blocked (standing P1/P2)**
 
-18. Sandbox live-verification pass (`WISE_SANDBOX_API_KEY`).
-19. OTT `2026Q3→2026Q4` flip after the live probe.
-20. Credentialed sandbox integration tests.
-21. v1.0.0 API-lock tag.
-22. Typed recipient `Details` decision.
-23. `CACHIX_AUTH_TOKEN` / `ERRAUDIT_TOKEN` secrets.
-24. CI re-enable on GitHub.
-25. x86_64-darwin `--all-systems` decision.
+18. Sandbox live-verification pass (`WISE_SANDBOX_API_KEY`). **→ key-gated sandbox lane**
+19. OTT `2026Q3→2026Q4` flip after the live probe. **→ key-gated sandbox lane**
+20. Credentialed sandbox integration tests. **→ key-gated sandbox lane**
+21. v1.0.0 API-lock tag. **→ user-gated v1.0.0 decision**
+22. Typed recipient `Details` decision. **→ open decision, user-gated**
+23. `CACHIX_AUTH_TOKEN` / `ERRAUDIT_TOKEN` secrets. **→ consolidated user ask pending**
+24. CI re-enable on GitHub. **→ CI enable pending user step**
+25. x86_64-darwin `--all-systems` decision. **→ darwin matrix decision pending**
 
 **Cross-repo / tooling**
 
-26. Record the go-retry drift + Ginkgo `-count>1` + `gh --body-file -` lessons in crush-config `references/lessons.md`.
-27. Resolve the missing `check-skill-fanout.sh`.
-28. Propose `checks.pin-sync` upstream to BuildFlow.
+26. Record the go-retry drift + Ginkgo `-count>1` + `gh --body-file -` lessons in crush-config `references/lessons.md`. **→ cross-repo lesson lane (pin-drift lesson landed 0607ed3; the rest open)**
+27. ~~Resolve the missing `check-skill-fanout.sh`.~~ done — global AGENTS points at the crush-repo script path
+28. Propose `checks.pin-sync` upstream to BuildFlow. **→ upstream proposal on ROADMAP**
 
 **Report / process**
 
-29. Relocate this report's `§f` survivors into TODO_LIST/ROADMAP (HARVEST) — the report is now the newest snapshot.
-30. Archive this report once its items resolve (annotate-then-archive).
+29. ~~Relocate this report's `§f` survivors into TODO_LIST/ROADMAP (HARVEST) — the report is now the newest snapshot.~~ done — harvested via the 2026-10-16 plan
+30. ~~Archive this report once its items resolve (annotate-then-archive).~~ done — this archive is that
 
 ## g) QUESTIONS FOR LARS (I cannot self-answer)
 
-1. **Was the concurrent `.buildflow.yml` GOEXPERIMENT-env removal intentional and verified?** It was committed (`116815c`) by another actor with the note "BuildFlow auto-detects"; I documented the effect in AGENTS.md but could not exercise buildflow to prove the auto-detect is real. Should I restore the `env:` key, or trust the auto-detect?
-2. **Archive granularity — is banner-level "routed to TODO_LIST/ROADMAP" sufficient, or do you want every `§f` row in the kept/archived reports struck with a per-item verdict?** I followed the project's existing convention (banner + manifest); a maximalist pass is ~10 reports of per-row work.
-3. **`AGENTS.md` is 42 KB (the skill's budget flags >30 KB).** Prune it toward 5–15 KB (losing some embedded provenance), or keep the current density because the gotchas are load-bearing?
+1. ~~**Was the concurrent `.buildflow.yml` GOEXPERIMENT-env removal intentional and verified?** It was committed (`116815c`) by another actor with the note "BuildFlow auto-detects"; I documented the effect in AGENTS.md but could not exercise buildflow to prove the auto-detect is real. Should I restore the `env:` key, or trust the auto-detect?~~ done — auto-detect verified green through every later buildflow run
+2. ~~**Archive granularity — is banner-level "routed to TODO_LIST/ROADMAP" sufficient, or do you want every `§f` row in the kept/archived reports struck with a per-item verdict?** I followed the project's existing convention (banner + manifest); a maximalist pass is ~10 reports of per-row work.~~ done — answered by the 2026-10-16 maximalist pass
+3. **`AGENTS.md` is 42 KB (the skill's budget flags >30 KB).** Prune it toward 5–15 KB (losing some embedded provenance), or keep the current density because the gotchas are load-bearing? **→ decided with M24**
