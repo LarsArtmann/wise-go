@@ -378,6 +378,65 @@ var _ = Describe("Wise Client", func() {
 			err := client.Health(context.Background())
 			Expect(err).To(HaveOccurred())
 		})
+
+		Context("with a throttled API", func() {
+			BeforeEach(func() {
+				// Health rides the retry executor, so exhaust the policy fast.
+				client = wise.New("test-api-key",
+					wise.WithBaseURL(server.URL),
+					wise.WithRetry(1, time.Millisecond, time.Millisecond),
+				)
+
+				mux.HandleFunc("/v2/profiles", errorHandler(
+					http.StatusTooManyRequests,
+					map[string]string{"Retry-After": "30", "X-Rate-Limited-By": "ip"},
+					"RATE_LIMITED", "Too many requests",
+				))
+			})
+
+			It("should surface a RateLimitError — reachability proven under throttling", func() {
+				err := client.Health(context.Background())
+
+				rlErr, ok := errors.AsType[*wise.RateLimitError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.RateLimitError, got %T: %v", err, err)
+				Expect(rlErr.RateLimitedBy).To(Equal("ip"))
+				Expect(rlErr.IsRetryable()).To(BeTrue())
+			})
+		})
+
+		Context("with invalid credentials", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v2/profiles", unauthorizedHandler)
+			})
+
+			It("should surface an AuthError — reachability proven with bad credentials", func() {
+				err := client.Health(context.Background())
+
+				_, ok := errors.AsType[*wise.AuthError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.AuthError, got %T: %v", err, err)
+			})
+		})
+
+		Context("with a persistent server failure", func() {
+			BeforeEach(func() {
+				client = wise.New("test-api-key",
+					wise.WithBaseURL(server.URL),
+					wise.WithRetry(1, time.Millisecond, time.Millisecond),
+				)
+
+				mux.HandleFunc("/v2/profiles", errorHandler(
+					http.StatusInternalServerError, nil, "SYSTEM_ERROR", "internal failure",
+				))
+			})
+
+			It("should surface the typed ServerError through retry exhaustion", func() {
+				err := client.Health(context.Background())
+
+				srvErr, ok := errors.AsType[*wise.ServerError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.ServerError, got %T: %v", err, err)
+				Expect(srvErr.IsRetryable()).To(BeTrue())
+			})
+		})
 	})
 
 	Describe("ListProfiles", func() {
