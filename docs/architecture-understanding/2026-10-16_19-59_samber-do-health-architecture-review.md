@@ -136,7 +136,11 @@ do.Provide(injector, func(i do.Injector) (*wise.Client, error) {
 do.ProvideNamed(injector, "wise.health", func(i do.Injector) (do.HealthcheckerWithContext, error) {
     return healthAdapter{client: do.MustInvoke[*wise.Client](i)}, nil // composition root: Must is correct here (DO-1)
 })
+```
 
+The adapter itself is a two-line type (declared in the same file as the composition root):
+
+```go
 type healthAdapter struct{ client *wise.Client }
 
 func (h healthAdapter) HealthCheck(ctx context.Context) error { return h.client.Health(ctx) }
