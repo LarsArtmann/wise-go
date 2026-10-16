@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.14.0] - 2026-10-16
+
 ### Added
 
 - `OneTimeToken` — the SCA one-time token (OTT) is now a distinct type.
@@ -56,6 +60,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   and `GetTransferNOC` (`GET /v1/transfers/{id}/documents/noc`, the Indian
   FIRC no-objection certificate) — raw-bytes downloads alongside the existing
   receipt and payout-info endpoints.
+- `CreateThirdPartyTransfer` / `GetThirdPartyTransfer` — originator transfers
+  (`POST|GET /v1/profiles/{id}/third-party-transfers`): money moved on behalf
+  of a named third party, funded through your own quote. The originator block
+  is a typed PRIVATE/BUSINESS oneOf (`Originator`, `OriginatorLegalEntityType`,
+  `OriginatorName`, `OriginatorAddress`), `OriginalTransferID` is the
+  idempotency key, and response amounts parse as `Money`.
+- Typed webhook payloads for the transfer events: `transfers#active-cases`
+  (`TransferActiveCases`, case list normalized to nil when absent) and
+  `transfers#refund` (`TransferRefund`, refund amount as `Money`; a missing
+  amount is surfaced as corruption instead of a silent zero).
 
 ### Changed
 
@@ -78,6 +92,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `docs/reviews/2026-10-16_sca-auth-data-model.html`.
 - README error-handling example no longer prints the raw OTT (reports only
   whether one was issued), matching the SDK's own secrecy contract.
+- README gained an SCA endpoint matrix (statements + `FundTransfer` are the
+  SCA set; protection follows the profile's registered region, not the token
+  type), a transfer `TransferStatus` lifecycle section, and a Dependency
+  Injection & Health Checks section with a compile-verified samber/do v2
+  recipe.
 - `lll` removed from the curated linter list AGAIN: a post-d8e28b5
   auto-configure sweep re-added it (14 findings, all pre-existing lines).
 - Coverage floor raised from 90% to 92% (measured 92.8%), enforced identically

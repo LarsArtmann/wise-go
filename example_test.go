@@ -632,3 +632,110 @@ func ExampleClient_ListTransfers() {
 
 	fmt.Println(transfer.ID, transfer.Status)
 }
+
+// List the completed payments that funded a transfer. Usually a single
+// payment; an empty result means the transfer is not funded (yet).
+//
+//nolint:testableexamples // documentation-only; runs against the live API
+func ExampleClient_ListTransferPayments() {
+	client := wise.New("your-api-key")
+
+	payments, err := client.ListTransferPayments(context.Background(), wise.NewTransferID(987654))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, payment := range payments {
+		fmt.Println(payment.ID, payment.Method, payment.Amount)
+	}
+}
+
+// Download the US combined receipt (a PDF combining transfer confirmation
+// and funding proof, required by some US institutions) and save it to disk.
+// 404 means the receipt does not exist yet, not that the transfer is gone.
+//
+//nolint:testableexamples // documentation-only; runs against the live API
+func ExampleClient_GetUSCombinedReceipt() {
+	client := wise.New("your-api-key")
+
+	pdf, err := client.GetUSCombinedReceipt(context.Background(), wise.NewTransferID(987654))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := os.WriteFile("transfer-987654-us-combined-receipt.pdf", pdf, 0o600); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// Download the no-objection certificate (the Indian FIRC document) for a
+// transfer into India. 404 before payout means it has not been issued yet.
+//
+//nolint:testableexamples // documentation-only; runs against the live API
+func ExampleClient_GetTransferNOC() {
+	client := wise.New("your-api-key")
+
+	noc, err := client.GetTransferNOC(context.Background(), wise.NewTransferID(987654))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := os.WriteFile("transfer-987654-noc.pdf", noc, 0o600); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// Move money on behalf of a third-party originator: your own quote funds
+// the transfer, but compliance data names the real originator. Reuse the
+// same Originator.Reference for every transfer of one originator — Wise
+// keys compliance on it — and OriginalTransferID for idempotency.
+//
+//nolint:testableexamples // documentation-only; runs against the live API
+func ExampleClient_CreateThirdPartyTransfer() {
+	client := wise.New("your-api-key")
+
+	transfer, err := client.CreateThirdPartyTransfer(context.Background(), wise.CreateThirdPartyTransferRequest{
+		ProfileID:          wise.NewProfileID(12345),
+		OriginalTransferID: "our-originator-transfer-correlation-id",
+		TargetAccount:      wise.NewRecipientID(67890),
+		QuoteID:            wise.NewQuoteID("6d3b3cf1-8f2a-4b7e-9c1d-2e5f6a7b8c9d"),
+		Reference:          "INV-2026-014",
+		Originator: wise.Originator{
+			LegalEntityType: wise.OriginatorLegalEntityTypePrivate,
+			Reference:       "originator-ref-42",
+			Name: wise.OriginatorName{
+				GivenName:  "Ana",
+				FamilyName: "Martins",
+			},
+			DateOfBirth: time.Date(1988, 4, 12, 0, 0, 0, 0, time.UTC),
+			Nationality: "PT",
+			Address: wise.OriginatorAddress{
+				FirstLine:   "Rua das Flores 12",
+				City:        "Lisboa",
+				CountryCode: "PT",
+				PostCode:    "1200-192",
+			},
+		},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(transfer.ID, transfer.Status, transfer.Source, transfer.Target)
+}
+
+// Fetch a third-party (originator) transfer by profile and transfer ID.
+//
+//nolint:testableexamples // documentation-only; runs against the live API
+func ExampleClient_GetThirdPartyTransfer() {
+	client := wise.New("your-api-key")
+
+	transfer, err := client.GetThirdPartyTransfer(
+		context.Background(), wise.NewProfileID(12345), wise.NewTransferID(987654),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(transfer.Status, transfer.OriginalTransferID, transfer.HasActiveIssues)
+}
