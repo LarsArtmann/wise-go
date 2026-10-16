@@ -110,6 +110,38 @@ var (
 	)
 )
 
+// WiseErrorCode is Wise's own granular, machine-readable error code from the
+// errors[].code field of a non-2xx response body (for example
+// resource_not_found on a 404 or rate_limit_exceeded on a 429). It is an open
+// enum: Wise documents a growing set of codes and may add new ones at any
+// time, so values received from the wire pass through unmodified — switch on
+// the constants for known cases and handle the default explicitly. Read the
+// codes structurally from [APIError.Details], match the curated ones with
+// errors.Is against the Err* code sentinels, or branch on any code (curated
+// or not) with [APIError.HasCode].
+type WiseErrorCode string
+
+// Granular Wise error codes from the documented API surface (census against
+// the vendored OpenAPI snapshot, 2026-10-16). This list is deliberately NOT
+// exhaustive: it names the codes with a consumer branching story. Unknown
+// wire values are valid WiseErrorCodes.
+const (
+	WiseErrorCodeNotValid              WiseErrorCode = "not.valid"
+	WiseErrorCodeInvalidValue          WiseErrorCode = "invalid_value"
+	WiseErrorCodeParameterMissing      WiseErrorCode = "parameter_missing"
+	WiseErrorCodeParameterInvalid      WiseErrorCode = "parameter_invalid"
+	WiseErrorCodeMissingValue          WiseErrorCode = "missing_value"
+	WiseErrorCodeInvalidRequest        WiseErrorCode = "invalid_request"
+	WiseErrorCodeUnauthorized          WiseErrorCode = "unauthorized"
+	WiseErrorCodeForbidden             WiseErrorCode = "forbidden"
+	WiseErrorCodeResourceNotFound      WiseErrorCode = "resource_not_found"
+	WiseErrorCodeOperationNotSupported WiseErrorCode = "operation_not_supported"
+	WiseErrorCodeRateLimitExceeded     WiseErrorCode = "rate_limit_exceeded"
+	WiseErrorCodeSystemError           WiseErrorCode = "system_error"
+	WiseErrorCodeInvalidFileExtension  WiseErrorCode = "invalid_file_extension"
+	WiseErrorCodeUnexpectedError       WiseErrorCode = "unexpected.error"
+)
+
 // Wise's Strong Customer Authentication (SCA) response headers. Wise answers
 // SCA-protected endpoints (balance statements for UK/EEA profiles among them)
 // with HTTP 403 and an EMPTY body: the verdict lives in
