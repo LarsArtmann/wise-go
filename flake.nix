@@ -108,6 +108,16 @@
         inherit src;
         vendorHash = import ./vendorHash.nix;
 
+        # Tools the buildflow pipeline expects in the project devShell;
+        # without these it nix-runs them ad hoc on every run with a
+        # "binary X not in project devShell ... WITHOUT project deps"
+        # warning (dprint/ruff/vulnix, observed 2026-10-17).
+        devShellExtraPackages = pkgs: [
+          pkgs.dprint
+          pkgs.ruff
+          pkgs.vulnix
+        ];
+
         deps = {
           "github.com/larsartmann/go-branded-id" = inputs.go-branded-id;
           "github.com/larsartmann/go-error-family" = inputs.go-error-family;
@@ -252,7 +262,7 @@
                 pname = "md-go-validator";
                 version = "1.3.0";
                 src = inputs.md-go-validator;
-                vendorHash = "sha256-QUgeh99RqCc80oh1UNJDH38Llm8jMW3hQkKmPGZr3NE=";
+                vendorHash = import ./vendorHashMdGoValidator.nix;
                 proxyVendor = true;
                 env.GOEXPERIMENT = "jsonv2";
               };

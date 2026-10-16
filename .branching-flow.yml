@@ -16,7 +16,7 @@ disabled_rules:
   - composition_mixin
   # ANTI_PATTERN_LARGE_STRUCT: raw wire structs carry 16-18 fields because
   # Wise's JSON payloads do; trimming them would corrupt the wire contract.
-  - anti_pattern_large_struct
+  - anti_pattern_large-struct
 #
 # GOTCHA: disabled_rules entries match EXACTLY (case-insensitive;
 # pkg/finding/filter.go FilterByRuleKnobs). The glob forms that
