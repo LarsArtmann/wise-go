@@ -96,16 +96,3 @@ nixpkgs#go.version` = 1.26.8 → not met. Execution is blocked on those
 conditions (nixpkgs stable 1.27, in-house deps verified on 1.27, erraudit local install,
 buildflow skip_steps removal). Source:
 `docs/status/2026-10-07_03-45_buildflow-red-to-green-repair-status.md` §g1.
-
-## Cross-repo (crush-config, not wise-go)
-
-[ ] Record the go-retry drift lesson ("a `go.mod` version bump must update the
-matching flake input rev; pinned revs are immutable under `nix flake update`") in
-crush-config `references/lessons.md`, plus the Ginkgo `-count>1` ban and the
-`gh issue create --body-file -` silent-failure quirk.
-Sources: `docs/status/2026-10-07_07-35_go-retry-pin-drift-fix-status.md` §f9; `docs/status/2026-10-07_07-09_p3-resume-execution-prerelease-green-status.md` §f25.
-
-[ ] Resolve the `check-skill-fanout.sh` absence — global AGENTS.md documents
-`bash ~/.config/crush/scripts/check-skill-fanout.sh`, but the path does not exist;
-restore the script or fix the doc.
-Source: `docs/status/2026-10-07_07-09_p3-resume-execution-prerelease-green-status.md` §b6.
