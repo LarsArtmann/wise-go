@@ -52,6 +52,10 @@ Immutable objects defined by attributes.
 | SCA               | Strong Customer Authentication (3-D Secure-like challenge)                             | HTTP 403 with empty body; one-time token in response headers                                                                                           |
 | OTT               | One-Time Token authorizing an SCA challenge                                            | Carried in the `x-2fa-approval` header; cleared programmatically via the `/2026Q3/one-time-token` endpoints; never logged or embedded in error strings |
 | Challenge channel | The phone channel that delivers the OTP (sms, whatsapp, voice)                         | `OTTChannel` enum; wire paths are lowercase, Wise's challenge types are UPPERCASE                                                                      |
+| One-time token record | The typed SCA challenge state the OTT endpoints return                              | `OneTimeToken` type (status, channels, expiry); consumed via `wisesdk.OneTimeToken` in the v0.14.0 consumer migration                                   |
+| Account details   | A receiving-bank-details set (per-currency account identification block) keyed by its own ID, not by profile | `GetBankAccountDetails` on the relocated 2027Q1 path; `AccountIdentification` is a spec oneOf (BE/GB/US), exactly one member present            |
+| Transfer originator | The ultimate party originating transferred funds (amount, address, legal identity)   | `CreateTransferOriginator`/`GetTransferOriginator` (v0.14.0); `OriginatorName`/`OriginatorAddress` wire values are toWire-mapped                       |
+| Typed webhook payload | The event-specific struct decoded from a delivery envelope's payload               | `TransferActiveCasesData`/`TransferRefundData` (v0.14.0) alongside the generic `WebhookResource`; unknown event types keep the raw payload             |
 
 ## Raw vs Result Types
 
