@@ -80,6 +80,30 @@ const ottPINWithSMSAlternativeJSON = `[
 	}
 ]`
 
+var _ = Describe("NewOneTimeToken", func() {
+	It("accepts a non-blank token", func() {
+		token, err := wise.NewOneTimeToken(testOTT)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(token).To(Equal(wise.OneTimeToken(testOTT)))
+		Expect(token.IsZero()).To(BeFalse())
+	})
+
+	DescribeTable("rejects blank values without trimming",
+		func(input string) {
+			_, err := wise.NewOneTimeToken(input)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("one-time token is required"))
+		},
+		Entry("empty", ""),
+		Entry("spaces only", "   "),
+		Entry("tab and newline only", "\t\n"),
+	)
+
+	It("keeps the zero value absent", func() {
+		Expect(wise.OneTimeToken("").IsZero()).To(BeTrue())
+	})
+})
+
 var _ = Describe("OTT (SCA one-time-token endpoints)", func() {
 	var (
 		server      *httptest.Server
@@ -112,7 +136,7 @@ var _ = Describe("OTT (SCA one-time-token endpoints)", func() {
 			status, err := client.GetOTTStatus(context.Background(), testOTT)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(status.ActionType).To(Equal("BALANCE__GET_STATEMENT"))
+			Expect(status.ActionType).To(Equal(wise.OTTAction("BALANCE__GET_STATEMENT")))
 			Expect(status.UserID).To(Equal(wise.NewUserID(6146956)))
 			Expect(status.Validity).To(Equal(time.Hour))
 

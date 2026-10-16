@@ -257,6 +257,36 @@ func TestCheckErrorClassifiesSCAChallenge(t *testing.T) {
 	}
 }
 
+// TestCheckErrorTokenlessSCAChallenge pins Wise's PSD2 flavor: a 403 with
+// the verdict header but NO x-2fa-approval OTT (live 2026-10-16). The error
+// is still an SCA challenge — blocked — but TwoFAApprovalToken() is zero:
+// nothing to clear programmatically, and the context reports issued=false.
+func TestCheckErrorTokenlessSCAChallenge(t *testing.T) {
+	t.Parallel()
+
+	client := &Client{}
+	resp := &http.Response{
+		StatusCode: http.StatusForbidden,
+		Header:     http.Header{HeaderTwoFAApprovalResult: []string{"REJECTED"}},
+		Body:       http.NoBody,
+	}
+
+	err := client.checkError(resp)
+
+	sca, ok := errors.AsType[*SCAChallengeError](err)
+	if !ok {
+		t.Fatalf("expected *SCAChallengeError, got %T: %v", err, err)
+	}
+
+	if !sca.TwoFAApprovalToken().IsZero() {
+		t.Errorf("tokenless challenge must yield a zero OneTimeToken, got %q", sca.TwoFAApprovalToken())
+	}
+
+	if got := sca.ErrorContext()["approval_token_issued"]; got != "false" {
+		t.Errorf("approval_token_issued = %q, want \"false\"", got)
+	}
+}
+
 func TestCheckErrorForbiddenWithoutSCAHeadersStaysAuthError(t *testing.T) {
 	t.Parallel()
 
