@@ -249,7 +249,10 @@ and connection-pool tuning; retries, logging, and typed errors work unchanged.
 // Validate API key (calls ListProfiles internally)
 err := client.Authenticate(ctx)
 
-// Health check (delegates to Authenticate)
+// Readiness probe: authenticated ListProfiles through the retry executor.
+// A *RateLimitError proves reachability (answered, throttled); an *AuthError
+// proves reachability with bad credentials; worst case spends the full
+// retry budget (~2 min). Not a cheap liveness check.
 err := client.Health(ctx)
 ```
 

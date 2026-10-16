@@ -52,7 +52,7 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
 | Profiles                                                                                                | 19  | 2       | reads shipped; writes PLANNED; KYB OUT_OF_SCOPE                     |
 | Quotes                                                                                                  | 4   | 3       | complete except PATCH update (PLANNED)                              |
 | Recipients                                                                                              | 8   | 5       | core shipped; deactivate/compat/confirmations PLANNED               |
-| Transfers (standard)                                                                                    | 11  | 8       | core + receipts shipped; 3 ops PLANNED                              |
+| Transfers (standard)                                                                                    | 11  | 11      | complete: payments-list, US receipt, NOC shipped 2026-10-16          |
 | Transfers (third-party)                                                                                 | 2   | 0       | DEMAND_GATED (correspondent demand)                                 |
 | Users                                                                                                   | 6   | 2       | reads shipped; writes OUT_OF_SCOPE                                  |
 | Multi-currency account                                                                                  | 4   | 1       | MCA read shipped; configuration PLANNED                             |
@@ -102,7 +102,7 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 
 | Method | Path                                                      | Status           | wise-go                                            |
 | ------ | --------------------------------------------------------- | ---------------- | -------------------------------------------------- |
-| GET    | `/balances/account-details/{id}` (2027Q1)                 | FULLY_FUNCTIONAL | `GetBankAccountDetails` (`account_details.go:156`) |
+| GET    | `/balances/account-details/{id}` (2027Q1)                 | FULLY_FUNCTIONAL | `GetBankAccountDetails` (`account_details.go:164`) |
 | POST   | `/v1/profiles/{id}/bank-details`                          | PLANNED          | issue local+international details                  |
 | POST   | `/v1/profiles/{id}/account-details-orders`                | PLANNED          | order account details                              |
 | GET    | `/v1/profiles/{id}/account-details-orders`                | PLANNED          | list orders                                        |
@@ -112,7 +112,7 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 
 | Method | Path                                                                    | Status           | wise-go                                             |
 | ------ | ----------------------------------------------------------------------- | ---------------- | --------------------------------------------------- |
-| GET    | `/v1/profiles/{id}/multi-currency-account`                              | FULLY_FUNCTIONAL | `GetMultiCurrencyAccount` (`account_details.go:29`) |
+| GET    | `/v1/profiles/{id}/multi-currency-account`                              | FULLY_FUNCTIONAL | `GetMultiCurrencyAccount` (`account_details.go:30`) |
 | GET    | `/borderless-accounts-configuration/profiles/{id}/available-currencies` | PLANNED          | balance-eligible currencies                         |
 | GET    | `/borderless-accounts-configuration/profiles/{id}/payin-currencies`     | PLANNED          | details-eligible currencies                         |
 | GET    | `/multi-currency-account/eligibility`                                   | PLANNED          | eligibility by profile or location                  |
@@ -224,13 +224,13 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 
 | Method | Path                                         | Status           | wise-go                                                |
 | ------ | -------------------------------------------- | ---------------- | ------------------------------------------------------ |
-| GET    | `/2026Q3/one-time-token/status`              | FULLY_FUNCTIONAL | `GetOTTStatus` (`ott.go:188`)                          |
-| POST   | `/2026Q3/one-time-token/sms/trigger`         | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:209`, `OTTChannelSMS`)           |
-| POST   | `/2026Q3/one-time-token/sms/verify`          | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:235`, `OTTChannelSMS`)            |
-| POST   | `/2026Q3/one-time-token/whatsapp/trigger`    | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:209`, `OTTChannelWhatsApp`)      |
-| POST   | `/2026Q3/one-time-token/whatsapp/verify`     | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:235`, `OTTChannelWhatsApp`)       |
-| POST   | `/2026Q3/one-time-token/voice/trigger`       | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:209`, `OTTChannelVoice`)         |
-| POST   | `/2026Q3/one-time-token/voice/verify`        | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:235`, `OTTChannelVoice`)          |
+| GET    | `/2026Q3/one-time-token/status`              | FULLY_FUNCTIONAL | `GetOTTStatus` (`ott.go:226`)                          |
+| POST   | `/2026Q3/one-time-token/sms/trigger`         | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:247`, `OTTChannelSMS`)           |
+| POST   | `/2026Q3/one-time-token/sms/verify`          | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:273`, `OTTChannelSMS`)            |
+| POST   | `/2026Q3/one-time-token/whatsapp/trigger`    | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:247`, `OTTChannelWhatsApp`)      |
+| POST   | `/2026Q3/one-time-token/whatsapp/verify`     | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:273`, `OTTChannelWhatsApp`)       |
+| POST   | `/2026Q3/one-time-token/voice/trigger`       | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:247`, `OTTChannelVoice`)         |
+| POST   | `/2026Q3/one-time-token/voice/verify`        | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:273`, `OTTChannelVoice`)          |
 | POST   | `/application/users/{id}/phone-numbers`      | OUT_OF_SCOPE     | restricted access (client credentials + Wise approval) |
 | DELETE | `/application/users/{id}/phone-numbers/{id}` | OUT_OF_SCOPE     | restricted access (client credentials + Wise approval) |
 
@@ -305,8 +305,8 @@ the plan; bulk payments only on a consumer demand signal).
 | Custom HTTP client (`WithHTTPClient`)   | FULLY_FUNCTIONAL | `options.go:114`; accepts `Doer` interface (`client.go:41`)                              |
 | Correlation ID (`WithCorrelationID`)    | FULLY_FUNCTIONAL | `options.go:127`; sets `X-External-Correlation-Id` header on all requests               |
 | Retry with backoff (429, 5xx, network)  | FULLY_FUNCTIONAL | `client.go:145` `isRetryableError`; `Retry-After` honored via `DelayFunc` (capped)      |
-| `Authenticate(ctx)`                     | FULLY_FUNCTIONAL | `client.go:174`; delegates to `ListProfiles`                                            |
-| `Health(ctx)`                           | FULLY_FUNCTIONAL | `client.go:184`; delegates to `Authenticate`                                            |
+| `Authenticate(ctx)`                     | FULLY_FUNCTIONAL | `client.go:180`; delegates to `ListProfiles`                                            |
+| `Health(ctx)`                           | FULLY_FUNCTIONAL | `client.go:190`; credential-validating readiness probe (authenticated `ListProfiles` through the retry executor — not a cheap liveness check; see godoc) |
 | `WithUserAgent` option (v0.11.0)        | FULLY_FUNCTIONAL | `options.go:88`; custom `User-Agent` on every request, default preserved (BDD)          |
 | Shared-client concurrency (v0.11.0)     | FULLY_FUNCTIONAL | `wise_test.go:246`; 16 parallel requests, per-request correlation-ID isolation, `-race` |
 
@@ -340,7 +340,7 @@ the plan; bulk payments only on a consumer demand signal).
 | `RateLimitError.RateLimitedBy` (429 header)       | FULLY_FUNCTIONAL | `errors.go:75`; captures `X-Rate-Limited-By` header                 |
 | `AuthError` (HTTP 401, 403)                       | FULLY_FUNCTIONAL | `errors.go:103`                                                     |
 | `SCAChallengeError` (403 + 2FA headers, v0.6.0)   | FULLY_FUNCTIONAL | `errors.go:116`; `TwoFAApprovalToken()` returns the OTT             |
-| `WithSCAApprovalToken` option (v0.6.0)            | FULLY_FUNCTIONAL | `options.go:142`; sends cleared OTT as `x-2fa-approval`             |
+| `WithSCAApprovalToken` option (v0.6.0)            | FULLY_FUNCTIONAL | `options.go:161`; sends cleared OTT as `x-2fa-approval`             |
 | `NotFoundError` (HTTP 404)                        | FULLY_FUNCTIONAL | `errors.go:142`                                                     |
 | `ServerError` (HTTP 5xx)                          | FULLY_FUNCTIONAL | `errors.go:151`                                                     |
 | `ErrorCode()` / `ErrorFamily()` / `IsRetryable()` | FULLY_FUNCTIONAL | All implement go-error-family interfaces                            |
@@ -358,6 +358,8 @@ the plan; bulk payments only on a consumer demand signal).
 | `ProfileType`, `BalanceType`, `TransactionType` enums | FULLY_FUNCTIONAL | `types.go:139,147,164`                                                                    |
 | `InvestmentState` typed enum                          | FULLY_FUNCTIONAL | `types.go:155`; used for balance filtering (`balances.go:43`)                             |
 | `DetailType` typed enum + constants                   | FULLY_FUNCTIONAL | `transactions.go:159`; typed filter for `ListTransactionsRequest.Type`                    |
+| `OneTimeToken` typed credential (unreleased)          | FULLY_FUNCTIONAL | `ott.go:34`; `NewOneTimeToken` validates; typed on every OTT-taking surface               |
+| `OTTAction` open enum (unreleased)                    | FULLY_FUNCTIONAL | `ott.go:155`; `OTTStatus.ActionType` (was bare `string`)                                  |
 | Enum casing normalization (lowercase SDK values)      | FULLY_FUNCTIONAL | `BalanceType` normalized; `ProfileType`/`TransactionType` already lowercase               |
 
 ## Wire format hardening
@@ -373,11 +375,11 @@ the plan; bulk payments only on a consumer demand signal).
 
 | Feature                                                 | Status           | Evidence                                                                                              |
 | ------------------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------- |
-| `ParseWebhookPublicKey` (PKIX + PKCS#1 PEM, RSA-only)   | FULLY_FUNCTIONAL | `webhooks.go:33`; garbage/non-RSA input rejected with clear errors                                    |
+| `ParseWebhookPublicKey` (PKIX + PKCS#1 PEM, RSA-only)   | FULLY_FUNCTIONAL | `webhooks.go:35`; garbage/non-RSA input rejected with clear errors                                    |
 | `VerifyWebhookSignature` (RSA-SHA256 over raw body)     | FULLY_FUNCTIONAL | `webhooks.go:64`; valid/tampered/wrong-key/malformed/empty/5 MiB tested                               |
 | `HeaderWebhookSignature` / `HeaderDeliveryID` constants | FULLY_FUNCTIONAL | `webhooks.go:22,24`; delivery-dedup guidance in README Webhooks section                               |
-| `ClearSCAChallenge` convenience loop                    | FULLY_FUNCTIONAL | `ott.go:284`; triggers, prompts via callback, verifies, repeats until every challenge passed          |
-| `OTTChannel` typed channel enum                         | FULLY_FUNCTIONAL | `ott.go:24`; single lowercase-wire → UPPERCASE-challenge-type mapping                                 |
+| `ClearSCAChallenge` convenience loop                    | FULLY_FUNCTIONAL | `ott.go:322`; triggers, prompts via callback, verifies, repeats until every challenge passed          |
+| `OTTChannel` typed channel enum                         | FULLY_FUNCTIONAL | `ott.go:55`; single lowercase-wire → UPPERCASE-challenge-type mapping                                 |
 | OTT secrecy: token never in error strings               | FULLY_FUNCTIONAL | `SCAChallengeError.Error()` reports `token issued: true/false` only; value via `TwoFAApprovalToken()` |
 
 ## Build & tooling
@@ -400,7 +402,7 @@ the plan; bulk payments only on a consumer demand signal).
 
 | Feature                           | Status           | Evidence                                                                                                      |
 | --------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------- |
-| Godoc examples for the public API | FULLY_FUNCTIONAL | `example_test.go`; 25 `Example*` funcs (compile-only doc examples + 3 runnable) covering every resource group |
+| Godoc examples for the public API | FULLY_FUNCTIONAL | `example_test.go`; 27 `Example*` funcs (compile-only doc examples + 3 runnable) covering every resource group |
 | README API reference              | FULLY_FUNCTIONAL | All 16 resources documented with runnable snippets + TOC                                                      |
 
 ## Deferred architecture

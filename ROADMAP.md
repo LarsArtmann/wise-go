@@ -11,16 +11,21 @@ library that is obviously correct, obviously typed, and obviously safe to depend
 Every monetary amount is `Money` (cents paired with `Currency`). Every entity ID is
 branded. Every error is typed and classifiable. Every API call retries intelligently.
 
-As of 2026-10-07 (v0.12.0), the type-safety redesign is complete, the core transfer
-flow is live END TO END (quotes, recipients, transfers, funding, delivery estimates,
-transfer-requirements and account-requirements validation, exchange rates),
+As of 2026-10-16 (v0.13.0 + a staged v0.14.0), the type-safety redesign is
+complete, the core transfer flow — and with it the whole transfer category —
+is live END TO END (quotes, recipients, transfers, funding, delivery
+estimates, transfer-requirements and account-requirements validation,
+exchange rates, payments-list/receipts/US receipt/NOC),
 the tier-2 surface shipped: users, statement files in all six formats, webhook
 signature verification, balance lifecycle (create/direct-get/total-funds),
-Multi-Currency Account + bank details, and currency reference data — 41
+Multi-Currency Account + bank details (on Wise's 2027Q1 surface), and
+currency reference data — 44
 `*Client` methods across 16 resources, plus webhook subscriptions with typed
-event decoding, programmatic SCA challenge clearing (one-time-token endpoints),
-observability (WithLogger, per-request correlation IDs) and write helpers under
-the existing retry/error architecture. v0.9.0, v0.10.0, v0.11.0, and v0.12.0
+event decoding, programmatic SCA challenge clearing (one-time-token endpoints,
+every OTT-taking surface typed via `OneTimeToken`), a spec-drift gate against
+the live OpenAPI bundle, and
+observability (WithLogger, per-request correlation IDs) under the
+existing retry/error architecture. v0.9.0 through v0.13.0
 have shipped; the v1.0 audit (`docs/reviews/2026-08-21_v1.0-api-audit.md`) found
 nothing blocking the tag (re-audited 2026-09-13; the v0.11.0 OTT additions are
 covered by the audit's growth-lineage note). The roadmap expands the surface
@@ -30,14 +35,17 @@ preserving the architectural decisions that make the codebase maintainable.
 ## Axis 1: Completeness (API surface)
 
 Today: tiers 1 and 2 of
-`docs/planning/2026-08-19_wise-api-full-implementation-plan.md` are complete —
-41 `*Client` methods across 16 resources. The core transfer flow is live end to end:
-quotes (including account requirements and the two-pass refresh), recipients,
-transfers (including receipts and MT103 payout info), funding, delivery estimates,
-exchange rates, transfer-requirements validation — plus webhook subscription CRUD
-and typed event parsing on the quarterly surfaces (subscriptions 2026Q4,
-OTT 2026Q3 — each rolls over independently), and SCA one-time-token endpoints
-that clear challenges programmatically.
+`docs/planning/2026-08-19_wise-api-full-implementation-plan.md` are complete,
+and the transfer category is complete end to end — 44 `*Client` methods
+across 16 resources. The core transfer flow is live: quotes (including
+account requirements and the two-pass refresh), recipients, transfers
+(including receipts, US combined receipt, NOC documents, payments-list and
+MT103 payout info), funding, delivery estimates, exchange rates,
+transfer-requirements validation — plus webhook subscription CRUD and typed
+event parsing on the quarterly surfaces (subscriptions 2026Q4,
+OTT 2026Q3 — each rolls over independently), SCA one-time-token endpoints
+that clear challenges programmatically, and `GetBankAccountDetails` on the
+2027Q1 account-details surface (spec roll caught by `nix run .#spec-drift`).
 
 ### Shipped 2026-08-21 (previously near-term)
 
@@ -83,9 +91,12 @@ that clear challenges programmatically.
   subscription surface, and the rates/timestamp parse fixes.
 
 **Release state:** shipped as **v0.9.0** (2026-08-21), **v0.10.0**
-(2026-09-13), **v0.11.0** (2026-09-14), and **v0.12.0** (2026-10-07; tags on
-origin and served by the module proxy, GitHub Release objects published
-2026-10-07). The v1.0 audit is
+(2026-09-13), **v0.11.0** (2026-09-14), **v0.12.0** and **v0.13.0**
+(2026-10-07; tags on origin and served by the module proxy, GitHub Release
+objects published 2026-10-07). A v0.14.0 carrying the breaking
+`OneTimeToken`/`OTTAction` typing, the 2027Q1 account-details migration, and
+the three completed transfer-category endpoints is staged in `[Unreleased]`.
+The v1.0 audit is
 green and re-audited 2026-09-13 at the 33-method surface
 (`docs/reviews/2026-08-21_v1.0-api-audit.md` — refreshed inventory, godoc pass,
 risk-register items 8–10, growth lineage through 41 methods); the v1.0.0 tag
@@ -276,6 +287,12 @@ scheduled work:
 - **BuildFlow `file-size-check` inert** — the step scans 0 files in root-package Go layouts (350 and 700-line thresholds both report zero), so `max_file_size` never fires. FILED upstream: [BuildFlow #36](https://github.com/LarsArtmann/BuildFlow/issues/36).
 - **Daemon/`go.mod` guard hook** — a session-start (or pre-commit) check that fails loudly when `.buildflow.yml` is deleted or `grep '^go ' go.mod` leaves the 1.26 line.
 - Wishlist-era leftovers (Postman collection, currency-conversion helpers, batch APIs, mock server): only with a real consumer ask. Response caching stays a non-goal (the SDK is stateless by design).
+- **Fleet pin-drift sweep** — port the `pin-sync` check pattern to the other flake+go repos (md-go, go-output, dynamic-markdown-site, …); the tag-object/stale-rev class was proven fleet-wide 2026-10-07.
+- **Release-process automation** — checklist app or `docs/RELEASE_CHECKLIST.md`, single-commit releases (serialize the daemon on tag day), `pre-release` printing measured coverage + apidiff summary, tag-exists/`wise.Version` guards, post-release proxy verification app, `--dry-run` mode.
+- **Spec-drift growth** — query-parameter conformance (the `?types=` NotNull class), webhook-payload drift scope, `x-tagGroups`-derived FEATURES categories, `--json` output, scheduled recurrence once CI is back.
+- **Default `User-Agent` from `wise.Version`** — or a `Client.Version()` accessor; consumers currently identify via `WithUserAgent` only.
+- **Upstream BuildFlow proposals** — a fleet-wide pin-sync step and rev-aware gomod-check warnings on `go.mod` changes.
+- **crush-config lessons** — pipe-masking as fleet lesson; "`ps` for live buildflow before running gates in daemon-managed repos"; the compile-the-snippet-you-ship rule as a fleet checklist item.
 
 ## Release strategy
 
@@ -287,7 +304,8 @@ scheduled work:
   observability; v0.10.0 receipts + MT103; v0.11.0 webhook subscriptions, typed
   events, and SCA one-time-token endpoints; v0.12.0 the OpenAPI conformance
   gate, spec-native statement types, branded idempotency keys, and the
-  go-retry executor.
+  go-retry executor; v0.13.0 the Retry-After delay-entry log, pin-sync gate,
+  and the one-command pre-release chain.
 - **v1.0** — public API freeze. After v1.0, breaking changes require v2 and a
   deliberate migration path.
 
