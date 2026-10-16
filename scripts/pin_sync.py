@@ -29,7 +29,7 @@ import argparse
 import json
 import pathlib
 import re
-import subprocess
+import subprocess  # nosec B404 -- verifier shells out to git ls-remote only
 import sys
 
 OWNER = "LarsArtmann"
@@ -69,7 +69,7 @@ def parse_flake_lock(text: str) -> dict[str, str]:
 
 
 def remote_tag_rev(repo: str, tag: str) -> str:
-    result = subprocess.run(
+    result = subprocess.run(  # nosec B603 B607 -- git from the sandbox's trusted PATH; fixed args, no user input
         [
             "git",
             "ls-remote",
@@ -92,7 +92,10 @@ def remote_tag_rev(repo: str, tag: str) -> str:
         else:
             plain = sha
 
-    return peeled or plain
+    rev = peeled or plain
+    if rev is None:
+        raise SystemExit(f"git ls-remote found no refs/tags/{tag} for {OWNER}/{repo}")
+    return rev
 
 
 def main() -> None:

@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import argparse
 import pathlib
-import subprocess
+import subprocess  # nosec B404 -- fixtures shell out to this repo's own scripts only
 import sys
 import tempfile
 
@@ -175,7 +175,7 @@ def run_all(
         expect_substr,
     ) in PIN_SYNC_CASES.items():
         ran += 1
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 -- fixed argv, repo-owned script, fixture input only
             [
                 sys.executable,
                 str(scripts_dir / "pin_sync.py"),
@@ -209,7 +209,7 @@ def run_all(
             .replace("@plus_one@", str(testdata / "spec_drift" / "plus_one.json"))
             for a in extra
         ]
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 -- fixed argv, repo-owned script, fixture input only
             [
                 sys.executable,
                 str(scripts_dir / "spec_drift.py"),

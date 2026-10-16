@@ -73,7 +73,7 @@ def load_spec(spec_file: str | None, url: str) -> dict:
             "User-Agent": "wise-go-spec-drift/0.1",
         },
     )
-    with urllib.request.urlopen(req, timeout=60) as resp:
+    with urllib.request.urlopen(req, timeout=60) as resp:  # nosec B310 -- URL is the repo-pinned https Wise OpenAPI endpoint
         return json.loads(resp.read().decode("utf-8"))
 
 
@@ -138,7 +138,7 @@ def extract_sdk_endpoints(repo: pathlib.Path) -> list[dict]:
                     }
                 )
         for entry in pending:
-            methods = set()
+            methods: set[str] = set()
             for i, line in enumerate(lines):
                 if re.search(r"\b" + re.escape(entry["enclosing"]) + r"\(", line):
                     window = "\n".join(lines[i : i + WRAPPER_WINDOW_LINES])
