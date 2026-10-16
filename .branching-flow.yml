@@ -1,0 +1,19 @@
+# branching-flow scoping for this repo (2026-10-17).
+#
+# The SDK's two-layer type design (internal/raw wire structs deliberately
+# mirror Wise's JSON with primitives; public types convert to strong types)
+# and the polymorphic account-identification ID spaces fire the three rule
+# classes below by construction — the findings are the documented
+# architecture, not defects (see AGENTS.md "Two-layer type design" and
+# "strong-id analysis has deliberate non-fixes"). Everything else
+# (panic, phantom, splitbrain, contextguard, do/ro, ...) stays active.
+disabled_rules:
+  # DUPLICATE_TYPE: raw/public mirror pairs + account-identification
+  # variants sharing field shapes across the anti-corruption boundary.
+  - duplicate_type
+  # COMPOSITION_mixin: "consider mixin" suggestions that would merge the
+  # raw and public layers the SDK exists to keep separate.
+  - composition_*
+  # ANTI_PATTERN_large-struct: raw wire structs carry 16-18 fields because
+  # Wise's JSON payloads do; trimming them would corrupt the wire contract.
+  - anti_pattern_*
