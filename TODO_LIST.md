@@ -123,22 +123,48 @@ the regex extractor on stdlib `go/parser` (kills the call-shape-bug class).
 DONE 2026-10-16: extraction-floor guard (fail below 40 resolved endpoints,
 negative-tested at 44) and `PYTHONDONTWRITEBYTECODE=1` in the flake app
 (recorded in CHANGELOG). Source: `docs/status/2026-10-16_19-48_wise-api-spec-drift-check-session.md` §f.
+DONE 2026-10-16 (remainder): the 2027Q1 triage is IN FEATURES (Bank account
+details + Multi-currency account sections, FULLY_FUNCTIONAL/PLANNED/DEMAND_GATED);
+spec-drift reports 43 unique endpoints, 0 drift against 2027Q1. Remaining for a
+future session: only the `go/parser` extractor rewrite. ~~~Triage the 16 added
+2027Q1 paths~~~ (verified against FEATURES.md 2026-10-16 late).
 
-[ ] Persist negative-scenario tests for the two Python gates
+[ ] ~~Persist negative-scenario tests for the two Python gates
 (`scripts/pin_sync.py`, `scripts/spec_drift.py`) — crafted stale-pin /
 removed-path / broken-JSON fixtures wired into flake checks; both scripts are
-currently verified by manual gauntlets only.
+currently verified by manual gauntlets only.~~ DONE 2026-10-16:
+`checks.script-fixtures` (in `nix flake check`) runs
+`scripts/negative_fixtures.py` — 9/9 cases (pin-sync: ok/stale-lock/
+tag-mismatch/missing-input/unpinned; spec-drift: broken-JSON/missing-endpoint/
+--fail-on-drift/warn-only), each asserted on exit code AND output substring,
+hermetic. pin-sync fixtures are generated into a tempdir because committed
+fixture go.mod files trip buildflow's go-mod-tidy detection.
 
-[ ] Cut a fresh benchstat baseline at the next release tag — the committed
+[ ] ~~Cut a fresh benchstat baseline at the next release tag — the committed
 one predates `BenchmarkParseWiseTimestamp` and ends with a junk
-`exit status 1` line (benchstat tolerates both; append-only forbids editing).
+`exit status 1` line (benchstat tolerates both; append-only forbids editing).~~
+DONE 2026-10-16: `docs/bench/2026-10-16_v0140_baseline.txt` cut at the v0.14.0
+tag (six captures) + README table row.
 
-[ ] File the two BuildFlow display defects upstream after a
+[ ] ~~File the two BuildFlow display defects upstream after a
 verify-before-filing pass: (a) "9 tools unavailable" persists after installing
 the tools and purging the result cache while `buildflow doctor` passes them;
 (b) the findings counter reports rendered output lines, not findings (27
-"statix warnings" where `statix check .` shows 2). Source: 2026-10-11 19:20
-session §f2.
+"statix warnings" where `statix check .` shows 2).~~ DONE 2026-10-16, with
+corrected diagnoses: (a) the 9 are language-INAPPLICABLE tools (jest/vitest/
+interrogate in a Go-only repo), not installed-but-unavailable tools —
+[BuildFlow #65](https://github.com/LarsArtmann/BuildFlow/issues/65);
+(b) root-caused to `FindingsFromOutput`'s line-per-finding fallback parsing
+statix's multi-line render —
+[BuildFlow #64](https://github.com/LarsArtmann/BuildFlow/issues/64).
+Source: 2026-10-11 19:20 session §f2; repro evidence 2026-10-16 23:06 run.
+
+[ ] Continue the AGENTS.md prune — 2026-10-16 pass moved the five worst
+incident narratives to `docs/reviews/2026-10-16_agents-incident-narratives.md`
+(57,987 → 53,216 bytes, zero constraint loss) but the plan's <30 KB target
+needs a dedicated compression pass over the ~40 remaining 400-900 B constraint
+bullets; do it bullet-by-bullet with the carry-every-concept rule, not in bulk.
+Source: 21:45 plan M24/T87.
 
 [ ] Consume the committed `benchstat` baseline
 (`docs/bench/2026-10-07_v0120_baseline.txt`) in the next perf-touching PR.
