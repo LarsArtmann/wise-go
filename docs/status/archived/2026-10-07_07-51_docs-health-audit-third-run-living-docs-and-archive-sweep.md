@@ -5,6 +5,7 @@
 - **Scope:** This session only — the operator ordered: "View ALL `**/2026-0*` files! Execute the docs-health SKILL! TODO_LIST/CHANGELOG/AGENTS/README/ROADMAP/FEATURES superb; archive fully-done + inline-struck reports." **No Go source was modified.**
 - **Format note:** `.md` per explicit user instruction (the status-report skill's canonical format is HTML — one-off override, same as the 2026-09-13/09-16/10-05/10-07 reports).
 - **End state:** tree clean; `nix fmt` 0 changed; `nix run .#doc-verify` all checks passed (5 count-claims, 63 links, 0 errors); `nix flake check` **9/9 passed**; archived-completeness `grep -rLn '~~'` clean. All edits swept by the daemon into commit `4a1e527` (24 files).
+- **Fully resolved 2026-10-16 (maximalist pass):** the banner-granularity gap this report flagged is closed — every kept report now carries per-item verdicts; its §f queue shipped (pin-sync, CI wiring, meta.description, floor 92, the test-gap batch) or is routed. Archived per the annotate-then-archive rule.
 
 ---
 

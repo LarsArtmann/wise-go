@@ -7,6 +7,23 @@ wording for provenance.
 
 ## 2026-10-16 docs-health archive sweep
 
+- `2026-10-07_03-45_buildflow-red-to-green-repair-status.md` — RESOLVED +
+  ARCHIVE: the red-to-green repair held (go 1.26 steady through v0.14.0); the
+  erraudit divergence was filed (BuildFlow #34, closed) and the skip removed
+  on verified evidence; the toolchain question is answered by the
+  condition-gated migration plan.
+- `2026-10-07_04-20_dual-phase-repair-and-tool-reevaluation-status.md` —
+  RESOLVED + ARCHIVE: the re-verified verdicts (samber/lo census, binary
+  freshness, max_file_size data) are the recorded truth; the three defects
+  were filed the same day; residuals routed.
+- `2026-10-07_05-14_docs-health-audit-v0120-living-docs-and-archive-sweep.md` —
+  RESOLVED + ARCHIVE: every tooling ask shipped (md-go-snippets,
+  release-notes-check, pre-release, shuffle-proof guard, CAMT test,
+  baselines); the 2026-10-16 pass closed its banner-granularity gap.
+- `2026-10-07_07-51_docs-health-audit-third-run-living-docs-and-archive-sweep.md` —
+  RESOLVED + ARCHIVE: the maximalist per-item pass this report asked for is
+  the 2026-10-16 sweep itself; its §f queue shipped or is routed; the AGENTS
+  prune rides plan task M24.
 - `2026-10-07_04-57_v0120-release-session-status.md` — RESOLVED + ARCHIVE:
   v0.12.0 shipped and verified end-to-end; every §b–§g follow-up carries an
   inline verdict from the 2026-10-16 maximalist pass (pre-release app,
