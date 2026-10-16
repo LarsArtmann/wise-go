@@ -86,6 +86,18 @@ Source: `docs/status/archived/2026-10-07_03-57_session-status-unblocked-prep-rel
 
 ### Open
 
+[ ] Fix `Health` semantics (docs half) — rewrite the `client.go:184` doc
+comment and the README line to say what the method IS: a credential-validating
+end-to-end readiness probe (authenticated `ListProfiles` through the retry
+executor), not a cheap reachability check. Document the typed-error distinction
+(a `*RateLimitError` from `Health` proves reachability with throttling) and the
+worst-case latency (~4 attempts × 30 s timeout + capped delays, up to ~2 min).
+Unblocked; the code-half decision lives under Decisions below. Optionally add a
+short README recipe for wiring the client into a consumer-side DI container
+health check (adapter pattern, no SDK changes — see
+`docs/architecture-understanding/2026-10-16_19-59_samber-do-health-architecture-review.md` §5).
+Source: 2026-10-16 samber/do + health architecture review, finding F-1/F-3.
+
 [ ] Consume the committed `benchstat` baseline
 (`docs/bench/2026-10-07_v0120_baseline.txt`) in the next perf-touching PR.
 Note: the README rerun commands are now execution-verified (six separate
@@ -93,6 +105,16 @@ Note: the README rerun commands are now execution-verified (six separate
 devShell — install with `go install golang.org/x/perf/cmd/benchstat@latest`.
 
 ### Decisions (P3)
+
+[ ] `Health` code-half — after (or with) the docs fix above, decide: keep
+`Health` as the retried readiness probe as-is, give it a fail-fast path
+(`MaxAttempts=1`-style, health probes should not spend ~2 min in the retry
+executor), and/or add a `VerifyCredentials` alias if any consumer depends on
+the current retried semantics. A true cheap liveness probe additionally needs
+an endpoint choice verified against the live API (no ping/health endpoint is
+documented in the vendored snapshot).
+**BLOCKED: user design decision.** Source: 2026-10-16 samber/do + health
+architecture review, finding F-1.
 
 [ ] `nix flake check --all-systems` — verified 2026-10-07: aarch64-linux and
 aarch64-darwin evaluate clean; x86_64-darwin FAILS EXTERNALLY (nixpkgs-26.11
