@@ -152,19 +152,19 @@ implicit in my closing summary, not stated loudly. It is stated here.
 ## f) NEXT (up to 50, ranked; tiers: P1 = do next sitting, P2 = soon, P3 = backlog/ROADMAP fuel)
 
 **P1 — unblock the release gate**
-1. Migrate `GetBankAccountDetails` to `GET /balances/account-details/{id}`
-   (live-preview contract check → rework account_details.go: path, branded ID,
-   fixtures → `go test` → spec-drift green). Gate-blocking.
-2. Decide g1 (keep spec-drift in pre-release red, or temporarily demote).
-3. Re-vendor `docs/reviews/wise-api-openapi.json` to 2027Q1 and re-baseline the
-   conformance gate (floors, exemptions, recorded exchanges, statement variants).
-4. Add an extraction-floor guard to the script (fail if extracted endpoint
+1. ~~Migrate `GetBankAccountDetails` to `GET /balances/account-details/{id}`~~ done — migrated to GET /balances/account-details/{id} with the AccountDetailsID brand (baba096, 2026-10-16)
+   ~~(live-preview contract check → rework account_details.go: path, branded ID,~~
+   ~~fixtures → `go test` → spec-drift green). Gate-blocking.~~
+2. Decide g1 (keep spec-drift in pre-release red, or temporarily demote). **→ routed — TODO_LIST spec-drift-gate-posture decision item**
+3. ~~Re-vendor `docs/reviews/wise-api-openapi.json` to 2027Q1 and re-baseline the~~ done — spec re-vendored 173 to 188 paths, floors re-baselined (baba096 + 163f41f)
+   ~~conformance gate (floors, exemptions, recorded exchanges, statement variants).~~
+4. Add an extraction-floor guard to the script (fail if extracted endpoint **→ routed — TODO_LIST spec-drift hardening item (extraction-floor guard)**
    count != expected surface count; wire the expected count from the same
    source doc-verify uses).
-5. Triage the 16 added 2027Q1 paths into FEATURES.md (demand-gated vs
+5. Triage the 16 added 2027Q1 paths into FEATURES.md (demand-gated vs **→ routed — TODO_LIST spec-drift hardening item (2027Q1 path triage)**
    out-of-scope), incl. `/auth/jose/playground/jwsjwe` method change and
    `/profiles/{profileId}/balances/hold-limit-breach`.
-6. Persist the 5 scenario tests (pytest or a golden shell test wired into
+6. Persist the 5 scenario tests (pytest or a golden shell test wired into **→ routed — TODO_LIST python-gates item**
    flake checks).
 
 **P2 — robustness & hygiene**

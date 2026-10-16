@@ -192,31 +192,31 @@ Everything user-gated, correctly untouched:
     `9eb3cab` reach the live fan-out; then re-verify through
     `~/.config/crush/references/lessons.md`.
 15. Push crush-config master (4 commits ahead; user call).
-16. Review TODAY's buildflow run findings summary (it ran ~08:29–08:34;
-    warning-class = triage queue).
-17. Add a recurrence note to the wise-go AGENTS buildflow-auto-configure
-    gotcha: `lll` re-added 2026-10-16, reverted in `d8e28b5` — the class
-    recurs, consider the allowlist gate (item 18).
-18. Build a linter-allowlist check (enabled-linters set must match a pinned
+16. ~~Review TODAY's buildflow run findings summary (it ran ~08:29–08:34;~~ **NOT-DO — NOT-DO — stale by now (the run was 2026-10-16 08:29-08:34; its kept hunks were reviewed hunk-by-hunk per a.5).**
+    ~~warning-class = triage queue).~~
+17. ~~Add a recurrence note to the wise-go AGENTS buildflow-auto-configure~~ done — lll recurrence + allowlist-gate pointer added to the AGENTS buildflow gotcha (2026-10-16 docs-health pass)
+    ~~gotcha: `lll` re-added 2026-10-16, reverted in `d8e28b5` — the class~~
+    ~~recurs, consider the allowlist gate (item 18).~~
+18. Build a linter-allowlist check (enabled-linters set must match a pinned **→ routed — TODO_LIST linter-allowlist item**
     list) to make the curated-`.golangci.yml` policy structural.
-19. Audit `git log 93601d1..HEAD` in full (daemon-committed `1cf83ab` /
-    `7c13bbb` / `d8e28b5` — verify each daemon commit contains exactly what
-    was reviewed; the AGENTS daemon-race gotcha demands it).
-20. Run `nix flake check` once on wise-go after today's `flake.lock`
-    nixpkgs bump (buildflow likely ran its own, but nobody verified from
-    here; also exercises `checks.pin-sync` hermetically).
-21. Fleet-wide rev↔go.mod drift sweep (from the 07-35 backlog: md-go,
+19. ~~Audit `git log 93601d1..HEAD` in full (daemon-committed `1cf83ab` /~~ done — in part — 1cf83ab/7c13bbb/d8e28b5 reviewed in-session (this report); 113d9f0 covered by the 21:09 session gates
+    ~~`7c13bbb` / `d8e28b5` — verify each daemon commit contains exactly what~~
+    ~~was reviewed; the AGENTS daemon-race gotcha demands it).~~
+20. ~~Run `nix flake check` once on wise-go after today's `flake.lock`~~ done — nix flake check ran green twice after the bump (2026-10-11 batteries; twice again 2026-10-16 by the spec-drift session)
+    ~~nixpkgs bump (buildflow likely ran its own, but nobody verified from~~
+    ~~here; also exercises `checks.pin-sync` hermetically).~~
+21. Fleet-wide rev↔go.mod drift sweep (from the 07-35 backlog: md-go, **→ routed — ROADMAP fleet pin-drift sweep raw idea**
     go-output, dynamic-markdown-site, …) — the drift class was proven
     fleet-wide; consider porting the pin-sync check pattern.
-22. Next perf-touching PR: install benchstat
+22. Next perf-touching PR: install benchstat **→ routed — TODO_LIST P3 benchstat item**
     (`go install golang.org/x/perf/cmd/benchstat@latest`, NOT in devShell)
     and consume `docs/bench/2026-10-07_v0120_baseline.txt`.
-23. Re-run the manual art-dupl pass
-    (`/home/lars/go/bin/art-dupl -t 2 --type-aware .`) if any
-    cloned-adjacent code changes (baseline: 0 actionable, 16 groups).
-24. Consider a crush-config lesson for "check ps for live buildflow before
+23. ~~Re-run the manual art-dupl pass~~ done — standing policy: the AGENTS art-dupl bullet already mandates manual re-run when touching cloned-adjacent code
+    ~~(`/home/lars/go/bin/art-dupl -t 2 --type-aware .`) if any~~
+    ~~cloned-adjacent code changes (baseline: 0 actionable, 16 groups).~~
+24. Consider a crush-config lesson for "check ps for live buildflow before **→ routed — ROADMAP crush-config lesson ideas**
     running gates in daemon-managed repos" (improvement e.1).
-25. After CI re-enables: confirm the coverage-badge job rewrites README to
+25. After CI re-enables: confirm the coverage-badge job rewrites README to **→ routed — TODO_LIST CI re-enable item covers the badge follow-up**
     current coverage (frozen at last CI-measured value; local 92.8% vs
     92.0 floor as of 2026-10-11).
 

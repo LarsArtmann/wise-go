@@ -51,15 +51,15 @@ Sorted by importance/impact/effort/customer-value. `[wise-go]` unless tagged.
 
 | ID | Tier | Task | Items covered | Est | Blocked on |
 |----|------|------|---------------|-----|------------|
-| M1 | 1% | Add compile-only godoc examples: `ExampleClient_GetTransfer` + list-then-fetch pairing | #2, #28 | 60m | — |
-| M2 | 1% | Hallucination sweep: compile-check every fenced go block in README + docs/** against types.go; fix offenders | #3 | 90m | — |
-| M3 | 4% | AGENTS.md gotcha: "compile chat snippets against consumer's pinned tag" + incident reference | #4, #22, #46 | 30m | — |
+| ~~M1~~ | ~~1%~~ done — 2026-10-16 — ExampleClient_GetTransfer + ExampleClient_ListTransfers (c50507f) | ~~Add compile-only godoc examples: `ExampleClient_GetTransfer` + list-then-fetch pairing~~ | ~~#2, #28~~ | ~~60m~~ | ~~—~~ |
+| ~~M2~~ | ~~1%~~ done — 2026-10-16 — 33 go blocks verified identifier-level; 3 offenders fixed (7318077; AGENTS gotcha) | ~~Hallucination sweep: compile-check every fenced go block in README + docs/** against types.go; fix offenders~~ | ~~#3~~ | ~~90m~~ | ~~—~~ |
+| ~~M3~~ | ~~4%~~ done — 2026-10-16 — AGENTS compile-snippets-against-pinned-tag rule (8b6a5cb) | ~~AGENTS.md gotcha: "compile chat snippets against consumer's pinned tag" + incident reference~~ | ~~#4, #22, #46~~ | ~~30m~~ | ~~—~~ |
 | M4 | 4% | Live smoke: GetTransfer + ListTransfers with real key; record verdict + real-ID caveat | #1 | 30m | user key |
-| M5 | 4% | Implement `GET /transfers/{id}/payments` (list funding payments): raw type, mapper, method, conformance fixture, tests | #8 | 100m | — |
-| M6 | 20% | Fix RED spec-drift gate: migrate `GetBankAccountDetails` to 2027Q1 shape, re-vendor OpenAPI (188 paths) | TODO_LIST P1 | 100m | — |
-| M7 | 4% | Transfer-category docs re-audit vs live preview (prep for remaining endpoints) | #38 | 45m | — |
-| M8 | 20% | Implement `GET /transfers/{id}/us-combined-receipt.pdf` via getRaw (+ zero-ID negative test check) | #9, #39 | 45m | — |
-| M9 | 20% | Implement `GET /transfers/{id}/documents/noc` via getRaw; evaluate payout-docs helper abstraction | #10, #41 | 45m | — |
+| ~~M5~~ | ~~4%~~ done — 2026-10-16 — ListTransferPayments (19ab4e5) | ~~Implement `GET /transfers/{id}/payments` (list funding payments): raw type, mapper, method, conformance fixture, tests~~ | ~~#8~~ | ~~100m~~ | ~~—~~ |
+| ~~M6~~ | ~~20%~~ done — 2026-10-16 — 2027Q1 migration + re-vendor 188 paths (baba096, 163f41f) | ~~Fix RED spec-drift gate: migrate `GetBankAccountDetails` to 2027Q1 shape, re-vendor OpenAPI (188 paths)~~ | ~~TODO_LIST P1~~ | ~~100m~~ | ~~—~~ |
+| ~~M7~~ | ~~4%~~ done — 2026-10-16 — transfer-category re-audit recorded (4c6fb1e), 2 false gaps corrected | ~~Transfer-category docs re-audit vs live preview (prep for remaining endpoints)~~ | ~~#38~~ | ~~45m~~ | ~~—~~ |
+| ~~M8~~ | ~~20%~~ done — 2026-10-16 — GetUSCombinedReceipt (3c185f7) | ~~Implement `GET /transfers/{id}/us-combined-receipt.pdf` via getRaw (+ zero-ID negative test check)~~ | ~~#9, #39~~ | ~~45m~~ | ~~—~~ |
+| ~~M9~~ | ~~20%~~ done — 2026-10-16 — GetTransferNOC (3c185f7) | ~~Implement `GET /transfers/{id}/documents/noc` via getRaw; evaluate payout-docs helper abstraction~~ | ~~#10, #41~~ | ~~45m~~ | ~~—~~ |
 | M10 | 20% | Typed webhook payloads: `transfers#active-cases` + `transfers#refund` (raw+public, decoders, tests) | #12 | 100m | — |
 | M11 | 20% | bank-sync hygiene: devshell gotcha in AGENTS/05, doctor key check, err.txt removal, config-path UX | #5, #6, #7, #33 | 60m | bank-sync |
 | M12 | 20% | README SCA/OTP endpoint matrix (which reads need SCA per profile class) | #25 | 45m | — |

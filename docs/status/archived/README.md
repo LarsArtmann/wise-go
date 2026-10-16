@@ -5,6 +5,21 @@ inline as `~~item~~ done at <hash>`, `Won't implement`, `NOT-DO`, or routed to
 TODO_LIST/ROADMAP. Do not open an archived file unless you need the original
 wording for provenance.
 
+## 2026-10-16 docs-health archive sweep
+
+- `2026-10-07_07-35_go-retry-pin-drift-fix-status.md` — RESOLVED + ARCHIVE:
+  the pin drift was fixed in-session (`3ed4fb4`); the class was closed
+  structurally by `checks.pin-sync` + the peeled-commit realignment in v0.13.0
+  (`7368a21`); the cross-project lesson landed in crush-config (`0607ed3`).
+  Residuals (tag-pin strategy, fleet sweep, upstream proposals) routed to
+  TODO_LIST/ROADMAP.
+- `2026-10-07_08-22_v0.13.0-release-pin-sync-drift-discovery-status.md` —
+  RESOLVED + ARCHIVE: v0.13.0 shipped; the 2026-10-11 session landed the
+  fuzz/bench/typing tail; the `.buildflow.yml` erraudit-skip question was
+  answered (BuildFlow #34 closed — the removal was correct, verified
+  2026-10-16). The one open seed (hermetic tag-pin strategy) is routed to
+  TODO_LIST as a user decision.
+
 ## 2026-10-07 docs-health archive sweep (v0.12.0 era)
 
 - `2026-09-16_16-45_openapi-spec-conformance-status.md` — ANNOTATE + ARCHIVE: the

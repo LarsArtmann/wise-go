@@ -14,15 +14,15 @@ server version `2026Q4`) · **Baseline:** `docs/reviews/2026-08-08_api-docs-stud
 | 4 | Cancel transfer | `PUT /transfers/{transferId}/cancel` | SHIPPED (`CancelTransfer`) | |
 | 5 | Transfer requirements | `POST /transfer-requirements` | SHIPPED (`ValidateTransferRequirements` + refresh pair) | |
 | 6 | Fund transfer | `POST /profiles/{profileId}/transfers/{transferId}/payments` | SHIPPED (`FundTransfer`) | |
-| 7 | List transfer payments | `GET /transfers/{transferId}/payments` | **M5 — this plan** | response = array of `{id, method, pricingVariant, amount, currency, timeCreated, timeUpdated}`; "usually a single payment per transfer" |
+| 7 | ~~List transfer payments~~, `GET /transfers/{transferId}/payments` | ~~M5 — this plan~~ **done** — `ListTransferPayments` shipped 2026-10-16 (`19ab4e5`) | response = array of `{id, method, pricingVariant, amount, currency, timeCreated, timeUpdated}`; "usually a single payment per transfer" |
 | 8 | Receipt PDF | `GET /transfers/{transferId}/receipt.pdf` | SHIPPED (`GetTransferReceipt`) | 404 until `outgoing_payment_sent` |
-| 9 | US combined receipt | `GET /v3/transfers/{transferId}/us-combined-receipt.pdf` | **M8 — this plan** | note the `/v3/` version prefix on an otherwise-unversioned surface; available from `incoming_payment_initiated` |
-| 10 | NOC document | `GET /transfers/{transferId}/documents/noc` | **M9 — this plan** | INR transfers in `outgoing_payment_sent`; used to obtain a FIRC |
+| 9 | ~~US combined receipt~~ | `GET /v3/transfers/{transferId}/us-combined-receipt.pdf` | ~~M8 — this plan~~ **done** — `GetUSCombinedReceipt` shipped 2026-10-16 (`3c185f7`) | note the `/v3/` version prefix on an otherwise-unversioned surface; available from `incoming_payment_initiated` |
+| 10 | ~~NOC document~~ | `GET /transfers/{transferId}/documents/noc` | ~~M9 — this plan~~ **done** — `GetTransferNOC` shipped 2026-10-16 (`3c185f7`) | INR transfers in `outgoing_payment_sent`; used to obtain a FIRC |
 | 11 | Payout info | `GET /transfers/{transferId}/invoices...` family | SHIPPED (`GetTransferPayoutInfo`) | banking-partner reference tracking |
-| 12 | **Banking partner invoice** | `GET /transfers/{transferId}/invoices/bankingpartner` | **UNTRACKED GAP — new finding** | not in the 2026-08-08 study's 11 items; add to TODO_LIST |
-| 13 | **Deposit details (bank transfer pay-in)** | `GET /profiles/{profileId}/transfers/{transferId}/deposit-details/bank-transfer` | **UNTRACKED GAP — new finding** | pay-in instructions for funding; add to TODO_LIST |
-| 14 | Third-party (originator) create | `POST /profiles/{profileId}/third-party-transfers` | **M15 — this plan** | originator = a SEPARATE endpoint family, not a `POST /transfers` variant; idempotency via `originalTransferId` |
-| 15 | Third-party (originator) get | `GET /profiles/{profileId}/third-party-transfers/{transferId}` | **M15 — this plan** | |
+| 12 | ~~**Banking partner invoice**~~ **NOT-DO (false gap)** — `GET /transfers/{transferId}/invoices/bankingpartner` IS `GetTransferPayoutInfo` (`transfers.go:165`, shipped v0.10.0); corrected by the 2026-10-16 docs-health verify | not a gap; row 11 already covers the endpoint |
+| 13 | **Deposit details (bank transfer pay-in)** | `GET /profiles/{profileId}/transfers/{transferId}/deposit-details/bank-transfer` | ~~UNTRACKED GAP~~ **NOT-DO (already tracked)** — FEATURES.md carries it as DEMAND_GATED ("Payin deposit details"); no TODO row needed | pay-in instructions for funding; demand-gated |
+| 14 | Third-party (originator) create | `POST /profiles/{profileId}/third-party-transfers` | **M15 — routed** (TODO_LIST SUPERB-plan item) | originator = a SEPARATE endpoint family, not a `POST /transfers` variant; idempotency via `originalTransferId` |
+| 15 | Third-party (originator) get | `GET /profiles/{profileId}/third-party-transfers/{transferId}` | **M15 — routed** (TODO_LIST SUPERB-plan item) | |
 
 ## Corrections to earlier planning assumptions
 
@@ -41,7 +41,9 @@ server version `2026Q4`) · **Baseline:** `docs/reviews/2026-08-08_api-docs-stud
 
 ## Conformance note for M5/M8/M9
 
-The vendored spec (`docs/reviews/wise-api-openapi.json`, 173 paths) predates the
+~~The vendored spec (`docs/reviews/wise-api-openapi.json`, 173 paths) predates the
 `2027Q1` server version; M6 (executed before M5 in this plan run) re-vendors the
 fresh spec so the payments/receipt/NOC exchange templates validate against
-authoritative schemas rather than the stale snapshot.
+authoritative schemas rather than the stale snapshot.~~ Resolved 2026-10-16:
+M6 executed — the snapshot is re-vendored at 188 paths and `nix run .#spec-drift`
+is exit 0.

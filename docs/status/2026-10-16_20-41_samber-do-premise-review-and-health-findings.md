@@ -74,29 +74,29 @@
 
 | # | Task | Impact | Effort | Category |
 | --- | --- | --- | --- | --- |
-| 1 | Execute F-1 docs-half: rewrite `client.go:183-186` doc comment + README:245 to "credential-validating readiness probe" semantics, typed-error guidance (`*RateLimitError` proves reachability-with-throttling), worst-case latency (~2 min) | High | S | Documentation |
+| ~~1~~ | ~~Execute F-1 docs-half: rewrite `client.go:183-186` doc comment + README:245 to "credential-validating readiness probe" semantics, typed-error guidance (`*RateLimitError` proves reachability-with-throttling), worst-case latency (~2 min)~~ done — docs-half executed by the 2026-10-16 docs-health pass (godoc + README + FEATURES wording) | ~~High~~ | ~~S~~ | ~~Documentation~~ |
 | 2 | Decide F-1 code-half (user): keep retried semantics as-is / fail-fast `Health` (`MaxAttempts=1` path) / `VerifyCredentials` alias | High | S | Design decision |
 | 3 | Consider adding a named-alias method `HealthCheck(ctx)` (directly satisfies `do.HealthcheckerWithContext` in consumer containers without importing samber/do) — API-surface-before-v1.0 call | Medium | S | Design decision |
 | 4 | Run `nix run .#doc-verify` to certify this session's FEATURES/TODO edits | High | S | Documentation |
 | 5 | Run `nix flake check` post-edit sanity | Medium | S | Quality |
-| 6 | Repo-wide anchor sweep: verify every `*.go:NN` reference in README/FEATURES/TODO_LIST/ROADMAP against the referenced line; fix drifts (incl. `wise_test.go:246` cited in the new review) | Medium | M | Quality |
-| 7 | Build the anchor-checker script + wire into doc-verify (`nix run .#anchor-check`) | Medium | M | Quality |
+| 6 | Repo-wide anchor sweep: verify every `*.go:NN` reference in README/FEATURES/TODO_LIST/ROADMAP against the referenced line; fix drifts (incl. `wise_test.go:246` cited in the new review) **→ routed — TODO_LIST anchor-check item** | Medium | M | Quality |
+| 7 | Build the anchor-checker script + wire into doc-verify (`nix run .#anchor-check`) **→ routed — TODO_LIST anchor-check item** | Medium | M | Quality |
 | 8 | F-3: add README consumer-side DI + health-check recipe (review §5 snippet), or `docs/recipes/` page if README scope says no | Medium | S | Documentation |
 | 9 | Inspect daemon commit `113d9f0` (three test files dirty at session start) — confirm content matches intent | Medium | S | Cleanup |
 | 10 | Confirm `e1912ee`/`e066132`/`1f4b99d` (SCA/OTT data-model commits) are from the intended parallel session; no cross-session collision | Low | S | Cleanup |
 | 11 | Read `wise_test.go:372` `Describe("Health")` — if it only asserts nil-error, extend to pin the typed-error distinction (429 → `*RateLimitError`, bad key → `*AuthError`) | Medium | S | Quality |
 | 12 | Reconcile the architecture-understanding series: fully read both 2026-07-18 HTML scorecards/roadmaps; annotate still-open items vs the new review | Medium | S | Documentation |
-| 13 | Write the anchor-drift gotcha into AGENTS.md (doc-verify gates counts, not line anchors; 8 dead anchors found 2026-10-16) | Medium | S | Documentation |
+| ~~13~~ | ~~Write the anchor-drift gotcha into AGENTS.md (doc-verify gates counts, not line anchors; 8 dead anchors found 2026-10-16)~~ done — anchor-drift gotcha written to AGENTS.md (2026-10-16 docs-health pass) | ~~Medium~~ | ~~S~~ | ~~Documentation~~ |
 | 14 | HARVEST this report's (f) list into TODO_LIST/ROADMAP (docs-health HARVEST) — do not entomb | Medium | S | Documentation |
 | 15 | Annotate the 19-59 review inline (docs-health ANNOTATE) as F-1/F-2/F-3 resolve | Low | S | Documentation |
-| 16 | CHANGELOG entry for the 8-anchor fix + review, folded into the next dprint-covered commit (pre-commit gotcha) | Low | S | Documentation |
-| 17 | Sync FEATURES.md Health row wording when F-1 docs-half lands ("delegates to Authenticate" stays; semantics wording may need the same honesty fix) | Low | S | Documentation |
-| 18 | Run `nix run .#spec-drift` to confirm the P1 MISSING state unchanged (cheap certification; the migration itself is TODO_LIST P1) | Medium | S | Quality |
+| ~~16~~ | ~~CHANGELOG entry for the 8-anchor fix + review, folded into the next dprint-covered commit (pre-commit gotcha)~~ done — CHANGELOG [Unreleased] carries the anchor-fix entry (2026-10-16) | ~~Low~~ | ~~S~~ | ~~Documentation~~ |
+| ~~17~~ | ~~Sync FEATURES.md Health row wording when F-1 docs-half lands ("delegates to Authenticate" stays; semantics wording may need the same honesty fix)~~ done — FEATURES Health row reworded with readiness-probe semantics (2026-10-16) | ~~Low~~ | ~~S~~ | ~~Documentation~~ |
+| ~~18~~ | ~~Run `nix run .#spec-drift` to confirm the P1 MISSING state unchanged (cheap certification; the migration itself is TODO_LIST P1)~~ done — migration shipped (baba096); spec-drift exit 0 | ~~Medium~~ | ~~S~~ | ~~Quality~~ |
 | 19 | Fresh conformance-suite run to re-measure the "202/202 at v0.12.0" figure cited in the review (figure-hygiene lesson) | Low | S | Quality |
 | 20 | Liveness-probe endpoint research against the live API (unauthenticated candidate), demand-gated | Low | M | Feature |
 | 21 | Document the "stateless client — nothing to shut down" invariant in README/AGENTS (it is the reason no lifecycle API exists; worth pinning as a guarantee) | Low | S | Documentation |
 | 22 | Codify the .md-vs-HTML output convention for architecture-understanding + status reports (see g3; crush-config skill update if .md wins) | Low | S | Docs/process |
-| 23 | Carry-over (predates session, cited as F-5): migrate `GetBankAccountDetails` to 2027Q1 shape — THE release blocker; untouched here per scope | High | M | Feature |
+| ~~23~~ | ~~Carry-over (predates session, cited as F-5): migrate `GetBankAccountDetails` to 2027Q1 shape — THE release blocker; untouched here per scope~~ done — the 2027Q1 migration shipped (baba096) | ~~High~~ | ~~M~~ | ~~Feature~~ |
 | 24 | When Health docs change, re-check `example_test.go` / godoc examples for Health-related snippets that may need the same semantics wording | Low | S | Documentation |
 
 **HARVEST note:** items 1–5, 8, 11–14, 17 are TODO_LIST-grade; 2–3 are user-gated decisions; 6–7, 13 are quality tooling (TODO_LIST P3); 20–22 are ROADMAP fuel; 23 is already TODO_LIST P1. Per your WAIT convention I have NOT run HARVEST on this list — say the word.

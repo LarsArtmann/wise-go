@@ -28,9 +28,9 @@
 
 ## b) PARTIALLY DONE
 
-1. **Live fuzzing of the three seeded targets** — corpus seeds run under plain `go test`, and `FuzzParseWiseDate` got a 5s live fuzz, but I did NOT live-fuzz the three seeded targets this session (they were live-fuzzed 8s each on 2026-10-07 pre-corpus). The corpus itself is verified only in seed-execution mode.
-2. **Coverage-drop forensics** — I measured 92.8% vs the documented 93.1% (2026-10-07) and confirmed the 0.3pt drop predates this session (daemon commits between 10-07 and today). I did NOT identify WHICH commit/code caused it. The promotion to the 92 floor proceeded with 0.8pt headroom instead of the rationale's assumed 1.1pt.
-3. **ROADMAP resolved-item cleanup** — I removed the LSP duplicate and the shipped baseline idea, but the same duplication pattern remains for two sibling struck entries (art-dupl DECIDED line, erraudit RESOLVED line) that also summarize AGENTS.md content. Deliberate scope cut, now documented here.
+1. ~~**Live fuzzing of the three seeded targets** — corpus seeds run under plain `go test`, and `FuzzParseWiseDate` got a 5s live fuzz, but I did NOT live-fuzz the three seeded targets this session (they were live-fuzzed 8s each on 2026-10-07 pre-corpus). The corpus itself is verified only in seed-execution mode.~~ done — live-fuzzed 5s each, ~712k execs, zero crashers (2026-10-11 19:20 session, a.6)
+2. ~~**Coverage-drop forensics** — I measured 92.8% vs the documented 93.1% (2026-10-07) and confirmed the 0.3pt drop predates this session (daemon commits between 10-07 and today). I did NOT identify WHICH commit/code caused it. The promotion to the 92 floor proceeded with 0.8pt headroom instead of the rationale's assumed 1.1pt.~~ done — forensics closed: the 93.1% never existed; 90.5 to 92.8 at 5e7430b, stable since (19:20 session, a.2; CHANGELOG Fixed)
+3. ~~**ROADMAP resolved-item cleanup** — I removed the LSP duplicate and the shipped baseline idea, but the same duplication pattern remains for two sibling struck entries (art-dupl DECIDED line, erraudit RESOLVED line) that also summarize AGENTS.md content. Deliberate scope cut, now documented here.~~ done — both struck ROADMAP lines removed (19:20 session, a.4)
 
 ## c) NOT STARTED
 

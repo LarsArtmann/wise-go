@@ -76,16 +76,16 @@ _(honest count: 24; the remaining slots would be padding)_
 
 **Unblocked, bounded (start here):**
 
-1. ANNOTATE the 18:34 status report inline: §b1/§b2/§b3 resolved by this session (with the `5e7430b`/parity-check references) — docs-health ANNOTATE mode.
-2. File the BuildFlow display defects upstream after a verify-before-filing pass: (a) "9 tools unavailable" persists after installing the tools AND purging the result cache, while doctor and direct `-s` runs pass; (b) the findings counter that reports 27 statix warnings where `statix check .` shows 2 findings (rendered lines ≠ findings).
-3. Wire gitleaks into the recurring cadence: add `-s gitleaks` to the "full buildflow after infra-touching commits" note (or a dedicated periodic step) so secret scanning actually recurs.
-4. Add a minimal `.markdownlint.json` (MD013 off) so on-demand markdownlint runs are meaningful.
-5. Single-source the coverage floor (flake.nix ↔ ci.yml read one value) — eliminate the split brain the new parity check currently only guards.
-6. Cut a fresh benchstat baseline at the next release tag (current one lacks `BenchmarkParseWiseTimestamp`, carries a trailing junk line).
-7. Add the one-sided-geomean caveat to `docs/bench/README.md`.
-8. Record the fuzz-cache non-harvest decision (e.9) in AGENTS.md or the bench docs — one line, closes the question.
-9. Cross-repo (crush-config): the pipe-masking lesson generalizes fleet-wide — candidate for `references/lessons.md` alongside the already-carried go-retry drift, Ginkgo `-count>1`, and `gh --body-file -` lessons.
-10. Consume the committed benchstat baseline in the next perf-touching PR (carried; README is now execution-verified).
+1. ~~ANNOTATE the 18:34 status report inline: §b1/§b2/§b3 resolved by this session (with the `5e7430b`/parity-check references) — docs-health ANNOTATE mode.~~ done — 18:34 report annotated inline 2026-10-16 (docs-health pass)
+2. File the BuildFlow display defects upstream after a verify-before-filing pass: (a) "9 tools unavailable" persists after installing the tools AND purging the result cache, while doctor and direct `-s` runs pass; (b) the findings counter that reports 27 statix warnings where `statix check .` shows 2 findings (rendered lines ≠ findings). **→ routed — TODO_LIST BuildFlow display-defects filing item (verify-before-filing)**
+3. ~~Wire gitleaks into the recurring cadence: add `-s gitleaks` to the "full buildflow after infra-touching commits" note (or a dedicated periodic step) so secret scanning actually recurs.~~ done — gitleaks/codespell on-demand cadence added to the AGENTS full-buildflow bullet (2026-10-16)
+4. Add a minimal `.markdownlint.json` (MD013 off) so on-demand markdownlint runs are meaningful. **→ routed — TODO_LIST .markdownlint.json item**
+5. Single-source the coverage floor (flake.nix ↔ ci.yml read one value) — eliminate the split brain the new parity check currently only guards. **→ routed — TODO_LIST single-source-coverage-floor item**
+6. Cut a fresh benchstat baseline at the next release tag (current one lacks `BenchmarkParseWiseTimestamp`, carries a trailing junk line). **→ routed — TODO_LIST fresh-baseline-at-next-tag item**
+7. ~~Add the one-sided-geomean caveat to `docs/bench/README.md`.~~ done — one-sided-geomean caveat in docs/bench/README.md
+8. ~~Record the fuzz-cache non-harvest decision (e.9) in AGENTS.md or the bench docs — one line, closes the question.~~ done — fuzz-cache non-harvest decision recorded in docs/bench/README.md (2026-10-16)
+9. Cross-repo (crush-config): the pipe-masking lesson generalizes fleet-wide — candidate for `references/lessons.md` alongside the already-carried go-retry drift, Ginkgo `-count>1`, and `gh --body-file -` lessons. **→ routed — ROADMAP crush-config lesson ideas (pipe-masking)**
+10. Consume the committed benchstat baseline in the next perf-touching PR (carried; README is now execution-verified). **→ routed — TODO_LIST P3 benchstat item (carried)**
 
 **User-gated (one approval unblocks each):**
 

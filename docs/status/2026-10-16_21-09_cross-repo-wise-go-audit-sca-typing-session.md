@@ -117,11 +117,11 @@ typed OTT (awaits release) · wise-go v0.14.0 release chain (pre-release, tag, a
 10. ⏳ G4: SystemNix push+switch; observe exactly one SCA-pending Discord push (no storm) [F39–F40]
 11. E7: route bank-sync Health through callSDK + pre-cancelled-ctx test [F24–F25]
 12. E10: docs closeout — annotate TODO_LIST:60/87/381, flip AGENTS/01 KNOWN-BROKEN to resolved [F31–F34]
-13. wise-go: scratch-verify bank-sync compiles against master (replace/GOWORK) — closes e)1
-14. wise-go: v0.14.0 release chain (`nix run .#pre-release`, tag, apidiff vs v0.13.0 re-check, proxy verification)
-15. bank-sync: migrate the five OTT call sites to `wisesdk.OneTimeToken` when bumping to v0.14.0
-16. wise-go: OTT surface quarterly-rollover probe still PARKED on 2026Q3 (probe-blind; procedure in TODO_LIST) — recheck live
-17. wise-go: add the Ginkgo-Equal-newtype lesson to AGENTS.md (e)7)
+13. wise-go: scratch-verify bank-sync compiles against master (replace/GOWORK) — closes e)1 **→ routed — folded into the TODO_LIST v0.14.0 item (scratch-verify before tag)**
+14. wise-go: v0.14.0 release chain (`nix run .#pre-release`, tag, apidiff vs v0.13.0 re-check, proxy verification) **→ routed — TODO_LIST v0.14.0 release-chain item**
+15. bank-sync: migrate the five OTT call sites to `wisesdk.OneTimeToken` when bumping to v0.14.0 **→ routed — bank-sync repo (consumer migration rides the v0.14.0 bump)**
+16. wise-go: OTT surface quarterly-rollover probe still PARKED on 2026Q3 (probe-blind; procedure in TODO_LIST) — recheck live **→ routed — TODO_LIST P1 OTT-probe item**
+17. ~~wise-go: add the Ginkgo-Equal-newtype lesson to AGENTS.md (e)7)~~ done — Ginkgo-Equal-newtype lesson added to AGENTS.md (2026-10-16 docs-health pass)
 18. bank-sync E8: decide + implement SDK-version about/system surface [F26–F28]
 19. bank-sync E9: historical-FX design note (consumer-gated; `rates.go:23` seam) [F29–F30]
 20. bank-sync: audit daemon commit eb12168a contents for parallel-session mixing (e)3)
