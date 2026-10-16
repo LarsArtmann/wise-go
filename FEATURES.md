@@ -77,10 +77,10 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
 
 | Method | Path                                                | Status           | wise-go                                       |
 | ------ | --------------------------------------------------- | ---------------- | --------------------------------------------- |
-| POST   | `/v4/profiles/{id}/balances`                        | FULLY_FUNCTIONAL | `CreateBalance` (`balances.go:101`)           |
+| POST   | `/v4/profiles/{id}/balances`                        | FULLY_FUNCTIONAL | `CreateBalance` (`balances.go:107`)           |
 | GET    | `/v4/profiles/{id}/balances`                        | FULLY_FUNCTIONAL | `ListBalances` (`balances.go:31`)             |
 | GET    | `/v4/profiles/{id}/balances/{id}`                   | FULLY_FUNCTIONAL | `GetBalance` (`balances.go:61`)               |
-| GET    | `/v4/profiles/{id}/total-funds/{currency}`          | FULLY_FUNCTIONAL | `GetTotalFunds` (`balances.go:170`)           |
+| GET    | `/v4/profiles/{id}/total-funds/{currency}`          | FULLY_FUNCTIONAL | `GetTotalFunds` (`balances.go:195`)           |
 | DELETE | `/v4/profiles/{id}/balances/{id}`                   | PLANNED          | close balance (zero balance required)         |
 | POST   | `/v4/profiles/{id}/balance-movements`               | PLANNED          | convert/move between balances                 |
 | GET    | `/v4/profiles/{id}/balance-capacity`                | DEMAND_GATED     | regulatory deposit limit (hold-limit regions) |
@@ -177,8 +177,8 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 | GET    | `/v2/accounts`                                | FULLY_FUNCTIONAL | `ListRecipients` (`recipients.go:24`)               |
 | POST   | `/v1/accounts`                                | FULLY_FUNCTIONAL | `CreateRecipient` (`recipients.go:106`)             |
 | GET    | `/v1/accounts/{id}`                           | FULLY_FUNCTIONAL | `GetRecipient` (`recipients.go:88`)                 |
-| GET    | `/v1/quotes/{id}/account-requirements`        | FULLY_FUNCTIONAL | `GetQuoteAccountRequirements` (`quotes.go:94`)      |
-| POST   | `/v1/quotes/{id}/account-requirements`        | FULLY_FUNCTIONAL | `RefreshQuoteAccountRequirements` (`quotes.go:163`) |
+| GET    | `/v1/quotes/{id}/account-requirements`        | FULLY_FUNCTIONAL | `GetQuoteAccountRequirements` (`quotes.go:95`)      |
+| POST   | `/v1/quotes/{id}/account-requirements`        | FULLY_FUNCTIONAL | `RefreshQuoteAccountRequirements` (`quotes.go:158`) |
 | DELETE | `/v1/accounts/{id}`                           | PLANNED          | deactivate recipient                                |
 | POST   | `/v1/accounts/{id}/quotes/{id}/compatibility` | PLANNED          | pre-transfer compatibility check                    |
 | PATCH  | `/v1/accounts/{id}/confirmations`             | PLANNED          | accept verification mismatch                        |
@@ -187,12 +187,12 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 
 | Method | Path                                         | Status           | wise-go                                                        |
 | ------ | -------------------------------------------- | ---------------- | -------------------------------------------------------------- |
-| POST   | `/v1/transfers`                              | FULLY_FUNCTIONAL | `CreateTransfer` (`transfers.go:221`)                          |
+| POST   | `/v1/transfers`                              | FULLY_FUNCTIONAL | `CreateTransfer` (`transfers.go:218`)                          |
 | GET    | `/v1/transfers`                              | FULLY_FUNCTIONAL | `ListTransfers` (`transfers.go:39`)                            |
 | GET    | `/v1/transfers/{id}`                         | FULLY_FUNCTIONAL | `GetTransfer` (`transfers.go:117`)                             |
-| PUT    | `/v1/transfers/{id}/cancel`                  | FULLY_FUNCTIONAL | `CancelTransfer` (`transfers.go:257`)                          |
+| PUT    | `/v1/transfers/{id}/cancel`                  | FULLY_FUNCTIONAL | `CancelTransfer` (`transfers.go:254`)                          |
 | POST   | `/v1/transfer-requirements`                  | FULLY_FUNCTIONAL | `ValidateTransferRequirements` (`transfer_requirements.go:20`) |
-| POST   | `/v1/profiles/{id}/transfers/{id}/payments`  | FULLY_FUNCTIONAL | `FundTransfer` (`transfers.go:286`)                            |
+| POST   | `/v1/profiles/{id}/transfers/{id}/payments`  | FULLY_FUNCTIONAL | `FundTransfer` (`transfers.go:283`)                            |
 | GET    | `/v1/transfers/{id}/invoices/bankingpartner` | FULLY_FUNCTIONAL | `GetTransferPayoutInfo` (`transfers.go:160`)                   |
 | GET    | `/v1/transfers/{id}/receipt.pdf`             | FULLY_FUNCTIONAL | `GetTransferReceipt` (`transfers.go:138`)                      |
 | GET    | `/v1/transfers/{id}/payments`                | FULLY_FUNCTIONAL | `ListTransferPayments` (`transfers.go:432`)         |
@@ -203,17 +203,17 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 
 | Method | Path                                           | Status       | wise-go                                       |
 | ------ | ---------------------------------------------- | ------------ | --------------------------------------------- |
-| POST   | `/v1/profiles/{id}/third-party-transfers`      | FULLY_FUNCTIONAL | `CreateThirdPartyTransfer` (`third_party_transfers.go:87`) |
-| GET    | `/v1/profiles/{id}/third-party-transfers/{id}` | FULLY_FUNCTIONAL | `GetThirdPartyTransfer` (`third_party_transfers.go:135`)  |
+| POST   | `/v1/profiles/{id}/third-party-transfers`      | FULLY_FUNCTIONAL | `CreateThirdPartyTransfer` (`third_party_transfers.go:95`) |
+| GET    | `/v1/profiles/{id}/third-party-transfers/{id}` | FULLY_FUNCTIONAL | `GetThirdPartyTransfer` (`third_party_transfers.go:145`)  |
 
 ### Webhook subscriptions (9 operations)
 
 | Method | Path                                                              | Status           | wise-go                                                |
 | ------ | ----------------------------------------------------------------- | ---------------- | ------------------------------------------------------ |
-| POST   | `/2026Q4/profiles/{id}/subscriptions`                             | FULLY_FUNCTIONAL | `CreateProfileWebhookSubscription` (`webhooks.go:90`)  |
-| GET    | `/2026Q4/profiles/{id}/subscriptions`                             | FULLY_FUNCTIONAL | `ListProfileWebhookSubscriptions` (`webhooks.go:117`)  |
+| POST   | `/2026Q4/profiles/{id}/subscriptions`                             | FULLY_FUNCTIONAL | `CreateProfileWebhookSubscription` (`webhooks.go:92`)  |
+| GET    | `/2026Q4/profiles/{id}/subscriptions`                             | FULLY_FUNCTIONAL | `ListProfileWebhookSubscriptions` (`webhooks.go:119`)  |
 | GET    | `/2026Q4/profiles/{id}/subscriptions/{id}`                        | FULLY_FUNCTIONAL | `GetProfileWebhookSubscription` (`webhooks.go:156`)    |
-| DELETE | `/2026Q4/profiles/{id}/subscriptions/{id}`                        | FULLY_FUNCTIONAL | `DeleteProfileWebhookSubscription` (`webhooks.go:178`) |
+| DELETE | `/2026Q4/profiles/{id}/subscriptions/{id}`                        | FULLY_FUNCTIONAL | `DeleteProfileWebhookSubscription` (`webhooks.go:190`) |
 | POST   | `/applications/{clientKey}/subscriptions`                         | ON_HOLD          | app-level scope decision pending (ROADMAP.md Axis 1)   |
 | GET    | `/applications/{clientKey}/subscriptions`                         | ON_HOLD          | app-level scope decision pending                       |
 | GET    | `/applications/{clientKey}/subscriptions/{id}`                    | ON_HOLD          | app-level scope decision pending                       |

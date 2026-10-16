@@ -144,20 +144,26 @@
           ...
         }:
         {
-          # Hermetic test check with race detection and coverage output,
-          # matching the original buildGoModule test check. Mirrors the 92%
-          # coverage gate from ci.yml — the flake check must enforce the same
-          # floor, not just measure coverage (ci.yml is disabled on GitHub).
+          # Hermetic test check with race detection and coverage output.
+          # The coverage floor is SINGLE-SOURCED in ci.yml (the parity check
+          # below enforces the shape): this check reads the floor from ci.yml
+          # at check time, so a promotion can never split the two gates.
           checks.test = config.packages.default.overrideAttrs (_old: {
             pname = "wise-go-test";
             doCheck = true;
+            ciYml = ./.github/workflows/ci.yml;
             checkPhase = ''
               runHook preCheck
               GOEXPERIMENT=jsonv2 go test -race -coverprofile=coverage.out -covermode=atomic ./...
               TOTAL=$(go tool cover -func=coverage.out | awk '/^total:/ {sub("%", "", $3); print $3}')
               echo "coverage: $TOTAL%"
-              awk -v p="$TOTAL" 'BEGIN { if ((p+0) < 92.0) exit 1 }' || {
-                echo "FAIL: coverage $TOTAL% is below the 92% floor"
+              FLOOR=$(grep -oE 'p\+0 < [0-9]+(\.[0-9]+)?' "$ciYml" | grep -oE '[0-9]+(\.[0-9]+)?$' | sort -u)
+              if [ -z "$FLOOR" ] || [ "$(printf '%s\n' "$FLOOR" | grep -c .)" -ne 1 ]; then
+                echo "FAIL: expected exactly one coverage floor in ci.yml, found: '$FLOOR'"
+                exit 1
+              fi
+              awk -v p="$TOTAL" -v f="$FLOOR" 'BEGIN { if ((p+0) < (f+0)) exit 1 }' || {
+                echo "FAIL: coverage $TOTAL% is below the ${FLOOR}% floor (single-sourced from ci.yml)"
                 exit 1
               }
               runHook postCheck
@@ -170,11 +176,11 @@
             '';
           });
 
-          # The coverage floor is enforced in two places — checks.test above
-          # and the ci.yml coverage gate — that must never drift apart. This
-          # check greps both floors and fails on any mismatch (or on a floor
-          # going missing entirely), so a single-site promotion breaks the
-          # build instead of silently splitting the gates.
+          # The coverage floor is single-sourced: ci.yml carries THE floor,
+          # checks.test reads it from there at check time. This check pins the
+          # shape — exactly one floor in ci.yml, none hardcoded in flake.nix —
+          # so a two-site promotion or a floor removal breaks the build
+          # instead of silently splitting (or dropping) the gate.
           checks.coverage-floor-parity =
             pkgs.runCommand "coverage-floor-parity"
               {
@@ -186,19 +192,19 @@
                 ciYml = ./.github/workflows/ci.yml;
               }
               ''
-                FLOOR_FLAKE=$(grep -oE '\(p\+0\) < [0-9]+(\.[0-9]+)?' "$flakeNix" | grep -oE '[0-9]+(\.[0-9]+)?$' | sort -u)
                 FLOOR_CI=$(grep -oE 'p\+0 < [0-9]+(\.[0-9]+)?' "$ciYml" | grep -oE '[0-9]+(\.[0-9]+)?$' | sort -u)
-                if [ -z "$FLOOR_FLAKE" ] || [ -z "$FLOOR_CI" ]; then
-                  echo "FAIL: coverage floor not found (flake.nix: '$FLOOR_FLAKE', ci.yml: '$FLOOR_CI')"
-                  echo "The floor lives in the checks.test checkPhase (flake.nix) and the coverage gate (ci.yml); both must carry the same value."
+                COUNT=$(printf '%s\n' "$FLOOR_CI" | grep -c . || true)
+                INLINE_FLAKE=$(grep -c '(p+0) < ' "$flakeNix" || true)
+                if [ -z "$FLOOR_CI" ] || [ "$COUNT" -ne 1 ]; then
+                  echo "FAIL: ci.yml must carry exactly one coverage floor (found: '$FLOOR_CI')"
                   exit 1
                 fi
-                if [ "$FLOOR_FLAKE" != "$FLOOR_CI" ]; then
-                  echo "FAIL: coverage floor split brain: flake.nix enforces $FLOOR_FLAKE, ci.yml enforces $FLOOR_CI"
-                  echo "Promote both sites together — a one-sided change leaves a silent mismatch."
+                if [ "$INLINE_FLAKE" -ne 0 ]; then
+                  echo "FAIL: flake.nix hardcodes a coverage floor — the floor is single-sourced in ci.yml"
+                  echo "(checks.test reads it via the ciYml derivation attr)"
                   exit 1
                 fi
-                echo "coverage-floor-parity OK: both gates enforce $FLOOR_FLAKE"
+                echo "coverage-floor-parity OK: single floor ($FLOOR_CI) sourced from ci.yml"
                 touch $out
               '';
 
@@ -271,6 +277,38 @@
               ''
                 cd $src
                 md-go-validator README.md FEATURES.md ROADMAP.md TODO_LIST.md CHANGELOG.md CONTRIBUTING.md AGENTS.md $(find docs -type d)
+                touch $out
+              '';
+
+          # Line-anchor gate: every `Symbol` (`file.go:NN`) reference in the
+          # living docs must still land — the symbol on the cited line, or a
+          # non-blank line for bare anchors. doc-verify gates counts, not line
+          # anchors, and this class rots silently (16 dead anchors found and
+          # fixed 2026-10-16). Hermetic; scripts/anchor_check.py --self-test
+          # covers the drift classes. On-demand: nix run .#anchor-check.
+          checks.anchor-check =
+            pkgs.runCommand "anchor-check"
+              {
+                nativeBuildInputs = [ pkgs.python3 ];
+                src = lib.fileset.toSource {
+                  root = ./.;
+                  fileset = lib.fileset.unions [
+                    ./README.md
+                    ./FEATURES.md
+                    ./ROADMAP.md
+                    ./TODO_LIST.md
+                    ./CONTRIBUTING.md
+                    ./AGENTS.md
+                    ./docs
+                    ./scripts/anchor_check.py
+                    ./go.mod
+                    (lib.fileset.fileFilter (file: file.hasExt "go") ./.)
+                  ];
+                };
+              }
+              ''
+                cd $src
+                python3 scripts/anchor_check.py --repo .
                 touch $out
               '';
 
@@ -449,6 +487,31 @@
               meta.description = "Pre-flight release-notes files for split code spans and repo-relative links";
             };
 
+          # Living-docs line-anchor verifier (scripts/anchor_check.py):
+          # asserts every `Symbol` (`file.go:NN`) reference in README/
+          # FEATURES/TODO_LIST/ROADMAP/AGENTS/CONTRIBUTING + docs/*.md still
+          # lands. Also runs in `nix flake check` (checks.anchor-check) and
+          # the pre-release chain.
+          apps.anchor-check =
+            let
+              anchor-check = pkgs.writeShellApplication {
+                name = "anchor-check";
+                runtimeInputs = [
+                  pkgs.python3
+                  pkgs.git
+                ];
+                text = ''
+                  python3 ${./scripts/anchor_check.py} --self-test || exit 1
+                  exec python3 ${./scripts/anchor_check.py} --repo "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+                '';
+              };
+            in
+            {
+              type = "app";
+              program = pkgs.lib.getExe anchor-check;
+              meta.description = "Verify every file.go:NN line anchor in the living docs still lands";
+            };
+
           # SDK surface vs live Wise API reference (scripts/spec_drift.py):
           # every (method, path) the SDK calls must still exist in the live
           # spec, and vendored-snapshot drift is reported (breaking drift for
@@ -464,6 +527,7 @@
                   pkgs.git
                 ];
                 text = ''
+                  export PYTHONDONTWRITEBYTECODE=1
                   exec python3 ${./scripts/spec_drift.py} --repo "$(git rev-parse --show-toplevel 2>/dev/null || pwd)" "$@"
                 '';
               };
@@ -553,6 +617,9 @@
 
                   echo "==> doc-verify"
                   nix run .#doc-verify
+
+                  echo "==> anchor-check"
+                  nix run .#anchor-check
 
                   echo "==> release-notes-check"
                   nix run .#release-notes-check

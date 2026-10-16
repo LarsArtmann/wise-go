@@ -95,14 +95,70 @@ def check_anchor(repo: Path, doc: Path, line: str, match: re.Match, line_no: int
     )
 
 
+SELF_TEST_GO = (
+    "package fixture\n\n"
+    "func Alpha() {}\n\n"
+    "func Beta() {}\n"
+)
+
+SELF_TEST_DOC = (
+    "- good: `Alpha` (`fixture.go:3`)\n"
+    "- moved symbol: `Beta` (`fixture.go:3`)\n"
+    "- out of range: `fixture.go:99`\n"
+    "- missing file: `ghost.go:1`\n"
+    "- blank line: `fixture.go:4`\n"
+    "- bare ok: `fixture.go:5`\n"
+)
+
+SELF_TEST_EXPECTED = [
+    "expected `Beta` on the cited line, now at fixture.go:5",
+    "file has only 5 lines",
+    "file not found in repo",
+    "cited line is blank",
+]
+
+
+def self_test() -> int:
+    import tempfile
+
+    with tempfile.TemporaryDirectory(prefix="anchor-check-selftest-") as tmp:
+        root = Path(tmp)
+        (root / "go.mod").write_text("module fixture\n\ngo 1.26\n", encoding="utf-8")
+        (root / "fixture.go").write_text(SELF_TEST_GO, encoding="utf-8")
+        (root / "README.md").write_text(SELF_TEST_DOC, encoding="utf-8")
+        drifts: list[str] = []
+        for lineno, line in enumerate(SELF_TEST_DOC.splitlines(), start=1):
+            for match in ANCHOR_RE.finditer(line):
+                problem = check_anchor(root, root / "README.md", line, match, lineno)
+                if problem:
+                    drifts.append(problem)
+        missing = [exp for exp in SELF_TEST_EXPECTED if not any(exp in d for d in drifts)]
+        unexpected = len(drifts) - len(SELF_TEST_EXPECTED)
+        if missing or unexpected != 0:
+            for miss in missing:
+                print(f"self-test FAIL: expected drift class not raised: {miss}")
+            if unexpected != 0:
+                print(f"self-test FAIL: {unexpected} unexpected drift(s): {drifts}")
+            return 1
+        print(f"self-test OK: all {len(SELF_TEST_EXPECTED)} drift classes raised")
+        return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--self-test",
+        action="store_true",
+        help="run the built-in negative-scenario fixture and exit",
+    )
     parser.add_argument(
         "--repo",
         default=".",
         help="repo root (default: current directory)",
     )
     args = parser.parse_args()
+    if args.self_test:
+        return self_test()
     repo = Path(args.repo).resolve()
     if not (repo / "go.mod").is_file():
         print(f"error: {repo} is not the repo root (no go.mod)", file=sys.stderr)

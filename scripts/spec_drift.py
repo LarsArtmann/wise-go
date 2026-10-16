@@ -308,6 +308,22 @@ def main() -> int:
 
     unresolved = sorted(norm for method, norm in unique if method == "UNRESOLVED")
     unique = {(method, norm) for method, norm in unique if method != "UNRESOLVED"}
+
+    # Extraction-floor guard: a call-shape change (new wrapper idiom the
+    # regexes do not know) silently shrinks the extracted surface and the
+    # check would then pass while comparing far fewer endpoints than the SDK
+    # really has. 43 endpoints at the 46-method surface (2026-10-16); fail
+    # well below that, and only ever tighter as the surface grows.
+    EXTRACTION_FLOOR = 40
+    if len(unique) < EXTRACTION_FLOOR:
+        print(
+            f"FAIL: extraction floor broken: {len(unique)} resolved endpoints "
+            f"extracted, expected >= {EXTRACTION_FLOOR}; the SDK grew or the "
+            f"extractor lost call shapes (check new request-helper idioms)",
+            file=sys.stderr,
+        )
+        return 3
+
     failures: list[str] = []
     for method, norm in sorted(unique):
         verdict, matched = match_endpoint(index, method, norm)
