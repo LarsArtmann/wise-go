@@ -373,31 +373,30 @@ func ExampleClient_GetMultiCurrencyAccount() {
 	fmt.Println("top up via recipient", account.RecipientID)
 }
 
-// Read every set of receiving bank details (IBANs, routing pairs, ...) and
-// pull the labeled key values from the receive options' calls to action.
+// Read one set of receiving bank details by its own ID and pull the labeled
+// key values (IBAN, sort code, routing number) out of the identification
+// block.
 //
 //nolint:testableexamples // documentation-only; runs against the live API
 func ExampleClient_GetBankAccountDetails() {
 	client := wise.New("your-api-key")
 
-	details, err := client.GetBankAccountDetails(
-		context.Background(), wise.NewProfileID(12345),
+	detail, err := client.GetBankAccountDetails(
+		context.Background(), wise.NewAccountDetailsID(14000001),
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	for _, detail := range details {
-		if detail.Deprecated {
-			continue // Wise replaced these details; prefer the newer set
-		}
+	fmt.Println(detail.State, detail.AccountHolderName, detail.Country)
 
-		for _, option := range detail.ReceiveOptions {
-			if option.Description != nil && option.Description.CTA != nil {
-				fmt.Printf("%s %s: %s\n",
-					detail.Currency, option.Description.CTA.Label, option.Description.CTA.Content)
-			}
-		}
+	switch {
+	case detail.Identification.GB != nil:
+		fmt.Println(detail.Identification.GB.SortCode, detail.Identification.GB.AccountNumber)
+	case detail.Identification.BE != nil:
+		fmt.Println(detail.Identification.BE.IBAN)
+	case detail.Identification.US != nil:
+		fmt.Println(detail.Identification.US.RoutingNumber, detail.Identification.US.AccountNumber)
 	}
 }
 

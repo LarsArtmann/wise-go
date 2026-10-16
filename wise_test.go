@@ -3350,69 +3350,82 @@ var _ = Describe("Wise Client", func() {
 	Describe("GetBankAccountDetails", func() {
 		Context("with valid API response", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/v1/profiles/12345/account-details",
+				mux.HandleFunc("/2027Q1/balances/account-details/14000001",
 					func(w http.ResponseWriter, _ *http.Request) {
 						w.Header().Set("Content-Type", "application/json")
-						_ = json.MarshalWrite(w, []raw.BankAccountDetails{
-							{
-								ID:         new(int64(14000001)),
-								Currency:   raw.BankAccountCurrency{Code: "EUR", Name: "Euro"},
-								Title:      "Your EUR account details",
-								Subtitle:   "IBAN, SWIFT/BIC",
-								Status:     "ACTIVE",
-								Deprecated: false,
-								ReceiveOptions: []raw.BankReceiveOption{
-									{
-										Type:  "LOCAL",
-										Title: "Local",
-										Description: &raw.BankOptionDescription{
-											Title: "Your EUR account details",
-											Body:  "Receive from a bank in the Eurozone",
-											CTA:   &raw.BankOptionCTA{Label: "IBAN", Content: "BE12 3456 7890 1234"},
-										},
-									},
+						_ = json.MarshalWrite(w, raw.AccountDetails{
+							ID:                14000001,
+							ProfileID:         12345,
+							State:             "ACTIVE",
+							AccountHolderName: "Sarah Jenkins",
+							Country:           "GB",
+							AccountIdentification: raw.AccountIdentification{
+								GB: &raw.GBAccountIdentification{
+									BIC:           "TRWIGB2L",
+									SortCode:      "230801",
+									AccountNumber: "12345678",
 								},
 							},
 						})
 					})
 			})
 
-			It("should map the details and receive options", func() {
-				details, err := client.GetBankAccountDetails(
-					context.Background(), wise.NewProfileID(12345),
+			It("should map the details and identification block", func() {
+				detail, err := client.GetBankAccountDetails(
+					context.Background(), wise.NewAccountDetailsID(14000001),
 				)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(details).To(HaveLen(1))
 
-				detail := details[0]
-				Expect(detail.ID).ToNot(BeNil())
-				Expect(*detail.ID).To(Equal(int64(14000001)))
-				Expect(detail.Currency).To(Equal(wise.Currency("EUR")))
-				Expect(detail.Status).To(Equal(wise.AccountDetailsStatusActive))
-				Expect(detail.ReceiveOptions).To(HaveLen(1))
-				Expect(detail.ReceiveOptions[0].Type).To(Equal(wise.ReceiveOptionTypeLocal))
-				Expect(detail.ReceiveOptions[0].Description.CTA.Content).To(Equal("BE12 3456 7890 1234"))
+				Expect(detail.ID.Get()).To(Equal(int64(14000001)))
+				Expect(detail.ProfileID.Get()).To(Equal(int64(12345)))
+				Expect(detail.State).To(Equal(wise.AccountDetailsStateActive))
+				Expect(detail.AccountHolderName).To(Equal("Sarah Jenkins"))
+				Expect(detail.Country).To(Equal("GB"))
+				Expect(detail.Identification.GB).ToNot(BeNil())
+				Expect(detail.Identification.GB.SortCode).To(Equal("230801"))
+				Expect(detail.Identification.GB.AccountNumber).To(Equal("12345678"))
+				Expect(detail.Identification.BE).To(BeNil())
+				Expect(detail.Identification.US).To(BeNil())
 			})
 		})
 
-		Context("with zero profile ID", func() {
-			It("should return a rejection without calling the API", func() {
-				_, err := client.GetBankAccountDetails(context.Background(), wise.ProfileID{})
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("profileID is required"))
-			})
-		})
-
-		Context("with 404 unknown profile", func() {
+		Context("with a corrupt identification block (no member)", func() {
 			BeforeEach(func() {
-				mux.HandleFunc("/v1/profiles/404/account-details", errorHandler(
-					http.StatusNotFound, nil, "NOT_FOUND", "Profile not found",
+				mux.HandleFunc("/2027Q1/balances/account-details/14000002",
+					func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						_, _ = w.Write([]byte(`{"id":14000002,"profileId":12345,"state":"ACTIVE",` +
+							`"accountHolderName":"X","country":"GB","accountIdentification":{}}`))
+					})
+			})
+
+			It("should surface a corruption error", func() {
+				_, err := client.GetBankAccountDetails(
+					context.Background(), wise.NewAccountDetailsID(14000002),
+				)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("expected exactly one identification member, found 0"))
+			})
+		})
+
+		Context("with zero details ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetBankAccountDetails(context.Background(), wise.AccountDetailsID{})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("id is required"))
+			})
+		})
+
+		Context("with 404 unknown details ID", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/2027Q1/balances/account-details/404", errorHandler(
+					http.StatusNotFound, nil, "NOT_FOUND", "Account details not found",
 				))
 			})
 
 			It("should surface a NotFoundError", func() {
 				_, err := client.GetBankAccountDetails(
-					context.Background(), wise.NewProfileID(404),
+					context.Background(), wise.NewAccountDetailsID(404),
 				)
 				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
 				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)

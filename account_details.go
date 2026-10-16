@@ -80,148 +80,185 @@ func mapMultiCurrencyAccount(account raw.MultiCurrencyAccount) (MultiCurrencyAcc
 	}, nil
 }
 
-// AccountDetailsStatus reports whether a set of bank account details exists
-// and is usable.
-type AccountDetailsStatus string
+// AccountDetailsState reports whether a set of receiving bank details is
+// usable. The 2027Q1 surface replaced the old AVAILABLE/ACTIVE statuses with
+// this two-value state (an INACTIVE set exists but must not receive money).
+type AccountDetailsState string
 
-// Documented account-details statuses.
+// Documented account-details states.
 const (
-	// AccountDetailsStatusAvailable means the details do not exist yet but
-	// can be ordered via the account-details-orders endpoint.
-	AccountDetailsStatusAvailable AccountDetailsStatus = "AVAILABLE"
-	// AccountDetailsStatusActive means the details are ready to receive money.
-	AccountDetailsStatusActive AccountDetailsStatus = "ACTIVE"
+	// AccountDetailsStateActive means the details are ready to receive money.
+	AccountDetailsStateActive AccountDetailsState = "ACTIVE"
+	// AccountDetailsStateInactive means the details exist but are switched off.
+	AccountDetailsStateInactive AccountDetailsState = "INACTIVE"
 )
 
-// ReceiveOptionType identifies a receive route of a details set.
-type ReceiveOptionType string
-
-// Documented receive-option types.
-const (
-	ReceiveOptionTypeLocal         ReceiveOptionType = "LOCAL"
-	ReceiveOptionTypeInternational ReceiveOptionType = "INTERNATIONAL"
-)
-
-// BankAccountDetails is one set of receiving bank details (e.g. an EUR IBAN
-// or USD routing pair) for the Multi-Currency Account. Deprecated sets are
-// Wise-issued replacements of earlier details; prefer non-deprecated sets.
-type BankAccountDetails struct {
-	ID             *int64 // Nil for preview details that have not been issued.
-	Currency       Currency
-	CurrencyName   string
-	Title          string
-	Subtitle       string
-	Status         AccountDetailsStatus
-	Deprecated     bool
-	ReceiveOptions []ReceiveOption
+// AccountDetails is one set of receiving bank details (an IBAN, a UK sort
+// code/account pair, or a US routing/account pair) on the profile's
+// Multi-Currency Account. Wise relocated the surface in the 2027Q1 roll: it
+// is keyed by the details' own ID now, not by profile.
+type AccountDetails struct {
+	ID                AccountDetailsID
+	ProfileID         ProfileID
+	State             AccountDetailsState
+	AccountHolderName string
+	Country           string // ISO 3166-1 alpha-2
+	Identification    AccountIdentification
 }
 
-// ReceiveOption is one receive route (local or international) with the
-// display text Wise provides for payment instructions.
-type ReceiveOption struct {
-	Type        ReceiveOptionType
-	Title       string
-	Description *ReceiveOptionDescription
+// AccountIdentification is the country/scheme-specific account number block.
+// Exactly one member is present; anything else is a corrupt response.
+type AccountIdentification struct {
+	BE *BEAccountIdentification
+	GB *GBAccountIdentification
+	US *USAccountIdentification
 }
 
-// ReceiveOptionDescription carries the display text of a receive option.
-type ReceiveOptionDescription struct {
-	Title string
-	Body  string
-	CTA   *CallToAction
+// BEAccountIdentification is the Belgian (SEPA) details format.
+type BEAccountIdentification struct {
+	BIC                string
+	IBAN               string
+	InstitutionName    string
+	InstitutionAddress *ISO20022Address
 }
 
-// CallToAction labels the key value of a receive option (e.g. "IBAN" → the
-// actual IBAN string).
-type CallToAction struct {
-	Label   string
-	Content string
+// GBAccountIdentification is the UK details format.
+type GBAccountIdentification struct {
+	BIC                string
+	IBAN               string
+	SortCode           string
+	AccountNumber      string
+	InstitutionName    string
+	InstitutionAddress *ISO20022Address
 }
 
-// GetBankAccountDetails returns every set of receiving bank details for the
-// profile's Multi-Currency Account
-// (GET /v1/profiles/{profileId}/account-details).
+// USAccountIdentification is the US (ACH) details format.
+type USAccountIdentification struct {
+	BIC                string
+	RoutingNumber      string
+	AccountNumber      string
+	InstitutionName    string
+	InstitutionAddress *ISO20022Address
+}
+
+// ISO20022Address is Wise's structured postal address for the instructing
+// institution, with optional free-form address lines.
+type ISO20022Address struct {
+	StreetName         string
+	BuildingNumber     string
+	TownName           string
+	PostCode           string
+	CountrySubDivision string
+	Country            string
+	AddressLines       []string
+}
+
+// GetBankAccountDetails returns one set of receiving bank details by its own
+// ID (GET /{version}/balances/account-details/{id}; the 2027Q1 shape that
+// replaced GET /v1/profiles/{profileId}/account-details).
 func (c *Client) GetBankAccountDetails(
 	ctx context.Context,
-	profileID ProfileID,
-) ([]BankAccountDetails, error) {
-	if err := requireID(profileID, "wise.account_details.invalid_request", "profileID"); err != nil {
+	id AccountDetailsID,
+) (*AccountDetails, error) {
+	if err := requireID(id, "wise.account_details.invalid_request", "id"); err != nil {
 		return nil, err
 	}
 
-	path := fmt.Sprintf("/v1/profiles/%d/account-details", profileID.Get())
+	path := fmt.Sprintf("/%s/balances/account-details/%d", accountDetailsAPIVersion, id.Get())
 
-	var details []raw.BankAccountDetails
+	var detail raw.AccountDetails
 
-	if err := c.get(ctx, path, &details); err != nil {
-		return nil, fmt.Errorf("get bank account details for profile %d: %w", profileID.Get(), err)
+	if err := c.get(ctx, path, &detail); err != nil {
+		return nil, fmt.Errorf("get bank account details %d: %w", id.Get(), err)
 	}
 
-	result := make([]BankAccountDetails, 0, len(details))
-	for _, detail := range details {
-		mapped, mapErr := mapBankAccountDetails(detail)
-		if mapErr != nil {
-			return nil, fmt.Errorf("map bank account details %v: %w", detail.ID, mapErr)
-		}
-
-		result = append(result, mapped)
+	result, err := mapAccountDetails(detail)
+	if err != nil {
+		return nil, fmt.Errorf("map bank account details %d: %w", detail.ID, err)
 	}
 
-	return result, nil
+	return &result, nil
 }
 
-func mapBankAccountDetails(detail raw.BankAccountDetails) (BankAccountDetails, error) {
-	currency, err := NewCurrency(detail.Currency.Code)
-	if err != nil {
-		return BankAccountDetails{}, errorfamily.WrapCorruption(
-			err,
-			"wise.account_details.parse_currency",
-			fmt.Sprintf("currency %q", detail.Currency.Code),
+func mapAccountDetails(detail raw.AccountDetails) (AccountDetails, error) {
+	members := countIdentificationMembers(detail.AccountIdentification)
+	if members != 1 {
+		return AccountDetails{}, errorfamily.WrapCorruption(
+			fmt.Errorf("expected exactly one identification member, found %d", members),
+			"wise.account_details.parse_identification",
+			fmt.Sprintf("country %q", detail.Country),
 		)
 	}
 
-	receiveOptions := make([]ReceiveOption, 0, len(detail.ReceiveOptions))
-	for _, option := range detail.ReceiveOptions {
-		receiveOptions = append(receiveOptions, mapReceiveOption(option))
-	}
-
-	return BankAccountDetails{
-		ID:             detail.ID,
-		Currency:       currency,
-		CurrencyName:   detail.Currency.Name,
-		Title:          detail.Title,
-		Subtitle:       detail.Subtitle,
-		Status:         AccountDetailsStatus(detail.Status),
-		Deprecated:     detail.Deprecated,
-		ReceiveOptions: receiveOptions,
+	return AccountDetails{
+		ID:                NewAccountDetailsID(detail.ID),
+		ProfileID:         NewProfileID(detail.ProfileID),
+		State:             AccountDetailsState(detail.State),
+		AccountHolderName: detail.AccountHolderName,
+		Country:           detail.Country,
+		Identification:    mapAccountIdentification(detail.AccountIdentification),
 	}, nil
 }
 
-func mapReceiveOption(option raw.BankReceiveOption) ReceiveOption {
-	result := ReceiveOption{
-		Type:        ReceiveOptionType(option.Type),
-		Title:       option.Title,
-		Description: nil,
-	}
-
-	if option.Description == nil {
-		return result
-	}
-
-	var cta *CallToAction
-
-	if option.Description.CTA != nil {
-		cta = &CallToAction{
-			Label:   option.Description.CTA.Label,
-			Content: option.Description.CTA.Content,
+func countIdentificationMembers(ident raw.AccountIdentification) int {
+	count := 0
+	for _, present := range []bool{ident.BE != nil, ident.GB != nil, ident.US != nil} {
+		if present {
+			count++
 		}
 	}
 
-	result.Description = &ReceiveOptionDescription{
-		Title: option.Description.Title,
-		Body:  option.Description.Body,
-		CTA:   cta,
+	return count
+}
+
+func mapAccountIdentification(ident raw.AccountIdentification) AccountIdentification {
+	result := AccountIdentification{}
+
+	if ident.BE != nil {
+		result.BE = &BEAccountIdentification{
+			BIC:                ident.BE.BIC,
+			IBAN:               ident.BE.IBAN,
+			InstitutionName:    ident.BE.InstitutionName,
+			InstitutionAddress: mapISO20022Address(ident.BE.InstitutionAddress),
+		}
+	}
+
+	if ident.GB != nil {
+		result.GB = &GBAccountIdentification{
+			BIC:                ident.GB.BIC,
+			IBAN:               ident.GB.IBAN,
+			SortCode:           ident.GB.SortCode,
+			AccountNumber:      ident.GB.AccountNumber,
+			InstitutionName:    ident.GB.InstitutionName,
+			InstitutionAddress: mapISO20022Address(ident.GB.InstitutionAddress),
+		}
+	}
+
+	if ident.US != nil {
+		result.US = &USAccountIdentification{
+			BIC:                ident.US.BIC,
+			RoutingNumber:      ident.US.RoutingNumber,
+			AccountNumber:      ident.US.AccountNumber,
+			InstitutionName:    ident.US.InstitutionName,
+			InstitutionAddress: mapISO20022Address(ident.US.InstitutionAddress),
+		}
 	}
 
 	return result
+}
+
+func mapISO20022Address(addr *raw.ISO20022Address) *ISO20022Address {
+	if addr == nil {
+		return nil
+	}
+
+	return &ISO20022Address{
+		StreetName:         addr.StreetName,
+		BuildingNumber:     addr.BuildingNumber,
+		TownName:           addr.TownName,
+		PostCode:           addr.PostCode,
+		CountrySubDivision: addr.CountrySubDivision,
+		Country:            addr.Country,
+		AddressLines:       addr.AddressLines,
+	}
 }

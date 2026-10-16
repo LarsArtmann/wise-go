@@ -91,42 +91,62 @@ type MultiCurrencyAccount struct {
 	Eligible         bool   `json:"eligible"`
 }
 
-// BankAccountDetails from Wise API
-// (GET /v1/profiles/{profileId}/account-details).
-type BankAccountDetails struct {
-	ID             *int64              `json:"id"` // nil for preview details
-	Currency       BankAccountCurrency `json:"currency"`
-	Title          string              `json:"title"`
-	Subtitle       string              `json:"subtitle"`
-	Status         string              `json:"status"` // "AVAILABLE" or "ACTIVE"
-	Deprecated     bool                `json:"deprecated"`
-	ReceiveOptions []BankReceiveOption `json:"receiveOptions"`
+// AccountDetails from Wise API
+// (GET /{version}/balances/account-details/{id}, the 2027Q1 surface).
+type AccountDetails struct {
+	ID                    int64                 `json:"id"`
+	ProfileID             int64                 `json:"profileId"`
+	State                 string                `json:"state"` // "ACTIVE" or "INACTIVE"
+	AccountHolderName     string                `json:"accountHolderName"`
+	Country               string                `json:"country"` // ISO 3166-1 alpha-2
+	AccountIdentification AccountIdentification `json:"accountIdentification"`
 }
 
-// BankAccountCurrency names the currency of a bank-account-details set.
-type BankAccountCurrency struct {
-	Code string `json:"code"`
-	Name string `json:"name"`
+// AccountIdentification is the country/scheme-specific account number block
+// of an account-details set: a spec oneOf, so exactly one member is present.
+type AccountIdentification struct {
+	BE *BEAccountIdentification `json:"beAccountIdentification,omitempty"`
+	GB *GBAccountIdentification `json:"gbAccountIdentification,omitempty"`
+	US *USAccountIdentification `json:"usAccountIdentification,omitempty"`
 }
 
-// BankReceiveOption is one receive route (local or SWIFT) of a details set.
-type BankReceiveOption struct {
-	Type        string                 `json:"type"` // "LOCAL" or "INTERNATIONAL"
-	Title       string                 `json:"title"`
-	Description *BankOptionDescription `json:"description"`
+// BEAccountIdentification is the Belgian (SEPA) details format.
+type BEAccountIdentification struct {
+	BIC                string           `json:"bic,omitempty"`
+	IBAN               string           `json:"iban"`
+	InstitutionName    string           `json:"institutionName,omitempty"`
+	InstitutionAddress *ISO20022Address `json:"institutionAddress,omitempty"`
 }
 
-// BankOptionDescription carries the display text of a receive option.
-type BankOptionDescription struct {
-	Title string         `json:"title"`
-	Body  string         `json:"body"`
-	CTA   *BankOptionCTA `json:"cta"`
+// GBAccountIdentification is the UK details format.
+type GBAccountIdentification struct {
+	BIC                string           `json:"bic,omitempty"`
+	IBAN               string           `json:"iban,omitempty"`
+	SortCode           string           `json:"sortCode,omitempty"`
+	AccountNumber      string           `json:"accountNumber"`
+	InstitutionName    string           `json:"institutionName,omitempty"`
+	InstitutionAddress *ISO20022Address `json:"institutionAddress,omitempty"`
 }
 
-// BankOptionCTA labels the key value of a receive option (e.g. "IBAN").
-type BankOptionCTA struct {
-	Label   string `json:"label"`
-	Content string `json:"content"`
+// USAccountIdentification is the US (ACH) details format.
+type USAccountIdentification struct {
+	BIC                string           `json:"bic,omitempty"`
+	RoutingNumber      string           `json:"routingNumber"`
+	AccountNumber      string           `json:"accountNumber"`
+	InstitutionName    string           `json:"institutionName,omitempty"`
+	InstitutionAddress *ISO20022Address `json:"institutionAddress,omitempty"`
+}
+
+// ISO20022Address is the spec's structured postal address with optional
+// free-form address lines.
+type ISO20022Address struct {
+	StreetName         string   `json:"streetName,omitempty"`
+	BuildingNumber     string   `json:"buildingNumber,omitempty"`
+	TownName           string   `json:"townName,omitempty"`
+	PostCode           string   `json:"postCode,omitempty"`
+	CountrySubDivision string   `json:"countrySubDivision,omitempty"`
+	Country            string   `json:"country,omitempty"`
+	AddressLines       []string `json:"addressLines,omitempty"`
 }
 
 // CurrencyInfo from Wise API (GET /v1/currencies).
