@@ -68,6 +68,11 @@ type AccountDetailsBrand struct{}
 
 func (AccountDetailsBrand) Name() string { return "AccountDetails" }
 
+// TransferPaymentBrand is a phantom type for TransferPaymentID.
+type TransferPaymentBrand struct{}
+
+func (TransferPaymentBrand) Name() string { return "TransferPayment" }
+
 // ProfileID is a strongly-typed identifier for Wise profiles.
 type ProfileID = id.ID[ProfileBrand, int64]
 
@@ -117,6 +122,10 @@ type CustomerTransactionID = id.ID[CustomerTransactionIDBrand, string]
 // the 2027Q1 roll). It is a distinct int64 ID space from profiles, balances,
 // and accounts.
 type AccountDetailsID = id.ID[AccountDetailsBrand, int64]
+
+// TransferPaymentID is a strongly-typed identifier for one funding payment
+// of a transfer (wire "id" of GET /transfers/{transferId}/payments).
+type TransferPaymentID = id.ID[TransferPaymentBrand, int64]
 
 // NewProfileID creates a new ProfileID from an int64 value.
 func NewProfileID(v int64) ProfileID {
@@ -179,6 +188,11 @@ func NewCustomerTransactionID(v string) CustomerTransactionID {
 // NewAccountDetailsID creates a new AccountDetailsID from an int64 value.
 func NewAccountDetailsID(v int64) AccountDetailsID {
 	return id.NewID[AccountDetailsBrand](v)
+}
+
+// NewTransferPaymentID creates a new TransferPaymentID from an int64 value.
+func NewTransferPaymentID(v int64) TransferPaymentID {
+	return id.NewID[TransferPaymentBrand](v)
 }
 
 // requireID turns a zero branded ID into a Rejection carrying the endpoint

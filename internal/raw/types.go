@@ -244,6 +244,18 @@ type Quote struct {
 	Notices                       []QuoteNotice        `json:"notices"`
 }
 
+// TransferPayment is one completed funding payment of a transfer
+// (GET /v1/transfers/{transferId}/payments).
+type TransferPayment struct {
+	ID             int64   `json:"id"`
+	Method         string  `json:"method"`
+	PricingVariant *string `json:"pricingVariant"`
+	Amount         float64 `json:"amount"`
+	Currency       string  `json:"currency"`
+	TimeCreated    string  `json:"timeCreated"`
+	TimeUpdated    string  `json:"timeUpdated"`
+}
+
 // QuotePaymentOption is one payment method combination available for a quote.
 type QuotePaymentOption struct {
 	Disabled                   bool     `json:"disabled"`

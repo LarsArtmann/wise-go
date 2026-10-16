@@ -413,3 +413,85 @@ func mapTransfer(t raw.Transfer) (Transfer, error) {
 		HasActiveIssues:       t.HasActiveIssues,
 	}, nil
 }
+
+// TransferPayment is one completed payment that funded a transfer: the
+// method used (BANK_TRANSFER, BALANCE, ...), the optional pricing variant,
+// and the source amount actually debited.
+type TransferPayment struct {
+	ID             TransferPaymentID
+	Method         string
+	PricingVariant *string
+	Amount         Money
+	Created        time.Time
+	Updated        time.Time
+}
+
+// ListTransferPayments returns the completed payments used to fund a transfer
+// (GET /v1/transfers/{transferId}/payments). Usually a single payment per
+// transfer; an empty result means the transfer has no completed funding yet.
+func (c *Client) ListTransferPayments(
+	ctx context.Context,
+	transferID TransferID,
+) ([]TransferPayment, error) {
+	if err := requireID(transferID, "wise.transfer.invalid_request", "transferID"); err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/v1/transfers/%d/payments", transferID.Get())
+
+	var payments []raw.TransferPayment
+
+	if err := c.get(ctx, path, &payments); err != nil {
+		return nil, fmt.Errorf("list payments for transfer %d: %w", transferID.Get(), err)
+	}
+
+	result := make([]TransferPayment, 0, len(payments))
+	for _, payment := range payments {
+		mapped, mapErr := mapTransferPayment(payment)
+		if mapErr != nil {
+			return nil, fmt.Errorf("map transfer payment %d: %w", payment.ID, mapErr)
+		}
+
+		result = append(result, mapped)
+	}
+
+	return result, nil
+}
+
+func mapTransferPayment(payment raw.TransferPayment) (TransferPayment, error) {
+	created, err := parseWiseTimestamp(payment.TimeCreated)
+	if err != nil {
+		return TransferPayment{}, errorfamily.WrapCorruption(
+			err,
+			"wise.transfer.parse_payment_created",
+			fmt.Sprintf("parse timeCreated %q", payment.TimeCreated),
+		)
+	}
+
+	updated, err := parseWiseTimestamp(payment.TimeUpdated)
+	if err != nil {
+		return TransferPayment{}, errorfamily.WrapCorruption(
+			err,
+			"wise.transfer.parse_payment_updated",
+			fmt.Sprintf("parse timeUpdated %q", payment.TimeUpdated),
+		)
+	}
+
+	currency, err := NewCurrency(payment.Currency)
+	if err != nil {
+		return TransferPayment{}, errorfamily.WrapCorruption(
+			err,
+			"wise.transfer.parse_payment_currency",
+			fmt.Sprintf("currency %q", payment.Currency),
+		)
+	}
+
+	return TransferPayment{
+		ID:             NewTransferPaymentID(payment.ID),
+		Method:         payment.Method,
+		PricingVariant: payment.PricingVariant,
+		Amount:         Money{Cents: majorToCents(payment.Amount), Currency: currency},
+		Created:        created,
+		Updated:        updated,
+	}, nil
+}
