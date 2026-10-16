@@ -56,7 +56,13 @@ def load_spec(spec_file: str | None, url: str) -> dict:
     if spec_file:
         with open(spec_file, encoding="utf-8") as f:
             return json.load(f)
-    req = urllib.request.Request(url, headers={"Accept": "application/json"})
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Accept": "application/json",
+            "User-Agent": "wise-go-spec-drift/0.1",
+        },
+    )
     with urllib.request.urlopen(req, timeout=60) as resp:
         return json.loads(resp.read().decode("utf-8"))
 

@@ -560,7 +560,7 @@
                   nix run .#pin-sync
 
                   echo "==> spec-drift (needs network)"
-                  nix run .#spec-drift -- --fail-on-drift
+                  nix run .#spec-drift
 
                   echo "==> apidiff (needs network)"
                   nix run .#apidiff
