@@ -54,3 +54,27 @@ type FundingResponse struct {
 	BalanceTransactionID *int64 `json:"balanceTransactionId,omitempty"`
 	PartnerReference     string `json:"partnerReference,omitempty"`
 }
+
+// ThirdPartyTransfer from Wise API
+// (/v1/profiles/{profileId}/third-party-transfers). Same core shape as the
+// standard Transfer, but the quote rides as "quote" (a quoteUUID string),
+// customerTransactionId is replaced by originalTransferId, and the
+// originator block is echoed back.
+type ThirdPartyTransfer struct {
+	ID                 int64           `json:"id"`
+	User               int64           `json:"user"`
+	TargetAccount      int64           `json:"targetAccount"`
+	SourceAccount      *int64          `json:"sourceAccount"`
+	Quote              string          `json:"quote"`
+	Status             string          `json:"status"`
+	Rate               float64         `json:"rate"`
+	Details            TransferDetails `json:"details"`
+	Originator         map[string]any  `json:"originator"`
+	HasActiveIssues    bool            `json:"hasActiveIssues"`
+	SourceCurrency     string          `json:"sourceCurrency"`
+	SourceValue        float64         `json:"sourceValue"`
+	TargetCurrency     string          `json:"targetCurrency"`
+	TargetValue        float64         `json:"targetValue"`
+	OriginalTransferID string          `json:"originalTransferId"`
+	Created            string          `json:"created"`
+}

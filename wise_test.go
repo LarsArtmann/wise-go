@@ -2301,6 +2301,131 @@ var _ = Describe("Wise Client", func() {
 		})
 	})
 
+	Describe("CreateThirdPartyTransfer", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/third-party-transfers",
+					func(w http.ResponseWriter, r *http.Request) {
+						var body map[string]any
+						Expect(json.UnmarshalRead(r.Body, &body)).To(Succeed())
+						Expect(body["originalTransferId"]).To(Equal("4711"))
+						Expect(body["targetAccount"]).To(Equal(float64(7839323)))
+						Expect(body["quote"]).To(Equal("3522e360-356a-4e37-9f99-94a21898d8fa"))
+
+						originator, ok := body["originator"].(map[string]any)
+						Expect(ok).To(BeTrue())
+						Expect(originator["legalEntityType"]).To(Equal("PRIVATE"))
+						Expect(originator["reference"]).To(Equal("CST-2991992"))
+						Expect(originator["dateOfBirth"]).To(Equal("1977-07-01"))
+
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.MarshalWrite(w, raw.ThirdPartyTransfer{
+							ID:                 16521640,
+							User:               4342275,
+							TargetAccount:      7839323,
+							Quote:              "3522e360-356a-4e37-9f99-94a21898d8fa",
+							Status:             "incoming_payment_waiting",
+							SourceCurrency:     "EUR",
+							SourceValue:        1000,
+							TargetCurrency:     "GBP",
+							TargetValue:        850,
+							OriginalTransferID: "4711",
+							Created:            "2026-10-16 10:47:49",
+						})
+					})
+			})
+
+			It("should create and map the originator transfer", func() {
+				transfer, err := client.CreateThirdPartyTransfer(context.Background(),
+					wise.CreateThirdPartyTransferRequest{
+						ProfileID:          wise.NewProfileID(12345),
+						OriginalTransferID: "4711",
+						TargetAccount:      wise.NewRecipientID(7839323),
+						QuoteID:            wise.NewQuoteID("3522e360-356a-4e37-9f99-94a21898d8fa"),
+						Reference:          "invoice 42",
+						Originator: wise.Originator{
+							LegalEntityType: wise.OriginatorLegalEntityTypePrivate,
+							Reference:       "CST-2991992",
+							Name:            wise.OriginatorName{GivenName: "John", FamilyName: "Godspeed"},
+							DateOfBirth:     time.Date(1977, 7, 1, 0, 0, 0, 0, time.UTC),
+							Address:         wise.OriginatorAddress{FirstLine: "Salu tee 14", City: "Tallinn", CountryCode: "EE"},
+						},
+					})
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(transfer.ID.Get()).To(Equal(int64(16521640)))
+				Expect(transfer.Status).To(Equal(wise.TransferStatus("incoming_payment_waiting")))
+				Expect(transfer.Source).To(Equal(wise.Money{Cents: 100000, Currency: wise.Currency("EUR")}))
+				Expect(transfer.Target).To(Equal(wise.Money{Cents: 85000, Currency: wise.Currency("GBP")}))
+				Expect(transfer.OriginalTransferID).To(Equal("4711"))
+			})
+		})
+
+		Context("with an empty originalTransferId", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.CreateThirdPartyTransfer(context.Background(),
+					wise.CreateThirdPartyTransferRequest{
+						ProfileID:          wise.NewProfileID(12345),
+						TargetAccount:      wise.NewRecipientID(7839323),
+						QuoteID:            wise.NewQuoteID("3522e360-356a-4e37-9f99-94a21898d8fa"),
+						OriginalTransferID: "",
+					})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("originalTransferId is required"))
+			})
+		})
+	})
+
+	Describe("GetThirdPartyTransfer", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/third-party-transfers/16521640",
+					func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.MarshalWrite(w, raw.ThirdPartyTransfer{
+							ID:                 16521640,
+							User:               4342275,
+							TargetAccount:      7839323,
+							Quote:              "3522e360-356a-4e37-9f99-94a21898d8fa",
+							Status:             "outgoing_payment_sent",
+							SourceCurrency:     "EUR",
+							SourceValue:        1000,
+							TargetCurrency:     "GBP",
+							TargetValue:        850,
+							OriginalTransferID: "4711",
+							Created:            "2026-10-16 10:47:49",
+						})
+					})
+			})
+
+			It("should fetch and map the originator transfer", func() {
+				transfer, err := client.GetThirdPartyTransfer(
+					context.Background(), wise.NewProfileID(12345), wise.NewTransferID(16521640),
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(transfer.OriginalTransferID).To(Equal("4711"))
+				Expect(transfer.Status).To(Equal(wise.TransferStatusOutgoingPaymentSent))
+			})
+		})
+
+		Context("with 404 unknown transfer", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/third-party-transfers/404", errorHandler(
+					http.StatusNotFound, nil, "NOT_FOUND", "Transfer not found",
+				))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.GetThirdPartyTransfer(
+					context.Background(), wise.NewProfileID(12345), wise.NewTransferID(404),
+				)
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+	})
+
 	Describe("CancelTransfer", func() {
 		Context("with valid API response", func() {
 			BeforeEach(func() {

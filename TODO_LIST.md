@@ -13,8 +13,9 @@ M1/M2/M3/M6/M7 shipped 2026-10-16, M5 `ListTransferPayments` + M8
 `GetUSCombinedReceipt` + M9 `GetTransferNOC` landed same evening
 (`19ab4e5`, `3c185f7`), M10 typed webhook payloads in flight): remaining
 M4 live smoke (user key), M12 README SCA/OTP endpoint matrix, M13
-inventory-honesty sweep (count-claim updates — the surface is now 44 methods),
-M14 live-smoke harness, M15 originator transfers.
+inventory-honesty remainder (the 44-method count sweep landed 2026-10-16;
+the 16 added 2027Q1 paths are triaged under the spec-drift hardening item
+below), M14 live-smoke harness, M15 originator transfers.
 Source: transfer-category re-audit
 `docs/reviews/2026-10-16_transfer-category-reaudit.md` (true category ~15
 ops; deposit-details pay-in already DEMAND_GATED; the re-audit's
@@ -53,8 +54,8 @@ Carried since `docs/status/archived/2026-08-08_05-15_wise-sandbox-integration-st
 **BLOCKED: needs a sandbox API key (`WISE_SANDBOX_API_KEY`) from the user.**
 
 [ ] Lock the public API at v1.0 — audit is green (re-audit + growth lineage in
-`docs/reviews/2026-08-21_v1.0-api-audit.md`, now covering the 41-method
-v0.12.0 surface); remaining: tag `v1.0.0`.
+`docs/reviews/2026-08-21_v1.0-api-audit.md`, growth lineage maintained through
+the current 44-method surface); remaining: tag `v1.0.0`.
 **BLOCKED: needs the user's explicit approval (tagging is irreversible).**
 
 [ ] `RequestLog.RetryAfterDelay` API freeze — lock the delay-decision-entry shape
