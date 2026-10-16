@@ -7,6 +7,7 @@ a release tag, named `<date>_<tag>_baseline.txt`.
 | File                                                           | Captured at |
 | -------------------------------------------------------------- | ----------- |
 | [2026-10-07_v0120_baseline.txt](2026-10-07_v0120_baseline.txt) | v0.12.0     |
+| [2026-10-16_v0140_baseline.txt](2026-10-16_v0140_baseline.txt) | v0.14.0     |
 
 ## Rerun and compare
 
