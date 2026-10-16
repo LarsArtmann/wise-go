@@ -1659,8 +1659,8 @@ var _ = Describe("Wise Client", func() {
 				_, err := client.CreateQuote(
 					context.Background(), wise.NewProfileID(12345), validQuoteRequest(),
 				)
-				apiErr, ok := errors.AsType[*wise.APIError](err)
-				Expect(ok).To(BeTrue(), "expected *wise.APIError, got %T: %v", err, err)
+				apiErr, ok := errors.AsType[*wise.BadRequestError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.BadRequestError, got %T: %v", err, err)
 				Expect(apiErr.StatusCode).To(Equal(http.StatusBadRequest))
 				Expect(apiErr.Message).To(ContainSubstring("VALIDATION_INVALID_SOURCE_AMOUNT"))
 				Expect(apiErr.Message).To(ContainSubstring("must be greater than zero"))
@@ -2208,8 +2208,8 @@ var _ = Describe("Wise Client", func() {
 					AccountHolderName: "Jane Doe",
 					Details:           map[string]string{"sortCode": "040075"},
 				})
-				apiErr, ok := errors.AsType[*wise.APIError](err)
-				Expect(ok).To(BeTrue(), "expected *wise.APIError, got %T: %v", err, err)
+				apiErr, ok := errors.AsType[*wise.BadRequestError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.BadRequestError, got %T: %v", err, err)
 				Expect(apiErr.StatusCode).To(Equal(http.StatusBadRequest))
 				Expect(apiErr.Message).To(ContainSubstring("sortCode must be 6 digits"))
 			})
@@ -2306,8 +2306,8 @@ var _ = Describe("Wise Client", func() {
 
 			It("should surface an APIError", func() {
 				_, err := client.CreateTransfer(context.Background(), validCreateTransferRequest())
-				apiErr, ok := errors.AsType[*wise.APIError](err)
-				Expect(ok).To(BeTrue(), "expected *wise.APIError, got %T: %v", err, err)
+				apiErr, ok := errors.AsType[*wise.BadRequestError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.BadRequestError, got %T: %v", err, err)
 				Expect(apiErr.StatusCode).To(Equal(http.StatusBadRequest))
 				Expect(apiErr.Message).To(ContainSubstring("Quote expired"))
 			})
@@ -3090,8 +3090,8 @@ var _ = Describe("Wise Client", func() {
 						QuoteID:       wise.NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
 					},
 				)
-				apiErr, ok := errors.AsType[*wise.APIError](err)
-				Expect(ok).To(BeTrue(), "expected *wise.APIError, got %T: %v", err, err)
+				apiErr, ok := errors.AsType[*wise.BadRequestError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.BadRequestError, got %T: %v", err, err)
 				Expect(apiErr.StatusCode).To(Equal(http.StatusBadRequest))
 				Expect(apiErr.Message).To(ContainSubstring("Transfer purpose is required"))
 			})
@@ -4407,8 +4407,8 @@ var _ = Describe("Wise Client", func() {
 				_, err := client.CreateProfileWebhookSubscription(
 					context.Background(), wise.NewProfileID(12345), validCreateReq,
 				)
-				apiErr, ok := errors.AsType[*wise.APIError](err)
-				Expect(ok).To(BeTrue(), "expected *wise.APIError, got %T: %v", err, err)
+				apiErr, ok := errors.AsType[*wise.BadRequestError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.BadRequestError, got %T: %v", err, err)
 				Expect(apiErr.StatusCode).To(Equal(http.StatusBadRequest))
 			})
 		})

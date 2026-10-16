@@ -92,9 +92,9 @@ func TestErrorClassification(t *testing.T) {
 			wantCode: "wise.server", wantFamily: errorfamily.Transient, wantRetry: true,
 		},
 		{
-			name: "generic api error", statusCode: http.StatusBadRequest,
+			name: "bad request", statusCode: http.StatusBadRequest,
 			body:     `{"errors":[{"code":"BAD","message":"nope"}]}`,
-			wantCode: "wise.api_error", wantFamily: errorfamily.Rejection, wantRetry: false,
+			wantCode: "wise.bad_request", wantFamily: errorfamily.Rejection, wantRetry: false,
 		},
 	}
 
@@ -209,7 +209,7 @@ func TestNewAPIErrorCapturesDetails(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := newAPIError(http.StatusBadRequest, tt.body, nil, 0, "")
+			err := newAPIError(http.StatusUnprocessableEntity, tt.body, nil, 0, "")
 
 			apiErr, ok := errors.AsType[*APIError](err)
 			if !ok {
@@ -666,6 +666,42 @@ func TestMapFundTransferResultParseErrorsAreCorruption(t *testing.T) {
 	}
 }
 
+// TestBadRequestErrorClassification pins the 400 surface: typed error code,
+// promoted Rejection family, no IsRetryable method, promoted status-code
+// context, and code-sentinel matching through the embedded APIError.
+func TestBadRequestErrorClassification(t *testing.T) {
+	t.Parallel()
+
+	err := newAPIError(http.StatusBadRequest,
+		`{"errors":[{"code":"parameter_missing","message":"source is required"}]}`, nil, 0, "")
+
+	badRequest, ok := errors.AsType[*BadRequestError](err)
+	if !ok {
+		t.Fatalf("expected *BadRequestError, got %T", err)
+	}
+
+	if got := badRequest.ErrorCode(); got != errorCodeBadRequest {
+		t.Errorf("ErrorCode() = %q, want %q", got, errorCodeBadRequest)
+	}
+
+	if got := badRequest.ErrorFamily(); got != errorfamily.Rejection {
+		t.Errorf("ErrorFamily() = %v, want Rejection (promoted)", got)
+	}
+
+	if _, implements := err.(interface{ IsRetryable() bool }); implements {
+		t.Errorf("BadRequestError implements IsRetryable, want absence")
+	}
+
+	ctx := badRequest.ErrorContext()
+	if ctx["status_code"] != "400" {
+		t.Errorf("ErrorContext = %v, want promoted status_code 400", ctx)
+	}
+
+	if !errors.Is(err, ErrParameterMissing) {
+		t.Errorf("BadRequestError did not match ErrParameterMissing through promotion")
+	}
+}
+
 // TestErrorContexts pins the structured-context contract of the error types:
 // consumers route on these maps in logs and metrics.
 func TestErrorContexts(t *testing.T) {
@@ -745,15 +781,15 @@ func TestErrorContexts(t *testing.T) {
 	})
 }
 
-// TestIsRetryableContract pins the retryability contract of the six error
-// types: only RateLimitError and ServerError are retryable. The four
+// TestIsRetryableContract pins the retryability contract of the seven error
+// types: only RateLimitError and ServerError are retryable. The five
 // non-retryable types deliberately do not implement IsRetryable — absence is
 // the convention for "not retryable".
 func TestIsRetryableContract(t *testing.T) {
 	t.Parallel()
 
 	for _, err := range []error{
-		&APIError{}, &AuthError{}, &SCAChallengeError{}, &NotFoundError{},
+		&APIError{}, &AuthError{}, &SCAChallengeError{}, &NotFoundError{}, &BadRequestError{},
 	} {
 		if _, implements := err.(interface{ IsRetryable() bool }); implements {
 			t.Errorf("%T implements IsRetryable, want absence (non-retryable by convention)", err)
@@ -1096,7 +1132,7 @@ func TestAPIErrorMatchesCuratedCodeSentinels(t *testing.T) {
 func TestAPIErrorHasCode(t *testing.T) {
 	t.Parallel()
 
-	err := newAPIError(http.StatusBadRequest,
+	err := newAPIError(http.StatusUnprocessableEntity,
 		`{"errors":[{"code":"brand_new_code","message":"from the future"}]}`, nil, 0, "")
 
 	apiErr, ok := errors.AsType[*APIError](err)
@@ -1167,6 +1203,15 @@ func TestAsTypeAndIsAreComplementary(t *testing.T) {
 		err := newAPIError(http.StatusBadRequest,
 			`{"errors":[{"code":"system_error","message":"wise is sad"}]}`, nil, 0, "")
 
+		badRequest, ok := errors.AsType[*BadRequestError](err)
+		if !ok {
+			t.Fatalf("AsType[*BadRequestError] = false, want true (status drives the type)")
+		}
+
+		if badRequest.StatusCode != http.StatusBadRequest {
+			t.Errorf("StatusCode = %d, want 400", badRequest.StatusCode)
+		}
+
 		if _, ok := errors.AsType[*ServerError](err); ok {
 			t.Errorf("AsType[*ServerError] = true on a 400, want false (status drives the type)")
 		}
@@ -1175,4 +1220,315 @@ func TestAsTypeAndIsAreComplementary(t *testing.T) {
 			t.Errorf("Is(ErrSystemError) = false, want true (body code matches regardless of type)")
 		}
 	})
+}
+
+// errorMatches reports whether err carries the given concrete error type.
+// The matrix rows use it as their wantType matcher.
+func errorMatches[T error](err error) bool {
+	_, ok := errors.AsType[T](err)
+
+	return ok
+}
+
+// TestErrorSurfaceMappingMatrix pins the ENTIRE error surface end-to-end in
+// one table: every status x envelope-shape combination maps to its typed
+// error, structured details, code-sentinel matches, classification, and
+// context keys. A change to newAPIError/classifyAPIError that breaks any
+// consumer-visible dimension fails here.
+func TestErrorSurfaceMappingMatrix(t *testing.T) {
+	t.Parallel()
+
+	const envelope = `{"errors":[{"code":%q,"message":"wire message"}]}`
+
+	tests := []errorMatrixRow{
+		{
+			name:            "400 envelope maps to BadRequestError with its code",
+			statusCode:      http.StatusBadRequest,
+			body:            fmt.Sprintf(envelope, "parameter_missing"),
+			wantType:        errorMatches[*BadRequestError],
+			wantErrorCode:   "wise.bad_request",
+			wantFamily:      errorfamily.Rejection,
+			wantDetailCount: 1,
+			wantIs:          []error{ErrParameterMissing},
+			wantNotIs:       []error{ErrRateLimitExceeded},
+			wantHasCodes:    []WiseErrorCode{WiseErrorCodeParameterMissing},
+			wantContextKeys: []string{"status_code"},
+		},
+		{
+			name:            "400 plain text maps to BadRequestError without details",
+			statusCode:      http.StatusBadRequest,
+			body:            "validation failed",
+			wantType:        errorMatches[*BadRequestError],
+			wantErrorCode:   "wise.bad_request",
+			wantFamily:      errorfamily.Rejection,
+			wantDetailCount: 0,
+			wantNotIs:       []error{ErrNotValid, ErrInvalidRequest},
+			wantContextKeys: []string{"status_code"},
+		},
+		{
+			name:            "401 envelope maps to AuthError matching ErrUnauthorized",
+			statusCode:      http.StatusUnauthorized,
+			body:            fmt.Sprintf(envelope, "unauthorized"),
+			wantType:        errorMatches[*AuthError],
+			wantErrorCode:   "wise.auth",
+			wantFamily:      errorfamily.Rejection,
+			wantDetailCount: 1,
+			wantIs:          []error{ErrUnauthorized},
+			wantHasCodes:    []WiseErrorCode{WiseErrorCodeUnauthorized},
+			wantContextKeys: []string{"status_code"},
+		},
+		{
+			name:            "403 envelope maps to AuthError matching ErrForbidden",
+			statusCode:      http.StatusForbidden,
+			body:            fmt.Sprintf(envelope, "forbidden"),
+			wantType:        errorMatches[*AuthError],
+			wantErrorCode:   "wise.auth",
+			wantFamily:      errorfamily.Rejection,
+			wantDetailCount: 1,
+			wantIs:          []error{ErrForbidden},
+			wantNotIs:       []error{ErrUnauthorized},
+			wantHasCodes:    []WiseErrorCode{WiseErrorCodeForbidden},
+			wantContextKeys: []string{"status_code"},
+		},
+		{
+			name:       "403 empty body with 2FA headers maps to SCAChallengeError",
+			statusCode: http.StatusForbidden,
+			headers: http.Header{
+				HeaderTwoFAApprovalResult: []string{"REJECTED"},
+				HeaderTwoFAApproval:       []string{"ott-value"},
+			},
+			wantType:        errorMatches[*SCAChallengeError],
+			wantErrorCode:   "wise.sca_challenge",
+			wantFamily:      errorfamily.Rejection,
+			wantDetailCount: 0,
+			wantNotIs:       []error{ErrForbidden},
+			wantContextKeys: []string{"status_code", "approval_result", "approval_token_issued"},
+		},
+		{
+			name:            "404 envelope maps to NotFoundError matching ErrResourceNotFound",
+			statusCode:      http.StatusNotFound,
+			body:            fmt.Sprintf(envelope, "resource_not_found"),
+			wantType:        errorMatches[*NotFoundError],
+			wantErrorCode:   "wise.not_found",
+			wantFamily:      errorfamily.Rejection,
+			wantDetailCount: 1,
+			wantIs:          []error{ErrResourceNotFound},
+			wantHasCodes:    []WiseErrorCode{WiseErrorCodeResourceNotFound},
+			wantContextKeys: []string{"status_code"},
+		},
+		{
+			name:            "409 plain text maps to bare APIError",
+			statusCode:      http.StatusConflict,
+			body:            "Transfer is already funded",
+			wantType:        errorMatches[*APIError],
+			wantErrorCode:   "wise.api_error",
+			wantFamily:      errorfamily.Rejection,
+			wantDetailCount: 0,
+			wantContextKeys: []string{"status_code"},
+		},
+		{
+			name:            "429 envelope maps to RateLimitError matching ErrRateLimitExceeded",
+			statusCode:      http.StatusTooManyRequests,
+			body:            fmt.Sprintf(envelope, "rate_limit_exceeded"),
+			retryAfter:      3 * time.Second,
+			rateLimitedBy:   "ip",
+			wantType:        errorMatches[*RateLimitError],
+			wantErrorCode:   "wise.rate_limit",
+			wantFamily:      errorfamily.Transient,
+			wantRetryable:   true,
+			wantDetailCount: 1,
+			wantIs:          []error{ErrRateLimitExceeded},
+			wantHasCodes:    []WiseErrorCode{WiseErrorCodeRateLimitExceeded},
+			wantContextKeys: []string{"status_code", "retry_after", "rate_limited_by"},
+		},
+		{
+			name:            "500 envelope with system_error stays a retryable ServerError",
+			statusCode:      http.StatusInternalServerError,
+			body:            fmt.Sprintf(envelope, "system_error"),
+			wantType:        errorMatches[*ServerError],
+			wantErrorCode:   "wise.server",
+			wantFamily:      errorfamily.Transient,
+			wantRetryable:   true,
+			wantDetailCount: 1,
+			wantIs:          []error{ErrSystemError},
+			wantHasCodes:    []WiseErrorCode{WiseErrorCodeSystemError},
+			wantContextKeys: []string{"status_code"},
+		},
+		{
+			name:            "503 plain text maps to a retryable ServerError without details",
+			statusCode:      http.StatusServiceUnavailable,
+			body:            "upstream hiccup",
+			wantType:        errorMatches[*ServerError],
+			wantErrorCode:   "wise.server",
+			wantFamily:      errorfamily.Transient,
+			wantRetryable:   true,
+			wantDetailCount: 0,
+			wantNotIs:       []error{ErrSystemError},
+			wantContextKeys: []string{"status_code"},
+		},
+		{
+			name:            "422 multi-error envelope maps to bare APIError with both codes",
+			statusCode:      http.StatusUnprocessableEntity,
+			body:            `{"errors":[{"code":"parameter_missing","message":"a"},{"code":"not.valid","message":"b"}]}`,
+			wantType:        errorMatches[*APIError],
+			wantErrorCode:   "wise.api_error",
+			wantFamily:      errorfamily.Rejection,
+			wantDetailCount: 2,
+			wantIs:          []error{ErrParameterMissing, ErrNotValid},
+			wantHasCodes:    []WiseErrorCode{WiseErrorCodeParameterMissing, WiseErrorCodeNotValid},
+			wantContextKeys: []string{"status_code"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := newAPIError(tt.statusCode, tt.body, tt.headers, tt.retryAfter, tt.rateLimitedBy)
+			if err == nil {
+				t.Fatal("newAPIError returned nil")
+			}
+
+			assertMatrixClassification(t, tt, err)
+
+			apiErr := embeddedAPIError(err)
+			if apiErr == nil {
+				t.Fatalf("no embedded APIError reachable from %T", err)
+			}
+
+			assertMatrixMatching(t, tt, err, apiErr)
+			assertMatrixContext(t, tt, err)
+		})
+	}
+}
+
+// errorMatrixRow is one status x envelope-shape expectation of
+// TestErrorSurfaceMappingMatrix.
+type errorMatrixRow struct {
+	name            string
+	statusCode      int
+	body            string
+	headers         http.Header
+	retryAfter      time.Duration
+	rateLimitedBy   string
+	wantType        func(error) bool
+	wantErrorCode   string
+	wantFamily      errorfamily.Family
+	wantRetryable   bool
+	wantDetailCount int
+	wantIs          []error
+	wantNotIs       []error
+	wantHasCodes    []WiseErrorCode
+	wantContextKeys []string
+}
+
+// assertMatrixClassification checks the typed classification of one matrix
+// row: concrete type, ErrorCode, ErrorFamily, and the IsRetryable contract.
+func assertMatrixClassification(t *testing.T, tt errorMatrixRow, err error) {
+	t.Helper()
+
+	if !tt.wantType(err) {
+		t.Errorf("type mismatch: got %T", err)
+	}
+
+	coder, ok := err.(interface{ ErrorCode() string })
+	if !ok {
+		t.Fatalf("%T does not implement ErrorCode", err)
+	}
+
+	if got := coder.ErrorCode(); got != tt.wantErrorCode {
+		t.Errorf("ErrorCode() = %q, want %q", got, tt.wantErrorCode)
+	}
+
+	familier, ok := err.(interface{ ErrorFamily() errorfamily.Family })
+	if !ok {
+		t.Fatalf("%T does not implement ErrorFamily", err)
+	}
+
+	if got := familier.ErrorFamily(); got != tt.wantFamily {
+		t.Errorf("ErrorFamily() = %v, want %v", got, tt.wantFamily)
+	}
+
+	retryable, implements := err.(interface{ IsRetryable() bool })
+	if tt.wantRetryable && (!implements || !retryable.IsRetryable()) {
+		t.Errorf("IsRetryable() = false/absent, want true")
+	}
+
+	if !tt.wantRetryable && implements {
+		t.Errorf("IsRetryable implemented, want absence")
+	}
+}
+
+// embeddedAPIError reaches the APIError value embedded in whichever typed
+// wrapper newAPIError produced.
+func embeddedAPIError(err error) *APIError {
+	switch typed := err.(type) {
+	case *APIError:
+		return typed
+	case *RateLimitError:
+		return &typed.APIError
+	case *AuthError:
+		return &typed.APIError
+	case *SCAChallengeError:
+		return &typed.APIError
+	case *NotFoundError:
+		return &typed.APIError
+	case *BadRequestError:
+		return &typed.APIError
+	case *ServerError:
+		return &typed.APIError
+	default:
+		return nil
+	}
+}
+
+// assertMatrixMatching checks the structured-details and code-sentinel
+// surface of one matrix row: Headers capture, Details count, errors.Is
+// matches and non-matches, and HasCode.
+func assertMatrixMatching(t *testing.T, tt errorMatrixRow, err error, apiErr *APIError) {
+	t.Helper()
+
+	if apiErr.Headers == nil {
+		t.Errorf("Headers is nil, want non-nil (captured even when empty)")
+	}
+
+	if len(apiErr.Details) != tt.wantDetailCount {
+		t.Errorf("len(Details) = %d, want %d", len(apiErr.Details), tt.wantDetailCount)
+	}
+
+	for _, sentinel := range tt.wantIs {
+		if !errors.Is(err, sentinel) {
+			t.Errorf("errors.Is(err, %v) = false, want true", sentinel)
+		}
+	}
+
+	for _, sentinel := range tt.wantNotIs {
+		if errors.Is(err, sentinel) {
+			t.Errorf("errors.Is(err, %v) = true, want false", sentinel)
+		}
+	}
+
+	for _, code := range tt.wantHasCodes {
+		if !apiErr.HasCode(code) {
+			t.Errorf("HasCode(%q) = false, want true", code)
+		}
+	}
+}
+
+// assertMatrixContext checks the OUTER error's ErrorContext keys (subtype
+// overrides like the SCA headers and rate-limit fields matter here).
+func assertMatrixContext(t *testing.T, tt errorMatrixRow, err error) {
+	t.Helper()
+
+	ctx, ok := err.(interface{ ErrorContext() map[string]string })
+	if !ok {
+		t.Fatalf("%T does not implement ErrorContext", err)
+	}
+
+	got := ctx.ErrorContext()
+	for _, key := range tt.wantContextKeys {
+		if _, present := got[key]; !present {
+			t.Errorf("ErrorContext missing key %q (got %v)", key, got)
+		}
+	}
 }

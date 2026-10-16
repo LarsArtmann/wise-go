@@ -17,13 +17,13 @@ import (
 
 // Error code constants returned by ErrorCode() on each error type.
 const (
-	errorCodeAPI       = "wise.api_error"
-	errorCodeRateLimit = "wise.rate_limit"
-	errorCodeAuth      = "wise.auth"
-	errorCodeNotFound  = "wise.not_found"
+	errorCodeAPI        = "wise.api_error"
+	errorCodeRateLimit  = "wise.rate_limit"
+	errorCodeAuth       = "wise.auth"
+	errorCodeNotFound   = "wise.not_found"
 	errorCodeBadRequest = "wise.bad_request"
-	errorCodeServer    = "wise.server"
-	errorCodeSCA       = "wise.sca_challenge"
+	errorCodeServer     = "wise.server"
+	errorCodeSCA        = "wise.sca_challenge"
 )
 
 // Error codes carried by errorfamily-classified errors (validation
@@ -471,6 +471,21 @@ func newAPIError(
 		Details:    details,
 	}
 
+	return classifyAPIError(statusCode, base, headers, retryAfter, rateLimitedBy)
+}
+
+// classifyAPIError maps the response status (and, for SCA, the two-factor
+// headers) onto the typed error surface. Status drives the type; the body's
+// granular codes never flip it (a 5xx carrying system_error stays a
+// retryable *ServerError, a 400 carrying system_error stays a
+// *BadRequestError).
+func classifyAPIError(
+	statusCode int,
+	base APIError,
+	headers http.Header,
+	retryAfter time.Duration,
+	rateLimitedBy string,
+) error {
 	switch {
 	case statusCode == http.StatusTooManyRequests:
 		return &RateLimitError{
