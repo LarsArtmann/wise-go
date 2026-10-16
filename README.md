@@ -988,9 +988,9 @@ In CI: the [Sandbox Live Tests](.github/workflows/sandbox-live.yml) workflow
 runs the same suite on manual dispatch (`workflow_dispatch`). Add the
 `WISE_SANDBOX_API_KEY` secret to the repository first; dispatching without it
 is a green no-op (all tests skip, visible as `SKIP` lines in the log). Current
-coverage is a `GetMe` smoke test — the natural place to grow credentialed
-scenarios (quote → recipient → transfer against sandbox data) once a key is
-available.
+coverage: a `GetMe` smoke test, a `ListTransfers` read (must succeed — the
+endpoint is not SCA-protected), and a `GetTransfer` by-ID test that stays
+silent unless `WISE_TEST_TRANSFER_ID` names a transfer the key owns.
 
 ## Project Status
 
