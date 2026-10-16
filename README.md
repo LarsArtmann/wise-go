@@ -724,7 +724,7 @@ if err != nil {
     if rl, ok := errors.AsType[*wise.RateLimitError](err); ok {
         fmt.Printf("rate limited (scope: %s), retry after %s\n", rl.RateLimitedBy, rl.RetryAfter)
     } else if sca, ok := errors.AsType[*wise.SCAChallengeError](err); ok {
-        fmt.Printf("SCA approval required, token: %s\n", sca.TwoFAApprovalToken())
+        fmt.Printf("SCA approval required (token issued: %t)\n", !sca.TwoFAApprovalToken().IsZero())
     } else if auth, ok := errors.AsType[*wise.AuthError](err); ok {
         fmt.Printf("auth failed: %s\n", auth.Message)
     } else if nf, ok := errors.AsType[*wise.NotFoundError](err); ok {
@@ -798,9 +798,14 @@ if err != nil {
 The one-time-token endpoints (`GetOTTStatus`, `TriggerOTT`, `VerifyOTT`,
 `ClearSCAChallenge`) live on the quarterly versioned surface
 (`/2026Q3/one-time-token/...`) and authorize with the same personal API
-token. Challenges that no phone channel can clear (e.g. a PIN-only
-challenge) surface as a Rejection naming the available types — clear those by
-viewing a statement on wise.com instead.
+token. The OTT is a distinct type, `wise.OneTimeToken` (construct with
+`wise.NewOneTimeToken`), so it can never be passed where an OTP code or any
+other string is expected. Challenges that no phone channel can clear (e.g. a
+PIN-only challenge) surface as a Rejection naming the available types — clear
+those by viewing a statement on wise.com instead. Wise's PSD2 flavor can also
+issue a **tokenless** challenge (403 with the verdict header but no
+`x-2fa-approval`): `TwoFAApprovalToken()` then returns the zero
+`OneTimeToken` — still blocked, but with nothing to clear programmatically.
 
 `GET /v1/transfers` (and the other transfer endpoints) are **not** SCA-protected,
 which is why `ListTransfers` is the reliable source for outgoing transfer

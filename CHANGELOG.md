@@ -8,6 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- `OneTimeToken` — the SCA one-time token (OTT) is now a distinct type.
+  `wise.NewOneTimeToken` validates (rejects blank, never trims),
+  `IsZero()` reports absence, and every OTT-taking surface is typed:
+  `GetOTTStatus`, `TriggerOTT`, `VerifyOTT`, `ClearSCAChallenge`,
+  `WithSCAApprovalToken`, and `SCAChallengeError.TwoFAApprovalToken`.
+  An OTT can no longer be accidentally passed where an OTP code, an API
+  key, or any other string is expected (breaking — see migration note).
+- `OTTStatus.ActionType` is now the open-enum type `OTTAction`
+  (was a bare `string`).
+- Tokenless-SCA contract pinned: a 403 with the verdict header but no
+  `x-2fa-approval` OTT (Wise's PSD2 flavor, live 2026-10-16) yields an
+  `*SCAChallengeError` whose `TwoFAApprovalToken()` is zero and whose
+  context reports `approval_token_issued=false` (new test).
 - Fuzz corpus seeds checked in under `testdata/fuzz/` for the webhook-key,
   webhook-signature, and exchange-rates fuzz targets, plus a new
   `FuzzParseWiseDate` target pinning the date parser's contract.
@@ -24,6 +37,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Breaking / migration:** wrap OTT strings in `wise.OneTimeToken(...)` (or
+  validate with `wise.NewOneTimeToken`) at the five typed surfaces above;
+  `ActionType` comparisons against string literals still compile via untyped
+  constants, but typed variables need `wise.OTTAction(...)`. Unaffected:
+  constructing an OTT from `SCAChallengeError.TwoFAApprovalToken()` and
+  passing it straight to the OTT endpoints or `WithSCAApprovalToken` — that
+  flow compiles unchanged. Review companion:
+  `docs/reviews/2026-10-16_sca-auth-data-model.html`.
+- README error-handling example no longer prints the raw OTT (reports only
+  whether one was issued), matching the SDK's own secrecy contract.
+- `lll` removed from the curated linter list AGAIN: a post-d8e28b5
+  auto-configure sweep re-added it (14 findings, all pre-existing lines).
 - Coverage floor raised from 90% to 92% (measured 92.8%), enforced identically
   by the flake check and the CI coverage gate.
 - CI's nix job now runs the release-notes check (`nix run .#release-notes-check`)
