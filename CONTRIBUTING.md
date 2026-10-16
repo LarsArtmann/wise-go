@@ -73,7 +73,7 @@ go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.0
 
 **This is non-negotiable.** The `go-branded-id` and `go-error-family` dependencies use `encoding/json/v2`, which only builds when the `jsonv2` experiment is enabled. Without it you will see:
 
-```
+```text
 build constraints exclude all Go files in encoding/json/v2
 ```
 
@@ -114,7 +114,7 @@ problem" (2026-10-07).
 
 wise-go is a **single-package Go library** with one internal subpackage. The public SDK lives in `package wise` at the repository root; raw wire-format types live in `internal/raw`.
 
-```
+```text
 ├── *.go              # package wise — the entire public SDK
 ├── flake.nix         # devShells, checks (tests + lint + format), treefmt
 ├── .golangci.yml     # curated linter config (63 linters)
@@ -321,7 +321,7 @@ Inside `nix develop` this is handled automatically.
 
 ### Branch naming
 
-```
+```text
 feat/description
 fix/description
 docs/description
@@ -364,7 +364,7 @@ Brief description of the change and why.
 
 Conventional Commits format:
 
-```
+```text
 <type>(<scope>): <subject>
 
 <body — explain the why>
