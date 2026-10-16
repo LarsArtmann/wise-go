@@ -52,6 +52,10 @@ All verification artifacts live in `/tmp/snippet-check/` (scratch, untracked).
 
 1. **Snippet hygiene as a rule:** every SDK usage example I emit in chat should be
    compile-checked against the consumer's pinned version before sending.
+   DONE 2026-10-16 (later same day): codified as the first Gotcha in `AGENTS.md`
+   ("compile snippets against the consumer's pinned tag AND master"); the full
+   README/docs block sweep ran and fixed 3 offenders — see
+   `docs/planning/2026-10-16_19-45_SUPERB-pareto-plan-transfer-truth-close-and-fleet-hygiene.md` (M1/M2/M3).
 2. **`ExampleClient_GetTransfer` is missing** — adding it is cheap insurance against the
    next hallucinated snippet (mine included).
 3. **No live-smoke path exists** for "does my personal API key work with GetTransfer" —
