@@ -237,7 +237,7 @@
               ''
                 cd $src
                 lychee --offline --no-progress \
-                  README.md FEATURES.md ROADMAP.md TODO_LIST.md CHANGELOG.md CONTRIBUTING.md AGENTS.md
+                  README.md FEATURES.md ROADMAP.md TODO_LIST.md CHANGELOG.md CONTRIBUTING.md AGENTS.md docs/error-codes.md
                 touch $out
               '';
 
@@ -276,7 +276,7 @@
               }
               ''
                 cd $src
-                md-go-validator README.md FEATURES.md ROADMAP.md TODO_LIST.md CHANGELOG.md CONTRIBUTING.md AGENTS.md $(find docs -type d)
+                md-go-validator README.md FEATURES.md ROADMAP.md TODO_LIST.md CHANGELOG.md CONTRIBUTING.md AGENTS.md docs/error-codes.md $(find docs -type d)
                 touch $out
               '';
 
@@ -598,7 +598,7 @@
 
                   # 3. No ghost relative links in the living docs.
                   if ! lychee --offline --no-progress \
-                    README.md FEATURES.md ROADMAP.md TODO_LIST.md CHANGELOG.md CONTRIBUTING.md AGENTS.md; then
+                    README.md FEATURES.md ROADMAP.md TODO_LIST.md CHANGELOG.md CONTRIBUTING.md AGENTS.md docs/error-codes.md; then
                     status=1
                   fi
 

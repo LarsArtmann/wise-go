@@ -1,0 +1,2 @@
+go test fuzz v1
+string("{\"errors\":[{\"code\":\"parameter_missing\",\"message\":\"source is required\"},{\"code\":\"not.valid\",\"message\":\"amount is invalid\"}]}")

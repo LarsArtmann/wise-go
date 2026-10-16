@@ -1,1 +1,3 @@
-input-retry = "github:LarsArtmann/go-retry?rev=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+{
+  input-retry = "github:LarsArtmann/go-retry?rev=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+}

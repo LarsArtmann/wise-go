@@ -1585,3 +1585,83 @@ func assertMatrixContext(t *testing.T, tt errorMatrixRow, err error) {
 		}
 	}
 }
+
+// FuzzParseErrorResponse hardens the envelope parser: for any input it must
+// either return nil or a non-empty error list, and it must never panic.
+func FuzzParseErrorResponse(f *testing.F) {
+	f.Add(`{"errors":[{"code":"parameter_missing","message":"source is required"}]}`)
+	f.Add(`{"errors":[]}`)
+	f.Add(`{}`)
+	f.Add(``)
+	f.Add(`not json at all`)
+	f.Add(`{"errors":[{"code":"","message":""}]}`)
+	f.Add(`{"errors":[{"code":"a"},{"code":"b","message":"m"}]}`)
+	f.Add(`[1,2,3]`)
+	f.Add(`null`)
+
+	f.Fuzz(func(t *testing.T, body string) {
+		resp := parseErrorResponse(body)
+		if resp == nil {
+			return
+		}
+
+		if len(resp.Errors) == 0 {
+			t.Errorf("parseErrorResponse(%q) returned non-nil with zero errors", body)
+		}
+	})
+}
+
+// FuzzNewAPIError pins the parser invariants over arbitrary input: no panic,
+// deterministic classification, and byte-exact Details↔Message consistency.
+func FuzzNewAPIError(f *testing.F) {
+	f.Add(http.StatusBadRequest, `{"errors":[{"code":"parameter_missing","message":"source"}]}`)
+	f.Add(http.StatusTooManyRequests, `{"errors":[{"code":"rate_limit_exceeded","message":"slow"}]}`)
+	f.Add(http.StatusForbidden, "")
+	f.Add(http.StatusInternalServerError, "plain text")
+	f.Add(http.StatusNotFound, `{}`)
+	f.Add(http.StatusUnauthorized, `{"errors":[]}`)
+
+	f.Fuzz(func(t *testing.T, rawStatus int, body string) {
+		statusCode := 100 + ((rawStatus%500)+500)%500
+
+		err := newAPIError(statusCode, body, nil, 0, "")
+		if err == nil {
+			t.Fatal("newAPIError returned nil")
+		}
+
+		rebuilt := newAPIError(statusCode, body, nil, 0, "")
+
+		if fmt.Sprintf("%T", err) != fmt.Sprintf("%T", rebuilt) {
+			t.Errorf("classification nondeterministic: %T vs %T", err, rebuilt)
+		}
+
+		first, ok := err.(interface{ ErrorCode() string })
+
+		second, ok2 := rebuilt.(interface{ ErrorCode() string })
+		if !ok || !ok2 || first.ErrorCode() != second.ErrorCode() {
+			t.Errorf("ErrorCode nondeterministic for status %d", statusCode)
+		}
+
+		apiErr := embeddedAPIError(err)
+		if apiErr == nil {
+			t.Fatalf("no embedded APIError reachable from %T", err)
+		}
+
+		if len(apiErr.Details) > 0 {
+			msgs := make([]string, 0, len(apiErr.Details))
+			for _, detail := range apiErr.Details {
+				msgs = append(msgs, fmt.Sprintf("%s: %s", string(detail.Code), detail.Message))
+
+				if !apiErr.HasCode(detail.Code) {
+					t.Errorf("HasCode(%q) = false for a detail present in Details", detail.Code)
+				}
+			}
+
+			if want := strings.Join(msgs, "; "); apiErr.Message != want {
+				t.Errorf("Message %q does not join Details (want %q)", apiErr.Message, want)
+			}
+		} else if apiErr.Message != body {
+			t.Errorf("Message %q = body %q expected when the envelope is absent", apiErr.Message, body)
+		}
+	})
+}
