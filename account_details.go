@@ -31,7 +31,7 @@ func (c *Client) GetMultiCurrencyAccount(
 	ctx context.Context,
 	profileID ProfileID,
 ) (*MultiCurrencyAccount, error) {
-	if err := requireID(profileID, "wise.account.invalid_request", "profileID"); err != nil {
+	if err := requireID(profileID, errorCodeAccountInvalidRequest, "profileID"); err != nil {
 		return nil, err
 	}
 
@@ -56,7 +56,7 @@ func mapMultiCurrencyAccount(account raw.MultiCurrencyAccount) (MultiCurrencyAcc
 	if err != nil {
 		return MultiCurrencyAccount{}, errorfamily.WrapCorruption(
 			err,
-			"wise.account.parse_creation_time",
+			errorCodeAccountParseCreationTime,
 			fmt.Sprintf("parse creationTime %q", account.CreationTime),
 		)
 	}
@@ -65,7 +65,7 @@ func mapMultiCurrencyAccount(account raw.MultiCurrencyAccount) (MultiCurrencyAcc
 	if err != nil {
 		return MultiCurrencyAccount{}, errorfamily.WrapCorruption(
 			err,
-			"wise.account.parse_modification_time",
+			errorCodeAccountParseModificationTime,
 			fmt.Sprintf("parse modificationTime %q", account.ModificationTime),
 		)
 	}
@@ -165,7 +165,7 @@ func (c *Client) GetBankAccountDetails(
 	ctx context.Context,
 	id AccountDetailsID,
 ) (*AccountDetails, error) {
-	if err := requireID(id, "wise.account_details.invalid_request", "id"); err != nil {
+	if err := requireID(id, errorCodeAccountDetailsInvalidRequest, "id"); err != nil {
 		return nil, err
 	}
 
@@ -190,7 +190,7 @@ func mapAccountDetails(detail raw.AccountDetails) (AccountDetails, error) {
 	if members != 1 {
 		return AccountDetails{}, errorfamily.WrapCorruption(
 			errAccountIdentificationCardinality,
-			"wise.account_details.parse_identification",
+			errorCodeAccountDetailsParseIdentification,
 			fmt.Sprintf("expected exactly one identification member, found %d (country %q)", members, detail.Country),
 		)
 	}

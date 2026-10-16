@@ -96,20 +96,20 @@ func (c *Client) CreateThirdPartyTransfer(
 	ctx context.Context,
 	req CreateThirdPartyTransferRequest,
 ) (*ThirdPartyTransfer, error) {
-	if err := requireID(req.ProfileID, "wise.transfer.invalid_request", "profileID"); err != nil {
+	if err := requireID(req.ProfileID, errorCodeTransferInvalidRequest, "profileID"); err != nil {
 		return nil, err
 	}
 
-	if err := requireID(req.TargetAccount, "wise.transfer.invalid_request", "targetAccount"); err != nil {
+	if err := requireID(req.TargetAccount, errorCodeTransferInvalidRequest, "targetAccount"); err != nil {
 		return nil, err
 	}
 
-	if err := requireID(req.QuoteID, "wise.transfer.invalid_request", "quoteUuid"); err != nil {
+	if err := requireID(req.QuoteID, errorCodeTransferInvalidRequest, "quoteUuid"); err != nil {
 		return nil, err
 	}
 
 	if req.OriginalTransferID == "" {
-		return nil, errorfamily.NewRejection("wise.transfer.invalid_request", "originalTransferId is required")
+		return nil, errorfamily.NewRejection(errorCodeTransferInvalidRequest, "originalTransferId is required")
 	}
 
 	body := map[string]any{
@@ -147,11 +147,11 @@ func (c *Client) GetThirdPartyTransfer(
 	profileID ProfileID,
 	transferID TransferID,
 ) (*ThirdPartyTransfer, error) {
-	if err := requireID(profileID, "wise.transfer.invalid_request", "profileID"); err != nil {
+	if err := requireID(profileID, errorCodeTransferInvalidRequest, "profileID"); err != nil {
 		return nil, err
 	}
 
-	if err := requireID(transferID, "wise.transfer.invalid_request", "transferID"); err != nil {
+	if err := requireID(transferID, errorCodeTransferInvalidRequest, "transferID"); err != nil {
 		return nil, err
 	}
 
@@ -254,7 +254,7 @@ func toThirdPartyTransfer(label string, transfer raw.ThirdPartyTransfer) (ThirdP
 	if err != nil {
 		return ThirdPartyTransfer{}, errorfamily.WrapCorruption(
 			err,
-			"wise.transfer.parse_created",
+			errorCodeTransferParseCreated,
 			fmt.Sprintf("%s: parse created %q", label, transfer.Created),
 		)
 	}
@@ -263,7 +263,7 @@ func toThirdPartyTransfer(label string, transfer raw.ThirdPartyTransfer) (ThirdP
 	if err != nil {
 		return ThirdPartyTransfer{}, errorfamily.WrapCorruption(
 			err,
-			"wise.transfer.parse_currency",
+			errorCodeTransferParseCurrency,
 			fmt.Sprintf("%s: source currency %q", label, transfer.SourceCurrency),
 		)
 	}
@@ -272,7 +272,7 @@ func toThirdPartyTransfer(label string, transfer raw.ThirdPartyTransfer) (ThirdP
 	if err != nil {
 		return ThirdPartyTransfer{}, errorfamily.WrapCorruption(
 			err,
-			"wise.transfer.parse_currency",
+			errorCodeTransferParseCurrency,
 			fmt.Sprintf("%s: target currency %q", label, transfer.TargetCurrency),
 		)
 	}

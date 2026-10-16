@@ -93,7 +93,7 @@ func (c *Client) listTransfersPage(
 	for _, t := range transfers {
 		mapped, mapErr := mapTransfer(t)
 		if mapErr != nil {
-			return nil, errorfamily.WrapCorruption(mapErr, "wise.transfer.map",
+			return nil, errorfamily.WrapCorruption(mapErr, errorCodeTransferMap,
 				fmt.Sprintf("map transfer %d", t.ID))
 		}
 
@@ -119,7 +119,7 @@ func (c *Client) GetTransfer(ctx context.Context, transferID TransferID) (*Trans
 
 	var transfer raw.Transfer
 
-	if err := fetchByID(ctx, c, transferID, "transfer", path, &transfer); err != nil {
+	if err := fetchByID(ctx, c, transferID, "transfer", errorCodeTransferInvalidRequest, path, &transfer); err != nil {
 		return nil, err
 	}
 
@@ -136,7 +136,7 @@ func (c *Client) GetTransfer(ctx context.Context, transferID TransferID) (*Trans
 // is not SCA-protected and is available to personal API tokens in all
 // regions.
 func (c *Client) GetTransferReceipt(ctx context.Context, transferID TransferID) ([]byte, error) {
-	if err := requireID(transferID, "wise.transfer.invalid_request", "transferID"); err != nil {
+	if err := requireID(transferID, errorCodeTransferInvalidRequest, "transferID"); err != nil {
 		return nil, err
 	}
 
@@ -158,7 +158,7 @@ func (c *Client) GetTransferReceipt(ctx context.Context, transferID TransferID) 
 // MT103 is nil when no SWIFT message exists for the transfer. The endpoint
 // is not SCA-protected.
 func (c *Client) GetTransferPayoutInfo(ctx context.Context, transferID TransferID) (*TransferPayoutInfo, error) {
-	if err := requireID(transferID, "wise.transfer.invalid_request", "transferID"); err != nil {
+	if err := requireID(transferID, errorCodeTransferInvalidRequest, "transferID"); err != nil {
 		return nil, err
 	}
 
@@ -180,15 +180,15 @@ func (c *Client) GetTransferPayoutInfo(ctx context.Context, transferID TransferI
 }
 
 func (r CreateTransferRequest) validate() error {
-	if err := requireID(r.QuoteID, "wise.transfer.invalid_request", "quoteID"); err != nil {
+	if err := requireID(r.QuoteID, errorCodeTransferInvalidRequest, "quoteID"); err != nil {
 		return err
 	}
 
-	if err := requireID(r.TargetAccount, "wise.transfer.invalid_request", "targetAccount"); err != nil {
+	if err := requireID(r.TargetAccount, errorCodeTransferInvalidRequest, "targetAccount"); err != nil {
 		return err
 	}
 
-	if err := requireID(r.CustomerTransactionID, "wise.transfer.invalid_request", "customerTransactionId"); err != nil {
+	if err := requireID(r.CustomerTransactionID, errorCodeTransferInvalidRequest, "customerTransactionId"); err != nil {
 		return err
 	}
 
@@ -252,7 +252,7 @@ func (c *Client) CreateTransfer(
 // if it has not been processed (not in funds_converted or later state) and
 // has no processing problems. Cancellation is final.
 func (c *Client) CancelTransfer(ctx context.Context, transferID TransferID) (*Transfer, error) {
-	if err := requireID(transferID, "wise.transfer.invalid_request", "transferID"); err != nil {
+	if err := requireID(transferID, errorCodeTransferInvalidRequest, "transferID"); err != nil {
 		return nil, err
 	}
 
@@ -286,11 +286,11 @@ func (c *Client) FundTransfer(
 	transferID TransferID,
 ) (*FundTransferResult, error) {
 	// art-dupl:accept paired requireID guards and the per-endpoint path literal are the deliberate two-idiom validation convention; an abstraction would take more parameters than it saves lines
-	if err := requireID(profileID, "wise.transfer.invalid_request", "profileID"); err != nil {
+	if err := requireID(profileID, errorCodeTransferInvalidRequest, "profileID"); err != nil {
 		return nil, err
 	}
 
-	if err := requireID(transferID, "wise.transfer.invalid_request", "transferID"); err != nil {
+	if err := requireID(transferID, errorCodeTransferInvalidRequest, "transferID"); err != nil {
 		return nil, err
 	}
 
@@ -322,7 +322,7 @@ func mapFundTransferResult(funding raw.FundingResponse) (FundTransferResult, err
 	if err != nil {
 		return FundTransferResult{}, errorfamily.WrapCorruption(
 			err,
-			"wise.funding.parse_type",
+			errorCodeFundingParseType,
 			fmt.Sprintf("parse funding type %q", funding.Type),
 		)
 	}
@@ -335,7 +335,7 @@ func mapFundTransferResult(funding raw.FundingResponse) (FundTransferResult, err
 	if err != nil {
 		return FundTransferResult{}, errorfamily.WrapCorruption(
 			err,
-			"wise.funding.parse_status",
+			errorCodeFundingParseStatus,
 			fmt.Sprintf("parse funding status %q (type %q)", funding.Status, funding.Type),
 		)
 	}
@@ -433,7 +433,7 @@ func (c *Client) ListTransferPayments(
 	ctx context.Context,
 	transferID TransferID,
 ) ([]TransferPayment, error) {
-	if err := requireID(transferID, "wise.transfer.invalid_request", "transferID"); err != nil {
+	if err := requireID(transferID, errorCodeTransferInvalidRequest, "transferID"); err != nil {
 		return nil, err
 	}
 
@@ -463,7 +463,7 @@ func mapTransferPayment(payment raw.TransferPayment) (TransferPayment, error) {
 	if err != nil {
 		return TransferPayment{}, errorfamily.WrapCorruption(
 			err,
-			"wise.transfer.parse_payment_created",
+			errorCodeTransferParsePaymentCreated,
 			fmt.Sprintf("parse timeCreated %q", payment.TimeCreated),
 		)
 	}
@@ -472,7 +472,7 @@ func mapTransferPayment(payment raw.TransferPayment) (TransferPayment, error) {
 	if err != nil {
 		return TransferPayment{}, errorfamily.WrapCorruption(
 			err,
-			"wise.transfer.parse_payment_updated",
+			errorCodeTransferParsePaymentUpdated,
 			fmt.Sprintf("parse timeUpdated %q", payment.TimeUpdated),
 		)
 	}
@@ -481,7 +481,7 @@ func mapTransferPayment(payment raw.TransferPayment) (TransferPayment, error) {
 	if err != nil {
 		return TransferPayment{}, errorfamily.WrapCorruption(
 			err,
-			"wise.transfer.parse_payment_currency",
+			errorCodeTransferParsePaymentCurrency,
 			fmt.Sprintf("currency %q", payment.Currency),
 		)
 	}
@@ -505,7 +505,7 @@ func mapTransferPayment(payment raw.TransferPayment) (TransferPayment, error) {
 // outgoing_payment_sent; a 404 (*NotFoundError) before that means "not
 // issued yet", not a hard failure.
 func (c *Client) GetUSCombinedReceipt(ctx context.Context, transferID TransferID) ([]byte, error) {
-	if err := requireID(transferID, "wise.transfer.invalid_request", "transferID"); err != nil {
+	if err := requireID(transferID, errorCodeTransferInvalidRequest, "transferID"); err != nil {
 		return nil, err
 	}
 
@@ -526,7 +526,7 @@ func (c *Client) GetUSCombinedReceipt(ctx context.Context, transferID TransferID
 // The endpoint answers 404 (*NotFoundError) until the transfer reaches
 // outgoing_payment_sent; treat that as "not issued yet", not a hard failure.
 func (c *Client) GetTransferNOC(ctx context.Context, transferID TransferID) ([]byte, error) {
-	if err := requireID(transferID, "wise.transfer.invalid_request", "transferID"); err != nil {
+	if err := requireID(transferID, errorCodeTransferInvalidRequest, "transferID"); err != nil {
 		return nil, err
 	}
 

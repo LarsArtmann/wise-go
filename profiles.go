@@ -15,7 +15,7 @@ func (c *Client) GetProfile(ctx context.Context, profileID ProfileID) (*Profile,
 
 	var profile raw.Profile
 
-	if err := fetchByID(ctx, c, profileID, "profile", path, &profile); err != nil {
+	if err := fetchByID(ctx, c, profileID, "profile", errorCodeProfileInvalidRequest, path, &profile); err != nil {
 		return nil, err
 	}
 
@@ -59,7 +59,7 @@ func mapProfile(p raw.Profile) (Profile, error) {
 	if err != nil {
 		return Profile{}, errorfamily.WrapCorruption(
 			err,
-			"wise.profile.parse_created_at",
+			errorCodeProfileParseCreatedAt,
 			fmt.Sprintf("parse created_at %q", p.CreatedAt),
 		)
 	}
@@ -68,7 +68,7 @@ func mapProfile(p raw.Profile) (Profile, error) {
 	if err != nil {
 		return Profile{}, errorfamily.WrapCorruption(
 			err,
-			"wise.profile.parse_type",
+			errorCodeProfileParseType,
 			fmt.Sprintf("parse type %q", p.Type),
 		)
 	}

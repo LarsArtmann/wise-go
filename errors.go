@@ -2,6 +2,7 @@ package wise
 
 import (
 	"encoding/json/v2"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -22,6 +23,91 @@ const (
 	errorCodeNotFound  = "wise.not_found"
 	errorCodeServer    = "wise.server"
 	errorCodeSCA       = "wise.sca_challenge"
+)
+
+// Error codes carried by errorfamily-classified errors (validation
+// rejections and corruption wraps). This block is the catalog: every code
+// the SDK emits is named here exactly once, call sites reference the
+// constant, and tests pin the wire value.
+const (
+	errorCodeAccountInvalidRequest             = "wise.account.invalid_request"
+	errorCodeAccountParseCreationTime          = "wise.account.parse_creation_time"
+	errorCodeAccountParseModificationTime      = "wise.account.parse_modification_time"
+	errorCodeAccountDetailsInvalidRequest      = "wise.account_details.invalid_request"
+	errorCodeAccountDetailsParseIdentification = "wise.account_details.parse_identification"
+	errorCodeBalanceInvalidRequest             = "wise.balance.invalid_request"
+	errorCodeBalanceParseCreationTime          = "wise.balance.parse_creation_time"
+	errorCodeBalanceParseCurrency              = "wise.balance.parse_currency"
+	errorCodeBalanceParseType                  = "wise.balance.parse_type"
+	errorCodeDeliveryEstimateParseDate         = "wise.delivery_estimate.parse_date"
+	errorCodeFundingParseStatus                = "wise.funding.parse_status"
+	errorCodeFundingParseType                  = "wise.funding.parse_type"
+	errorCodeMoneyParse                        = "wise.money.parse"
+	errorCodeOTTChannelUnsupported             = "wise.ott.channel_unsupported"
+	errorCodeOTTDecode                         = "wise.ott.decode"
+	errorCodeOTTInvalidRequest                 = "wise.ott.invalid_request"
+	errorCodeOTTUncleared                      = "wise.ott.uncleared"
+	errorCodeProfileInvalidRequest             = "wise.profile.invalid_request"
+	errorCodeProfileParseCreatedAt             = "wise.profile.parse_created_at"
+	errorCodeProfileParseType                  = "wise.profile.parse_type"
+	errorCodeQuoteInvalidRequest               = "wise.quote.invalid_request"
+	errorCodeQuoteParseCreated                 = "wise.quote.parse_created"
+	errorCodeQuoteParseExpiration              = "wise.quote.parse_expiration"
+	errorCodeQuoteParsePaymentOptionDelivery   = "wise.quote.parse_payment_option_delivery"
+	errorCodeQuoteParsePaymentOptionSource     = "wise.quote.parse_payment_option_source"
+	errorCodeQuoteParsePaymentOptionTarget     = "wise.quote.parse_payment_option_target"
+	errorCodeQuoteParseSourceCurrency          = "wise.quote.parse_source_currency"
+	errorCodeQuoteParseTargetCurrency          = "wise.quote.parse_target_currency"
+	errorCodeRatesEmptyResponse                = "wise.rates.empty_response"
+	errorCodeRatesInvalidRequest               = "wise.rates.invalid_request"
+	errorCodeRatesParseSource                  = "wise.rates.parse_source"
+	errorCodeRatesParseTarget                  = "wise.rates.parse_target"
+	errorCodeRatesParseTime                    = "wise.rates.parse_time"
+	errorCodeRecipientInvalidRequest           = "wise.recipient.invalid_request"
+	errorCodeRecipientMap                      = "wise.recipient.map"
+	errorCodeRecipientParseCurrency            = "wise.recipient.parse_currency"
+	errorCodeResponseDecode                    = "wise.response.decode"
+	errorCodeTotalFundsInvalidRequest          = "wise.total_funds.invalid_request"
+	errorCodeTransactionParseDate              = "wise.transaction.parse_date"
+	errorCodeTransactionsInvalidRequest        = "wise.transactions.invalid_request"
+	errorCodeTransferInvalidRequest            = "wise.transfer.invalid_request"
+	errorCodeTransferMap                       = "wise.transfer.map"
+	errorCodeTransferParseCreated              = "wise.transfer.parse_created"
+	errorCodeTransferParseCurrency             = "wise.transfer.parse_currency"
+	errorCodeTransferParsePaymentCreated       = "wise.transfer.parse_payment_created"
+	errorCodeTransferParsePaymentCurrency      = "wise.transfer.parse_payment_currency"
+	errorCodeTransferParsePaymentUpdated       = "wise.transfer.parse_payment_updated"
+	errorCodeUserInvalidRequest                 = "wise.user.invalid_request"
+	errorCodeUserParseDateOfBirth              = "wise.user.parse_date_of_birth"
+	errorCodeWebhookDecode                     = "wise.webhook.decode"
+	errorCodeWebhookInvalidRequest             = "wise.webhook.invalid_request"
+)
+
+// Sentinel errors name distinct response-shape failures so consumers can
+// match them with errors.Is. The SDK returns them only wrapped (with a
+// Corruption classification and a code from the catalog above), never bare,
+// and they are declared with the error interface type on purpose: they are
+// matched by value, never by type.
+var (
+	// ErrEmptyRateList reports a rates payload that decoded to zero entries.
+	ErrEmptyRateList error = errors.New("empty rate list")
+
+	// ErrAccountIdentificationCardinality marks a wire accountIdentification
+	// that carries zero or several oneOf members; the wrap's detail message
+	// holds the count.
+	ErrAccountIdentificationCardinality error = errors.New(
+		"accountIdentification member count is not exactly one",
+	)
+
+	// ErrOTTAlternativesShape is the sentinel for alternatives payloads that
+	// are neither the documented object form nor a bare string array.
+	ErrOTTAlternativesShape error = errors.New("alternatives are neither objects nor strings")
+
+	// ErrTransferRefundAmountMissing marks a transfers#refund payload whose
+	// resource block lacks the refund amount/currency pair.
+	ErrTransferRefundAmountMissing error = errors.New(
+		"refund amount or currency missing from resource block",
+	)
 )
 
 // Wise's Strong Customer Authentication (SCA) response headers. Wise answers

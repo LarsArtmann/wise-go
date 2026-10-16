@@ -94,7 +94,7 @@ func (c *Client) CreateProfileWebhookSubscription(
 	profileID ProfileID,
 	req CreateWebhookSubscriptionRequest,
 ) (*WebhookSubscription, error) {
-	if err := requireID(profileID, "wise.webhook.invalid_request", "profileID"); err != nil {
+	if err := requireID(profileID, errorCodeWebhookInvalidRequest, "profileID"); err != nil {
 		return nil, err
 	}
 
@@ -120,7 +120,7 @@ func (c *Client) ListProfileWebhookSubscriptions(
 	ctx context.Context,
 	profileID ProfileID,
 ) ([]WebhookSubscription, error) {
-	if err := requireID(profileID, "wise.webhook.invalid_request", "profileID"); err != nil {
+	if err := requireID(profileID, errorCodeWebhookInvalidRequest, "profileID"); err != nil {
 		return nil, err
 	}
 
@@ -158,11 +158,11 @@ func (c *Client) GetProfileWebhookSubscription(
 	profileID ProfileID,
 	subscriptionID WebhookSubscriptionID,
 ) (*WebhookSubscription, error) {
-	if err := requireID(profileID, "wise.webhook.invalid_request", "profileID"); err != nil {
+	if err := requireID(profileID, errorCodeWebhookInvalidRequest, "profileID"); err != nil {
 		return nil, err
 	}
 
-	if err := requireID(subscriptionID, "wise.webhook.invalid_request", "subscriptionID"); err != nil {
+	if err := requireID(subscriptionID, errorCodeWebhookInvalidRequest, "subscriptionID"); err != nil {
 		return nil, err
 	}
 
@@ -192,11 +192,11 @@ func (c *Client) DeleteProfileWebhookSubscription(
 	profileID ProfileID,
 	subscriptionID WebhookSubscriptionID,
 ) error {
-	if err := requireID(profileID, "wise.webhook.invalid_request", "profileID"); err != nil {
+	if err := requireID(profileID, errorCodeWebhookInvalidRequest, "profileID"); err != nil {
 		return err
 	}
 
-	if err := requireID(subscriptionID, "wise.webhook.invalid_request", "subscriptionID"); err != nil {
+	if err := requireID(subscriptionID, errorCodeWebhookInvalidRequest, "subscriptionID"); err != nil {
 		return err
 	}
 
@@ -219,20 +219,20 @@ func (c *Client) DeleteProfileWebhookSubscription(
 // malformed create never reaches the API.
 func (r CreateWebhookSubscriptionRequest) validate() error {
 	if r.Name == "" {
-		return errorfamily.NewRejection("wise.webhook.invalid_request", "name is required")
+		return errorfamily.NewRejection(errorCodeWebhookInvalidRequest, "name is required")
 	}
 
 	if r.TriggerOn == "" {
-		return errorfamily.NewRejection("wise.webhook.invalid_request", "triggerOn is required")
+		return errorfamily.NewRejection(errorCodeWebhookInvalidRequest, "triggerOn is required")
 	}
 
 	if r.Delivery.Version == "" {
-		return errorfamily.NewRejection("wise.webhook.invalid_request", "delivery.version is required")
+		return errorfamily.NewRejection(errorCodeWebhookInvalidRequest, "delivery.version is required")
 	}
 
 	if !strings.HasPrefix(r.Delivery.URL, "https://") {
 		return errorfamily.NewRejection(
-			"wise.webhook.invalid_request",
+			errorCodeWebhookInvalidRequest,
 			"delivery.url must be an HTTPS URL (Wise only delivers to HTTPS endpoints)",
 		)
 	}
@@ -260,7 +260,7 @@ func toWebhookSubscription(label string, subscription raw.Subscription) (*Webhoo
 	if err != nil {
 		return nil, errorfamily.WrapCorruption(
 			err,
-			"wise.response.decode",
+			errorCodeResponseDecode,
 			label+" "+subscription.ID+": parse created_at",
 		)
 	}
@@ -301,18 +301,18 @@ func ParseWebhookEvent(payload []byte) (*WebhookEvent, error) {
 	var envelope raw.WebhookEventEnvelope
 
 	if err := json.Unmarshal(payload, &envelope); err != nil {
-		return nil, errorfamily.WrapCorruption(err, "wise.webhook.decode", "parse webhook event envelope")
+		return nil, errorfamily.WrapCorruption(err, errorCodeWebhookDecode, "parse webhook event envelope")
 	}
 
 	if envelope.EventType == "" {
 		//nolint:err113 // corruption-classified decode failure; no sentinel to wrap
 		return nil, errorfamily.WrapCorruption(errors.New("event_type is empty"),
-			"wise.webhook.decode", "parse webhook event envelope")
+			errorCodeWebhookDecode, "parse webhook event envelope")
 	}
 
 	sentAt, err := parseWiseTimestamp(envelope.SentAt)
 	if err != nil {
-		return nil, errorfamily.WrapCorruption(err, "wise.webhook.decode", "parse webhook sent_at")
+		return nil, errorfamily.WrapCorruption(err, errorCodeWebhookDecode, "parse webhook sent_at")
 	}
 
 	return &WebhookEvent{
@@ -332,7 +332,7 @@ func decodeWebhookPayload[T any](data jsontext.Value, eventType WebhookEventType
 	var payload T
 
 	if err := json.Unmarshal(data, &payload); err != nil {
-		return nil, errorfamily.WrapCorruption(err, "wise.webhook.decode",
+		return nil, errorfamily.WrapCorruption(err, errorCodeWebhookDecode,
 			"decode "+string(eventType)+" payload")
 	}
 
@@ -344,7 +344,7 @@ func decodeWebhookPayload[T any](data jsontext.Value, eventType WebhookEventType
 func parseWebhookOccurredAt(rawOccurredAt string, eventType WebhookEventType) (time.Time, error) {
 	occurredAt, err := parseWiseTimestamp(rawOccurredAt)
 	if err != nil {
-		return time.Time{}, errorfamily.WrapCorruption(err, "wise.webhook.decode",
+		return time.Time{}, errorfamily.WrapCorruption(err, errorCodeWebhookDecode,
 			"parse "+string(eventType)+" occurred_at")
 	}
 
@@ -481,7 +481,7 @@ func (e *WebhookEvent) TransferRefund() (*TransferRefundData, error) {
 	if payload.Resource.RefundAmount == nil || payload.Resource.RefundCurrency == "" {
 		return nil, errorfamily.WrapCorruption(
 			errTransferRefundAmountMissing,
-			"wise.webhook.decode",
+			errorCodeWebhookDecode,
 			"decode transfers#refund payload",
 		)
 	}

@@ -12,8 +12,8 @@ Completed work lives in [CHANGELOG.md](CHANGELOG.md), never here.
 Of the 19:45 plan: M1/M2/M3/M5/M6/M7/M8/M9/M10/M15 ALL shipped 2026-10-16
 (typed webhook payloads + originator transfers landed 21:16-21:44;
 46-method surface, count claims synced `41b09dc`; art-dupl CI job
-scaffolded `cb7b271`). Remaining: M4 live smoke (user key), M12 SCA/OTP
-README matrix (plan task M14), M13 remainder (2027Q1 path triage → plan
+scaffolded `cb7b271`). M12 SCA/OTP README matrix landed too (`703d80a`).
+Remaining: M4 live smoke (user key), M13 remainder (2027Q1 path triage → plan
 task M10), M14 smoke-harness decision (plan task M18), plus the v0.14.0
 release close (plan tasks M1-M3) and CI resurrection (plan task M4).
 Source: transfer-category re-audit
@@ -100,39 +100,19 @@ Source: `docs/status/archived/2026-10-07_03-57_session-status-unblocked-prep-rel
 
 ### Open
 
-[ ] Build an anchor-check gate (`nix run .#anchor-check`): extract every
-`*.go:NN` reference from README/FEATURES/TODO_LIST/ROADMAP and assert the
-cited line still contains the claimed symbol; run the repo-wide sweep and fix
-the drifts it finds. doc-verify gates counts, not line anchors — this class
-rots silently (8 dead anchors found 2026-10-16, more re-drifted the same
-evening). Source: `docs/status/2026-10-16_20-41_samber-do-premise-review-and-health-findings.md` §f6/§f7.
-
-[ ] Harden `spec_drift.py`: add an extraction-floor guard (fail when the
-extracted endpoint count diverges from the expected surface), set
-`PYTHONDONTWRITEBYTECODE=1` in the flake app, and triage the 16 added 2027Q1
+[ ] Harden `spec_drift.py` — REMAINDER: triage the 16 added 2027Q1
 paths into the FEATURES.md matrix (payment-instruments, settlement/
 allocations, saml2, simulation/*, gpi-tracking, cases/files, login/saml2/sso,
 plus the `/auth/jose/playground/jwsjwe` method change). Longer arc: rewrite
 the regex extractor on stdlib `go/parser` (kills the call-shape-bug class).
-Source: `docs/status/2026-10-16_19-48_wise-api-spec-drift-check-session.md` §f.
+DONE 2026-10-16: extraction-floor guard (fail below 40 resolved endpoints,
+negative-tested at 44) and `PYTHONDONTWRITEBYTECODE=1` in the flake app
+(recorded in CHANGELOG). Source: `docs/status/2026-10-16_19-48_wise-api-spec-drift-check-session.md` §f.
 
 [ ] Persist negative-scenario tests for the two Python gates
 (`scripts/pin_sync.py`, `scripts/spec_drift.py`) — crafted stale-pin /
 removed-path / broken-JSON fixtures wired into flake checks; both scripts are
 currently verified by manual gauntlets only.
-
-[ ] Add a minimal `.markdownlint.json` (MD013 off) so on-demand markdownlint
-runs surface real issues (broken references, duplicate headings) without
-fighting the repo's long-line style; dprint stays the formatter.
-
-[ ] Single-source the coverage floor (flake.nix and ci.yml read one value, or
-generate ci.yml's from flake.nix) — the parity check guards the split brain;
-eliminate it. Source: 2026-10-11 19:20 session §e4/§f5.
-
-[ ] Build a linter-allowlist check: the enabled-linters set in
-`.golangci.yml` must match a pinned allowlist, making the curated-list policy
-a gate instead of memory (`lll` was auto-re-added twice on 2026-10-16 alone).
-Source: `docs/status/2026-10-16_08-52_todo-execution...md` §f18.
 
 [ ] Cut a fresh benchstat baseline at the next release tag — the committed
 one predates `BenchmarkParseWiseTimestamp` and ends with a junk
@@ -159,13 +139,14 @@ devShell — install with `go install golang.org/x/perf/cmd/benchstat@latest`.
 executor), and/or add a `VerifyCredentials` alias if any consumer depends on
 the current retried semantics; consider a `HealthCheck(ctx)` name-alias so
 consumer `do.HealthcheckerWithContext` containers satisfy the interface
-directly. Also extend the `wise_test.go` `Describe("Health")` context to pin
-the typed-error distinction (429 → `*RateLimitError` proves reachability;
-bad key → `*AuthError`). A true cheap liveness probe additionally needs
+directly. A true cheap liveness probe additionally needs
 an endpoint choice verified against the live API (no ping/health endpoint is
-documented in the vendored snapshot). The docs-half (godoc + README +
-FEATURES wording) shipped 2026-10-16; the optional consumer-side DI recipe
-(README vs `docs/recipes/`) is also yours to place.
+documented in the vendored snapshot). SHIPPED 2026-10-16: the docs-half
+(godoc + README + FEATURES wording), the `Describe("Health")` typed-error
+contract tests (429 → `*RateLimitError`, bad key → `*AuthError`, retry-
+exhausted 5xx → `*ServerError`), and the consumer-side DI recipe (README
+"Dependency Injection & Health Checks", compile-verified vs v0.13.0 +
+master). Remaining is the code-half ONLY.
 **BLOCKED: user design decision.** Source: 2026-10-16 samber/do + health
 architecture review, finding F-1; `docs/architecture-understanding/2026-10-16_19-59_samber-do-health-architecture-review.md`.
 

@@ -323,7 +323,7 @@ func (c *Client) request(
 		if err := jsonDecode(resp, target); err != nil {
 			return errorfamily.WrapCorruption(
 				err,
-				"wise.response.decode",
+				errorCodeResponseDecode,
 				"decode response from "+fullURL,
 			)
 		}

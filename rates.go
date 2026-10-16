@@ -23,21 +23,21 @@ func (c *Client) GetExchangeRate(
 ) (*ExchangeRate, error) {
 	if source == "" {
 		return nil, errorfamily.NewRejection(
-			"wise.rates.invalid_request",
+			errorCodeRatesInvalidRequest,
 			"source currency is required",
 		)
 	}
 
 	if target == "" {
 		return nil, errorfamily.NewRejection(
-			"wise.rates.invalid_request",
+			errorCodeRatesInvalidRequest,
 			"target currency is required",
 		)
 	}
 
 	if source == target {
 		return nil, errorfamily.NewRejection(
-			"wise.rates.invalid_request",
+			errorCodeRatesInvalidRequest,
 			"source and target currency must be different",
 		)
 	}
@@ -102,7 +102,7 @@ func decodeExchangeRates(
 	if len(rates) == 0 {
 		return raw.ExchangeRate{}, errorfamily.WrapCorruption(
 			errEmptyRateList,
-			"wise.rates.empty_response",
+			errorCodeRatesEmptyResponse,
 			fmt.Sprintf("no rates for %s-%s", source, target),
 		)
 	}
@@ -122,7 +122,7 @@ func mapExchangeRate(r raw.ExchangeRate) (*ExchangeRate, error) {
 	if err != nil {
 		return nil, errorfamily.WrapCorruption(
 			err,
-			"wise.rates.parse_time",
+			errorCodeRatesParseTime,
 			fmt.Sprintf("parse time %q", r.Time),
 		)
 	}
@@ -131,7 +131,7 @@ func mapExchangeRate(r raw.ExchangeRate) (*ExchangeRate, error) {
 	if err != nil {
 		return nil, errorfamily.WrapCorruption(
 			err,
-			"wise.rates.parse_source",
+			errorCodeRatesParseSource,
 			fmt.Sprintf("source currency %q", r.Source),
 		)
 	}
@@ -140,7 +140,7 @@ func mapExchangeRate(r raw.ExchangeRate) (*ExchangeRate, error) {
 	if err != nil {
 		return nil, errorfamily.WrapCorruption(
 			err,
-			"wise.rates.parse_target",
+			errorCodeRatesParseTarget,
 			fmt.Sprintf("target currency %q", r.Target),
 		)
 	}

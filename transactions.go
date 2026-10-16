@@ -81,7 +81,7 @@ func mapTransaction(
 ) (Transaction, error) {
 	date, err := parseWiseTimestamp(t.Date)
 	if err != nil {
-		return Transaction{}, errorfamily.WrapCorruption(err, "wise.transaction.parse_date",
+		return Transaction{}, errorfamily.WrapCorruption(err, errorCodeTransactionParseDate,
 			fmt.Sprintf("parse date %q for profileID=%d balanceID=%d currency=%s",
 				t.Date, profileID.Get(), balanceID.Get(), currency))
 	}
@@ -235,7 +235,7 @@ func creditOrDebit(totalCents int64) TransactionType {
 	return TransactionTypeDebit
 }
 
-const invalidRequestCode = "wise.transactions.invalid_request"
+const invalidRequestCode = errorCodeTransactionsInvalidRequest
 
 // validate checks the request for client-side errors before hitting the API,
 // failing fast with a clear rejection instead of an opaque API error.

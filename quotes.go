@@ -64,11 +64,11 @@ func (c *Client) GetQuote(
 	quoteID QuoteID,
 ) (*Quote, error) {
 	// art-dupl:accept paired requireID guards and the per-endpoint path literal are the deliberate two-idiom validation convention; an abstraction would take more parameters than it saves lines
-	if err := requireID(profileID, "wise.quote.invalid_request", "profileID"); err != nil {
+	if err := requireID(profileID, errorCodeQuoteInvalidRequest, "profileID"); err != nil {
 		return nil, err
 	}
 
-	if err := requireID(quoteID, "wise.quote.invalid_request", "quoteID"); err != nil {
+	if err := requireID(quoteID, errorCodeQuoteInvalidRequest, "quoteID"); err != nil {
 		return nil, err
 	}
 
@@ -96,7 +96,7 @@ func (c *Client) GetQuoteAccountRequirements(
 	ctx context.Context,
 	req QuoteAccountRequirementsRequest,
 ) ([]AccountRequirement, error) {
-	if err := requireID(req.QuoteID, "wise.quote.invalid_request", "quoteID"); err != nil {
+	if err := requireID(req.QuoteID, errorCodeQuoteInvalidRequest, "quoteID"); err != nil {
 		return nil, err
 	}
 
@@ -205,27 +205,27 @@ func (c *Client) quoteAccountRequirements(
 }
 
 func (r RefreshQuoteAccountRequirementsRequest) validate() error {
-	if err := requireID(r.QuoteID, "wise.quote.invalid_request", "quoteID"); err != nil {
+	if err := requireID(r.QuoteID, errorCodeQuoteInvalidRequest, "quoteID"); err != nil {
 		return err
 	}
 
 	if r.Recipient.Currency == "" {
 		return errorfamily.NewRejection(
-			"wise.recipient.invalid_request",
+			errorCodeRecipientInvalidRequest,
 			"recipient currency is required",
 		)
 	}
 
 	if r.Recipient.Type == "" {
 		return errorfamily.NewRejection(
-			"wise.recipient.invalid_request",
+			errorCodeRecipientInvalidRequest,
 			"recipient type is required",
 		)
 	}
 
 	if len(r.Recipient.Details) == 0 {
 		return errorfamily.NewRejection(
-			"wise.recipient.invalid_request",
+			errorCodeRecipientInvalidRequest,
 			"recipient details are required (at least the field that triggered the refresh)",
 		)
 	}
@@ -265,7 +265,7 @@ func (r CreateQuoteRequest) validate() error {
 }
 
 func (r CreateQuoteRequest) validateAuthenticated(profileID ProfileID) error {
-	if err := requireID(profileID, "wise.quote.invalid_request", "profileID"); err != nil {
+	if err := requireID(profileID, errorCodeQuoteInvalidRequest, "profileID"); err != nil {
 		return err
 	}
 
@@ -275,49 +275,49 @@ func (r CreateQuoteRequest) validateAuthenticated(profileID ProfileID) error {
 func (r CreateQuoteRequest) validateCommon() error {
 	if r.SourceCurrency == "" {
 		return errorfamily.NewRejection(
-			"wise.quote.invalid_request",
+			errorCodeQuoteInvalidRequest,
 			"sourceCurrency is required",
 		)
 	}
 
 	if r.TargetCurrency == "" {
 		return errorfamily.NewRejection(
-			"wise.quote.invalid_request",
+			errorCodeQuoteInvalidRequest,
 			"targetCurrency is required",
 		)
 	}
 
 	if r.SourceCurrency == r.TargetCurrency {
 		return errorfamily.NewRejection(
-			"wise.quote.invalid_request",
+			errorCodeQuoteInvalidRequest,
 			"sourceCurrency and targetCurrency must be different",
 		)
 	}
 
 	if r.SourceAmount == nil && r.TargetAmount == nil {
 		return errorfamily.NewRejection(
-			"wise.quote.invalid_request",
+			errorCodeQuoteInvalidRequest,
 			"either sourceAmount or targetAmount is required",
 		)
 	}
 
 	if r.SourceAmount != nil && r.TargetAmount != nil {
 		return errorfamily.NewRejection(
-			"wise.quote.invalid_request",
+			errorCodeQuoteInvalidRequest,
 			"only one of sourceAmount or targetAmount may be set",
 		)
 	}
 
 	if r.SourceAmount != nil && r.SourceAmount.Currency != r.SourceCurrency {
 		return errorfamily.NewRejection(
-			"wise.quote.invalid_request",
+			errorCodeQuoteInvalidRequest,
 			"sourceAmount currency must match sourceCurrency",
 		)
 	}
 
 	if r.TargetAmount != nil && r.TargetAmount.Currency != r.TargetCurrency {
 		return errorfamily.NewRejection(
-			"wise.quote.invalid_request",
+			errorCodeQuoteInvalidRequest,
 			"targetAmount currency must match targetCurrency",
 		)
 	}
@@ -401,7 +401,7 @@ func parseQuoteCreated(quote raw.Quote) (time.Time, time.Time, error) {
 	if err != nil {
 		return time.Time{}, time.Time{}, errorfamily.WrapCorruption(
 			err,
-			"wise.quote.parse_created",
+			errorCodeQuoteParseCreated,
 			fmt.Sprintf("parse createdTime %q", quote.CreatedTime),
 		)
 	}
@@ -410,7 +410,7 @@ func parseQuoteCreated(quote raw.Quote) (time.Time, time.Time, error) {
 	if err != nil {
 		return time.Time{}, time.Time{}, errorfamily.WrapCorruption(
 			err,
-			"wise.quote.parse_expiration",
+			errorCodeQuoteParseExpiration,
 			fmt.Sprintf("parse expirationTime %q", quote.ExpirationTime),
 		)
 	}
@@ -425,7 +425,7 @@ func mapQuoteMonetary(quote raw.Quote) (Money, Money, error) {
 	if err != nil {
 		return Money{}, Money{}, errorfamily.WrapCorruption(
 			err,
-			"wise.quote.parse_source_currency",
+			errorCodeQuoteParseSourceCurrency,
 			fmt.Sprintf("source currency %q", quote.SourceCurrency),
 		)
 	}
@@ -434,7 +434,7 @@ func mapQuoteMonetary(quote raw.Quote) (Money, Money, error) {
 	if err != nil {
 		return Money{}, Money{}, errorfamily.WrapCorruption(
 			err,
-			"wise.quote.parse_target_currency",
+			errorCodeQuoteParseTargetCurrency,
 			fmt.Sprintf("target currency %q", quote.TargetCurrency),
 		)
 	}
@@ -455,7 +455,7 @@ func mapQuotePaymentOptions(options []raw.QuotePaymentOption) ([]QuotePaymentOpt
 		if err != nil {
 			return nil, errorfamily.WrapCorruption(
 				err,
-				"wise.quote.parse_payment_option_delivery",
+				errorCodeQuoteParsePaymentOptionDelivery,
 				fmt.Sprintf("parse estimatedDelivery %q", option.EstimatedDelivery),
 			)
 		}
@@ -464,7 +464,7 @@ func mapQuotePaymentOptions(options []raw.QuotePaymentOption) ([]QuotePaymentOpt
 		if err != nil {
 			return nil, errorfamily.WrapCorruption(
 				err,
-				"wise.quote.parse_payment_option_source",
+				errorCodeQuoteParsePaymentOptionSource,
 				fmt.Sprintf("payment option source currency %q", option.SourceCurrency),
 			)
 		}
@@ -473,7 +473,7 @@ func mapQuotePaymentOptions(options []raw.QuotePaymentOption) ([]QuotePaymentOpt
 		if err != nil {
 			return nil, errorfamily.WrapCorruption(
 				err,
-				"wise.quote.parse_payment_option_target",
+				errorCodeQuoteParsePaymentOptionTarget,
 				fmt.Sprintf("payment option target currency %q", option.TargetCurrency),
 			)
 		}

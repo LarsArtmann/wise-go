@@ -41,11 +41,11 @@ func (c *Client) ValidateTransferRequirements(
 }
 
 func (r ValidateTransferRequirementsRequest) validate() error {
-	if err := requireID(r.TargetAccount, "wise.transfer.invalid_request", "targetAccount"); err != nil {
+	if err := requireID(r.TargetAccount, errorCodeTransferInvalidRequest, "targetAccount"); err != nil {
 		return err
 	}
 
-	if err := requireID(r.QuoteID, "wise.transfer.invalid_request", "quoteUuid"); err != nil {
+	if err := requireID(r.QuoteID, errorCodeTransferInvalidRequest, "quoteUuid"); err != nil {
 		return err
 	}
 

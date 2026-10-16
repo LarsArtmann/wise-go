@@ -25,7 +25,7 @@ func (c *Client) ListRecipients(
 	ctx context.Context,
 	req ListRecipientsRequest,
 ) ([]Recipient, error) {
-	if err := requireID(req.ProfileID, "wise.recipient.invalid_request", "profileID"); err != nil {
+	if err := requireID(req.ProfileID, errorCodeRecipientInvalidRequest, "profileID"); err != nil {
 		return nil, err
 	}
 
@@ -74,7 +74,7 @@ func (c *Client) listRecipientsPage(
 	for _, r := range recipients {
 		mapped, mapErr := mapRecipient(r)
 		if mapErr != nil {
-			return nil, errorfamily.WrapCorruption(mapErr, "wise.recipient.map",
+			return nil, errorfamily.WrapCorruption(mapErr, errorCodeRecipientMap,
 				fmt.Sprintf("map recipient %d", r.ID))
 		}
 
@@ -90,7 +90,7 @@ func (c *Client) GetRecipient(ctx context.Context, recipientID RecipientID) (*Re
 
 	var recipient raw.Recipient
 
-	if err := fetchByID(ctx, c, recipientID, "recipient", path, &recipient); err != nil {
+	if err := fetchByID(ctx, c, recipientID, "recipient", errorCodeRecipientInvalidRequest, path, &recipient); err != nil {
 		return nil, err
 	}
 
@@ -129,34 +129,34 @@ func (c *Client) CreateRecipient(
 }
 
 func (r CreateRecipientRequest) validate() error {
-	if err := requireID(r.ProfileID, "wise.recipient.invalid_request", "profileID"); err != nil {
+	if err := requireID(r.ProfileID, errorCodeRecipientInvalidRequest, "profileID"); err != nil {
 		return err
 	}
 
 	if r.Currency == "" {
 		return errorfamily.NewRejection(
-			"wise.recipient.invalid_request",
+			errorCodeRecipientInvalidRequest,
 			"currency is required",
 		)
 	}
 
 	if r.AccountHolderName == "" {
 		return errorfamily.NewRejection(
-			"wise.recipient.invalid_request",
+			errorCodeRecipientInvalidRequest,
 			"accountHolderName is required",
 		)
 	}
 
 	if r.Type == "" {
 		return errorfamily.NewRejection(
-			"wise.recipient.invalid_request",
+			errorCodeRecipientInvalidRequest,
 			"type is required",
 		)
 	}
 
 	if len(r.Details) == 0 {
 		return errorfamily.NewRejection(
-			"wise.recipient.invalid_request",
+			errorCodeRecipientInvalidRequest,
 			"details are required",
 		)
 	}
@@ -186,7 +186,7 @@ func mapRecipient(r raw.Recipient) (Recipient, error) {
 	if err != nil {
 		return Recipient{}, errorfamily.WrapCorruption(
 			err,
-			"wise.recipient.parse_currency",
+			errorCodeRecipientParseCurrency,
 			fmt.Sprintf("currency %q", r.Currency),
 		)
 	}

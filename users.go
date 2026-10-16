@@ -66,7 +66,7 @@ func (c *Client) GetMe(ctx context.Context) (*User, error) {
 func (c *Client) GetUser(ctx context.Context, userID UserID) (*User, error) {
 	var user raw.User
 
-	if err := fetchByID(ctx, c, userID, "user",
+	if err := fetchByID(ctx, c, userID, "user", errorCodeUserInvalidRequest,
 		fmt.Sprintf("/v1/users/%d", userID.Get()), &user); err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func mapUser(user raw.User) (User, error) {
 	if err != nil {
 		return User{}, errorfamily.WrapCorruption(
 			err,
-			"wise.user.parse_date_of_birth",
+			errorCodeUserParseDateOfBirth,
 			fmt.Sprintf("parse dateOfBirth %q", user.Detail.DateOfBirth),
 		)
 	}

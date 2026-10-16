@@ -35,7 +35,7 @@ func (c *Client) GetDeliveryEstimate(
 	transferID TransferID,
 	timezone string,
 ) (*DeliveryEstimate, error) {
-	if err := requireID(transferID, "wise.transfer.invalid_request", "transferID"); err != nil {
+	if err := requireID(transferID, errorCodeTransferInvalidRequest, "transferID"); err != nil {
 		return nil, err
 	}
 
@@ -69,7 +69,7 @@ func mapDeliveryEstimate(estimate rawDeliveryEstimate) (*DeliveryEstimate, error
 	if err != nil {
 		return nil, errorfamily.WrapCorruption(
 			err,
-			"wise.delivery_estimate.parse_date",
+			errorCodeDeliveryEstimateParseDate,
 			fmt.Sprintf("parse estimatedDeliveryDate %q", estimate.EstimatedDeliveryDate),
 		)
 	}

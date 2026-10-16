@@ -64,11 +64,11 @@ func (c *Client) GetBalance(
 	balanceID BalanceID,
 ) (*Balance, error) {
 	// art-dupl:accept paired requireID guards and the per-endpoint path literal are the deliberate two-idiom validation convention; an abstraction would take more parameters than it saves lines
-	if err := requireID(profileID, "wise.balance.invalid_request", "profileID"); err != nil {
+	if err := requireID(profileID, errorCodeBalanceInvalidRequest, "profileID"); err != nil {
 		return nil, err
 	}
 
-	if err := requireID(balanceID, "wise.balance.invalid_request", "balanceID"); err != nil {
+	if err := requireID(balanceID, errorCodeBalanceInvalidRequest, "balanceID"); err != nil {
 		return nil, err
 	}
 
@@ -152,23 +152,23 @@ func (c *Client) CreateBalance(ctx context.Context, req CreateBalanceRequest) (*
 }
 
 func (r CreateBalanceRequest) validate() error {
-	if err := requireID(r.ProfileID, "wise.balance.invalid_request", "profileID"); err != nil {
+	if err := requireID(r.ProfileID, errorCodeBalanceInvalidRequest, "profileID"); err != nil {
 		return err
 	}
 
 	if _, err := NewCurrency(string(r.Currency)); err != nil {
-		return errorfamily.NewRejection("wise.balance.invalid_request", "currency is required")
+		return errorfamily.NewRejection(errorCodeBalanceInvalidRequest, "currency is required")
 	}
 
 	if r.Type != BalanceTypeStandard && r.Type != BalanceTypeSavings {
 		return errorfamily.NewRejection(
-			"wise.balance.invalid_request",
+			errorCodeBalanceInvalidRequest,
 			"type must be BalanceTypeStandard or BalanceTypeSavings",
 		)
 	}
 
 	if r.Type == BalanceTypeSavings && r.Name == "" {
-		return errorfamily.NewRejection("wise.balance.invalid_request", "name is required for savings balances")
+		return errorfamily.NewRejection(errorCodeBalanceInvalidRequest, "name is required for savings balances")
 	}
 
 	return nil
@@ -197,12 +197,12 @@ func (c *Client) GetTotalFunds(
 	profileID ProfileID,
 	currency Currency,
 ) (*TotalFunds, error) {
-	if err := requireID(profileID, "wise.total_funds.invalid_request", "profileID"); err != nil {
+	if err := requireID(profileID, errorCodeTotalFundsInvalidRequest, "profileID"); err != nil {
 		return nil, err
 	}
 
 	if _, err := NewCurrency(string(currency)); err != nil {
-		return nil, errorfamily.NewRejection("wise.total_funds.invalid_request", "currency is required")
+		return nil, errorfamily.NewRejection(errorCodeTotalFundsInvalidRequest, "currency is required")
 	}
 
 	path := fmt.Sprintf("/v4/profiles/%d/total-funds/%s", profileID.Get(), string(currency))
@@ -231,7 +231,7 @@ func mapBalance(b raw.Balance) (Balance, error) {
 	if err != nil {
 		return Balance{}, errorfamily.WrapCorruption(
 			err,
-			"wise.balance.parse_creation_time",
+			errorCodeBalanceParseCreationTime,
 			fmt.Sprintf("parse creation_time %q", b.CreationTime),
 		)
 	}
@@ -240,7 +240,7 @@ func mapBalance(b raw.Balance) (Balance, error) {
 	if err != nil {
 		return Balance{}, errorfamily.WrapCorruption(
 			err,
-			"wise.balance.parse_type",
+			errorCodeBalanceParseType,
 			fmt.Sprintf("parse type %q", b.Type),
 		)
 	}
@@ -249,7 +249,7 @@ func mapBalance(b raw.Balance) (Balance, error) {
 	if err != nil {
 		return Balance{}, errorfamily.WrapCorruption(
 			err,
-			"wise.balance.parse_currency",
+			errorCodeBalanceParseCurrency,
 			fmt.Sprintf("currency %q", b.Currency),
 		)
 	}

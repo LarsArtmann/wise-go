@@ -38,7 +38,7 @@ type OneTimeToken string
 // credential must never be silently trimmed.
 func NewOneTimeToken(value string) (OneTimeToken, error) {
 	if strings.TrimSpace(value) == "" {
-		return "", errorfamily.NewRejection("wise.ott.invalid_request",
+		return "", errorfamily.NewRejection(errorCodeOTTInvalidRequest,
 			"one-time token is required — the OTT issued in the x-2fa-approval header "+
 				"of the SCA challenge")
 	}
@@ -250,7 +250,7 @@ func (c *Client) TriggerOTT(ctx context.Context, ott OneTimeToken, channel OTTCh
 	}
 
 	if !isPhoneChannel(channel) {
-		return nil, errorfamily.NewRejection("wise.ott.invalid_request",
+		return nil, errorfamily.NewRejection(errorCodeOTTInvalidRequest,
 			fmt.Sprintf("channel must be one of sms, whatsapp, voice — got %q", channel))
 	}
 
@@ -282,7 +282,7 @@ func (c *Client) VerifyOTT(
 
 	if !isPhoneChannel(channel) {
 		return nil, errorfamily.NewRejection(
-			"wise.ott.invalid_request",
+			errorCodeOTTInvalidRequest,
 			fmt.Sprintf(
 				"channel must be one of sms, whatsapp, voice — got %q",
 				channel,
@@ -291,7 +291,7 @@ func (c *Client) VerifyOTT(
 	}
 
 	if otpCode == "" {
-		return nil, errorfamily.NewRejection("wise.ott.invalid_request",
+		return nil, errorfamily.NewRejection(errorCodeOTTInvalidRequest,
 			"otpCode is required — trigger the challenge first and submit the code it delivered")
 	}
 
@@ -326,7 +326,7 @@ func (c *Client) ClearSCAChallenge(
 	code OTTCodeProvider,
 ) (*OTTStatus, error) {
 	if code == nil {
-		return nil, errorfamily.NewRejection("wise.ott.invalid_request",
+		return nil, errorfamily.NewRejection(errorCodeOTTInvalidRequest,
 			"code provider is required — ClearSCAChallenge needs the OTP only the user can supply")
 	}
 
@@ -367,7 +367,7 @@ func (c *Client) ClearSCAChallenge(
 		}
 	}
 
-	return nil, errorfamily.NewRejection("wise.ott.uncleared",
+	return nil, errorfamily.NewRejection(errorCodeOTTUncleared,
 		fmt.Sprintf("one-time token still has required challenges after %d verify rounds — "+
 			"inspect the status with GetOTTStatus and clear the rest manually", maxOTTClearRounds))
 }
@@ -383,7 +383,7 @@ func rejectionUnsupportedChallenge(challenge OTTChallenge, channel OTTChannel) *
 		types = append(types, string(alt.Type))
 	}
 
-	return errorfamily.NewRejection("wise.ott.channel_unsupported",
+	return errorfamily.NewRejection(errorCodeOTTChannelUnsupported,
 		fmt.Sprintf("challenge of type %s cannot be cleared over the %s channel "+
 			"(available for this challenge: %v) — clear it in the Wise web app by viewing a statement, "+
 			"or verify a different channel",
@@ -393,7 +393,7 @@ func rejectionUnsupportedChallenge(challenge OTTChallenge, channel OTTChannel) *
 // requireOTT rejects an absent one-time token before any request is made.
 func requireOTT(ott OneTimeToken) error {
 	if ott.IsZero() {
-		return errorfamily.NewRejection("wise.ott.invalid_request",
+		return errorfamily.NewRejection(errorCodeOTTInvalidRequest,
 			"ott is required — the one-time token issued in the x-2fa-approval header of the SCA challenge")
 	}
 
@@ -410,7 +410,7 @@ func toOTTStatus(response raw.OTTResponse) (*OTTStatus, error) {
 	for _, wire := range properties.Challenges {
 		alternatives, err := parseOTTAlternatives(wire.Alternatives)
 		if err != nil {
-			return nil, errorfamily.WrapCorruption(err, "wise.ott.decode",
+			return nil, errorfamily.WrapCorruption(err, errorCodeOTTDecode,
 				"decode one-time-token challenges")
 		}
 

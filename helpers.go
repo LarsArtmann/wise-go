@@ -34,10 +34,11 @@ func fetchByID[T any, B any, V comparable](
 	client *Client,
 	identifier id.ID[B, V],
 	resource string,
+	invalidRequestCode string,
 	path string,
 	target *T,
 ) error {
-	if err := requireID(identifier, "wise."+resource+".invalid_request", resource+"ID"); err != nil {
+	if err := requireID(identifier, invalidRequestCode, resource+"ID"); err != nil {
 		return err
 	}
 
@@ -54,7 +55,7 @@ func fetchByID[T any, B any, V comparable](
 func toMoney(a raw.BalanceAmount) (Money, error) {
 	currency, err := NewCurrency(a.Currency)
 	if err != nil {
-		return Money{}, errorfamily.WrapCorruption(err, "wise.money.parse", fmt.Sprintf("currency %q", a.Currency))
+		return Money{}, errorfamily.WrapCorruption(err, errorCodeMoneyParse, fmt.Sprintf("currency %q", a.Currency))
 	}
 
 	return Money{Cents: a.Cents(), Currency: currency}, nil
