@@ -212,7 +212,7 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 | ------ | ----------------------------------------------------------------- | ---------------- | ------------------------------------------------------ |
 | POST   | `/2026Q4/profiles/{id}/subscriptions`                             | FULLY_FUNCTIONAL | `CreateProfileWebhookSubscription` (`webhooks.go:90`)  |
 | GET    | `/2026Q4/profiles/{id}/subscriptions`                             | FULLY_FUNCTIONAL | `ListProfileWebhookSubscriptions` (`webhooks.go:117`)  |
-| GET    | `/2026Q4/profiles/{id}/subscriptions/{id}`                        | FULLY_FUNCTIONAL | `GetProfileWebhookSubscription` (`webhooks.go:149`)    |
+| GET    | `/2026Q4/profiles/{id}/subscriptions/{id}`                        | FULLY_FUNCTIONAL | `GetProfileWebhookSubscription` (`webhooks.go:156`)    |
 | DELETE | `/2026Q4/profiles/{id}/subscriptions/{id}`                        | FULLY_FUNCTIONAL | `DeleteProfileWebhookSubscription` (`webhooks.go:178`) |
 | POST   | `/applications/{clientKey}/subscriptions`                         | ON_HOLD          | app-level scope decision pending (ROADMAP.md Axis 1)   |
 | GET    | `/applications/{clientKey}/subscriptions`                         | ON_HOLD          | app-level scope decision pending                       |
@@ -352,9 +352,9 @@ the plan; bulk payments only on a consumer demand signal).
 | ----------------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------- |
 | Branded `ProfileID` / `BalanceID`                     | FULLY_FUNCTIONAL | `ids.go:32,38`; phantom types prevent entity-ID mixing at compile time                    |
 | Branded `TransactionID`                               | FULLY_FUNCTIONAL | `ids.go:41`                                                                               |
-| `Money` value object (`Cents` + `Currency`)           | FULLY_FUNCTIONAL | `types.go:59`; paired cents/currency makes mismatch unrepresentable                       |
-| `Currency` branded type with ISO 4217 validation      | FULLY_FUNCTIONAL | `types.go:39` `NewCurrency`; validates 3-letter uppercase ASCII                           |
-| Two-layer raw/result split (`internal/raw` boundary)  | FULLY_FUNCTIONAL | Wire types in `internal/raw/types.go`; parsed types in `types.go`; `helpers.go:47` bridge |
+| `Money` value object (`Cents` + `Currency`)           | FULLY_FUNCTIONAL | `types.go:65`; paired cents/currency makes mismatch unrepresentable                       |
+| `Currency` branded type with ISO 4217 validation      | FULLY_FUNCTIONAL | `types.go:49` `NewCurrency`; validates 3-letter uppercase ASCII                           |
+| Two-layer raw/result split (`internal/raw` boundary)  | FULLY_FUNCTIONAL | Wire types in `internal/raw/types.go`; parsed types in `types.go`; `helpers.go:54` bridge |
 | `ProfileType`, `BalanceType`, `TransactionType` enums | FULLY_FUNCTIONAL | `types.go:139,147,164`                                                                    |
 | `InvestmentState` typed enum                          | FULLY_FUNCTIONAL | `types.go:155`; used for balance filtering (`balances.go:43`)                             |
 | `DetailType` typed enum + constants                   | FULLY_FUNCTIONAL | `transactions.go:159`; typed filter for `ListTransactionsRequest.Type`                    |

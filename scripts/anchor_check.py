@@ -50,13 +50,19 @@ def find_go_file(repo: Path, rel: str) -> Path | None:
 
 def locate_symbol(text: str, symbol: str) -> int | None:
     pattern = re.compile(rf"\b{re.escape(symbol)}\b")
+    func_pattern = re.compile(rf"func[^(]*\b{re.escape(symbol)}\b")
+    func_hit = None
     for lineno, line in enumerate(text.splitlines(), start=1):
+        if func_hit is None and func_pattern.search(line):
+            func_hit = lineno
+        if func_hit is not None:
+            break
         if pattern.search(line):
             return lineno
-    return None
+    return func_hit
 
 
-def check_anchor(repo: Path, doc: Path, match: re.Match, line_no: int) -> str | None:
+def check_anchor(repo: Path, doc: Path, line: str, match: re.Match, line_no: int) -> str | None:
     rel, num = match.group(1), int(match.group(2))
     go_file = find_go_file(repo, rel)
     if go_file is None:
@@ -66,8 +72,7 @@ def check_anchor(repo: Path, doc: Path, match: re.Match, line_no: int) -> str | 
     if not 1 <= num <= len(lines):
         return f"{doc}:{line_no}: anchor `{rel}:{num}` -- file has only {len(lines)} lines"
 
-    prefix = doc.read_text(encoding="utf-8")[: match.start()]
-    tail = prefix[-120:]
+    tail = line[: match.start()][-120:]
     symbol = SYMBOL_BEFORE_RE.search(tail)
     if symbol is None:
         cited = lines[num - 1]
@@ -119,7 +124,7 @@ def main() -> int:
                 continue
             for match in ANCHOR_RE.finditer(line):
                 anchors += 1
-                problem = check_anchor(repo, doc, match, lineno)
+                problem = check_anchor(repo, doc, line, match, lineno)
                 if problem:
                     drifts.append(problem)
 
