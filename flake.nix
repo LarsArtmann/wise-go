@@ -141,12 +141,16 @@
           pkgs.vulnix
           # Python toolchain for scripts/*.py (the new binary runs the full
           # Python provider set on this repo; without these it nix-runs each
-          # ad hoc with a "not in project devShell" warning).
+          # ad hoc with a "not in project devShell" warning). NOTE: pytest
+          # and vulture have no top-level attr in nixpkgs-unstable (removed
+          # ~2026-10); use python3Packages.* — top-level pkgs.pytest breaks
+          # the entire flake eval (live 2026-10-17: every nix-shell step
+          # died with "attribute 'pytest' missing").
           pkgs.pyupgrade
           pkgs.bandit
           pkgs.mypy
-          pkgs.pytest
-          pkgs.vulture
+          pkgs.python3Packages.pytest
+          pkgs.python3Packages.vulture
         ];
       };
 
