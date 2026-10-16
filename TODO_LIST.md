@@ -7,6 +7,18 @@ Completed work lives in [CHANGELOG.md](CHANGELOG.md), never here.
 
 ## P1 — Release readiness
 
+[ ] Error-system excellence epic — execute
+`docs/planning/2026-10-16_22-29_SUPERB-pareto-plan-error-system-excellence.md`
+(25 medium / ~108 fine tasks). Core (1% tier): `APIError.Details` structured
+envelope exposure (today `newAPIError` discards it), `WiseErrorCode` open enum
+from the spec census, curated wave-1 `errors.Is` code-sentinels via
+`APIError.Is`, `BadRequestError` (ROADMAP:276). Then: mapping-matrix tests,
+`wise_code` context key, README decision-tree guide, compile-verified snippets
+(vs v0.13.0 AND master), `docs/error-codes.md`, envelope fuzzing, conformance
+fixtures, bank-sync matching recipe, final no-regression audit. Builds on the
+2026-10-16 central catalog (57 named codes + 4 sentinels, shipped); declined
+dispositions stay declined.
+
 [ ] Execute the remaining SUPERB Pareto plan items — sequenced by
 `docs/planning/2026-10-16_21-45_SUPERB-v0.14-release-close-ci-resurrection-and-gate-hardening.md`.
 Of the 19:45 plan: M1/M2/M3/M5/M6/M7/M8/M9/M10/M15 ALL shipped 2026-10-16
