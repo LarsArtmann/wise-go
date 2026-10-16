@@ -27,6 +27,17 @@ tool_options:
   art-dupl:
     threshold: 15
 
+  # branching-flow's pipeline path runs IN-PROCESS (toolsdk Detect) and
+  # never reads .branching-flow.yml — that file is honored by the CLI only
+  # (verified 2026-10-17: standalone CLI = 0 findings, embedded step = 64).
+  # The embedded path takes rules via this option instead; values must be
+  # EXACT rule IDs (the filter is exact-match, see .branching-flow.yml).
+  # Dispositions: the two-layer wire/public type design and the
+  # polymorphic account-identification ID spaces fire these classes by
+  # construction (AGENTS.md).
+  branching-flow:
+    disabled_rules: "duplicate_type,composition_mixin,anti_pattern_large-struct"
+
 skip_steps:
   # go-auto-upgrade cannot act in this repo by policy, so its 20 findings
   # are permanent noise: (a) the jsonv1tov2 migrations require a go >= 1.27
