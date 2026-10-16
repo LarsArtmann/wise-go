@@ -188,7 +188,9 @@ contract tests (429 → `*RateLimitError`, bad key → `*AuthError`, retry-
 exhausted 5xx → `*ServerError`), and the consumer-side DI recipe (README
 "Dependency Injection & Health Checks", compile-verified vs v0.13.0 +
 master). Remaining is the code-half ONLY.
-**BLOCKED: user design decision.** Source: 2026-10-16 samber/do + health
+**BLOCKED: user design decision.** Recommendation + options written:
+`docs/planning/2026-10-16_decision-memos.md` D2 (suggests additive
+`VerifyCredentials` in v1.1, no `Health` behavior change). Source: 2026-10-16 samber/do + health
 architecture review, finding F-1; `docs/architecture-understanding/2026-10-16_19-59_samber-do-health-architecture-review.md`.
 
 [ ] Spec-drift gate posture — decide whether `--fail-on-drift` should be
@@ -197,7 +199,9 @@ spec; today vendored-snapshot staleness is report-only) and where spec-drift
 recurs while CI is disabled (scheduled local run, buildflow step, or
 manual-before-release). Source:
 `docs/status/2026-10-16_19-48_wise-api-spec-drift-check-session.md` §g2/§g3.
-**BLOCKED: user decision.**
+**BLOCKED: user decision.** Recommendation + options written:
+`docs/planning/2026-10-16_decision-memos.md` D3 (keep pre-release
+report-only; wire `--fail-on-drift` into a scheduled job once CI runs).
 
 [ ] Flake pinning strategy — keep `?rev=<commit-sha>` inputs (the hermetic
 `checks.pin-sync` asserts structural invariants only; the network
@@ -205,6 +209,8 @@ manual-before-release). Source:
 switch to version-tag refs (`github:LarsArtmann/go-retry/v0.7.1`, flake.lock
 still pinning the immutable commit) so the hermetic check can catch version
 drift offline. Reverses the documented rev-pinned decision — user call.
+Recommendation + options written: `docs/planning/2026-10-16_decision-memos.md` D4
+(keep rev pins; tag pins hide drift behind the lock).
 Source: `docs/status/2026-10-07_08-22_v0.13.0-release-pin-sync-drift-discovery-status.md` §g1.
 **BLOCKED: user decision.**
 
@@ -212,9 +218,10 @@ Source: `docs/status/2026-10-07_08-22_v0.13.0-release-pin-sync-drift-discovery-s
 aarch64-darwin evaluate clean; x86_64-darwin FAILS EXTERNALLY (nixpkgs-26.11
 dropped that system, not a flake bug). Decide: pin a nixpkgs-26.05-darwin
 input for darwin checks, or drop x86_64-darwin from the check matrix.
-**BLOCKED: user decision.**
-
-[ ] Go 1.27 migration — plan written at
+**BLOCKED: user decision.** Recommendation + options written:
+`docs/planning/2026-10-16_decision-memos.md` D5 (drop x86_64-darwin;
+reversible one-liner if a consumer appears) — also ask #7 in
+`docs/planning/2026-10-16_open-user-asks.md`.
 `docs/planning/2026-10-07_go-1.27-migration-plan.md` (4 unlock conditions,
 single-commit flip/rollback). Condition-1 probe 2026-10-07: `nix eval
 nixpkgs#go.version` = 1.26.8 → not met. Execution is blocked on those

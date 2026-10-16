@@ -4,6 +4,12 @@
 **Author:** Research session\
 **Sources:** wise-go source code analysis + [Wise Open Banking docs](https://docs.wise.com/guides/developer/open-banking) + [Production OIDC config](https://wise.com/openbanking/.well-known/openid-configuration)
 
+**Point-in-time note (2026-10-16):** this comparison is a snapshot against
+the wise-go surface and Wise's open-banking docs as of 2026-08-08; the SDK
+has since grown (46 methods, v0.14.0) and Wise's API reference rolls
+quarterly (vendored spec at 2026Q3, live at 2027Q1). Re-verify any
+capability gap against the live preview reference before acting on it.
+
 ---
 
 ## Executive Summary
