@@ -470,6 +470,11 @@ func TestSpecConformanceValidatorCanFail(t *testing.T) {
 	}
 }
 
+// granularRatesEnvelope is the two-code error envelope the granular-code
+// fixture serves on the examples-only rates 400.
+const granularRatesEnvelope = `{"errors":[{"code":"parameter_missing","message":"source is required"},` +
+	`{"code":"not.valid","message":"amount is invalid"}]}`
+
 // TestSpecConformanceErrorEnvelopeValidation pins the error-body validation
 // boundary of the conformance gate:
 //   - where the snapshot declares a real 4xx schema (the problem-details
@@ -495,6 +500,7 @@ func TestSpecConformanceErrorEnvelopeValidation(t *testing.T) {
 	})
 
 	armed := false
+
 	for _, problem := range malformed {
 		if strings.Contains(problem, "response 400") {
 			armed = true
@@ -502,7 +508,8 @@ func TestSpecConformanceErrorEnvelopeValidation(t *testing.T) {
 	}
 
 	if !armed {
-		t.Error("validator accepted a malformed error envelope against a declared 400 schema; error-body response validation is not armed")
+		t.Errorf("validator accepted a malformed error envelope against a declared 400 schema; " +
+			"error-body response validation is not armed")
 	}
 
 	envelope := validateExchange(specCtx, conformanceExchange{
@@ -510,9 +517,10 @@ func TestSpecConformanceErrorEnvelopeValidation(t *testing.T) {
 		rawPath:  "/v1/rates",
 		query:    "source=EUR&target=USD",
 		status:   http.StatusBadRequest,
-		respBody: []byte(`{"errors":[{"code":"parameter_missing","message":"source is required"},{"code":"not.valid","message":"amount is invalid"}]}`),
+		respBody: []byte(granularRatesEnvelope),
 		respCT:   "application/json",
 	})
+
 	for _, problem := range envelope {
 		t.Errorf("granular error envelope on an examples-only 400 should pass route/request validation: %s", problem)
 	}

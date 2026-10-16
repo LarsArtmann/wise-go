@@ -162,6 +162,11 @@ func TestNewAPIErrorRetryAfter(t *testing.T) {
 	}
 }
 
+// multiErrorEnvelope is a two-entry Wise error body used across the
+// captures and matrix tests.
+const multiErrorEnvelope = `{"errors":[{"code":"parameter_missing","message":"source is required"},` +
+	`{"code":"not.valid","message":"amount is invalid"}]}`
+
 // TestNewAPIErrorCapturesDetails pins the structured-envelope surface: the
 // wire codes/messages land in Details verbatim (unknown codes pass through),
 // while Message keeps its historical flattened join format byte-for-byte.
@@ -176,7 +181,7 @@ func TestNewAPIErrorCapturesDetails(t *testing.T) {
 	}{
 		{
 			name: "structured envelope with two entries",
-			body: `{"errors":[{"code":"parameter_missing","message":"source is required"},{"code":"not.valid","message":"amount is invalid"}]}`,
+			body: multiErrorEnvelope,
 			wantDetails: []WiseErrorDetail{
 				{Code: WiseErrorCodeParameterMissing, Message: "source is required"},
 				{Code: WiseErrorCodeNotValid, Message: "amount is invalid"},
