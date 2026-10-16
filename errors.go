@@ -112,13 +112,13 @@ var (
 
 // Curated wave-1 code sentinels: the Wise wire codes with a consumer
 // branching story, matchable through any wrap chain via errors.Is on an
-// *APIError (APIError.Is compares the structured Details codes — never
+// *APIError (APIError.Is compares the structured Details codes, never
 // message text). Declared with the error interface type like every sentinel
 // in this file: they are matched by value, never by type. Codes without a
 // sentinel (open-enum passthrough) stay reachable via [APIError.HasCode].
 var (
 	// ErrNotValid reports Wise rejecting a value as not valid (wire code
-	// "not.valid") — typically a malformed amount or field value.
+	// "not.valid"), typically a malformed amount or field value.
 	ErrNotValid error = errors.New("wise: not valid")
 
 	// ErrInvalidValue reports Wise rejecting a field value (wire code
@@ -154,11 +154,11 @@ var (
 	ErrOperationNotSupported error = errors.New("wise: operation not supported")
 
 	// ErrRateLimitExceeded reports that Wise throttled the request (wire
-	// code "rate_limit_exceeded") — back off and retry.
+	// code "rate_limit_exceeded"); back off and retry.
 	ErrRateLimitExceeded error = errors.New("wise: rate limit exceeded")
 
 	// ErrSystemError reports a Wise-side system failure (wire code
-	// "system_error") — typically transient.
+	// "system_error"), typically transient.
 	ErrSystemError error = errors.New("wise: system error")
 )
 
@@ -166,6 +166,8 @@ var (
 // stands for; [APIError.Is] consults it. Keyed by sentinel identity (each is
 // a distinct errors.New value), so lookup is pointer comparison and a
 // look-alike error never matches by accident.
+//
+//nolint:gochecknoglobals // sentinel-code lookup table built from the errors.New sentinels above
 var codeSentinels = map[error]WiseErrorCode{
 	ErrNotValid:              WiseErrorCodeNotValid,
 	ErrInvalidValue:          WiseErrorCodeInvalidValue,
@@ -184,7 +186,7 @@ var codeSentinels = map[error]WiseErrorCode{
 // errors[].code field of a non-2xx response body (for example
 // resource_not_found on a 404 or rate_limit_exceeded on a 429). It is an open
 // enum: Wise documents a growing set of codes and may add new ones at any
-// time, so values received from the wire pass through unmodified — switch on
+// time, so values received from the wire pass through unmodified; switch on
 // the constants for known cases and handle the default explicitly. Read the
 // codes structurally from [APIError.Details], match the curated ones with
 // errors.Is against the Err* code sentinels, or branch on any code (curated
@@ -291,8 +293,8 @@ func (e *APIError) HasCode(code WiseErrorCode) bool {
 // Is reports whether the error carries the Wise wire code represented by a
 // curated code sentinel (see codeSentinels), so errors.Is matches through
 // arbitrary fmt.Errorf("%w") wrap chains and through every typed subtype
-// that embeds APIError. It compares structured Details codes only — never
-// message text — and deliberately returns false for everything else: type
+// that embeds APIError. It compares structured Details codes only (never
+// message text) and deliberately returns false for everything else: type
 // extraction stays the job of errors.AsType.
 func (e *APIError) Is(target error) bool {
 	if e == nil {

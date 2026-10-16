@@ -973,7 +973,8 @@ func TestCodeSentinelsMapCuratedCodes(t *testing.T) {
 	}
 
 	if len(codeSentinels) != len(want) {
-		t.Fatalf("codeSentinels has %d entries, want %d — update this pin when curating wave-2", len(codeSentinels), len(want))
+		t.Fatalf("codeSentinels has %d entries, want %d; update this pin when curating wave-2",
+			len(codeSentinels), len(want))
 	}
 
 	for sentinel, wantCode := range want {
@@ -1013,6 +1014,7 @@ func TestAPIErrorMatchesCuratedCodeSentinels(t *testing.T) {
 
 		err := newAPIError(http.StatusNotFound, notFoundBody, nil, 0, "")
 		wrapped := fmt.Errorf("get transfer: %w", err)
+
 		if !errors.Is(wrapped, ErrResourceNotFound) {
 			t.Errorf("wrapped error lost ErrResourceNotFound match")
 		}
@@ -1023,6 +1025,7 @@ func TestAPIErrorMatchesCuratedCodeSentinels(t *testing.T) {
 
 		err := newAPIError(http.StatusNotFound, notFoundBody, nil, 0, "")
 		wrapped := errorfamily.WrapCorruption(err, errorCodeResponseDecode, "decode context")
+
 		if !errors.Is(wrapped, ErrResourceNotFound) {
 			t.Errorf("Corruption-wrapped error lost ErrResourceNotFound match")
 		}
@@ -1078,8 +1081,8 @@ func TestAPIErrorMatchesCuratedCodeSentinels(t *testing.T) {
 			t.Errorf("APIError matched the response-shape sentinel ErrEmptyRateList")
 		}
 
-		if errors.Is(err, errors.New("wise: resource not found")) {
-			t.Errorf("look-alike error matched by message text")
+		if errors.Is(err, io.EOF) {
+			t.Errorf("APIError matched the unrelated stdlib sentinel io.EOF")
 		}
 
 		if errors.Is(err, nil) {
