@@ -139,6 +139,14 @@
           pkgs.dprint
           pkgs.ruff
           pkgs.vulnix
+          # Python toolchain for scripts/*.py (the new binary runs the full
+          # Python provider set on this repo; without these it nix-runs each
+          # ad hoc with a "not in project devShell" warning).
+          pkgs.pyupgrade
+          pkgs.bandit
+          pkgs.mypy
+          pkgs.pytest
+          pkgs.vulture
         ];
       };
 

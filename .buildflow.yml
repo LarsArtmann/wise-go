@@ -36,6 +36,23 @@ skip_steps:
   # SDK). Re-enable when the go pin moves or the ADR is revisited.
   - go-auto-upgrade
 
+  # file-size-check: the max_file_size setting is DEAD at every layer —
+  # .buildflow.yml key, BUILDFLOW_MAX_FILE_SIZE_LINES env var, and the
+  # --max-file-size CLI flag all leave the step running at its 350-line
+  # constant (verified 2026-10-17 against buildflow 5ccf8ea; the provider
+  # plumbing in internal/di/providers_tools.go:50 exists but the step
+  # ignores it). Upstream defect; skipped until fixed — the repo's
+  # max_file_size: 4300 policy above documents the intended value.
+  - file-size-check
+
+  # pytest-test: this repo has no pytest suite — the Python scripts are
+  # verified hermetically by checks.script-fixtures in nix flake check.
+  # pytest runs anyway (auto-detected from scripts/*.py), collects 0
+  # items, exits 5, and its banner output is counted line-wise as
+  # findings (the BuildFlow #64 line-fallback class). Skipped until the
+  # zero-collected case stops emitting findings.
+  - pytest-test
+
 # Embedded erraudit skip REMOVED 2026-10-07 (BuildFlow issue #34 fixed):
 # the embedded detector now runs the SAME legacyerrors engine as the
 # canonical standalone gate (`erraudit lint`), so verdicts agree by
