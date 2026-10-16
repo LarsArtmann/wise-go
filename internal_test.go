@@ -1566,3 +1566,153 @@ func TestCheckErrorUnreadableBody(t *testing.T) {
 		t.Errorf("body %q does not surface the read failure", apiErr.Body)
 	}
 }
+
+func TestOTTChannelChallengeType(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		channel OTTChannel
+		want    OTTChallengeType
+	}{
+		{OTTChannelSMS, OTTChallengeSMS},
+		{OTTChannelWhatsApp, OTTChallengeWhatsApp},
+		{OTTChannelVoice, OTTChallengeVoice},
+		{OTTChannel("carrier-pigeon"), OTTChallengeType("carrier-pigeon")},
+	}
+
+	for _, tt := range tests {
+		if got := tt.channel.challengeType(); got != tt.want {
+			t.Errorf("challengeType(%q) = %q, want %q", tt.channel, got, tt.want)
+		}
+	}
+}
+
+func TestParseOTTAlternatives(t *testing.T) {
+	t.Parallel()
+
+	if views, err := parseOTTAlternatives(nil); views != nil || err != nil {
+		t.Errorf("empty value = %v, %v, want nil, nil", views, err)
+	}
+
+	objects, err := parseOTTAlternatives(jsontext.Value(`[{"type":"SMS","viewData":{"code":"123"}}]`))
+	if err != nil || len(objects) != 1 || objects[0].Type != OTTChallengeSMS || objects[0].ViewData["code"] != "123" {
+		t.Errorf("object form = %v, %v, want one SMS view with viewData", objects, err)
+	}
+
+	strings, err := parseOTTAlternatives(jsontext.Value(`["SMS","VOICE"]`))
+	if err != nil || len(strings) != 2 || strings[1].Type != OTTChallengeVoice || strings[1].ViewData != nil {
+		t.Errorf("string form = %v, %v, want two views without viewData", strings, err)
+	}
+
+	if views, err := parseOTTAlternatives(jsontext.Value(`{"not":"an array"}`)); views != nil || !errors.Is(err, errOTTAlternativesShape) {
+		t.Errorf("non-array = %v, %v, want nil and errOTTAlternativesShape", views, err)
+	}
+}
+
+func TestOriginatorNameToWire(t *testing.T) {
+	t.Parallel()
+
+	full := originatorNameToWire(OriginatorName{
+		GivenName:      "Lars",
+		MiddleNames:    []string{"Q"},
+		FamilyName:     "Artmann",
+		PatronymicName: "Petrov",
+		FullName:       "Lars Q Artmann",
+	})
+	for _, key := range []string{"givenName", "middleNames", "familyName", "patronymicName", "fullName"} {
+		if _, ok := full[key]; !ok {
+			t.Errorf("originatorNameToWire missing %q: %v", key, full)
+		}
+	}
+
+	if empty := originatorNameToWire(OriginatorName{}); len(empty) != 0 {
+		t.Errorf("empty name emitted wire keys %v, want none", empty)
+	}
+}
+
+func TestOriginatorAddressToWire(t *testing.T) {
+	t.Parallel()
+
+	full := originatorAddressToWire(OriginatorAddress{
+		FirstLine:   "Main St 1",
+		City:        "Springfield",
+		StateCode:   "IL",
+		CountryCode: "US",
+		PostCode:    "62704",
+	})
+	for _, key := range []string{"firstLine", "city", "stateCode", "countryCode", "postCode"} {
+		if _, ok := full[key]; !ok {
+			t.Errorf("originatorAddressToWire missing %q: %v", key, full)
+		}
+	}
+
+	minimal := originatorAddressToWire(OriginatorAddress{FirstLine: "Main St 1", CountryCode: "US"})
+	for _, key := range []string{"city", "stateCode", "postCode"} {
+		if _, ok := minimal[key]; ok {
+			t.Errorf("originatorAddressToWire emitted optional %q for empty input: %v", key, minimal)
+		}
+	}
+}
+
+func TestOriginatorToWire(t *testing.T) {
+	t.Parallel()
+
+	wire := originatorToWire(Originator{
+		LegalEntityType:          OriginatorLegalEntityTypeBusiness,
+		Reference:                "ref-1",
+		Name:                     OriginatorName{FullName: "Example GmbH"},
+		DateOfBirth:              time.Date(1990, 1, 2, 0, 0, 0, 0, time.UTC),
+		Nationality:              "DE",
+		BusinessRegistrationCode: "HRB 1",
+		BusinessRegistrationDate: time.Date(2020, 3, 4, 0, 0, 0, 0, time.UTC),
+		AccountDetails:           "acct-9",
+		Address:                  OriginatorAddress{FirstLine: "Main St 1", CountryCode: "DE"},
+	})
+	for _, key := range []string{
+		"legalEntityType", "reference", "name", "address", "dateOfBirth",
+		"nationality", "businessRegistrationCode", "businessRegistrationDate", "accountDetails",
+	} {
+		if _, ok := wire[key]; !ok {
+			t.Errorf("originatorToWire missing %q: %v", key, wire)
+		}
+	}
+
+	if wire["businessRegistrationDate"] != "2020-03-04" {
+		t.Errorf("businessRegistrationDate = %v, want 2020-03-04", wire["businessRegistrationDate"])
+	}
+
+	bare := originatorToWire(Originator{LegalEntityType: OriginatorLegalEntityTypePrivate})
+	for _, key := range []string{"dateOfBirth", "nationality", "businessRegistrationCode", "businessRegistrationDate", "accountDetails"} {
+		if _, ok := bare[key]; ok {
+			t.Errorf("originatorToWire emitted optional %q for empty input: %v", key, bare)
+		}
+	}
+}
+
+func TestMapAccountIdentification(t *testing.T) {
+	t.Parallel()
+
+	result := mapAccountIdentification(raw.AccountIdentification{
+		BE: &raw.BEAccountIdentification{
+			BIC:                "GKCCBEBB",
+			IBAN:               "BE68539007547034",
+			InstitutionName:    "Bank",
+			InstitutionAddress: &raw.ISO20022Address{StreetName: "Main", Country: "BE"},
+		},
+		US: &raw.USAccountIdentification{BIC: "CHASUS33", RoutingNumber: "021000021", AccountNumber: "123"},
+	})
+
+	if result.BE == nil || result.BE.IBAN != "BE68539007547034" || result.BE.InstitutionAddress == nil {
+		t.Fatalf("BE mapping wrong: %+v", result.BE)
+	}
+	if result.US == nil || result.US.RoutingNumber != "021000021" || result.US.InstitutionAddress != nil {
+		t.Fatalf("US mapping wrong: %+v", result.US)
+	}
+	if result.GB != nil {
+		t.Errorf("GB set without input: %+v", result.GB)
+	}
+
+	if empty := mapAccountIdentification(raw.AccountIdentification{}); empty.BE != nil || empty.GB != nil || empty.US != nil {
+		t.Errorf("empty identification mapped to %+v", empty)
+	}
+}

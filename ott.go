@@ -440,8 +440,8 @@ var errOTTAlternativesShape = errors.New("alternatives are neither objects nor s
 // parseOTTAlternatives decodes a challenge's alternatives leniently: the
 // OpenAPI spec types the items only as "object" with no properties, so both
 // the documented object form ({"type": ...}) and a bare string form are
-// accepted; anything else decodes to no alternatives rather than failing the
-// whole status.
+// accepted; anything else is an errOTTAlternativesShape error, which
+// toOTTStatus surfaces as a corruption failure for the whole status.
 func parseOTTAlternatives(value jsontext.Value) ([]OTTChallengeView, error) {
 	if len(value) == 0 {
 		return nil, nil
