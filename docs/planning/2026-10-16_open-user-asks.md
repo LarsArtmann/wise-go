@@ -1,6 +1,6 @@
 # Open User Asks — 2026-10-16 (post-v0.14.0)
 
-Five decisions only the user can make, each with the exact unblock step.
+Eight decisions only the user can make, each with the exact unblock step.
 Everything else from the 21:45 plan is either done (see the plan's inline
 ~~annotations~~) or owned by the parallel session's active tiers.
 
