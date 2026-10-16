@@ -172,50 +172,11 @@ func (c *Client) GetThirdPartyTransfer(
 }
 
 func originatorToWire(originator Originator) map[string]any {
-	name := map[string]any{}
-
-	if originator.Name.GivenName != "" {
-		name["givenName"] = originator.Name.GivenName
-	}
-
-	if len(originator.Name.MiddleNames) > 0 {
-		name["middleNames"] = originator.Name.MiddleNames
-	}
-
-	if originator.Name.FamilyName != "" {
-		name["familyName"] = originator.Name.FamilyName
-	}
-
-	if originator.Name.PatronymicName != "" {
-		name["patronymicName"] = originator.Name.PatronymicName
-	}
-
-	if originator.Name.FullName != "" {
-		name["fullName"] = originator.Name.FullName
-	}
-
-	address := map[string]any{
-		"firstLine":   originator.Address.FirstLine,
-		"countryCode": originator.Address.CountryCode,
-	}
-
-	if originator.Address.City != "" {
-		address["city"] = originator.Address.City
-	}
-
-	if originator.Address.StateCode != "" {
-		address["stateCode"] = originator.Address.StateCode
-	}
-
-	if originator.Address.PostCode != "" {
-		address["postCode"] = originator.Address.PostCode
-	}
-
 	wire := map[string]any{
 		"legalEntityType": string(originator.LegalEntityType),
 		"reference":       originator.Reference,
-		"name":            name,
-		"address":         address,
+		"name":            originatorNameToWire(originator.Name),
+		"address":         originatorAddressToWire(originator.Address),
 	}
 
 	if !originator.DateOfBirth.IsZero() {
@@ -236,6 +197,53 @@ func originatorToWire(originator Originator) map[string]any {
 
 	if originator.AccountDetails != "" {
 		wire["accountDetails"] = originator.AccountDetails
+	}
+
+	return wire
+}
+
+func originatorNameToWire(name OriginatorName) map[string]any {
+	wire := map[string]any{}
+
+	if name.GivenName != "" {
+		wire["givenName"] = name.GivenName
+	}
+
+	if len(name.MiddleNames) > 0 {
+		wire["middleNames"] = name.MiddleNames
+	}
+
+	if name.FamilyName != "" {
+		wire["familyName"] = name.FamilyName
+	}
+
+	if name.PatronymicName != "" {
+		wire["patronymicName"] = name.PatronymicName
+	}
+
+	if name.FullName != "" {
+		wire["fullName"] = name.FullName
+	}
+
+	return wire
+}
+
+func originatorAddressToWire(address OriginatorAddress) map[string]any {
+	wire := map[string]any{
+		"firstLine":   address.FirstLine,
+		"countryCode": address.CountryCode,
+	}
+
+	if address.City != "" {
+		wire["city"] = address.City
+	}
+
+	if address.StateCode != "" {
+		wire["stateCode"] = address.StateCode
+	}
+
+	if address.PostCode != "" {
+		wire["postCode"] = address.PostCode
 	}
 
 	return wire

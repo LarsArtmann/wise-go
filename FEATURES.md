@@ -53,7 +53,7 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
 | Quotes                                                                                                  | 4   | 3       | complete except PATCH update (PLANNED)                              |
 | Recipients                                                                                              | 8   | 5       | core shipped; deactivate/compat/confirmations PLANNED               |
 | Transfers (standard)                                                                                    | 11  | 11      | complete: payments-list, US receipt, NOC shipped 2026-10-16          |
-| Transfers (third-party)                                                                                 | 2   | 0       | DEMAND_GATED (correspondent demand)                                 |
+| Transfers (third-party)                                                                                 | 2   | 2       | complete: originator create + get shipped 2026-10-16                |
 | Users                                                                                                   | 6   | 2       | reads shipped; writes OUT_OF_SCOPE                                  |
 | Multi-currency account                                                                                  | 4   | 1       | MCA read shipped; configuration PLANNED                             |
 | Webhook subscriptions                                                                                   | 9   | 4       | profile-level shipped; app-level ON_HOLD                            |
@@ -203,8 +203,8 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 
 | Method | Path                                           | Status       | wise-go                                       |
 | ------ | ---------------------------------------------- | ------------ | --------------------------------------------- |
-| POST   | `/v2/profiles/{id}/third-party-transfers`      | DEMAND_GATED | originator transfers (correspondent partners) |
-| GET    | `/v2/profiles/{id}/third-party-transfers/{id}` | DEMAND_GATED | third-party transfer status                   |
+| POST   | `/v1/profiles/{id}/third-party-transfers`      | FULLY_FUNCTIONAL | `CreateThirdPartyTransfer` (`third_party_transfers.go:87`) |
+| GET    | `/v1/profiles/{id}/third-party-transfers/{id}` | FULLY_FUNCTIONAL | `GetThirdPartyTransfer` (`third_party_transfers.go:135`)  |
 
 ### Webhook subscriptions (9 operations)
 

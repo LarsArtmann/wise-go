@@ -2348,7 +2348,9 @@ var _ = Describe("Wise Client", func() {
 							Reference:       "CST-2991992",
 							Name:            wise.OriginatorName{GivenName: "John", FamilyName: "Godspeed"},
 							DateOfBirth:     time.Date(1977, 7, 1, 0, 0, 0, 0, time.UTC),
-							Address:         wise.OriginatorAddress{FirstLine: "Salu tee 14", City: "Tallinn", CountryCode: "EE"},
+							Address: wise.OriginatorAddress{
+								FirstLine: "Salu tee 14", City: "Tallinn", CountryCode: "EE",
+							},
 						},
 					})
 				Expect(err).ToNot(HaveOccurred())
@@ -2386,8 +2388,10 @@ var _ = Describe("Wise Client", func() {
 							ID:                 16521640,
 							User:               4342275,
 							TargetAccount:      7839323,
+							SourceAccount:      new(int64(1527389)),
 							Quote:              "3522e360-356a-4e37-9f99-94a21898d8fa",
 							Status:             "outgoing_payment_sent",
+							Rate:               1.17,
 							SourceCurrency:     "EUR",
 							SourceValue:        1000,
 							TargetCurrency:     "GBP",
