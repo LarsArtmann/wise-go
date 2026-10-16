@@ -31,7 +31,9 @@ import sys
 import urllib.error
 import urllib.request
 
-LIVE_SPEC_URL = "https://docs.wise.com/_bundle/api-reference/@preview/index.json?download"
+LIVE_SPEC_URL = (
+    "https://docs.wise.com/_bundle/api-reference/@preview/index.json?download"
+)
 DEFAULT_VENDORED = "docs/reviews/wise-api-openapi.json"
 
 HTTP_VERBS = {"get", "post", "put", "patch", "delete", "head", "options", "trace"}
@@ -41,7 +43,7 @@ CLIENT_CALL_RE = re.compile(
     r"|\b(?:fetchByID|listTransfersPage)\("
 )
 SPRINTF_PATH_RE = re.compile(r'fmt\.Sprintf\(\s*"(/[^"]*)"')
-SPRINTF_OPEN_RE = re.compile(r'path\s*:?=\s*fmt\.Sprintf\(\s*$')
+SPRINTF_OPEN_RE = re.compile(r"path\s*:?=\s*fmt\.Sprintf\(\s*$")
 LITERAL_PATH_RE = re.compile(r'path\s*:?=\s*"(/[^"]*)"')
 CALL_WINDOW_PATH_RE = re.compile(r'"(/[^"]*)"')
 FORMAT_VERB_RE = re.compile(r"%[-#0 +]*\d*(?:\.\d+)?[a-zA-Z]")
@@ -85,7 +87,9 @@ def extract_sdk_endpoints(repo: pathlib.Path) -> list[dict]:
             if m:
                 last_path = m.group(1)
             elif SPRINTF_OPEN_RE.search(line):
-                ahead = CALL_WINDOW_PATH_RE.search("\n".join(lines[lineno : lineno + 2]))
+                ahead = CALL_WINDOW_PATH_RE.search(
+                    "\n".join(lines[lineno : lineno + 2])
+                )
                 if ahead:
                     last_path = ahead.group(1)
             method = request_method(line)
@@ -130,7 +134,9 @@ def extract_sdk_endpoints(repo: pathlib.Path) -> list[dict]:
             for i, line in enumerate(lines):
                 if re.search(r"\b" + re.escape(entry["enclosing"]) + r"\(", line):
                     window = "\n".join(lines[i : i + WRAPPER_WINDOW_LINES])
-                    methods.update(mm.group(1).upper() for mm in HTTP_METHOD_RE.finditer(window))
+                    methods.update(
+                        mm.group(1).upper() for mm in HTTP_METHOD_RE.finditer(window)
+                    )
             for resolved in sorted(methods) or ["UNRESOLVED"]:
                 endpoints.append({**entry, "method": resolved})
     return endpoints
@@ -194,7 +200,9 @@ def build_spec_index(spec: dict) -> dict[str, set[str]]:
     return index
 
 
-def match_endpoint(index: dict[str, set[str]], method: str, sdk_norm: str) -> tuple[str, list[str]]:
+def match_endpoint(
+    index: dict[str, set[str]], method: str, sdk_norm: str
+) -> tuple[str, list[str]]:
     """Return (verdict, matched spec paths): 'ok' | 'method' | 'missing'.
 
     A numeric SDK param ({d}) only matches a spec parameter, never a literal
@@ -247,34 +255,56 @@ def spec_drift(vendored: dict, live: dict) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--url", default=LIVE_SPEC_URL, help="live spec URL to fetch")
-    parser.add_argument("--spec-file", help="use a local spec JSON instead of downloading")
+    parser.add_argument(
+        "--spec-file", help="use a local spec JSON instead of downloading"
+    )
     parser.add_argument(
         "--repo",
         help="repo root (default: the git toplevel containing this script)",
     )
-    parser.add_argument("--fail-on-drift", action="store_true", help="exit 2 when the vendored snapshot is stale")
-    parser.add_argument("--verbose", action="store_true", help="list every extracted endpoint and its match")
+    parser.add_argument(
+        "--fail-on-drift",
+        action="store_true",
+        help="exit 2 when the vendored snapshot is stale",
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="list every extracted endpoint and its match",
+    )
     args = parser.parse_args()
 
-    repo = pathlib.Path(args.repo) if args.repo else pathlib.Path(__file__).resolve().parent.parent
+    repo = (
+        pathlib.Path(args.repo)
+        if args.repo
+        else pathlib.Path(__file__).resolve().parent.parent
+    )
     try:
         live = load_spec(args.spec_file, args.url)
     except (OSError, json.JSONDecodeError, urllib.error.URLError) as err:
         print(f"FAIL: could not load live spec: {err}", file=sys.stderr)
         return 3
     if not isinstance(live.get("paths"), dict) or not live["paths"]:
-        print("FAIL: live spec has no paths; refusing to judge on a broken document", file=sys.stderr)
+        print(
+            "FAIL: live spec has no paths; refusing to judge on a broken document",
+            file=sys.stderr,
+        )
         return 3
     index = build_spec_index(live)
 
     endpoints = extract_sdk_endpoints(repo)
     unique = {(e["method"], normalize_sdk_path(e["template"])) for e in endpoints}
     if not unique:
-        print(f"FAIL: extracted 0 SDK endpoints from {repo}/*.go; extraction is broken", file=sys.stderr)
+        print(
+            f"FAIL: extracted 0 SDK endpoints from {repo}/*.go; extraction is broken",
+            file=sys.stderr,
+        )
         return 3
 
     print(f"Live spec:  {spec_label(live)}")
-    print(f"SDK surface: {len(unique)} unique (method, path) endpoints extracted from root *.go files")
+    print(
+        f"SDK surface: {len(unique)} unique (method, path) endpoints extracted from root *.go files"
+    )
 
     unresolved = sorted(norm for method, norm in unique if method == "UNRESOLVED")
     unique = {(method, norm) for method, norm in unique if method != "UNRESOLVED"}
@@ -287,14 +317,25 @@ def main() -> int:
             continue
         if args.verbose:
             tag = "OK" if verdict == "ok" else "PROBLEM"
-            print(f"  [{tag}] {method} {norm}" + (f"  ->  {', '.join(matched)}" if verdict != "ok" else ""))
+            print(
+                f"  [{tag}] {method} {norm}"
+                + (f"  ->  {', '.join(matched)}" if verdict != "ok" else "")
+            )
         if verdict == "missing":
-            failures.append(f"MISSING: {method} {norm} matches no path in the live spec")
+            failures.append(
+                f"MISSING: {method} {norm} matches no path in the live spec"
+            )
         elif verdict == "method":
-            offered = sorted(set().union(*(index[p] for p in matched))) if matched else []
-            failures.append(f"METHOD GONE: {method} {norm} - live spec offers {offered} on {matched}")
+            offered = (
+                sorted(set().union(*(index[p] for p in matched))) if matched else []
+            )
+            failures.append(
+                f"METHOD GONE: {method} {norm} - live spec offers {offered} on {matched}"
+            )
     if unresolved:
-        print(f"\nWARNING: {len(unresolved)} endpoint(s) with unresolved HTTP method (wrapper indirection):")
+        print(
+            f"\nWARNING: {len(unresolved)} endpoint(s) with unresolved HTTP method (wrapper indirection):"
+        )
         for norm in unresolved:
             print(f"  UNRESOLVED: {norm} - not verified against the live spec")
     if failures:
@@ -311,17 +352,27 @@ def main() -> int:
         vendored = load_spec(str(vendored_file), args.url)
         drift = spec_drift(vendored, live)
         print(f"\nVendored snapshot: {spec_label(vendored)}")
-        print(f"Drift vs live: +{len(drift['added'])} added / -{len(drift['removed'])} removed / ~{len(drift['changed'])} changed paths")
+        print(
+            f"Drift vs live: +{len(drift['added'])} added / -{len(drift['removed'])} removed / ~{len(drift['changed'])} changed paths"
+        )
         if args.verbose:
-            for label, entries in (("added", drift["added"]), ("removed", drift["removed"]), ("changed methods", drift["changed"])):
+            for label, entries in (
+                ("added", drift["added"]),
+                ("removed", drift["removed"]),
+                ("changed methods", drift["changed"]),
+            ):
                 for entry in entries:
                     print(f"  {label}: {entry}")
         if drift["added"] or drift["removed"] or drift["changed"]:
-            print("Re-vendor docs/reviews/wise-api-openapi.json when adopting; new paths are expansion candidates for FEATURES.md")
+            print(
+                "Re-vendor docs/reviews/wise-api-openapi.json when adopting; new paths are expansion candidates for FEATURES.md"
+            )
             if args.fail_on_drift and status == 0:
                 status = 2
     else:
-        print(f"\nVendored snapshot not found at {vendored_file}; skipping drift report")
+        print(
+            f"\nVendored snapshot not found at {vendored_file}; skipping drift report"
+        )
 
     return status
 
