@@ -72,7 +72,6 @@ linters:
     - intrange
     - iotamixing
     - ireturn
-    - lll
     - loggercheck
     - maintidx
     - makezero
@@ -278,6 +277,9 @@ linters:
         linters:
           - exhaustruct_v5
           - revive
+      # Wise's webhook wire surface (subscriptions, event envelopes, event
+      # payloads) uses snake_case JSON keys, unlike the camelCase core API;
+      # the raw wire types must mirror it.
       - path: internal/raw/webhooks\.go
         linters:
           - tagliatelle
@@ -294,6 +296,12 @@ linters:
         text: unused
         linters:
           - unused
+      # go-structure-linter (buildflow) suppression directives use a
+      # `linter:check` colon syntax that nolintlint's machine-readable
+      # format check rejects. The directives are load-bearing — they keep
+      # the structure linter's false-positive panics suppressed (verified
+      # 2026-10-05, `branching-flow panic` clean) — so exempt exactly the
+      # lines carrying them instead of weakening the directives.
       - source: '//nolint:branching-flow:'
         linters:
           - nolintlint
