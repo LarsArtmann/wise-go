@@ -70,7 +70,12 @@ def extract_sdk_endpoints(repo: pathlib.Path) -> list[dict]:
         lines = go_file.read_text(encoding="utf-8").splitlines()
         last_path: str | None = None
         last_path_line = -100
+        enclosing = ""
+        pending: list[dict] = []
         for lineno, line in enumerate(lines, 1):
+            func_def = FUNC_DEF_RE.match(line)
+            if func_def:
+                enclosing = func_def.group(1)
             m = SPRINTF_PATH_RE.search(line) or LITERAL_PATH_RE.search(line)
             if m:
                 last_path = m.group(1)
@@ -82,6 +87,23 @@ def extract_sdk_endpoints(repo: pathlib.Path) -> list[dict]:
                     last_path_line = lineno
             method = request_method(line)
             if method is None:
+                if REQUEST_CALL_RE.search(line):
+                    window = "\n".join(lines[lineno - 1 : lineno + 3])
+                    inline = CALL_WINDOW_PATH_RE.search(window)
+                    template = inline.group(1) if inline else last_path
+                    if template:
+                        literal = HTTP_METHOD_RE.search(window)
+                        entry = {
+                            "method": literal.group(1) if literal else None,
+                            "template": template,
+                            "file": go_file.name,
+                            "line": lineno,
+                            "enclosing": enclosing,
+                        }
+                        if entry["method"]:
+                            endpoints.append(entry)
+                        else:
+                            pending.append(entry)
                 continue
             window = "\n".join(lines[lineno - 1 : lineno + 3])
             inline = CALL_WINDOW_PATH_RE.search(window)
@@ -100,6 +122,14 @@ def extract_sdk_endpoints(repo: pathlib.Path) -> list[dict]:
                         "line": lineno,
                     }
                 )
+        for entry in pending:
+            methods = set()
+            for i, line in enumerate(lines):
+                if re.search(r"\b" + re.escape(entry["enclosing"]) + r"\(", line):
+                    window = "\n".join(lines[i : i + WRAPPER_WINDOW_LINES])
+                    methods.update(mm.group(1) for mm in HTTP_METHOD_RE.finditer(window))
+            for resolved in sorted(methods) or ["UNRESOLVED"]:
+                endpoints.append({**entry, "method": resolved})
     return endpoints
 
 
@@ -122,6 +152,12 @@ def request_method(line: str) -> str | None:
         if re.search(r"\b(?:c|client)\." + fragment + r"\b", line):
             return method
     return None
+
+
+FUNC_DEF_RE = re.compile(r"^func (?:\([^)]*\) )?([A-Za-z_][A-Za-z0-9_]*)")
+HTTP_METHOD_RE = re.compile(r"http\.Method([A-Z]+)\b")
+REQUEST_CALL_RE = re.compile(r"\bc\.request\(")
+WRAPPER_WINDOW_LINES = 9
 
 
 def normalize_sdk_path(template: str) -> str:
@@ -217,6 +253,8 @@ def main() -> int:
     print(f"Live spec:  {spec_label(live)}")
     print(f"SDK surface: {len(unique)} unique (method, path) endpoints extracted from root *.go files")
 
+    unresolved = sorted(norm for method, norm in unique if method == "UNRESOLVED")
+    unique = {(method, norm) for method, norm in unique if method != "UNRESOLVED"}
     failures: list[str] = []
     for method, norm in sorted(unique):
         verdict, matched = match_endpoint(index, method, norm)
@@ -232,6 +270,10 @@ def main() -> int:
         elif verdict == "method":
             offered = sorted(set().union(*(index[p] for p in matched))) if matched else []
             failures.append(f"METHOD GONE: {method} {norm} - live spec offers {offered} on {matched}")
+    if unresolved:
+        print(f"\nWARNING: {len(unresolved)} endpoint(s) with unresolved HTTP method (wrapper indirection):")
+        for norm in unresolved:
+            print(f"  UNRESOLVED: {norm} - not verified against the live spec")
     if failures:
         print(f"\nSDK vs live spec: {len(failures)} problem(s)")
         for failure in failures:
