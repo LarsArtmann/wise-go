@@ -5,4 +5,17 @@ presets: [flat]
 # go-version excluded: this repo deliberately pins go 1.26 (AGENTS.md
 # documents it as a deliberate non-fix); the go.mod pin satisfies the
 # toolchain policy and must not be auto-bumped.
-exclude_patterns: [go-version]
+#
+# Layout-rule dispositions (2026-10-17, not covered by the flat preset):
+# - assets-directory: the SVGs are architecture-visualization skill output,
+#   docs/architecture-understanding/ is their documented home.
+# - examples-directory: example_test.go must stay in the root package for
+#   godoc example association (compile-only examples, see AGENTS.md).
+# - testdata-directory: scripts/negative_fixtures.py is a fixture RUNNER
+#   wired into flake checks, not a fixture; testdata/ is for fixture data.
+exclude_patterns: [
+  go-version,
+  assets-directory,
+  examples-directory,
+  testdata-directory,
+]

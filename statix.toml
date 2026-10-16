@@ -1,2 +1,11 @@
-[checks]
-disable = ["W200"]
+# statix dispositions for this repo (2026-10-17).
+# repeated_keys (W20) fires on the deliberate dotted-assignment style in
+# flake.nix: the checks.* and apps.* families are non-contiguous by design
+# (build/verify blocks interleaved with packages and apps), so the
+# nested-attrset rewrite statix suggests would move ~300 lines of code
+# blocks for zero semantic gain. Style policy per AGENTS.md; the lint is
+# disabled here rather than the style changed. All other statix lints stay
+# active.
+disabled = [
+  "repeated_keys",
+]

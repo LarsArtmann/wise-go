@@ -13,7 +13,14 @@ disabled_rules:
   - duplicate_type
   # COMPOSITION_mixin: "consider mixin" suggestions that would merge the
   # raw and public layers the SDK exists to keep separate.
-  - composition_*
-  # ANTI_PATTERN_large-struct: raw wire structs carry 16-18 fields because
+  - composition_mixin
+  # ANTI_PATTERN_LARGE_STRUCT: raw wire structs carry 16-18 fields because
   # Wise's JSON payloads do; trimming them would corrupt the wire contract.
-  - anti_pattern_*
+  - anti_pattern_large_struct
+#
+# GOTCHA: disabled_rules entries match EXACTLY (case-insensitive;
+# pkg/finding/filter.go FilterByRuleKnobs). The glob forms that
+# `branching-flow list-rules` advertises (composition_*, anti_pattern_*)
+# pass config VALIDATION via knownRulePrefixes but are silent no-ops at
+# filter time. Verified 2026-10-17: globs left 36 findings; exact IDs
+# took the surface to zero.
