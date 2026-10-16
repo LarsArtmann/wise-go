@@ -2554,10 +2554,10 @@ var _ = Describe("Wise Client", func() {
 						QuoteID:            wise.NewQuoteID("3522e360-356a-4e37-9f99-94a21898d8fa"),
 						Reference:          "invoice 43",
 						Originator: wise.Originator{
-							LegalEntityType: wise.OriginatorLegalEntityTypeBusiness,
-							Reference:       "CST-2991993",
-							Name:            wise.OriginatorName{FullName: "Muster GmbH"},
-							Nationality:     "DE",
+							LegalEntityType:          wise.OriginatorLegalEntityTypeBusiness,
+							Reference:                "CST-2991993",
+							Name:                     wise.OriginatorName{FullName: "Muster GmbH"},
+							Nationality:              "DE",
 							BusinessRegistrationCode: "HRB 12345",
 							BusinessRegistrationDate: time.Date(2020, 3, 1, 0, 0, 0, 0, time.UTC),
 							AccountDetails:           "DE89370400440532013000",
@@ -3918,9 +3918,12 @@ var _ = Describe("Wise Client", func() {
 		})
 
 		Context("with a GB response without an institution address", func() {
+			// The spec marks institutionAddress required in every identification
+			// variant, but mapISO20022Address defends the nil case against live
+			// drift — so this fixture is intentionally spec-invalid (exempted).
 			BeforeEach(func() {
 				mux.HandleFunc("/2027Q1/balances/account-details/14000003",
-					func(w http.ResponseWriter, _ *http.Request) {
+					exemptResponseSchema(func(w http.ResponseWriter, _ *http.Request) {
 						w.Header().Set("Content-Type", "application/json")
 						_ = json.MarshalWrite(w, raw.AccountDetails{
 							ID:                14000003,
@@ -3937,7 +3940,7 @@ var _ = Describe("Wise Client", func() {
 								},
 							},
 						})
-					})
+					}))
 			})
 
 			It("should map the institution address as nil", func() {
