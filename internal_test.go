@@ -1233,6 +1233,8 @@ func TestBrandNames(t *testing.T) {
 		{QuoteBrand{}, "Quote"},
 		{WebhookSubscriptionBrand{}, "WebhookSubscription"},
 		{CustomerTransactionIDBrand{}, "CustomerTransaction"},
+		{AccountDetailsBrand{}, "AccountDetails"},
+		{TransferPaymentBrand{}, "TransferPayment"},
 	}
 
 	for _, tt := range tests {

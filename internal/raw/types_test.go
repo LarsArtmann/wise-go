@@ -115,3 +115,70 @@ func TestTransferPayoutFailureDataWireJSON(t *testing.T) {
 		t.Fatalf("fields wrong: %+v", payload)
 	}
 }
+
+func TestWebhookOccurredAtCarriers(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		got  string
+		want string
+	}{
+		{
+			name: "transfer state change",
+			got:  WebhookOccurredAt(TransferStateChangeData{OccurredAt: "2026-10-16T10:00:00Z"}),
+			want: "2026-10-16T10:00:00Z",
+		},
+		{
+			name: "transfer payout failure",
+			got:  WebhookOccurredAt(TransferPayoutFailureData{OccurredAt: "2023-08-10T10:17:23.123Z"}),
+			want: "2023-08-10T10:17:23.123Z",
+		},
+		{
+			name: "balance credit",
+			got:  WebhookOccurredAt(BalanceCreditData{OccurredAt: "2026-09-13T10:00:00Z"}),
+			want: "2026-09-13T10:00:00Z",
+		},
+		{
+			name: "transfer refund",
+			got:  WebhookOccurredAt(TransferRefundData{OccurredAt: "2026-10-16T11:30:00Z"}),
+			want: "2026-10-16T11:30:00Z",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			if tt.got != tt.want {
+				t.Errorf("occurred_at = %q, want %q", tt.got, tt.want)
+			}
+		})
+	}
+}
+
+func TestBalanceAmountCents(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		value float64
+		want  int64
+	}{
+		{name: "zero", value: 0, want: 0},
+		{name: "exact", value: 1234.56, want: 123456},
+		{name: "negative", value: -50.00, want: -5000},
+		{name: "float representation error", value: 0.1 + 0.2, want: 30},
+		{name: "rounds half up", value: 12.345, want: 1235},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			if got := BalanceAmount{Value: tt.value}.Cents(); got != tt.want {
+				t.Errorf("Cents() = %d, want %d", got, tt.want)
+			}
+		})
+	}
+}
