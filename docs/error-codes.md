@@ -22,22 +22,22 @@ OpenAPI snapshot, 2026-10-16). HTTP-status context describes where Wise
 typically emits the code; the status — not the body code — always drives the
 SDK's typed error and its retry family.
 
-| Code | Constant | Typical status | Curated sentinel | Retry? | Guidance |
-| ---- | -------- | -------------- | ---------------- | ------ | -------- |
-| `not.valid` | `WiseErrorCodeNotValid` | 400, 422 | `ErrNotValid` | No | A value Wise rejects as not valid (often an amount). Fix the request. |
-| `invalid_value` | `WiseErrorCodeInvalidValue` | 400, 422 | `ErrInvalidValue` | No | A field value is out of range or malformed. Fix the request. |
-| `parameter_missing` | `WiseErrorCodeParameterMissing` | 400, 422 | `ErrParameterMissing` | No | A required parameter was absent. Fix the request. |
-| `parameter_invalid` | `WiseErrorCodeParameterInvalid` | 400, 422 | `ErrParameterInvalid` | No | A parameter's value failed validation. Fix the request. |
-| `missing_value` | — (open enum) | 400 | — | No | A required value was absent. Fix the request. |
-| `invalid_request` | `WiseErrorCodeInvalidRequest` | 400 | `ErrInvalidRequest` | No | Generic malformed request. Fix the request. |
-| `unauthorized` | `WiseErrorCodeUnauthorized` | 401 | `ErrUnauthorized` | No | Missing or invalid credentials. Fix the API key. |
-| `forbidden` | `WiseErrorCodeForbidden` | 403 | `ErrForbidden` | No | Credentials lack permission for the operation. |
-| `resource_not_found` | `WiseErrorCodeResourceNotFound` | 404 | `ErrResourceNotFound` | No | The addressed resource does not exist (or is not visible to this token). |
-| `operation_not_supported` | `WiseErrorCodeOperationNotSupported` | 405/422 | `ErrOperationNotSupported` | No | The API surface does not support the operation for this resource or corridor. |
-| `rate_limit_exceeded` | `WiseErrorCodeRateLimitExceeded` | 429 | `ErrRateLimitExceeded` | Yes | Wise throttled the request. `RateLimitError.RetryAfter` (from the `Retry-After` header) is honored automatically by the SDK's retry executor. |
-| `system_error` | `WiseErrorCodeSystemError` | 5xx (sometimes 4xx) | `ErrSystemError` | Usually | Wise-side failure. Inside a 5xx the error is a retryable `*ServerError`; inside a 4xx it is not — check `ErrorFamily()`. |
-| `invalid_file_extension` | — (open enum) | 400 | — | No | An upload (e.g. statement of funds) has an unsupported file extension. |
-| `unexpected.error` | — (open enum) | 5xx/4xx | — | Usually | Wise's generic failure code. Treat like `system_error`: retry only when the typed error says retryable. |
+| Code                      | Constant                             | Typical status      | Curated sentinel           | Retry?  | Guidance                                                                                                                                      |
+| ------------------------- | ------------------------------------ | ------------------- | -------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `not.valid`               | `WiseErrorCodeNotValid`              | 400, 422            | `ErrNotValid`              | No      | A value Wise rejects as not valid (often an amount). Fix the request.                                                                         |
+| `invalid_value`           | `WiseErrorCodeInvalidValue`          | 400, 422            | `ErrInvalidValue`          | No      | A field value is out of range or malformed. Fix the request.                                                                                  |
+| `parameter_missing`       | `WiseErrorCodeParameterMissing`      | 400, 422            | `ErrParameterMissing`      | No      | A required parameter was absent. Fix the request.                                                                                             |
+| `parameter_invalid`       | `WiseErrorCodeParameterInvalid`      | 400, 422            | `ErrParameterInvalid`      | No      | A parameter's value failed validation. Fix the request.                                                                                       |
+| `missing_value`           | — (open enum)                        | 400                 | —                          | No      | A required value was absent. Fix the request.                                                                                                 |
+| `invalid_request`         | `WiseErrorCodeInvalidRequest`        | 400                 | `ErrInvalidRequest`        | No      | Generic malformed request. Fix the request.                                                                                                   |
+| `unauthorized`            | `WiseErrorCodeUnauthorized`          | 401                 | `ErrUnauthorized`          | No      | Missing or invalid credentials. Fix the API key.                                                                                              |
+| `forbidden`               | `WiseErrorCodeForbidden`             | 403                 | `ErrForbidden`             | No      | Credentials lack permission for the operation.                                                                                                |
+| `resource_not_found`      | `WiseErrorCodeResourceNotFound`      | 404                 | `ErrResourceNotFound`      | No      | The addressed resource does not exist (or is not visible to this token).                                                                      |
+| `operation_not_supported` | `WiseErrorCodeOperationNotSupported` | 405/422             | `ErrOperationNotSupported` | No      | The API surface does not support the operation for this resource or corridor.                                                                 |
+| `rate_limit_exceeded`     | `WiseErrorCodeRateLimitExceeded`     | 429                 | `ErrRateLimitExceeded`     | Yes     | Wise throttled the request. `RateLimitError.RetryAfter` (from the `Retry-After` header) is honored automatically by the SDK's retry executor. |
+| `system_error`            | `WiseErrorCodeSystemError`           | 5xx (sometimes 4xx) | `ErrSystemError`           | Usually | Wise-side failure. Inside a 5xx the error is a retryable `*ServerError`; inside a 4xx it is not — check `ErrorFamily()`.                      |
+| `invalid_file_extension`  | — (open enum)                        | 400                 | —                          | No      | An upload (e.g. statement of funds) has an unsupported file extension.                                                                        |
+| `unexpected.error`        | — (open enum)                        | 5xx/4xx             | —                          | Usually | Wise's generic failure code. Treat like `system_error`: retry only when the typed error says retryable.                                       |
 
 Unknown codes: Wise adds codes over time. They flow through `Details` and
 `HasCode` unmodified — switch on the constants for known cases and handle the

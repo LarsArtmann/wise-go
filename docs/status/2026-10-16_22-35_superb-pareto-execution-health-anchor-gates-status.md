@@ -210,8 +210,8 @@ release close owned by the 21:45 plan, and one blocked gate (apidiff).
 
 ---
 
-*Point-in-time snapshot 2026-10-16 22:35 CEST. Verification appendix: `go test -race` 0 ·
+_Point-in-time snapshot 2026-10-16 22:35 CEST. Verification appendix: `go test -race` 0 ·
 `golangci-lint` 0 · `nix flake check` 0 (anchor-check + linter-allowlist + coverage-floor-parity
 green inside) · doc-verify 0 · release-notes-check 0 · spec-drift 0 (live 2027Q1, 188 paths, 43
 endpoints) · anchor-check 93/93 after 30 fixes · md-go-snippets 40/0 · apidiff BLOCKED (dirty
-tree, parallel session). Not run: nothing else was in scope. WAITING FOR INSTRUCTIONS.*
+tree, parallel session). Not run: nothing else was in scope. WAITING FOR INSTRUCTIONS._

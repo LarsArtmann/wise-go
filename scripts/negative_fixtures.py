@@ -33,9 +33,24 @@ PIN_SYNC_CASES = [
 
 SPEC_DRIFT_CASES = [
     ("broken_json", "@broken@", 3, "could not load live spec"),
-    ("missing_endpoint", ["--spec-file", "@testdata@/spec_drift/minimal_live.json"], 1, "problem(s)"),
-    ("stale_snapshot_failing", ["--spec-file", "@testdata@/spec_drift/plus_one.json", "--fail-on-drift"], 2, "all endpoints match"),
-    ("stale_snapshot_warn_only", ["--spec-file", "@testdata@/spec_drift/plus_one.json"], 0, "all endpoints match"),
+    (
+        "missing_endpoint",
+        ["--spec-file", "@testdata@/spec_drift/minimal_live.json"],
+        1,
+        "problem(s)",
+    ),
+    (
+        "stale_snapshot_failing",
+        ["--spec-file", "@testdata@/spec_drift/plus_one.json", "--fail-on-drift"],
+        2,
+        "all endpoints match",
+    ),
+    (
+        "stale_snapshot_warn_only",
+        ["--spec-file", "@testdata@/spec_drift/plus_one.json"],
+        0,
+        "all endpoints match",
+    ),
 ]
 
 
@@ -65,11 +80,7 @@ def main() -> int:
         if args.testdata_dir
         else scripts_dir / "testdata"
     )
-    repo_root = (
-        pathlib.Path(args.repo_root)
-        if args.repo_root
-        else scripts_dir.parent
-    )
+    repo_root = pathlib.Path(args.repo_root) if args.repo_root else scripts_dir.parent
 
     # The broken-spec fixture is generated, not committed: the check sandbox
     # mounts the source tree read-only, so nothing may be written into it.
@@ -92,7 +103,13 @@ def run_all(
         ran += 1
         root = testdata / "pin_sync" / name
         result = subprocess.run(
-            [sys.executable, str(scripts_dir / "pin_sync.py"), "--offline", "--root", str(root)],
+            [
+                sys.executable,
+                str(scripts_dir / "pin_sync.py"),
+                "--offline",
+                "--root",
+                str(root),
+            ],
             capture_output=True,
             text=True,
             check=False,
@@ -115,7 +132,13 @@ def run_all(
             for a in raw
         ]
         result = subprocess.run(
-            [sys.executable, str(scripts_dir / "spec_drift.py"), "--repo", str(repo_root), *spec_args],
+            [
+                sys.executable,
+                str(scripts_dir / "spec_drift.py"),
+                "--repo",
+                str(repo_root),
+                *spec_args,
+            ],
             capture_output=True,
             text=True,
             check=False,

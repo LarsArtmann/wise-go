@@ -52,7 +52,7 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
 | Profiles                                                                                                | 19  | 2       | reads shipped; writes PLANNED; KYB OUT_OF_SCOPE                     |
 | Quotes                                                                                                  | 4   | 3       | complete except PATCH update (PLANNED)                              |
 | Recipients                                                                                              | 8   | 5       | core shipped; deactivate/compat/confirmations PLANNED               |
-| Transfers (standard)                                                                                    | 11  | 11      | complete: payments-list, US receipt, NOC shipped 2026-10-16          |
+| Transfers (standard)                                                                                    | 11  | 11      | complete: payments-list, US receipt, NOC shipped 2026-10-16         |
 | Transfers (third-party)                                                                                 | 2   | 2       | complete: originator create + get shipped 2026-10-16                |
 | Users                                                                                                   | 6   | 2       | reads shipped; writes OUT_OF_SCOPE                                  |
 | Multi-currency account                                                                                  | 4   | 1       | MCA read shipped; configuration PLANNED                             |
@@ -195,16 +195,16 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 | POST   | `/v1/profiles/{id}/transfers/{id}/payments`  | FULLY_FUNCTIONAL | `FundTransfer` (`transfers.go:283`)                            |
 | GET    | `/v1/transfers/{id}/invoices/bankingpartner` | FULLY_FUNCTIONAL | `GetTransferPayoutInfo` (`transfers.go:160`)                   |
 | GET    | `/v1/transfers/{id}/receipt.pdf`             | FULLY_FUNCTIONAL | `GetTransferReceipt` (`transfers.go:138`)                      |
-| GET    | `/v1/transfers/{id}/payments`                | FULLY_FUNCTIONAL | `ListTransferPayments` (`transfers.go:432`)         |
-| GET    | `/v1/transfers/{id}/us-combined-receipt.pdf` | FULLY_FUNCTIONAL | `GetUSCombinedReceipt` (`transfers.go:507`)         |
-| GET    | `/v1/transfers/{id}/documents/noc`           | FULLY_FUNCTIONAL | `GetTransferNOC` (`transfers.go:528`)               |
+| GET    | `/v1/transfers/{id}/payments`                | FULLY_FUNCTIONAL | `ListTransferPayments` (`transfers.go:432`)                    |
+| GET    | `/v1/transfers/{id}/us-combined-receipt.pdf` | FULLY_FUNCTIONAL | `GetUSCombinedReceipt` (`transfers.go:507`)                    |
+| GET    | `/v1/transfers/{id}/documents/noc`           | FULLY_FUNCTIONAL | `GetTransferNOC` (`transfers.go:528`)                          |
 
 ### Transfers — third-party (2 operations)
 
-| Method | Path                                           | Status       | wise-go                                       |
-| ------ | ---------------------------------------------- | ------------ | --------------------------------------------- |
+| Method | Path                                           | Status           | wise-go                                                    |
+| ------ | ---------------------------------------------- | ---------------- | ---------------------------------------------------------- |
 | POST   | `/v1/profiles/{id}/third-party-transfers`      | FULLY_FUNCTIONAL | `CreateThirdPartyTransfer` (`third_party_transfers.go:95`) |
-| GET    | `/v1/profiles/{id}/third-party-transfers/{id}` | FULLY_FUNCTIONAL | `GetThirdPartyTransfer` (`third_party_transfers.go:145`)  |
+| GET    | `/v1/profiles/{id}/third-party-transfers/{id}` | FULLY_FUNCTIONAL | `GetThirdPartyTransfer` (`third_party_transfers.go:145`)   |
 
 ### Webhook subscriptions (9 operations)
 
@@ -294,21 +294,21 @@ the plan; bulk payments only on a consumer demand signal).
 
 ## Client core
 
-| Feature                                 | Status           | Evidence                                                                                |
-| --------------------------------------- | ---------------- | --------------------------------------------------------------------------------------- |
-| `wise.New(apiKey, opts...)` constructor | FULLY_FUNCTIONAL | `client.go:52`; functional-options pattern                                              |
-| Bearer-token authentication             | FULLY_FUNCTIONAL | `client.go:397` `setHeaders`                                                            |
-| Sandbox environment (`WithSandbox`)     | FULLY_FUNCTIONAL | `options.go:64`; `SandboxURL` const in `types.go:24`                                    |
-| Custom base URL (`WithBaseURL`)         | FULLY_FUNCTIONAL | `options.go:71`                                                                         |
-| Custom HTTP timeout (`WithTimeout`)     | FULLY_FUNCTIONAL | `options.go:95`                                                                         |
-| Custom retry policy (`WithRetry`)       | FULLY_FUNCTIONAL | `options.go:103`; exponential backoff with jitter via go-retry                          |
-| Custom HTTP client (`WithHTTPClient`)   | FULLY_FUNCTIONAL | `options.go:114`; accepts `Doer` interface (`client.go:41`)                              |
-| Correlation ID (`WithCorrelationID`)    | FULLY_FUNCTIONAL | `options.go:127`; sets `X-External-Correlation-Id` header on all requests               |
-| Retry with backoff (429, 5xx, network)  | FULLY_FUNCTIONAL | `client.go:145` `isRetryableError`; `Retry-After` honored via `DelayFunc` (capped)      |
-| `Authenticate(ctx)`                     | FULLY_FUNCTIONAL | `client.go:180`; delegates to `ListProfiles`                                            |
+| Feature                                 | Status           | Evidence                                                                                                                                                 |
+| --------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `wise.New(apiKey, opts...)` constructor | FULLY_FUNCTIONAL | `client.go:52`; functional-options pattern                                                                                                               |
+| Bearer-token authentication             | FULLY_FUNCTIONAL | `client.go:397` `setHeaders`                                                                                                                             |
+| Sandbox environment (`WithSandbox`)     | FULLY_FUNCTIONAL | `options.go:64`; `SandboxURL` const in `types.go:24`                                                                                                     |
+| Custom base URL (`WithBaseURL`)         | FULLY_FUNCTIONAL | `options.go:71`                                                                                                                                          |
+| Custom HTTP timeout (`WithTimeout`)     | FULLY_FUNCTIONAL | `options.go:95`                                                                                                                                          |
+| Custom retry policy (`WithRetry`)       | FULLY_FUNCTIONAL | `options.go:103`; exponential backoff with jitter via go-retry                                                                                           |
+| Custom HTTP client (`WithHTTPClient`)   | FULLY_FUNCTIONAL | `options.go:114`; accepts `Doer` interface (`client.go:41`)                                                                                              |
+| Correlation ID (`WithCorrelationID`)    | FULLY_FUNCTIONAL | `options.go:127`; sets `X-External-Correlation-Id` header on all requests                                                                                |
+| Retry with backoff (429, 5xx, network)  | FULLY_FUNCTIONAL | `client.go:145` `isRetryableError`; `Retry-After` honored via `DelayFunc` (capped)                                                                       |
+| `Authenticate(ctx)`                     | FULLY_FUNCTIONAL | `client.go:180`; delegates to `ListProfiles`                                                                                                             |
 | `Health(ctx)`                           | FULLY_FUNCTIONAL | `client.go:190`; credential-validating readiness probe (authenticated `ListProfiles` through the retry executor — not a cheap liveness check; see godoc) |
-| `WithUserAgent` option (v0.11.0)        | FULLY_FUNCTIONAL | `options.go:88`; custom `User-Agent` on every request, default preserved (BDD)          |
-| Shared-client concurrency (v0.11.0)     | FULLY_FUNCTIONAL | `wise_test.go:246`; 16 parallel requests, per-request correlation-ID isolation, `-race` |
+| `WithUserAgent` option (v0.11.0)        | FULLY_FUNCTIONAL | `options.go:88`; custom `User-Agent` on every request, default preserved (BDD)                                                                           |
+| Shared-client concurrency (v0.11.0)     | FULLY_FUNCTIONAL | `wise_test.go:246`; 16 parallel requests, per-request correlation-ID isolation, `-race`                                                                  |
 
 ## Transaction behavior
 

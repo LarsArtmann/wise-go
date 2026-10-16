@@ -1,6 +1,6 @@
 # Status: docs-health FULL AUDIT — harvest, verify, annotate, archive sweep, living-doc overhaul
 
-> Session 2026-10-16 ~21:05–21:43 CEST. Input: "View ALL **/2026-0* files! Execute
+> Session 2026-10-16 ~21:05–21:43 CEST. Input: "View ALL *_/2026-0_ files! Execute
 > the docs-health SKILL! PROPERLY! TODO_LIST/CHANGELOG/AGENTS/README/ROADMAP/
 > FEATURES must all be SUPERB! Archive FULLY done and UPDATED (inline
 > strikethrough) .md files!" Scope: this session's run only. **Format note:**
@@ -250,10 +250,10 @@ unexecuted (by design — routed, not done).
 
 ---
 
-*Point-in-time snapshot 2026-10-16 21:43 CEST. Verification appendix: doc-verify
+_Point-in-time snapshot 2026-10-16 21:43 CEST. Verification appendix: doc-verify
 0 · release-notes-check 0 · nix fmt clean · annotate self-test + check-rows
 complete on all archived files · completeness grep clean · BuildFlow #34 state
 verified via gh (CLOSED 2026-10-07T06:39:22Z) · spec snapshot 188 paths ·
 `go build ./internal/raw/` 0 · method count 44 (doc-verify-gated). Not run this
 session (deliberate): go test ./..., nix flake check, apidiff — in-flight tree
-owned by the parallel session. WAITING FOR INSTRUCTIONS.*
+owned by the parallel session. WAITING FOR INSTRUCTIONS._

@@ -199,61 +199,61 @@
 
 ## f) UP TO 50 THINGS WE SHOULD GET DONE NEXT
 
-*Brainstorm, impact-ordered; not a commitment list. Items 1–17 are the 21:45
-plan's own remainder; 18–50 are session fallout.*
+_Brainstorm, impact-ordered; not a commitment list. Items 1–17 are the 21:45
+plan's own remainder; 18–50 are session fallout._
 
-| #  | Task                                                                                                                            | Source |
-| -- | ------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| 1  | Write the consolidated user ask (CI enable, WISE_SANDBOX_API_KEY, CACHIX/ERRAUDIT tokens, darwin matrix, RetryAfterDelay lock, GOEXPERIMENT fleet scope, v1.0 timing) | M19 |
-| 2  | `gh workflow enable ci` (on your word) → watch first green → badge unfreeze → confirm art-dupl job output                       | M4 |
-| 3  | Confirm the grown art-dupl baseline (16 → 22 clone groups after tonight's new code) is fully accepted before CI locks it        | fallout |
-| 4  | M9: linter-allowlist check (`.golangci.yml` vs pinned list) + negative test                                                     | plan |
-| 5  | M10: spec-drift hardening (floor guard, `PYTHONDONTWRITEBYTECODE=1`, 16 added 2027Q1 paths → FEATURES triage)                   | plan |
-| 6  | M11: negative fixtures for pin_sync.py + spec_drift.py wired into flake checks                                                  | plan |
-| 7  | M12: single-source the coverage floor (flake.nix ↔ ci.yml)                                                                      | plan |
-| 8  | M15: file the two BuildFlow display defects (9-tools-unavailable persistence; findings-counter counting rendered lines) with repros | plan |
-| 9  | M21: bank-sync → v0.14.0 (typed `OneTimeToken` call sites), scratch-verify, redeploy, confirm FX footer                         | plan |
-| 10 | M22 (on key): 5-assumption sandbox pass + OTT `2026Q3→2026Q4` probe + flip + first recorded sandbox-live run                    | plan |
-| 11 | M23: Go 1.27 condition re-probe (`nix eval nixpkgs#go.version`) and execute the migration plan when its 4 conditions hold        | plan |
-| 12 | M24: AGENTS.md size pass (≈50 KB → <30 KB; extract incident narratives, keep every live gotcha)                                 | plan |
-| 13 | M17: commit the pipe-masking + ps-before-gates lessons to crush-config `references/lessons.md`                                  | plan |
-| 14 | M16: docs-truth tail (DOMAIN_LANGUAGE terms vs code, api-docs-study counts vs the 188-path spec, 19-59 review annotation)       | plan |
-| 15 | M18: live-smoke harness decision (build-tag `_live_test.go` vs sandbox-live fold) + implement the winner                        | plan |
-| 16 | M20: four decision memos (Health code-half, spec-drift posture, flake tag-pins, darwin matrix)                                  | plan |
-| 17 | M27: v1.0.0 path (growth lineage at 46 methods; tag on your word)                                                               | plan |
-| 18 | HARVEST this report's (f) into TODO_LIST.md once the parallel session's TODO edits land                                         | skill  |
-| 19 | Strike the plan's fine-grain T-rows (T23–T30, T56–T62) for the archived batches                                                  | fallout |
-| 20 | Itemize the current apidiff v0.14.0→HEAD delta (test/doc commits only expected)                                                 | fallout |
-| 21 | Verify the tag message's "32 godoc examples" claim against the actual `Example*` count (doc-verify gates FEATURES, not the tag)  | fallout |
-| 22 | Verify the GitHub release page renders correctly (code spans, tables) via `gh release view`                                     | fallout |
-| 23 | pkg.go.dev render check for v0.14.0 (lags the proxy by up to ~1h; non-signal 404 on /fetch)                                     | fallout |
-| 24 | Re-run the three-pass `-shuffle=on` loop after tonight's test additions                                                          | fallout |
-| 25 | Re-run `nix flake check` once the tree settles (fmt/build/doc-verify/markdownlint are green; the flake gate predates M13's commits) | fallout |
-| 26 | Confirm `checks.pin-sync` still green after the parallel session's flake.nix anchor-check wiring                                | fallout |
-| 27 | Confirm anchor-check's negative test (T35) exists and red-lines on a wrong anchor                                               | M8 tail |
-| 28 | Confirm anchor-check covers AGENTS.md anchors or document its scope                                                             | M8 tail |
+| #  | Task                                                                                                                                                                      | Source           |
+| -- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| 1  | Write the consolidated user ask (CI enable, WISE_SANDBOX_API_KEY, CACHIX/ERRAUDIT tokens, darwin matrix, RetryAfterDelay lock, GOEXPERIMENT fleet scope, v1.0 timing)     | M19              |
+| 2  | `gh workflow enable ci` (on your word) → watch first green → badge unfreeze → confirm art-dupl job output                                                                 | M4               |
+| 3  | Confirm the grown art-dupl baseline (16 → 22 clone groups after tonight's new code) is fully accepted before CI locks it                                                  | fallout          |
+| 4  | M9: linter-allowlist check (`.golangci.yml` vs pinned list) + negative test                                                                                               | plan             |
+| 5  | M10: spec-drift hardening (floor guard, `PYTHONDONTWRITEBYTECODE=1`, 16 added 2027Q1 paths → FEATURES triage)                                                             | plan             |
+| 6  | M11: negative fixtures for pin_sync.py + spec_drift.py wired into flake checks                                                                                            | plan             |
+| 7  | M12: single-source the coverage floor (flake.nix ↔ ci.yml)                                                                                                                | plan             |
+| 8  | M15: file the two BuildFlow display defects (9-tools-unavailable persistence; findings-counter counting rendered lines) with repros                                       | plan             |
+| 9  | M21: bank-sync → v0.14.0 (typed `OneTimeToken` call sites), scratch-verify, redeploy, confirm FX footer                                                                   | plan             |
+| 10 | M22 (on key): 5-assumption sandbox pass + OTT `2026Q3→2026Q4` probe + flip + first recorded sandbox-live run                                                              | plan             |
+| 11 | M23: Go 1.27 condition re-probe (`nix eval nixpkgs#go.version`) and execute the migration plan when its 4 conditions hold                                                 | plan             |
+| 12 | M24: AGENTS.md size pass (≈50 KB → <30 KB; extract incident narratives, keep every live gotcha)                                                                           | plan             |
+| 13 | M17: commit the pipe-masking + ps-before-gates lessons to crush-config `references/lessons.md`                                                                            | plan             |
+| 14 | M16: docs-truth tail (DOMAIN_LANGUAGE terms vs code, api-docs-study counts vs the 188-path spec, 19-59 review annotation)                                                 | plan             |
+| 15 | M18: live-smoke harness decision (build-tag `_live_test.go` vs sandbox-live fold) + implement the winner                                                                  | plan             |
+| 16 | M20: four decision memos (Health code-half, spec-drift posture, flake tag-pins, darwin matrix)                                                                            | plan             |
+| 17 | M27: v1.0.0 path (growth lineage at 46 methods; tag on your word)                                                                                                         | plan             |
+| 18 | HARVEST this report's (f) into TODO_LIST.md once the parallel session's TODO edits land                                                                                   | skill            |
+| 19 | Strike the plan's fine-grain T-rows (T23–T30, T56–T62) for the archived batches                                                                                           | fallout          |
+| 20 | Itemize the current apidiff v0.14.0→HEAD delta (test/doc commits only expected)                                                                                           | fallout          |
+| 21 | Verify the tag message's "32 godoc examples" claim against the actual `Example*` count (doc-verify gates FEATURES, not the tag)                                           | fallout          |
+| 22 | Verify the GitHub release page renders correctly (code spans, tables) via `gh release view`                                                                               | fallout          |
+| 23 | pkg.go.dev render check for v0.14.0 (lags the proxy by up to ~1h; non-signal 404 on /fetch)                                                                               | fallout          |
+| 24 | Re-run the three-pass `-shuffle=on` loop after tonight's test additions                                                                                                   | fallout          |
+| 25 | Re-run `nix flake check` once the tree settles (fmt/build/doc-verify/markdownlint are green; the flake gate predates M13's commits)                                       | fallout          |
+| 26 | Confirm `checks.pin-sync` still green after the parallel session's flake.nix anchor-check wiring                                                                          | fallout          |
+| 27 | Confirm anchor-check's negative test (T35) exists and red-lines on a wrong anchor                                                                                         | M8 tail          |
+| 28 | Confirm anchor-check covers AGENTS.md anchors or document its scope                                                                                                       | M8 tail          |
 | 29 | LSP tripwire: confirm the gopls duplicate-decl phantoms (visible ALL session in editor diagnostics) are gone in a FRESH session; if not, the `.crushrc` env fix regressed | reopen condition |
-| 30 | codespell + gitleaks re-run after tonight's doc churn (CONTRIBUTING/README changed; configs skip status/reviews trees)          | fallout |
-| 31 | Keep `internal/raw` at 100% function coverage — new raw payload types need carrier tests in the same commit                     | fallout |
-| 32 | Next baseline at v0.15.0 per the bench README convention                                                                        | cadence |
-| 33 | Decide whether markdownlint joins the pre-release chain or stays on-demand (2026-10-11 decision says on-demand)                 | decision |
-| 34 | CONTRIBUTING: one line documenting the on-demand markdownlint invocation                                                        | fallout |
-| 35 | Dependabot actions-group re-check after ci.yml changes (pin-sync job uses pinned SHAs — expected clean)                         | fallout |
-| 36 | Record the status-report `.md`-override recurrence (skill's standing exception covers dispatch reports only)                    | process |
-| 37 | Fleet pin-drift sweep (ROADMAP raw idea) — tonight proved the class again via the flake fileset miss                            | ROADMAP |
-| 38 | Daemon-hygiene upstream ask (heuristic commits sweeping staged work mid-commit) already on ROADMAP — keep evidence accumulating | ROADMAP |
-| 39 | Multi-session claim convention proposal (see g3)                                                                                | process |
-| 40 | Coordinate with the 22:29 "error-system excellence" plan from the other session — dedupe before executing                       | fleet |
-| 41 | Verify no `.envrc`/direnv regression in fresh shells (GOEXPERIMENT injection)                                                   | standing |
-| 42 | `release-notes-check` on any future release-notes edit before `gh release edit`                                                 | ritual  |
-| 43 | Consider a `docs/releases/` template with the count-claim slot pre-positioned                                                   | M19-adjacent |
-| 44 | Consider extracting the M1 gate battery into a scripted release-inventory lane (it caught two real breakages tonight)           | improvement |
-| 45 | Keep `docs/status/` holding only point-in-time snapshots (achieved tonight — maintain on each sweep)                            | cadence |
-| 46 | Re-check `README.md` install snippet for a version pin that should say v0.14.0                                                  | fallout |
-| 47 | Confirm the coverage-badge job's floor constant still matches 92 after M12 (or single-source it first — item 7)                 | M12-adjacent |
-| 48 | When #34-adjacent BuildFlow fixes land, re-diff embedded vs standalone before lifting any skip (none currently skipped)         | upstream watch |
-| 49 | Watch md-go-validator #8 for the flake-input switch that deletes the go_1_27/vendorHash dance                                   | upstream watch |
-| 50 | Next docs-health pass: annotate THIS report inline when its (f) items ship (annotate-then-archive)                              | skill  |
+| 30 | codespell + gitleaks re-run after tonight's doc churn (CONTRIBUTING/README changed; configs skip status/reviews trees)                                                    | fallout          |
+| 31 | Keep `internal/raw` at 100% function coverage — new raw payload types need carrier tests in the same commit                                                               | fallout          |
+| 32 | Next baseline at v0.15.0 per the bench README convention                                                                                                                  | cadence          |
+| 33 | Decide whether markdownlint joins the pre-release chain or stays on-demand (2026-10-11 decision says on-demand)                                                           | decision         |
+| 34 | CONTRIBUTING: one line documenting the on-demand markdownlint invocation                                                                                                  | fallout          |
+| 35 | Dependabot actions-group re-check after ci.yml changes (pin-sync job uses pinned SHAs — expected clean)                                                                   | fallout          |
+| 36 | Record the status-report `.md`-override recurrence (skill's standing exception covers dispatch reports only)                                                              | process          |
+| 37 | Fleet pin-drift sweep (ROADMAP raw idea) — tonight proved the class again via the flake fileset miss                                                                      | ROADMAP          |
+| 38 | Daemon-hygiene upstream ask (heuristic commits sweeping staged work mid-commit) already on ROADMAP — keep evidence accumulating                                           | ROADMAP          |
+| 39 | Multi-session claim convention proposal (see g3)                                                                                                                          | process          |
+| 40 | Coordinate with the 22:29 "error-system excellence" plan from the other session — dedupe before executing                                                                 | fleet            |
+| 41 | Verify no `.envrc`/direnv regression in fresh shells (GOEXPERIMENT injection)                                                                                             | standing         |
+| 42 | `release-notes-check` on any future release-notes edit before `gh release edit`                                                                                           | ritual           |
+| 43 | Consider a `docs/releases/` template with the count-claim slot pre-positioned                                                                                             | M19-adjacent     |
+| 44 | Consider extracting the M1 gate battery into a scripted release-inventory lane (it caught two real breakages tonight)                                                     | improvement      |
+| 45 | Keep `docs/status/` holding only point-in-time snapshots (achieved tonight — maintain on each sweep)                                                                      | cadence          |
+| 46 | Re-check `README.md` install snippet for a version pin that should say v0.14.0                                                                                            | fallout          |
+| 47 | Confirm the coverage-badge job's floor constant still matches 92 after M12 (or single-source it first — item 7)                                                           | M12-adjacent     |
+| 48 | When #34-adjacent BuildFlow fixes land, re-diff embedded vs standalone before lifting any skip (none currently skipped)                                                   | upstream watch   |
+| 49 | Watch md-go-validator #8 for the flake-input switch that deletes the go_1_27/vendorHash dance                                                                             | upstream watch   |
+| 50 | Next docs-health pass: annotate THIS report inline when its (f) items ship (annotate-then-archive)                                                                        | skill            |
 
 ## g) QUESTIONS I CANNOT FIGURE OUT MYSELF (3)
 

@@ -62,7 +62,9 @@ def locate_symbol(text: str, symbol: str) -> int | None:
     return func_hit
 
 
-def check_anchor(repo: Path, doc: Path, line: str, match: re.Match, line_no: int) -> str | None:
+def check_anchor(
+    repo: Path, doc: Path, line: str, match: re.Match, line_no: int
+) -> str | None:
     rel, num = match.group(1), int(match.group(2))
     go_file = find_go_file(repo, rel)
     if go_file is None:
@@ -70,7 +72,9 @@ def check_anchor(repo: Path, doc: Path, line: str, match: re.Match, line_no: int
     text = go_file.read_text(encoding="utf-8")
     lines = text.splitlines()
     if not 1 <= num <= len(lines):
-        return f"{doc}:{line_no}: anchor `{rel}:{num}` -- file has only {len(lines)} lines"
+        return (
+            f"{doc}:{line_no}: anchor `{rel}:{num}` -- file has only {len(lines)} lines"
+        )
 
     tail = line[: match.start()][-120:]
     symbol = SYMBOL_BEFORE_RE.search(tail)
@@ -95,11 +99,7 @@ def check_anchor(repo: Path, doc: Path, line: str, match: re.Match, line_no: int
     )
 
 
-SELF_TEST_GO = (
-    "package fixture\n\n"
-    "func Alpha() {}\n\n"
-    "func Beta() {}\n"
-)
+SELF_TEST_GO = "package fixture\n\nfunc Alpha() {}\n\nfunc Beta() {}\n"
 
 SELF_TEST_DOC = (
     "- good: `Alpha` (`fixture.go:3`)\n"
@@ -132,7 +132,9 @@ def self_test() -> int:
                 problem = check_anchor(root, root / "README.md", line, match, lineno)
                 if problem:
                     drifts.append(problem)
-        missing = [exp for exp in SELF_TEST_EXPECTED if not any(exp in d for d in drifts)]
+        missing = [
+            exp for exp in SELF_TEST_EXPECTED if not any(exp in d for d in drifts)
+        ]
         unexpected = len(drifts) - len(SELF_TEST_EXPECTED)
         if missing or unexpected != 0:
             for miss in missing:
@@ -169,7 +171,10 @@ def main() -> int:
     missing = [p.name for p in docs if not p.is_file()]
     docs = [p for p in docs if p.is_file()]
     if missing:
-        print(f"warning: living docs not found, skipped: {', '.join(missing)}", file=sys.stderr)
+        print(
+            f"warning: living docs not found, skipped: {', '.join(missing)}",
+            file=sys.stderr,
+        )
 
     drifts: list[str] = []
     anchors = 0
@@ -192,7 +197,9 @@ def main() -> int:
             f"across {len(docs)} living docs"
         )
         return 1
-    print(f"anchor-check: all {anchors} anchors verified across {len(docs)} living docs")
+    print(
+        f"anchor-check: all {anchors} anchors verified across {len(docs)} living docs"
+    )
     return 0
 
 

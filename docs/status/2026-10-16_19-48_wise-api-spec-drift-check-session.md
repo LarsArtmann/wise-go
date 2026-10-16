@@ -112,7 +112,7 @@ implicit in my closing summary, not stated loudly. It is stated here.
    collapse accounting (ClearSCAChallenge sharing OTT pairs, etc.) was asserted
    from memory of the method list, not verified call-site by call-site. No lie
    in the final numbers (38 is what the extractor found and it matched every
-   path), but the collapse *explanation* is unverified.
+   path), but the collapse _explanation_ is unverified.
 
 ## e) WHAT WE SHOULD IMPROVE
 
@@ -152,6 +152,7 @@ implicit in my closing summary, not stated loudly. It is stated here.
 ## f) NEXT (up to 50, ranked; tiers: P1 = do next sitting, P2 = soon, P3 = backlog/ROADMAP fuel)
 
 **P1 — unblock the release gate**
+
 1. ~~Migrate `GetBankAccountDetails` to `GET /balances/account-details/{id}`~~ done — migrated to GET /balances/account-details/{id} with the AccountDetailsID brand (baba096, 2026-10-16)
    ~~(live-preview contract check → rework account_details.go: path, branded ID,~~
    ~~fixtures → `go test` → spec-drift green). Gate-blocking.~~
@@ -169,28 +170,28 @@ implicit in my closing summary, not stated loudly. It is stated here.
 
 **P2 — robustness & hygiene**
 7. Rewrite the extractor on stdlib `go/parser` (small `go run`-able tool
-   emitting JSON; python keeps fetch/match) — kills the whole regex-bug class.
+emitting JSON; python keeps fetch/match) — kills the whole regex-bug class.
 8. Verify ClearSCAChallenge's call sites (unverified collapse assumption).
 9. Document the 41-methods → 38-pairs collapse math (script docstring or
-   AGENTS.md), next to the indirection list.
+AGENTS.md), next to the indirection list.
 10. Query-parameter conformance: at least required-params presence per matched
-    path (the `?types=` NotNull class).
+path (the `?types=` NotNull class).
 11. Single-source the statement-format exemption (or enforce a cross-check)
-    between conformance gate and script.
+between conformance gate and script.
 12. Webhook payload drift: live spec's top-level `webhooks` key vs the SDK's
-    typed webhook payloads — decide in/out of the check's scope.
+typed webhook payloads — decide in/out of the check's scope.
 13. On-demand `buildflow -s gitleaks -s codespell` over scripts/spec_drift.py.
 14. Fetch robustness: retry on 429/5xx + configurable timeout for the spec
-    download.
+download.
 15. `PYTHONDONTWRITEBYTECODE=1` (or `-B`) in the flake app to stop
-    `__pycache__` litter.
+`__pycache__` litter.
 16. Surface the schema-granularity limitation in the script's own output header
-    (one line: "checks paths+methods only"), not just the docstring.
+(one line: "checks paths+methods only"), not just the docstring.
 17. Cross-check `servers` URLs in the live spec vs the SDK's `SandboxURL`/
-    production base URL constants (cheap addition to the script).
+production base URL constants (cheap addition to the script).
 18. `servers`/`info.version` change detection with an explicit
-    "spec rolled to X" banner (the 2027Q1 roll is currently one number among
-    others).
+"spec rolled to X" banner (the 2027Q1 roll is currently one number among
+others).
 19. Re-baseline `buildflow timings` on an idle machine (verdict noise).
 20. Update AGENTS.md "API docs study" counts after a fresh preview re-audit.
 
@@ -198,61 +199,61 @@ implicit in my closing summary, not stated loudly. It is stated here.
 21. OTT `2026Q3` → `2026Q4` flip (pre-existing P1, probe-blind without creds).
 22. Sandbox live-verification pass (pre-existing P1, needs `WISE_SANDBOX_API_KEY`).
 23. CI re-enable (pre-existing; would give #3-recurrence a home + unfreeze the
-    coverage badge).
+coverage badge).
 24. `nix flake check --all-systems` x86_64-darwin blocker (open decision:
-    pin nixpkgs-26.05-darwin or drop the system).
+pin nixpkgs-26.05-darwin or drop the system).
 25. golangci 14 warning findings — triage queue per AGENTS.md policy.
 26. BuildFlow upstream defects #34/#35/#36 + md-go-validator #8 (filed; track).
 27. README coverage badge frozen (CI-disabled consequence) — revisits with 23.
 28. Consider `--json` output mode for spec-drift (machine-consumable for a
-    future dashboard/cron).
+future dashboard/cron).
 29. Consider a `docs/reviews/2027Q1-spec-roll.md` note documenting what changed
-    2026Q3→2027Q1 (the drift list is reproducible via `--verbose`, but a dated
-    narrative helps the migration sitting).
+2026Q3→2027Q1 (the drift list is reproducible via `--verbose`, but a dated
+narrative helps the migration sitting).
 30. Recurring candidate: fold `nix run .#spec-drift` into doc-verify-adjacent
-    weekly automation IF 23 lands; otherwise cron on Lars's machine (needs g3).
+weekly automation IF 23 lands; otherwise cron on Lars's machine (needs g3).
 31. Exemption negative test (remove `statement.json` from a fixture spec →
-    exemption path fires).
+exemption path fires).
 32. METHOD GONE message polish (union-of-methods across multiple structural
-    matches can mislead).
+matches can mislead).
 33. Consider `--min-endpoints` CLI override for the floor guard (#4) so
-    intentional surface changes need one explicit flag, not an edit.
+intentional surface changes need one explicit flag, not an edit.
 34. Note in FEATURES.md that per-endpoint coverage matrix is 2026Q3-based until
-    #3 lands (honesty marker for readers).
+#3 lands (honesty marker for readers).
 35. pin_sync.py: same test-coverage gap (no automated tests) — same pattern as
-    #6 when python test infra exists.
+#6 when python test infra exists.
 36. Pre-release chain runtime: now ~7 network gates; consider a `--fast` skip
-    set for iteration (tension with "one-command gate" purpose — decide).
+set for iteration (tension with "one-command gate" purpose — decide).
 37. `spec_drift.py` shebang/interpreter pinning (`#!/usr/bin/env python3` is
-    fine; document >=3.10 requirement for `str | None` unions).
+fine; document >=3.10 requirement for `str | None` unions).
 38. GitHub Actions: a manual-dispatch workflow for spec-drift, ready but
-    disabled alongside CI (one file, zero risk, instant value when CI returns).
+disabled alongside CI (one file, zero risk, instant value when CI returns).
 39. Add the drift check to the docs-health BUILD checklist ("new endpoint work
-    starts with a green spec-drift").
+starts with a green spec-drift").
 40. Post-#1: annotate this report + the AGENTS.md gotcha inline (docs-health
-    ANNOTATE) so the MISSING example doesn't outlive its cause.
+ANNOTATE) so the MISSING example doesn't outlive its cause.
 41. Sweep `/tmp` scenario fixtures into `testdata/` IF #6 is done (fixtures
-    become first-class).
+become first-class).
 42. Confirm codespell's `docs/reviews/*` skip still covers a future
-    `2027Q1-spec-roll.md` (#29) — skip patterns are path-based.
+`2027Q1-spec-roll.md` (#29) — skip patterns are path-based.
 43. Explore `x-tagGroups`/`tags` from the live spec to auto-derive FEATURE
-    categories instead of hand-maintaining the matrix mapping (#5 at scale).
+categories instead of hand-maintaining the matrix mapping (#5 at scale).
 44. Latency: script downloads ~2.1 MB per run; add `--cache-ttl` or reuse a
-    committed fixture for offline dev loops.
+committed fixture for offline dev loops.
 45. Error-family alignment: script exits are numeric-only; consider emitting
-    errorfamily-style structured codes if it ever gets a Go sibling (#7).
+errorfamily-style structured codes if it ever gets a Go sibling (#7).
 46. Consider suppressing the daemon for `docs/status/*` noise (fleet-level
-    process question, not repo-local — goes to crush-config discussion).
+process question, not repo-local — goes to crush-config discussion).
 47. `flake.nix` app description consistency check (`nix flake check` warns on
-    missing meta.description — new app has one; verified).
+missing meta.description — new app has one; verified).
 48. Document in AGENTS.md that `spec-drift` needs network (already in the
-    bullet; ensure the gotcha cross-references it) — tiny doc polish.
+bullet; ensure the gotcha cross-references it) — tiny doc polish.
 49. Evaluate upstreaming the "typed marker" matching idea (`{d}`/`{s}`/`{p}`)
-    into md-go-validator or BuildFlow if fleet-wide useful (linter-building
-    decision checklist applies).
+into md-go-validator or BuildFlow if fleet-wide useful (linter-building
+decision checklist applies).
 50. Close the loop per buildflow skill: ruff EXE001 was MY miss, not a tool
-    defect — no upstream filing needed; verified nix-checker/statix findings
-    against AGENTS.md dispositions (done during the run).
+defect — no upstream filing needed; verified nix-checker/statix findings
+against AGENTS.md dispositions (done during the run).
 
 ## g) QUESTIONS I CANNOT FIGURE OUT MYSELF
 
@@ -272,9 +273,9 @@ implicit in my closing summary, not stated loudly. It is stated here.
 
 ---
 
-*Verification appendix (all re-run after the ruff pass): live-spec run exit 1
+_Verification appendix (all re-run after the ruff pass): live-spec run exit 1
 (MISSING account-details); vendored-as-live exit 0; removed-path fixture exit 1;
 `--fail-on-drift` fixture exit 2; broken-file exit 3; `nix flake check` exit 0;
 `buildflow --fix --build-mode=full` exit 0 (63/72, warnings = documented
 dispositions); ruff "All checks passed!"; 206 Go tests green; flake app live
-network run 200 OK.*
+network run 200 OK._

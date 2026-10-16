@@ -469,3 +469,48 @@ func TestSpecConformanceValidatorCanFail(t *testing.T) {
 		}
 	}
 }
+
+// TestSpecConformanceGranularErrorEnvelope pins the error-envelope contract
+// against the vendored spec: a 400 carrying Wise's granular codes
+// (parameter_missing, not.valid) in the standard errors[] envelope conforms
+// to the declared 400 response schema, and error-body response validation
+// stays armed (a malformed envelope is rejected, so the granular-code
+// fixtures in the suites cannot rot vacuously).
+func TestSpecConformanceGranularErrorEnvelope(t *testing.T) {
+	specCtx, err := loadConformanceSpec()
+	if err != nil {
+		t.Fatalf("load spec snapshot %s: %v", specSnapshotPath, err)
+	}
+
+	conforming := validateExchange(specCtx, conformanceExchange{
+		method:   http.MethodGet,
+		rawPath:  "/v1/rates",
+		query:    "source=EUR&target=USD",
+		status:   http.StatusBadRequest,
+		respBody: []byte(`{"errors":[{"code":"parameter_missing","message":"source is required"},{"code":"not.valid","message":"amount is invalid"}]}`),
+		respCT:   "application/json",
+	})
+	for _, problem := range conforming {
+		t.Errorf("granular error envelope does not conform to the spec's 400 schema: %s", problem)
+	}
+
+	malformed := validateExchange(specCtx, conformanceExchange{
+		method:   http.MethodGet,
+		rawPath:  "/v1/rates",
+		query:    "source=EUR&target=USD",
+		status:   http.StatusBadRequest,
+		respBody: []byte(`{"errors":"not-an-array"}`),
+		respCT:   "application/json",
+	})
+
+	armed := false
+	for _, problem := range malformed {
+		if strings.Contains(problem, "response") {
+			armed = true
+		}
+	}
+
+	if !armed {
+		t.Error("validator accepted a malformed error envelope; error-body response validation is not armed")
+	}
+}

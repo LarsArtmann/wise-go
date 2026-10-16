@@ -18,9 +18,9 @@ Scope discipline: this report covers ONLY this session's run and what it noticed
 2. **SUPERB Pareto plan — bank-sync wise-go full adoption.**
    `docs/planning/2026-10-16_16-45_SUPERB-wise-go-full-adoption.md` (commit b47c3710, **pushed**).
    1%→51% owner-SCA + redeploy; 4%→64% lint-gate resurrection + coherence check; 20%→80% correlation IDs
-   + retry metrics; 13 comprehensive tasks + 40 micro-tasks (≤12 min), mermaid graph, 7 verschlimmbessern
-   guards, openness errata (4 already-shipped items killed, 2 do-not-touch traps flagged: go 1.27.1 war,
-   sweep-finding judgment). TODO_LIST updated: new P1 lint-gate row + tails-item re-audit pointers.
+   - retry metrics; 13 comprehensive tasks + 40 micro-tasks (≤12 min), mermaid graph, 7 verschlimmbessern
+     guards, openness errata (4 already-shipped items killed, 2 do-not-touch traps flagged: go 1.27.1 war,
+     sweep-finding judgment). TODO_LIST updated: new P1 lint-gate row + tails-item re-audit pointers.
 3. **Wise SCA documentation research (user-triggered).**
    Read `sca-otp` category page + the SCA-over-API guide: SCA applies to low-risk reads too (statements =
    Wise's own low-risk example); ~90-day PSD2 re-auth cycle; **one clearance opens a 5-minute session

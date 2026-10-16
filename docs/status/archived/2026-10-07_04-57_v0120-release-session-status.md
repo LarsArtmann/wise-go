@@ -110,73 +110,73 @@ Two genuine defects, both small and fixable:
 
 Release follow-ups (this session's direct output):
 
-| #  | Task                                                                                                                        | Impact      |
-| -- | --------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| ~~1~~  | ~~Fix broken code span in published v0.12.0 release notes (`gh release edit`)~~ done — fixed per the 2026-10-07 banner; release-notes-check now gates code spans in docs/releases | ~~High, 2 min~~ |
-| ~~2~~  | ~~Push local master (`c6c01a9`, `b0ec651`) once approved~~ done — push authorized and executed 2026-10-16; origin/master current | ~~High~~ |
-| 3  | Run `nix run .#apidiff` vs v0.11.0, archive delta to `docs/releases/v0.12.0-apidiff.md` **→ absorbed by the nix run .#pre-release apidiff step; no per-release archive kept** | High        |
-| ~~4~~  | ~~HARVEST this report's list into TODO_LIST (docs-health)~~ done — banner: routed into TODO_LIST/ROADMAP same day | ~~High~~ |
-| ~~5~~  | ~~Verify v0.10.0/v0.11.0 published note bodies against their tags (skim for factual errors)~~ **Won't implement — superseded — both note bodies proved correct; audit value expired.** | ~~Med~~ |
-| ~~6~~  | ~~Fix ROADMAP stale "pending user approval" clause after the concurrent session lands~~ done — banner: fixed in ROADMAP.md | ~~Med~~ |
-| ~~7~~  | ~~Annotate/archive today's earlier status docs (03:45, 04:20) per the annotate-then-archive rule~~ done — 2026-10-16 docs-health sweep annotates and archives 03-45 and 04-20 | ~~Med~~ |
-| 8  | Re-enable GitHub CI workflow (resolved SSH blocker, 2026-09-13; remaining: push+enable+green) **→ CI resurrection in flight: push authorized; server-side enable is the remaining user step** | High        |
-| 9  | After CI enable: verify coverage-badge job rebases/pushes cleanly, then delete the frozen-badge caveats in AGENTS.md/README **→ post-enable follow-up, tracked in TODO_LIST** | Med         |
-| ~~10~~ | ~~Add `nix run .#pre-release` gate app (build/vet/race/lint/flake/doc-verify/apidiff chain)~~ done — nix run .#pre-release shipped in v0.13.0 | ~~High~~ |
-| 11 | Release-notes template + pre-publish checklist under `docs/releases/` **→ release-notes conventions live in docs/releases; template still an idea** | Med         |
-| 12 | Markdown lint gate (code spans, relative links) wired into doc-verify **→ markdownlint stays on-demand (2026-10-11 decision); release-notes-check covers releases** | Med         |
-| ~~13~~ | ~~Run spec-conformance coverage guard explicitly (non-shuffled + shuffled) and pin the floor result~~ done — shuffle-proof TestMain guard landed 2026-10-07 | ~~Med~~ |
+| #      | Task                                                                                                                                                                                          | Impact          |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
+| ~~1~~  | ~~Fix broken code span in published v0.12.0 release notes (`gh release edit`)~~ done — fixed per the 2026-10-07 banner; release-notes-check now gates code spans in docs/releases             | ~~High, 2 min~~ |
+| ~~2~~  | ~~Push local master (`c6c01a9`, `b0ec651`) once approved~~ done — push authorized and executed 2026-10-16; origin/master current                                                              | ~~High~~        |
+| 3      | Run `nix run .#apidiff` vs v0.11.0, archive delta to `docs/releases/v0.12.0-apidiff.md` **→ absorbed by the nix run .#pre-release apidiff step; no per-release archive kept**                 | High            |
+| ~~4~~  | ~~HARVEST this report's list into TODO_LIST (docs-health)~~ done — banner: routed into TODO_LIST/ROADMAP same day                                                                             | ~~High~~        |
+| ~~5~~  | ~~Verify v0.10.0/v0.11.0 published note bodies against their tags (skim for factual errors)~~ **Won't implement — superseded — both note bodies proved correct; audit value expired.**        | ~~Med~~         |
+| ~~6~~  | ~~Fix ROADMAP stale "pending user approval" clause after the concurrent session lands~~ done — banner: fixed in ROADMAP.md                                                                    | ~~Med~~         |
+| ~~7~~  | ~~Annotate/archive today's earlier status docs (03:45, 04:20) per the annotate-then-archive rule~~ done — 2026-10-16 docs-health sweep annotates and archives 03-45 and 04-20                 | ~~Med~~         |
+| 8      | Re-enable GitHub CI workflow (resolved SSH blocker, 2026-09-13; remaining: push+enable+green) **→ CI resurrection in flight: push authorized; server-side enable is the remaining user step** | High            |
+| 9      | After CI enable: verify coverage-badge job rebases/pushes cleanly, then delete the frozen-badge caveats in AGENTS.md/README **→ post-enable follow-up, tracked in TODO_LIST**                 | Med             |
+| ~~10~~ | ~~Add `nix run .#pre-release` gate app (build/vet/race/lint/flake/doc-verify/apidiff chain)~~ done — nix run .#pre-release shipped in v0.13.0                                                 | ~~High~~        |
+| 11     | Release-notes template + pre-publish checklist under `docs/releases/` **→ release-notes conventions live in docs/releases; template still an idea**                                           | Med             |
+| 12     | Markdown lint gate (code spans, relative links) wired into doc-verify **→ markdownlint stays on-demand (2026-10-11 decision); release-notes-check covers releases**                           | Med             |
+| ~~13~~ | ~~Run spec-conformance coverage guard explicitly (non-shuffled + shuffled) and pin the floor result~~ done — shuffle-proof TestMain guard landed 2026-10-07                                   | ~~Med~~         |
 
 Credentials-gated (waiting on user, not on code):
 
-| #  | Task                                                         | Blocked on      |
-| -- | ------------------------------------------------------------ | --------------- |
-| 14 | Probe + flip `ottAPIVersion` to 2026Q4 **→ key-gated sandbox lane** | sandbox API key |
+| #  | Task                                                                                      | Blocked on      |
+| -- | ----------------------------------------------------------------------------------------- | --------------- |
+| 14 | Probe + flip `ottAPIVersion` to 2026Q4 **→ key-gated sandbox lane**                       | sandbox API key |
 | 15 | First credentialed sandbox-live run (`sandbox_live_test.go`) **→ key-gated sandbox lane** | sandbox API key |
-| 16 | v1.0.0 API-freeze tag **→ user-gated v1.0.0 decision** | user approval   |
+| 16 | v1.0.0 API-freeze tag **→ user-gated v1.0.0 decision**                                    | user approval   |
 
 Endpoint expansion (from the FEATURES matrix — tiers per the implementation plan):
 
-| #  | Task                                                    |
-| -- | ------------------------------------------------------- |
-| 17 | DELETE /v4/profiles/{id}/balances/{id} (close balance) **→ demand-gated per the FEATURES coverage matrix** |
+| #  | Task                                                                                                        |
+| -- | ----------------------------------------------------------------------------------------------------------- |
+| 17 | DELETE /v4/profiles/{id}/balances/{id} (close balance) **→ demand-gated per the FEATURES coverage matrix**  |
 | 18 | POST /v4/profiles/{id}/balance-movements (convert/move) **→ demand-gated per the FEATURES coverage matrix** |
-| 19 | Remaining balance operations (per coverage matrix) **→ demand-gated per the FEATURES coverage matrix** |
-| 20 | Bank account details ordering operation **→ demand-gated per the FEATURES coverage matrix** |
-| 21 | Profile write operations **→ demand-gated per the FEATURES coverage matrix** |
-| 22 | Quotes PATCH update **→ demand-gated per the FEATURES coverage matrix** |
-| 23 | Recipients deactivate / compatibility / confirmations **→ demand-gated per the FEATURES coverage matrix** |
-| 24 | 3 remaining standard-transfers operations **→ demand-gated per the FEATURES coverage matrix** |
-| 25 | Multi-currency account configuration operation **→ demand-gated per the FEATURES coverage matrix** |
-| 26 | Comparison operation (tier-2 leftover) **→ demand-gated per the FEATURES coverage matrix** |
+| 19 | Remaining balance operations (per coverage matrix) **→ demand-gated per the FEATURES coverage matrix**      |
+| 20 | Bank account details ordering operation **→ demand-gated per the FEATURES coverage matrix**                 |
+| 21 | Profile write operations **→ demand-gated per the FEATURES coverage matrix**                                |
+| 22 | Quotes PATCH update **→ demand-gated per the FEATURES coverage matrix**                                     |
+| 23 | Recipients deactivate / compatibility / confirmations **→ demand-gated per the FEATURES coverage matrix**   |
+| 24 | 3 remaining standard-transfers operations **→ demand-gated per the FEATURES coverage matrix**               |
+| 25 | Multi-currency account configuration operation **→ demand-gated per the FEATURES coverage matrix**          |
+| 26 | Comparison operation (tier-2 leftover) **→ demand-gated per the FEATURES coverage matrix**                  |
 
 Quality / infrastructure:
 
-| #  | Task                                                                                                                              |
-| -- | --------------------------------------------------------------------------------------------------------------------------------- |
-| ~~27~~ | ~~Spec-conformance guard: make floors assert under shuffle, not skip~~ done — same shuffle-proof guard as #13 |
-| ~~28~~ | ~~Fuzz `decodeExchangeRates` (array / single / empty / corrupt)~~ done — FuzzDecodeExchangeRates at internal_test.go:1172 |
-| ~~29~~ | ~~Bench the rates array-decode path in `bench_test.go`~~ done — BenchmarkDecodeExchangeRates is in the v0.14.0 baseline |
-| ~~30~~ | ~~Log line when go-retry honors a `Retry-After` hint (observability)~~ done — RequestLog.RetryAfterDelay shipped in v0.13.0 |
-| 31 | `nix flake check --all-systems` (aarch64/darwin coverage) **→ x86_64-darwin dropped by nixpkgs-26.11; matrix decision memo pending** |
+| #      | Task                                                                                                                                                                               |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ~~27~~ | ~~Spec-conformance guard: make floors assert under shuffle, not skip~~ done — same shuffle-proof guard as #13                                                                      |
+| ~~28~~ | ~~Fuzz `decodeExchangeRates` (array / single / empty / corrupt)~~ done — FuzzDecodeExchangeRates at internal_test.go:1172                                                          |
+| ~~29~~ | ~~Bench the rates array-decode path in `bench_test.go`~~ done — BenchmarkDecodeExchangeRates is in the v0.14.0 baseline                                                            |
+| ~~30~~ | ~~Log line when go-retry honors a `Retry-After` hint (observability)~~ done — RequestLog.RetryAfterDelay shipped in v0.13.0                                                        |
+| 31     | `nix flake check --all-systems` (aarch64/darwin coverage) **→ x86_64-darwin dropped by nixpkgs-26.11; matrix decision memo pending**                                               |
 | ~~32~~ | ~~Go 1.27 migration plan (erraudit needs ≥ 1.27; today 1.27 pushes get reverted)~~ done — plan at docs/planning/2026-10-07_go-1.27-migration-plan.md; execution is condition-gated |
-| 33 | Daemon/go.mod guard hook (fail loudly on `.buildflow.yml` deletion / go-directive bump) **→ skip_steps mitigations live in .buildflow.yml; hook idea open** |
-| ~~34~~ | ~~Markdown-validation gate for fenced Go snippets in docs~~ done — checks.md-go-snippets wired into nix flake check |
-| ~~35~~ | ~~art-dupl enforced-gate decision (accept baseline vs exit-code gate)~~ done — policy-not-gate decision 2026-10-07 plus the warn-first CI scaffold |
-| ~~36~~ | ~~erraudit 29 false-positive advisories: class-wide suppress-with-rationale or upstream fix~~ done — BuildFlow #34 closed 2026-10-07; class-wide skip policy recorded |
-| 37 | Typed `BadRequestError` (raw idea; today 400s are `*APIError`) **→ raw idea routed to ROADMAP** |
-| ~~38~~ | ~~Circuit breaker (raw idea; only on consumer demand)~~ **Won't implement — documented non-goal: only on real consumer demand.** |
-| 39 | 2026Q4→2027Q1 quarterly-surface rollover runbook (the two constants roll independently) **→ rollover probe procedure lives in TODO_LIST and the AGENTS conventions** |
-| 40 | Decide `Authenticate()`'s future now that `GetMe` exists **→ decision still open** |
-| 41 | Webhook signing-key rotation story (if Wise publishes one) **→ Wise-gated; no published rotation story** |
-| ~~42~~ | ~~Sweep `docs/status/` for further archive candidates (annotate-then-archive rule)~~ done — 2026-10-16 sweep annotates and archives the eight kept reports |
-| 43 | Typed recipient `Details` (per-corridor structs vs `map[string]string`) **→ open in TODO_LIST** |
-| ~~44~~ | ~~README install/quick-start snippet validation once #34 exists~~ done — checks.md-go-snippets plus the 2026-10-16 identifier sweep |
-| ~~45~~ | ~~Demand-gated: Postman collection, currency-conversion helpers, mock server (re-evaluate only on real consumer ask)~~ **Won't implement — documented non-goal, demand-gated.** |
-| ~~46~~ | ~~Keep response caching a documented non-goal (stateless client by design)~~ **Won't implement — documented non-goal: stateless client by design.** |
-| ~~47~~ | ~~AGENTS.md: add a short release-ritual note (CI-disabled exception, apidiff-before-tag)~~ done — AGENTS Build and Dev documents the pre-release chain and CI state |
-| 48 | Check next Dependabot actions-group sweep lands green (last: `55acf61`) **→ ongoing Dependabot watch** |
-| 49 | After CI enable: re-run apidiff in CI so surface deltas gate merges, not releases **→ post-CI-enable follow-up** |
-| 50 | Consider tagging strategy note: v0.x releases ship without `--prerelease` (repo convention) — document it in the release template **→ note rides the docs/releases conventions** |
+| 33     | Daemon/go.mod guard hook (fail loudly on `.buildflow.yml` deletion / go-directive bump) **→ skip_steps mitigations live in .buildflow.yml; hook idea open**                        |
+| ~~34~~ | ~~Markdown-validation gate for fenced Go snippets in docs~~ done — checks.md-go-snippets wired into nix flake check                                                                |
+| ~~35~~ | ~~art-dupl enforced-gate decision (accept baseline vs exit-code gate)~~ done — policy-not-gate decision 2026-10-07 plus the warn-first CI scaffold                                 |
+| ~~36~~ | ~~erraudit 29 false-positive advisories: class-wide suppress-with-rationale or upstream fix~~ done — BuildFlow #34 closed 2026-10-07; class-wide skip policy recorded              |
+| 37     | Typed `BadRequestError` (raw idea; today 400s are `*APIError`) **→ raw idea routed to ROADMAP**                                                                                    |
+| ~~38~~ | ~~Circuit breaker (raw idea; only on consumer demand)~~ **Won't implement — documented non-goal: only on real consumer demand.**                                                   |
+| 39     | 2026Q4→2027Q1 quarterly-surface rollover runbook (the two constants roll independently) **→ rollover probe procedure lives in TODO_LIST and the AGENTS conventions**               |
+| 40     | Decide `Authenticate()`'s future now that `GetMe` exists **→ decision still open**                                                                                                 |
+| 41     | Webhook signing-key rotation story (if Wise publishes one) **→ Wise-gated; no published rotation story**                                                                           |
+| ~~42~~ | ~~Sweep `docs/status/` for further archive candidates (annotate-then-archive rule)~~ done — 2026-10-16 sweep annotates and archives the eight kept reports                         |
+| 43     | Typed recipient `Details` (per-corridor structs vs `map[string]string`) **→ open in TODO_LIST**                                                                                    |
+| ~~44~~ | ~~README install/quick-start snippet validation once #34 exists~~ done — checks.md-go-snippets plus the 2026-10-16 identifier sweep                                                |
+| ~~45~~ | ~~Demand-gated: Postman collection, currency-conversion helpers, mock server (re-evaluate only on real consumer ask)~~ **Won't implement — documented non-goal, demand-gated.**    |
+| ~~46~~ | ~~Keep response caching a documented non-goal (stateless client by design)~~ **Won't implement — documented non-goal: stateless client by design.**                                |
+| ~~47~~ | ~~AGENTS.md: add a short release-ritual note (CI-disabled exception, apidiff-before-tag)~~ done — AGENTS Build and Dev documents the pre-release chain and CI state                |
+| 48     | Check next Dependabot actions-group sweep lands green (last: `55acf61`) **→ ongoing Dependabot watch**                                                                             |
+| 49     | After CI enable: re-run apidiff in CI so surface deltas gate merges, not releases **→ post-CI-enable follow-up**                                                                   |
+| 50     | Consider tagging strategy note: v0.x releases ship without `--prerelease` (repo convention) — document it in the release template **→ note rides the docs/releases conventions**   |
 
 ## g) QUESTIONS I CANNOT FIGURE OUT MYSELF
 

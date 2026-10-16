@@ -124,32 +124,32 @@ suite green (`go test .` → ok, 3.8s); `golangci-lint run` → 0 issues.
 1. ~~**golangci_lint_ls phantom (webhooks.go:142)** — investigation started,~~ done — root-caused 2026-10-07: env divergence; .crushrc redeclares both LSPs with GOEXPERIMENT=jsonv2
    ~~NOT root-caused. Facts assembled:~~
    ~~- webhooks.go:142 is exactly the `*mapped, //nolint:branching-flow:panic`~~
-     ~~line (the documented suppressed dereference).~~
+   ~~line (the documented suppressed dereference).~~
    ~~- "File is not properly formatted" is golangci-lint v2's FORMATTER~~
-     ~~finding message (gci/goimports/gofumpt/golines are configured).~~
+   ~~finding message (gci/goimports/gofumpt/golines are configured).~~
    ~~- CLI: golangci-lint 2.14.0 (nix store), built with go1.27.1, run inside~~
-     ~~the devShell with GOEXPERIMENT=jsonv2 + GOTOOLCHAIN=local.~~
+   ~~the devShell with GOEXPERIMENT=jsonv2 + GOTOOLCHAIN=local.~~
    ~~- LSP: crushrc wires `golangci_lint_ls` through a host-managed wrapper~~
-     ~~`~/.local/bin/golangci-lint-lsp-wrapper` → `golangci-lint-langserver`~~
-     ~~→ `golangci-lint` from PATH, with `--env GOTOOLCHAIN auto` and caches~~
-     ~~pinned to /mnt/buildcache. **The wrapper does NOT set~~
-     ~~GOEXPERIMENT=jsonv2** — it relies on "inherit the session env", so a~~
-     ~~session/daemon context without GOEXPERIMENT gets package-load failures~~
-     ~~(jsonv2 build constraints) and possibly formatter-only verdicts.~~
+   ~~`~/.local/bin/golangci-lint-lsp-wrapper` → `golangci-lint-langserver`~~
+   ~~→ `golangci-lint` from PATH, with `--env GOTOOLCHAIN auto` and caches~~
+   ~~pinned to /mnt/buildcache. **The wrapper does NOT set~~
+   ~~GOEXPERIMENT=jsonv2** — it relies on "inherit the session env", so a~~
+   ~~session/daemon context without GOEXPERIMENT gets package-load failures~~
+   ~~(jsonv2 build constraints) and possibly formatter-only verdicts.~~
    ~~- Version skew risk: the devShell historically pins v2.13 (ci.yml) while~~
-     ~~the system/PATH binary is 2.14.0 — if the langserver resolves a~~
-     ~~different golangci-lint than the CLI shell does, formatter versions~~
-     ~~disagree → phantom.~~
+   ~~the system/PATH binary is 2.14.0 — if the langserver resolves a~~
+   ~~different golangci-lint than the CLI shell does, formatter versions~~
+   ~~disagree → phantom.~~
    ~~- Live probe at 06:05: `lsp_diagnostics(webhooks.go)` returned **empty**~~
-     ~~— the phantom did NOT reproduce this session (it is intermittent).~~
+   ~~— the phantom did NOT reproduce this session (it is intermittent).~~
    ~~- Related observation: gopls has been reporting a STALE~~
-     ~~`internal_test.go:4 "bytes" unused` error all session although the~~
-     ~~package compiles — the LSP layer (gopls AND golangci) sees mid-edit or~~
-     ~~differently-configured states. Best next probe: restart~~
-     ~~golangci_lint_ls with GOEXPERIMENT=jsonv2 added to the wrapper, then~~
-     ~~edit webhooks.go:142 region and watch for the diagnostic; and diff~~
-     ~~`golangci-lint cache clean` behavior between /mnt/buildcache and the~~
-     ~~CLI's default cache.~~
+   ~~`internal_test.go:4 "bytes" unused` error all session although the~~
+   ~~package compiles — the LSP layer (gopls AND golangci) sees mid-edit or~~
+   ~~differently-configured states. Best next probe: restart~~
+   ~~golangci_lint_ls with GOEXPERIMENT=jsonv2 added to the wrapper, then~~
+   ~~edit webhooks.go:142 region and watch for the diagnostic; and diff~~
+   ~~`golangci-lint cache clean` behavior between /mnt/buildcache and the~~
+   ~~CLI's default cache.~~
 2. ~~**pre-release full-chain run** — app built and its dirty-tree gate~~ done — chain ran end-to-end through the v0.13.0 release and again 2026-10-16
    ~~verified, but a complete end-to-end pass (through apidiff, which needs~~
    ~~network) has not run on a clean tree yet.~~

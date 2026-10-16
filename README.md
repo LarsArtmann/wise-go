@@ -916,14 +916,14 @@ of a bare `AuthError`.
 
 **Which reads need SCA?**
 
-| Endpoint family | Personal token (UK/EEA profile) | Personal token (other regions) | Basis |
-| --------------- | ------------------------------- | ------------------------------ | ----- |
-| Balance statements (`GetStatement`, `ListTransactions`) | **SCA** | no | live-verified 2026-08 |
-| `FundTransfer` | **SCA** | no | godoc + live behavior |
-| `GetTransfer`, `ListTransfers` | no | no | live-verified 2026-10-16 |
-| Transfer receipts (`GetTransferReceipt`, `GetUSCombinedReceipt`) | no | no | not SCA-protected per docs |
-| `GetTransferPayoutInfo`, `ListTransferPayments` | no | no | same family as receipts |
-| Profiles, balances, quotes, recipients, rates, currencies, webhooks | no | no | standard token reads |
+| Endpoint family                                                     | Personal token (UK/EEA profile) | Personal token (other regions) | Basis                      |
+| ------------------------------------------------------------------- | ------------------------------- | ------------------------------ | -------------------------- |
+| Balance statements (`GetStatement`, `ListTransactions`)             | **SCA**                         | no                             | live-verified 2026-08      |
+| `FundTransfer`                                                      | **SCA**                         | no                             | godoc + live behavior      |
+| `GetTransfer`, `ListTransfers`                                      | no                              | no                             | live-verified 2026-10-16   |
+| Transfer receipts (`GetTransferReceipt`, `GetUSCombinedReceipt`)    | no                              | no                             | not SCA-protected per docs |
+| `GetTransferPayoutInfo`, `ListTransferPayments`                     | no                              | no                             | same family as receipts    |
+| Profiles, balances, quotes, recipients, rates, currencies, webhooks | no                              | no                             | standard token reads       |
 
 SCA protection keys off the **profile's registration region**, not the token
 type: a business profile registered outside the UK/EEA reads statements with a
