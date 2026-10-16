@@ -3184,6 +3184,88 @@ var _ = Describe("Wise Client", func() {
 		})
 	})
 
+	Describe("GetUSCombinedReceipt", func() {
+		Context("with an issued receipt", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v3/transfers/987654/us-combined-receipt.pdf",
+					func(w http.ResponseWriter, r *http.Request) {
+						Expect(r.Method).To(Equal(http.MethodGet))
+						w.Header().Set("Content-Type", "application/pdf")
+						_, _ = w.Write([]byte("%PDF-1.7 us-combined"))
+					})
+			})
+
+			It("should return the raw receipt bytes", func() {
+				data, err := client.GetUSCombinedReceipt(context.Background(), wise.NewTransferID(987654))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(data).To(HavePrefix("%PDF-1.7"))
+			})
+		})
+
+		Context("before the receipt is issued (404)", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v3/transfers/987654/us-combined-receipt.pdf",
+					errorHandler(http.StatusNotFound, nil, "NOT_FOUND", "not issued yet"))
+			})
+
+			It("should surface a NotFoundError the caller treats as pending", func() {
+				_, err := client.GetUSCombinedReceipt(context.Background(), wise.NewTransferID(987654))
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+
+		Context("with a zero transfer ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetUSCombinedReceipt(context.Background(), wise.NewTransferID(0))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("transferID is required"))
+			})
+		})
+	})
+
+	Describe("GetTransferNOC", func() {
+		Context("with an issued certificate", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/987654/documents/noc",
+					func(w http.ResponseWriter, r *http.Request) {
+						Expect(r.Method).To(Equal(http.MethodGet))
+						w.Header().Set("Content-Type", "application/pdf")
+						_, _ = w.Write([]byte("%PDF-1.7 noc"))
+					})
+			})
+
+			It("should return the raw certificate bytes", func() {
+				data, err := client.GetTransferNOC(context.Background(), wise.NewTransferID(987654))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(data).To(HavePrefix("%PDF-1.7"))
+			})
+		})
+
+		Context("before outgoing_payment_sent (404)", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/987654/documents/noc",
+					errorHandler(http.StatusNotFound, nil, "NOT_FOUND", "no NOC yet"))
+			})
+
+			It("should surface a NotFoundError the caller treats as pending", func() {
+				_, err := client.GetTransferNOC(context.Background(), wise.NewTransferID(987654))
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+
+		Context("with a zero transfer ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetTransferNOC(context.Background(), wise.NewTransferID(0))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("transferID is required"))
+			})
+		})
+	})
+
 	Describe("GetTransferPayoutInfo", func() {
 		Context("with a SWIFT payout", func() {
 			BeforeEach(func() {

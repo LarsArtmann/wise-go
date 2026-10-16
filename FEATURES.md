@@ -195,9 +195,9 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 | POST   | `/v1/profiles/{id}/transfers/{id}/payments`  | FULLY_FUNCTIONAL | `FundTransfer` (`transfers.go:286`)                            |
 | GET    | `/v1/transfers/{id}/invoices/bankingpartner` | FULLY_FUNCTIONAL | `GetTransferPayoutInfo` (`transfers.go:160`)                   |
 | GET    | `/v1/transfers/{id}/receipt.pdf`             | FULLY_FUNCTIONAL | `GetTransferReceipt` (`transfers.go:138`)                      |
-| GET    | `/v1/transfers/{id}/payments`                | FULLY_FUNCTIONAL | `ListTransferPayments` (`transfers.go:407`)         |
-| GET    | `/v1/transfers/{id}/us-combined-receipt.pdf` | PLANNED          | US combined tax receipt                                        |
-| GET    | `/v1/transfers/{id}/documents/noc`           | PLANNED          | no-objection certificate (India FIRC)                          |
+| GET    | `/v1/transfers/{id}/payments`                | FULLY_FUNCTIONAL | `ListTransferPayments` (`transfers.go:432`)         |
+| GET    | `/v1/transfers/{id}/us-combined-receipt.pdf` | FULLY_FUNCTIONAL | `GetUSCombinedReceipt` (`transfers.go:507`)         |
+| GET    | `/v1/transfers/{id}/documents/noc`           | FULLY_FUNCTIONAL | `GetTransferNOC` (`transfers.go:528`)               |
 
 ### Transfers — third-party (2 operations)
 
