@@ -2500,6 +2500,101 @@ var _ = Describe("Wise Client", func() {
 		})
 	})
 
+	Describe("ListTransferPayments", func() {
+		Context("with valid API response", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/16521634/payments",
+					func(w http.ResponseWriter, r *http.Request) {
+						Expect(r.Method).To(Equal(http.MethodGet))
+
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.MarshalWrite(w, []raw.TransferPayment{
+							{
+								ID:             50000000,
+								Method:         "BANK_TRANSFER",
+								PricingVariant: nil,
+								Amount:         1000,
+								Currency:       "GBP",
+								TimeCreated:    "2020-01-01T12:30:15.000Z",
+								TimeUpdated:    "2020-01-01T12:30:15.000Z",
+							},
+							{
+								ID:             50000001,
+								Method:         "BALANCE",
+								PricingVariant: new(string("BALANCE")),
+								Amount:         42.5,
+								Currency:       "EUR",
+								TimeCreated:    "2020-01-02T09:00:00.000Z",
+								TimeUpdated:    "2020-01-02T09:00:05.000Z",
+							},
+						})
+					})
+			})
+
+			It("should map every payment's amount, method, and timestamps", func() {
+				payments, err := client.ListTransferPayments(
+					context.Background(), wise.NewTransferID(16521634),
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(payments).To(HaveLen(2))
+
+				Expect(payments[0].ID.Get()).To(Equal(int64(50000000)))
+				Expect(payments[0].Method).To(Equal("BANK_TRANSFER"))
+				Expect(payments[0].PricingVariant).To(BeNil())
+				Expect(payments[0].Amount).To(Equal(wise.Money{Cents: 100000, Currency: wise.Currency("GBP")}))
+				Expect(payments[0].Created.Year()).To(Equal(2020))
+
+				Expect(payments[1].Method).To(Equal("BALANCE"))
+				Expect(*payments[1].PricingVariant).To(Equal("BALANCE"))
+				Expect(payments[1].Amount).To(Equal(wise.Money{Cents: 4250, Currency: wise.Currency("EUR")}))
+			})
+		})
+
+		Context("when the transfer has no completed funding yet", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/16521699/payments",
+					func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						_, _ = w.Write([]byte(`[]`))
+					})
+			})
+
+			It("should return an empty, non-nil result", func() {
+				payments, err := client.ListTransferPayments(
+					context.Background(), wise.NewTransferID(16521699),
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(payments).ToNot(BeNil())
+				Expect(payments).To(BeEmpty())
+			})
+		})
+
+		Context("with zero transfer ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.ListTransferPayments(context.Background(), wise.TransferID{})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("transferID is required"))
+			})
+		})
+
+		Context("with 404 unknown transfer", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/transfers/404/payments", errorHandler(
+					http.StatusNotFound, nil, "NOT_FOUND", "Transfer not found",
+				))
+			})
+
+			It("should surface a NotFoundError", func() {
+				_, err := client.ListTransferPayments(
+					context.Background(), wise.NewTransferID(404),
+				)
+				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
+				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+	})
+
 	Describe("GetDeliveryEstimate", func() {
 		Context("with valid API response", func() {
 			BeforeEach(func() {
