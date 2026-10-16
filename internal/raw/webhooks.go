@@ -133,20 +133,3 @@ func (d TransferRefundData) webhookOccurredAt() string { return d.OccurredAt }
 func WebhookOccurredAt[T OccurredAtCarrier](payload T) string {
 	return payload.webhookOccurredAt()
 }
-
-// TransferActiveCasesData is the wire payload of transfers#active-cases
-// events (schema version 4.0.0). The payload carries no occurred_at.
-type TransferActiveCasesData struct {
-	Resource    WebhookEventResource `json:"resource"`
-	ActiveCases []string             `json:"active_cases"`
-}
-
-// TransferRefundData is the wire payload of transfers#refund events (schema
-// version 4.0.0), raised when a transfer's status becomes funds_refunded.
-// The refunded amount rides on the resource block.
-type TransferRefundData struct {
-	Resource   WebhookEventResource `json:"resource"`
-	OccurredAt string               `json:"occurred_at"`
-}
-
-func (d TransferRefundData) webhookOccurredAt() string { return d.OccurredAt }

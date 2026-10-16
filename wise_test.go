@@ -4553,4 +4553,109 @@ var _ = Describe("Wise Client", func() {
 			Expect(err.Error()).To(ContainSubstring("map balances#credit amount"))
 		})
 	})
+
+	Describe("WebhookEvent.TransferActiveCases", func() {
+		It("should decode the typed payload", func() {
+			payload := `{
+				"schema_version": "4.0.0",
+				"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+				"event_type": "transfers#active-cases",
+				"sent_at": "2020-01-01T12:34:56.123Z",
+				"data": {
+					"resource": {"id": 111, "profile_id": 222, "type": "transfer", "account_id": 333},
+					"active_cases": ["deposit_amount_less_invoice"]
+				}
+			}`
+			event, err := wise.ParseWebhookEvent([]byte(payload))
+			Expect(err).ToNot(HaveOccurred())
+
+			data, err := event.TransferActiveCases()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(data.Resource.Type).To(Equal("transfer"))
+			Expect(data.Resource.ID).To(Equal(int64(111)))
+			Expect(data.Resource.ProfileID).To(Equal(wise.NewProfileID(222)))
+			Expect(data.ActiveCases).To(Equal([]string{"deposit_amount_less_invoice"}))
+		})
+
+		It("should normalize a missing case list to an empty slice", func() {
+			payload := `{
+				"schema_version": "4.0.0",
+				"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+				"event_type": "transfers#active-cases",
+				"sent_at": "2020-01-01T12:34:56.123Z",
+				"data": {"resource": {"id": 111, "profile_id": 222, "type": "transfer"}}
+			}`
+			event, err := wise.ParseWebhookEvent([]byte(payload))
+			Expect(err).ToNot(HaveOccurred())
+
+			data, err := event.TransferActiveCases()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(data.ActiveCases).ToNot(BeNil())
+			Expect(data.ActiveCases).To(BeEmpty())
+		})
+
+		It("should reject envelopes of a different event type", func() {
+			event, err := wise.ParseWebhookEvent([]byte(transferStateChangeEventJSON))
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = event.TransferActiveCases()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("event type mismatch"))
+		})
+	})
+
+	Describe("WebhookEvent.TransferRefund", func() {
+		It("should decode the typed payload and parse the refund amount", func() {
+			payload := `{
+				"schema_version": "4.0.0",
+				"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+				"event_type": "transfers#refund",
+				"sent_at": "2024-01-01T12:34:56.123Z",
+				"data": {
+					"resource": {
+						"id": 111, "profile_id": 222, "type": "transfer", "account_id": 333,
+						"refund_amount": 5000, "refund_currency": "EUR"
+					},
+					"occurred_at": "2024-01-01T12:34:56.789Z"
+				}
+			}`
+			event, err := wise.ParseWebhookEvent([]byte(payload))
+			Expect(err).ToNot(HaveOccurred())
+
+			data, err := event.TransferRefund()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(data.Resource.Type).To(Equal("transfer"))
+			Expect(data.Resource.ID).To(Equal(int64(111)))
+			Expect(data.Amount).To(Equal(wise.Money{Cents: 500000, Currency: wise.Currency("EUR")}))
+			Expect(data.OccurredAt.Equal(time.Date(2024, 1, 1, 12, 34, 56, 789000000, time.UTC))).To(BeTrue())
+		})
+
+		It("should classify a refund payload without an amount as corruption", func() {
+			payload := `{
+				"schema_version": "4.0.0",
+				"subscription_id": "72195556-e5cb-495e-a010-b37a4f2a3043",
+				"event_type": "transfers#refund",
+				"sent_at": "2024-01-01T12:34:56.123Z",
+				"data": {
+					"resource": {"id": 111, "profile_id": 222, "type": "transfer"},
+					"occurred_at": "2024-01-01T12:34:56.789Z"
+				}
+			}`
+			event, err := wise.ParseWebhookEvent([]byte(payload))
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = event.TransferRefund()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("refund amount or currency missing"))
+		})
+
+		It("should reject envelopes of a different event type", func() {
+			event, err := wise.ParseWebhookEvent([]byte(transferStateChangeEventJSON))
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = event.TransferRefund()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("event type mismatch"))
+		})
+	})
 })

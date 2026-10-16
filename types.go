@@ -798,3 +798,21 @@ type BalanceCreditData struct {
 	PostTransactionBalance Money
 	OccurredAt             time.Time
 }
+
+// TransferActiveCasesData is the typed payload of transfers#active-cases
+// events: the transfer's currently open compliance/case flags. The payload
+// carries no occurred_at (unlike the other transfer events), so there is
+// nothing to order by — process it as a snapshot of the current case set.
+type TransferActiveCasesData struct {
+	Resource    WebhookResource
+	ActiveCases []string
+}
+
+// TransferRefundData is the typed payload of transfers#refund events, raised
+// when a transfer's status becomes funds_refunded. Amount is the refunded
+// sum as Money (the wire amount rides on the resource block in major units).
+type TransferRefundData struct {
+	Resource   WebhookResource
+	Amount     Money
+	OccurredAt time.Time
+}

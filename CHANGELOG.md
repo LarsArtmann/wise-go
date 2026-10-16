@@ -49,6 +49,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `docs/reviews/2026-10-16_transfer-category-reaudit.md` (true category
   ~15 operations; originator transfers are a dedicated
   `third-party-transfers` family, not a `POST /transfers` variant).
+- `ListTransferPayments` — the completed funding payments of a transfer
+  (`GET /v1/transfers/{id}/payments`), completing the transfer category's
+  payment-side reads.
+- `GetUSCombinedReceipt` (`GET /v1/transfers/{id}/us-combined-receipt.pdf`)
+  and `GetTransferNOC` (`GET /v1/transfers/{id}/documents/noc`, the Indian
+  FIRC no-objection certificate) — raw-bytes downloads alongside the existing
+  receipt and payout-info endpoints.
 
 ### Changed
 

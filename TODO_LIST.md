@@ -9,16 +9,16 @@ Completed work lives in [CHANGELOG.md](CHANGELOG.md), never here.
 
 [ ] Execute the remaining SUPERB Pareto plan items
 (`docs/planning/2026-10-16_19-45_SUPERB-pareto-plan-transfer-truth-close-and-fleet-hygiene.md`;
-M1/M2/M3/M6/M7 already shipped 2026-10-16): M5
-`GET /transfers/{id}/payments`, M8 US combined receipt, M9 NOC document,
-M10 typed `transfers#active-cases`/`transfers#refund` payloads, M12 README
-SCA/OTP endpoint matrix, M13 inventory-honesty sweep (FEATURES gaps +
-count-claim updates), M14 live-smoke harness, M15 originator transfers.
+M1/M2/M3/M6/M7 shipped 2026-10-16, M5 `ListTransferPayments` + M8
+`GetUSCombinedReceipt` + M9 `GetTransferNOC` landed same evening
+(`19ab4e5`, `3c185f7`), M10 typed webhook payloads in flight): remaining
+M4 live smoke (user key), M12 README SCA/OTP endpoint matrix, M13
+inventory-honesty sweep (count-claim updates — the surface is now 44 methods),
+M14 live-smoke harness, M15 originator transfers.
 Source: transfer-category re-audit
 `docs/reviews/2026-10-16_transfer-category-reaudit.md` (true category ~15
-ops: 9 shipped, 4 planned, deposit-details pay-in already DEMAND_GATED;
-the re-audit's "banking-partner invoice" row was a false gap — it IS
-`GetTransferPayoutInfo`).
+ops; deposit-details pay-in already DEMAND_GATED; the re-audit's
+"banking-partner invoice" row was a false gap — it IS `GetTransferPayoutInfo`).
 
 [ ] Run the sandbox live-verification pass (`WISE_SANDBOX_API_KEY`) against the
 five spec-vs-live assumptions settled by the conformance work: statement
@@ -88,17 +88,50 @@ Source: `docs/status/archived/2026-10-07_03-57_session-status-unblocked-prep-rel
 
 ### Open
 
-[ ] Fix `Health` semantics (docs half) — rewrite the `client.go:184` doc
-comment and the README line to say what the method IS: a credential-validating
-end-to-end readiness probe (authenticated `ListProfiles` through the retry
-executor), not a cheap reachability check. Document the typed-error distinction
-(a `*RateLimitError` from `Health` proves reachability with throttling) and the
-worst-case latency (~4 attempts × 30 s timeout + capped delays, up to ~2 min).
-Unblocked; the code-half decision lives under Decisions below. Optionally add a
-short README recipe for wiring the client into a consumer-side DI container
-health check (adapter pattern, no SDK changes — see
-`docs/architecture-understanding/2026-10-16_19-59_samber-do-health-architecture-review.md` §5).
-Source: 2026-10-16 samber/do + health architecture review, finding F-1/F-3.
+[ ] Build an anchor-check gate (`nix run .#anchor-check`): extract every
+`*.go:NN` reference from README/FEATURES/TODO_LIST/ROADMAP and assert the
+cited line still contains the claimed symbol; run the repo-wide sweep and fix
+the drifts it finds. doc-verify gates counts, not line anchors — this class
+rots silently (8 dead anchors found 2026-10-16, more re-drifted the same
+evening). Source: `docs/status/2026-10-16_20-41_samber-do-premise-review-and-health-findings.md` §f6/§f7.
+
+[ ] Harden `spec_drift.py`: add an extraction-floor guard (fail when the
+extracted endpoint count diverges from the expected surface), set
+`PYTHONDONTWRITEBYTECODE=1` in the flake app, and triage the 16 added 2027Q1
+paths into the FEATURES.md matrix (payment-instruments, settlement/
+allocations, saml2, simulation/*, gpi-tracking, cases/files, login/saml2/sso,
+plus the `/auth/jose/playground/jwsjwe` method change). Longer arc: rewrite
+the regex extractor on stdlib `go/parser` (kills the call-shape-bug class).
+Source: `docs/status/2026-10-16_19-48_wise-api-spec-drift-check-session.md` §f.
+
+[ ] Persist negative-scenario tests for the two Python gates
+(`scripts/pin_sync.py`, `scripts/spec_drift.py`) — crafted stale-pin /
+removed-path / broken-JSON fixtures wired into flake checks; both scripts are
+currently verified by manual gauntlets only.
+
+[ ] Add a minimal `.markdownlint.json` (MD013 off) so on-demand markdownlint
+runs surface real issues (broken references, duplicate headings) without
+fighting the repo's long-line style; dprint stays the formatter.
+
+[ ] Single-source the coverage floor (flake.nix and ci.yml read one value, or
+generate ci.yml's from flake.nix) — the parity check guards the split brain;
+eliminate it. Source: 2026-10-11 19:20 session §e4/§f5.
+
+[ ] Build a linter-allowlist check: the enabled-linters set in
+`.golangci.yml` must match a pinned allowlist, making the curated-list policy
+a gate instead of memory (`lll` was auto-re-added twice on 2026-10-16 alone).
+Source: `docs/status/2026-10-16_08-52_todo-execution...md` §f18.
+
+[ ] Cut a fresh benchstat baseline at the next release tag — the committed
+one predates `BenchmarkParseWiseTimestamp` and ends with a junk
+`exit status 1` line (benchstat tolerates both; append-only forbids editing).
+
+[ ] File the two BuildFlow display defects upstream after a
+verify-before-filing pass: (a) "9 tools unavailable" persists after installing
+the tools and purging the result cache while `buildflow doctor` passes them;
+(b) the findings counter reports rendered output lines, not findings (27
+"statix warnings" where `statix check .` shows 2). Source: 2026-10-11 19:20
+session §f2.
 
 [ ] Consume the committed `benchstat` baseline
 (`docs/bench/2026-10-07_v0120_baseline.txt`) in the next perf-touching PR.
@@ -123,6 +156,14 @@ FEATURES wording) shipped 2026-10-16; the optional consumer-side DI recipe
 (README vs `docs/recipes/`) is also yours to place.
 **BLOCKED: user design decision.** Source: 2026-10-16 samber/do + health
 architecture review, finding F-1; `docs/architecture-understanding/2026-10-16_19-59_samber-do-health-architecture-review.md`.
+
+[ ] Spec-drift gate posture — decide whether `--fail-on-drift` should be
+wired into `nix run .#pre-release` (releases then require a fresh vendored
+spec; today vendored-snapshot staleness is report-only) and where spec-drift
+recurs while CI is disabled (scheduled local run, buildflow step, or
+manual-before-release). Source:
+`docs/status/2026-10-16_19-48_wise-api-spec-drift-check-session.md` §g2/§g3.
+**BLOCKED: user decision.**
 
 [ ] `nix flake check --all-systems` — verified 2026-10-07: aarch64-linux and
 aarch64-darwin evaluate clean; x86_64-darwin FAILS EXTERNALLY (nixpkgs-26.11

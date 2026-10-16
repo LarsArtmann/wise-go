@@ -186,7 +186,14 @@ func (c *Client) Authenticate(ctx context.Context) error {
 	return nil
 }
 
-// Health checks if the Wise API is reachable.
+// Health reports whether the client can reach the Wise API and its
+// credentials are accepted, by running an authenticated ListProfiles call
+// through the retry executor. It is a readiness probe, not a cheap liveness
+// check: a *RateLimitError proves reachability (the API answered, under
+// throttling), an *AuthError proves reachability with bad credentials, and
+// the worst case spends the full retry budget (~4 attempts x 30s timeout
+// plus capped delays) before returning. Consumers needing a fail-fast probe
+// should call an endpoint directly with a minimal retry policy.
 func (c *Client) Health(ctx context.Context) error {
 	return c.Authenticate(ctx)
 }

@@ -443,6 +443,64 @@ func (e *WebhookEvent) BalanceCredit() (*BalanceCreditData, error) {
 	}, nil
 }
 
+// errTransferRefundAmountMissing marks a transfers#refund payload whose
+// resource block lacks the refund amount/currency pair.
+var errTransferRefundAmountMissing = errors.New("refund amount or currency missing from resource block")
+
+// TransferActiveCases decodes the data payload of a transfers#active-cases
+// event. The payload carries no occurred_at, so nothing is parsed beyond the
+// case list. Calling it on an envelope of a different event type fails with
+// a corruption-classified error.
+func (e *WebhookEvent) TransferActiveCases() (*TransferActiveCasesData, error) {
+	payload, err := decodeWebhookPayload[raw.TransferActiveCasesData](e.Data, WebhookEventTransfersActiveCases)
+	if err != nil {
+		return nil, err
+	}
+
+	cases := payload.ActiveCases
+	if cases == nil {
+		cases = []string{}
+	}
+
+	return &TransferActiveCasesData{
+		Resource:    toWebhookResource(payload.Resource),
+		ActiveCases: cases,
+	}, nil
+}
+
+// TransferRefund decodes the data payload of a transfers#refund event,
+// parsing the resource-block refund amount into Money. Calling it on an
+// envelope of a different event type fails with a corruption-classified
+// error.
+func (e *WebhookEvent) TransferRefund() (*TransferRefundData, error) {
+	payload, occurredAt, err := decodeWebhookEvent[raw.TransferRefundData](e, WebhookEventTransfersRefund)
+	if err != nil {
+		return nil, err
+	}
+
+	if payload.Resource.RefundAmount == nil || payload.Resource.RefundCurrency == "" {
+		return nil, errorfamily.WrapCorruption(
+			errTransferRefundAmountMissing,
+			"wise.webhook.decode",
+			"decode transfers#refund payload",
+		)
+	}
+
+	amount, err := toMoney(raw.BalanceAmount{
+		Value:    *payload.Resource.RefundAmount,
+		Currency: payload.Resource.RefundCurrency,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("map transfers#refund amount: %w", err)
+	}
+
+	return &TransferRefundData{
+		Resource:   toWebhookResource(payload.Resource),
+		Amount:     amount,
+		OccurredAt: occurredAt,
+	}, nil
+}
+
 // toWebhookResource maps the wire resource block to its public type.
 func toWebhookResource(resource raw.WebhookEventResource) WebhookResource {
 	return WebhookResource{
