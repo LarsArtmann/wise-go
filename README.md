@@ -122,16 +122,23 @@ func main() {
         log.Fatal(err)
     }
 
+    // List balances for the first profile (kept outside the loop so the
+    // transaction query below can reference it)
+    balances, err := client.ListBalances(ctx, profiles[0].ID)
+    if err != nil {
+        log.Fatal(err)
+    }
+
     for _, p := range profiles {
         fmt.Printf("%s (%s)\n", p.Name, p.Type)
 
         // List balances for each profile
-        balances, err := client.ListBalances(ctx, p.ID)
+        profileBalances, err := client.ListBalances(ctx, p.ID)
         if err != nil {
             log.Fatal(err)
         }
 
-        for _, b := range balances {
+        for _, b := range profileBalances {
             fmt.Printf("  %s %s: %d cents\n", b.Currency, b.Name, b.Amount.Cents)
         }
     }
@@ -515,7 +522,7 @@ ctx := context.Background()
 // 1. Quote — locks the rate for 30 minutes.
 //    PreferredPayIn=BALANCE keeps quote fees consistent with transfer fees when
 //    funding from a multi-currency balance.
-quote, err := client.CreateQuote(ctx, profile.ID, wise.CreateQuoteRequest{
+quote, err := client.CreateQuote(ctx, profileID, wise.CreateQuoteRequest{
     SourceCurrency: wise.Currency("EUR"),
     TargetCurrency: wise.Currency("USD"),
     SourceAmount:   &wise.Money{Cents: 100_000, Currency: wise.Currency("EUR")},
@@ -536,7 +543,7 @@ for _, n := range quote.Notices {
 // 2. Recipient — a bank account to send to. Required details vary by currency
 //    and route; the account-requirements endpoint discovers them per corridor.
 recipient, err := client.CreateRecipient(ctx, wise.CreateRecipientRequest{
-    ProfileID:         profile.ID,
+    ProfileID:         profileID,
     Currency:          wise.Currency("GBP"),
     Type:              "sort_code",
     AccountHolderName: "Jane Doe",
@@ -588,7 +595,7 @@ if err != nil {
 //    final money-movement step; until it succeeds the transfer stays
 //    waiting_for_funds. An underfunded balance is not an error return but a
 //    rejected result — top up and call FundTransfer again.
-funding, err := client.FundTransfer(ctx, profile.ID, transfer.ID)
+funding, err := client.FundTransfer(ctx, profileID, transfer.ID)
 if err != nil {
     log.Fatal(err)
 }
@@ -724,7 +731,7 @@ if err != nil {
     if rl, ok := errors.AsType[*wise.RateLimitError](err); ok {
         fmt.Printf("rate limited (scope: %s), retry after %s\n", rl.RateLimitedBy, rl.RetryAfter)
     } else if sca, ok := errors.AsType[*wise.SCAChallengeError](err); ok {
-        fmt.Printf("SCA approval required (token issued: %t)\n", !sca.TwoFAApprovalToken().IsZero())
+        fmt.Printf("SCA approval required (token issued: %t)\n", sca.TwoFAApprovalToken() != "")
     } else if auth, ok := errors.AsType[*wise.AuthError](err); ok {
         fmt.Printf("auth failed: %s\n", auth.Message)
     } else if nf, ok := errors.AsType[*wise.NotFoundError](err); ok {
