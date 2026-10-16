@@ -162,6 +162,77 @@ func TestNewAPIErrorRetryAfter(t *testing.T) {
 	}
 }
 
+// TestNewAPIErrorCapturesDetails pins the structured-envelope surface: the
+// wire codes/messages land in Details verbatim (unknown codes pass through),
+// while Message keeps its historical flattened join format byte-for-byte.
+func TestNewAPIErrorCapturesDetails(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name        string
+		body        string
+		wantDetails []WiseErrorDetail
+		wantMessage string
+	}{
+		{
+			name: "structured envelope with two entries",
+			body: `{"errors":[{"code":"parameter_missing","message":"source is required"},{"code":"not.valid","message":"amount is invalid"}]}`,
+			wantDetails: []WiseErrorDetail{
+				{Code: WiseErrorCodeParameterMissing, Message: "source is required"},
+				{Code: WiseErrorCodeNotValid, Message: "amount is invalid"},
+			},
+			wantMessage: "parameter_missing: source is required; not.valid: amount is invalid",
+		},
+		{
+			name: "unknown code passes through",
+			body: `{"errors":[{"code":"brand_new_code_from_wise","message":"future failure"}]}`,
+			wantDetails: []WiseErrorDetail{
+				{Code: WiseErrorCode("brand_new_code_from_wise"), Message: "future failure"},
+			},
+			wantMessage: "brand_new_code_from_wise: future failure",
+		},
+		{
+			name:        "empty JSON object yields no details",
+			body:        `{}`,
+			wantDetails: nil,
+			wantMessage: `{}`,
+		},
+		{
+			name:        "plain-text body yields no details",
+			body:        "Funding failed",
+			wantDetails: nil,
+			wantMessage: "Funding failed",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := newAPIError(http.StatusBadRequest, tt.body, nil, 0, "")
+
+			apiErr, ok := errors.AsType[*APIError](err)
+			if !ok {
+				t.Fatalf("expected *APIError, got %T", err)
+			}
+
+			if len(apiErr.Details) != len(tt.wantDetails) {
+				t.Fatalf("Details = %+v, want %+v", apiErr.Details, tt.wantDetails)
+			}
+
+			for i, want := range tt.wantDetails {
+				if apiErr.Details[i] != want {
+					t.Errorf("Details[%d] = %+v, want %+v", i, apiErr.Details[i], want)
+				}
+			}
+
+			if apiErr.Message != tt.wantMessage {
+				t.Errorf("Message = %q, want %q (join format must stay byte-identical)", apiErr.Message, tt.wantMessage)
+			}
+		})
+	}
+}
+
 func TestCheckErrorCapturesRateLimitedBy(t *testing.T) {
 	t.Parallel()
 
@@ -777,6 +848,41 @@ func TestErrorCodesUniqueAndWellFormed(t *testing.T) {
 		}
 
 		seen[code] = true
+	}
+
+	// Wise's granular wire codes follow the same completeness contract, with
+	// their own shape: lowercase segments of letters/digits/underscores,
+	// dotted separators, no wise. prefix (these are Wise's codes, not ours).
+	wiseCodes := []WiseErrorCode{
+		WiseErrorCodeNotValid,
+		WiseErrorCodeInvalidValue,
+		WiseErrorCodeParameterMissing,
+		WiseErrorCodeParameterInvalid,
+		WiseErrorCodeMissingValue,
+		WiseErrorCodeInvalidRequest,
+		WiseErrorCodeUnauthorized,
+		WiseErrorCodeForbidden,
+		WiseErrorCodeResourceNotFound,
+		WiseErrorCodeOperationNotSupported,
+		WiseErrorCodeRateLimitExceeded,
+		WiseErrorCodeSystemError,
+		WiseErrorCodeInvalidFileExtension,
+		WiseErrorCodeUnexpectedError,
+	}
+
+	wireFormed := regexp.MustCompile(`^[a-z0-9_]+(\.[a-z0-9_]+)*$`)
+
+	seenWise := make(map[WiseErrorCode]bool, len(wiseCodes))
+	for _, code := range wiseCodes {
+		if !wireFormed.MatchString(string(code)) {
+			t.Errorf("Wise error code %q is not a lowercase dotted wire identifier", code)
+		}
+
+		if seenWise[code] {
+			t.Errorf("Wise error code %q is listed/declared more than once", code)
+		}
+
+		seenWise[code] = true
 	}
 }
 

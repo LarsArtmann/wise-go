@@ -156,6 +156,14 @@ const (
 	HeaderTwoFAApprovalResult = "X-2fa-Approval-Result"
 )
 
+// WiseErrorDetail is one entry of Wise's structured error envelope: the
+// granular wire code plus Wise's own human-readable message for that entry.
+// A single response can carry several entries (the envelope is an array).
+type WiseErrorDetail struct {
+	Code    WiseErrorCode
+	Message string
+}
+
 // APIError is the base error returned for non-2xx Wise API responses.
 type APIError struct {
 	StatusCode int
@@ -165,6 +173,13 @@ type APIError struct {
 	// diagnostics that never appear in the body here (SCA challenge tokens,
 	// rate-limit owner), so dropping them hides the actual verdict.
 	Headers http.Header
+	// Details carries Wise's structured error envelope (errors[].code /
+	// errors[].message from the response body) so consumers can branch on
+	// Wise's granular codes without parsing Message. Empty when the body was
+	// not Wise's structured envelope (empty body, plain text, non-JSON).
+	// Message stays the flattened join of the same entries for backward
+	// compatibility; prefer Details for matching.
+	Details []WiseErrorDetail
 }
 
 func (e *APIError) Error() string {
@@ -307,10 +322,15 @@ func newAPIError(
 
 	msg := body
 
+	var details []WiseErrorDetail
+
 	if errResp != nil && len(errResp.Errors) > 0 {
 		msgs := make([]string, 0, len(errResp.Errors))
+		details = make([]WiseErrorDetail, 0, len(errResp.Errors))
+
 		for _, e := range errResp.Errors {
 			msgs = append(msgs, fmt.Sprintf("%s: %s", e.Code, e.Message))
+			details = append(details, WiseErrorDetail{Code: WiseErrorCode(e.Code), Message: e.Message})
 		}
 
 		msg = strings.Join(msgs, "; ")
@@ -325,6 +345,7 @@ func newAPIError(
 		Message:    msg,
 		Body:       body,
 		Headers:    headers,
+		Details:    details,
 	}
 
 	switch {
