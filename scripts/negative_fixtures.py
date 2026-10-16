@@ -21,6 +21,7 @@ import argparse
 import pathlib
 import subprocess
 import sys
+import tempfile
 
 PIN_SYNC_CASES = [
     ("ok", 0, "2 in-house dependency pins verified"),
@@ -31,7 +32,7 @@ PIN_SYNC_CASES = [
 ]
 
 SPEC_DRIFT_CASES = [
-    ("broken_json", ["--spec-file", "@testdata@/spec_drift/broken.json"], 3, "could not load live spec"),
+    ("broken_json", "@broken@", 3, "could not load live spec"),
     ("missing_endpoint", ["--spec-file", "@testdata@/spec_drift/minimal_live.json"], 1, "problem(s)"),
     ("stale_snapshot_failing", ["--spec-file", "@testdata@/spec_drift/plus_one.json", "--fail-on-drift"], 2, "all endpoints match"),
     ("stale_snapshot_warn_only", ["--spec-file", "@testdata@/spec_drift/plus_one.json"], 0, "all endpoints match"),
@@ -70,7 +71,20 @@ def main() -> int:
         else scripts_dir.parent
     )
 
-    (testdata / "spec_drift" / "broken.json").write_text("not json {{{")
+    # The broken-spec fixture is generated, not committed: the check sandbox
+    # mounts the source tree read-only, so nothing may be written into it.
+    with tempfile.TemporaryDirectory() as tmp:
+        broken = pathlib.Path(tmp) / "broken.json"
+        broken.write_text("not json {{{")
+        return run_all(scripts_dir, testdata, repo_root, broken)
+
+
+def run_all(
+    scripts_dir: pathlib.Path,
+    testdata: pathlib.Path,
+    repo_root: pathlib.Path,
+    broken: pathlib.Path,
+) -> int:
 
     failures: list[str] = []
     ran = 0
@@ -95,7 +109,11 @@ def main() -> int:
 
     for name, extra, expect_exit, expect_substr in SPEC_DRIFT_CASES:
         ran += 1
-        spec_args = [a.replace("@testdata@", str(testdata)) for a in extra]
+        raw = ["--spec-file", str(broken)] if isinstance(extra, str) else extra
+        spec_args = [
+            a.replace("@testdata@", str(testdata)).replace("@broken@", str(broken))
+            for a in raw
+        ]
         result = subprocess.run(
             [sys.executable, str(scripts_dir / "spec_drift.py"), "--repo", str(repo_root), *spec_args],
             capture_output=True,

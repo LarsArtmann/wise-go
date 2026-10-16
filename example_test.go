@@ -739,3 +739,110 @@ func ExampleClient_GetThirdPartyTransfer() {
 
 	fmt.Println(transfer.Status, transfer.OriginalTransferID, transfer.HasActiveIssues)
 }
+
+// Handle an error from any SDK call: extract the typed error for its fields,
+// match curated Wise granular codes by value through any wrap chain, and read
+// the structured details for codes without a sentinel.
+//
+//nolint:testableexamples // documentation-only; constructs a real client
+func Example_errorHandling() {
+	client := wise.New("your-api-key")
+
+	_, err := client.ListBalances(context.Background(), wise.NewProfileID(12345))
+	if err == nil {
+		return
+	}
+
+	// Types carry the fields:
+	if rl, ok := errors.AsType[*wise.RateLimitError](err); ok {
+		fmt.Printf("rate limited; retry after %s\n", rl.RetryAfter)
+
+		return
+	}
+
+	// Curated Wise wire codes match by value:
+	if errors.Is(err, wise.ErrResourceNotFound) {
+		fmt.Println("profile does not exist")
+
+		return
+	}
+
+	// Any other granular code branches on the structured details:
+	if apiErr, ok := errors.AsType[*wise.APIError](err); ok {
+		for _, detail := range apiErr.Details {
+			fmt.Printf("%s: %s\n", detail.Code, detail.Message)
+		}
+
+		if apiErr.HasCode(wise.WiseErrorCodeNotValid) {
+			fmt.Println("wise rejected a value; fix the request instead of retrying")
+		}
+	}
+}
+
+// Match a granular Wise wire code by value with the curated sentinels. The
+// match survives arbitrary fmt.Errorf("%w") wrap chains.
+//
+//nolint:testableexamples // documentation-only; constructs a real client
+func Example_errorMatchingSentinels() {
+	client := wise.New("your-api-key")
+
+	_, err := client.GetTransfer(context.Background(), wise.NewTransferID(16521634))
+	if err != nil {
+		if errors.Is(err, wise.ErrResourceNotFound) {
+			fmt.Println("transfer does not exist; refresh before retrying")
+		}
+	}
+}
+
+// Branch on any granular Wise wire code, including ones without a curated
+// sentinel: WiseErrorCode is an open enum and unknown wire values pass
+// through HasCode unmodified.
+//
+//nolint:testableexamples // documentation-only; constructs a real client
+func ExampleAPIError_HasCode() {
+	client := wise.New("your-api-key")
+
+	_, err := client.GetBalance(
+		context.Background(),
+		wise.NewProfileID(12345),
+		wise.NewBalanceID(67890),
+	)
+	if err == nil {
+		return
+	}
+
+	apiErr, ok := errors.AsType[*wise.APIError](err)
+	if !ok {
+		return
+	}
+
+	if apiErr.HasCode(wise.WiseErrorCodeRateLimitExceeded) {
+		fmt.Println("throttled; back off, then retry")
+	}
+}
+
+// Read Wise's structured error envelope: one entry per wire error, each with
+// its granular code and Wise's own message.
+//
+//nolint:testableexamples // documentation-only; constructs a real client
+func ExampleAPIError_Details() {
+	client := wise.New("your-api-key")
+
+	_, err := client.GetBalance(
+		context.Background(),
+		wise.NewProfileID(12345),
+		wise.NewBalanceID(67890),
+	)
+	if err == nil {
+		return
+	}
+
+	apiErr, ok := errors.AsType[*wise.APIError](err)
+	if !ok {
+		return
+	}
+
+	for _, detail := range apiErr.Details {
+		fmt.Printf("%s: %s\n", detail.Code, detail.Message)
+	}
+}
