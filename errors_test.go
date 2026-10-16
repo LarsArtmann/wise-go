@@ -1168,6 +1168,7 @@ func TestAPIErrorMatchesCuratedCodeSentinels(t *testing.T) {
 			t.Errorf("APIError matched the unrelated stdlib sentinel io.EOF")
 		}
 
+		//nolint:legacyerrors // negative pin: a nil target is not a sentinel and must never match
 		if errors.Is(err, nil) {
 			t.Errorf("errors.Is(err, nil) = true, want false")
 		}

@@ -28,7 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **`docs/error-codes.md`**: reference for every granular code — sentinel,
   typical HTTP status, retry guidance, and matching recipes.
 - **Central, named error catalog** (`errors.go`): every error code the SDK
-  emits is a named constant (51 domain codes alongside the six typed-error
+  emits is a named constant (51 domain codes alongside the seven typed-error
   codes) — call sites reference the constant, tests pin the wire value. The
   four response-shape sentinels are exported (`ErrEmptyRateList`,
   `ErrAccountIdentificationCardinality`, `ErrOTTAlternativesShape`,
