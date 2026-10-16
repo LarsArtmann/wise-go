@@ -585,3 +585,51 @@ func ExampleClient_ClearSCAChallenge() {
 		}
 	}
 }
+
+// Fetch one transfer by ID and report how much moved where. Transfer.Source
+// and Transfer.Target carry the amounts (Money pairs cents with currency);
+// there are no SourceValue/TargetValue fields on the Transfer type.
+//
+//nolint:testableexamples // documentation-only; runs against the live API
+func ExampleClient_GetTransfer() {
+	ctx := context.Background()
+	client := wise.New(os.Getenv("WISE_API_KEY"))
+
+	transfer, err := client.GetTransfer(ctx, wise.NewTransferID(16521634))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(transfer.Status, transfer.Source, transfer.Target)
+}
+
+// List recent transfers newest-first, then fetch the first one in full.
+// ListTransfers pages through the complete result set automatically (pages
+// of 100); pass From/To (both inclusive, transfer creation time) to narrow
+// the window, and a ProfileID to target a specific profile — zero means
+// Wise's default (personal) profile.
+//
+//nolint:testableexamples // documentation-only; runs against the live API
+func ExampleClient_ListTransfers() {
+	ctx := context.Background()
+	client := wise.New(os.Getenv("WISE_API_KEY"))
+
+	transfers, err := client.ListTransfers(ctx, wise.ListTransfersRequest{
+		From: time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC),
+		To:   time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC),
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if len(transfers) == 0 {
+		return
+	}
+
+	transfer, err := client.GetTransfer(ctx, transfers[0].ID)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(transfer.ID, transfer.Status)
+}
