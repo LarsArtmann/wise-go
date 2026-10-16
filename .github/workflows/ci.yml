@@ -162,6 +162,32 @@ jobs:
         run: |
           erraudit lint ./... --type-aware --enforce-coded-errors
     timeout-minutes: 15
+  art-dupl:
+    # Clone detection against the accepted in-source baseline: the
+    # `// art-dupl:accept <rationale>` directives ARE the config, so this job
+    # asserts repo policy — 0 actionable findings at threshold 2, type-aware.
+    # See AGENTS.md "art-dupl suppression is in-source directives" and the
+    # 2026-10-07 enforced-gate decision (warn-first, non-blocking).
+    #
+    # WARN-not-fail: flip continue-on-error to false when promoting it to a
+    # gate after CI has a stabilized green baseline.
+    name: Clone Detection (art-dupl)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Install art-dupl
+        run: GOTOOLCHAIN=auto go install github.com/LarsArtmann/art-dupl/cmd/art-dupl@f8724119485070cc6295c98d5ba317915a4325b8
+
+      - name: Accepted-baseline gate
+        run: art-dupl -t 2 --type-aware .
+    timeout-minutes: 15
   coverage-badge:
     # Generates coverage/badge.json so the README badge renders live data —
     # kills badge drift (the 94.8%→84.2% hand-edit incident).
