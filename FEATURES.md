@@ -98,7 +98,8 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
 
 | Method | Path                                                      | Status           | wise-go                                            |
 | ------ | --------------------------------------------------------- | ---------------- | -------------------------------------------------- |
-| GET    | `/v1/profiles/{id}/account-details`                       | FULLY_FUNCTIONAL | `GetBankAccountDetails` (`account_details.go:144`) |
+| GET    | `/balances/account-details/{id}` (2027Q1)                 | FULLY_FUNCTIONAL | `GetBankAccountDetails` (`account_details.go:156`) |
+| GET    | `/v1/profiles/{id}/account-details` (removed by Wise)     | REMOVED_UPSTREAM | superseded by the row above in the 2027Q1 roll     |
 | POST   | `/v1/profiles/{id}/bank-details`                          | PLANNED          | issue local+international details                  |
 | POST   | `/v1/profiles/{id}/account-details-orders`                | PLANNED          | order account details                              |
 | GET    | `/v1/profiles/{id}/account-details-orders`                | PLANNED          | list orders                                        |

@@ -3362,8 +3362,14 @@ var _ = Describe("Wise Client", func() {
 							AccountIdentification: raw.AccountIdentification{
 								GB: &raw.GBAccountIdentification{
 									BIC:           "TRWIGB2L",
+									IBAN:          "GB29NWBK60161331926819",
 									SortCode:      "230801",
 									AccountNumber: "12345678",
+									InstitutionAddress: &raw.ISO20022Address{
+										TownName:     "London",
+										Country:      "GB",
+										AddressLines: []string{"56 Shoreditch High Street"},
+									},
 								},
 							},
 						})
@@ -3392,11 +3398,11 @@ var _ = Describe("Wise Client", func() {
 		Context("with a corrupt identification block (no member)", func() {
 			BeforeEach(func() {
 				mux.HandleFunc("/2027Q1/balances/account-details/14000002",
-					func(w http.ResponseWriter, _ *http.Request) {
+					exemptResponseSchema(func(w http.ResponseWriter, _ *http.Request) {
 						w.Header().Set("Content-Type", "application/json")
 						_, _ = w.Write([]byte(`{"id":14000002,"profileId":12345,"state":"ACTIVE",` +
 							`"accountHolderName":"X","country":"GB","accountIdentification":{}}`))
-					})
+					}))
 			})
 
 			It("should surface a corruption error", func() {

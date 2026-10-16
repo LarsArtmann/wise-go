@@ -630,11 +630,10 @@ transfer.
 account, err := client.GetMultiCurrencyAccount(ctx, profileID)
 // account.RecipientID → the account's own recipient entry
 
-// Every set of receiving bank details (EUR IBAN, USD routing pair, ...)
-details, err := client.GetBankAccountDetails(ctx, profileID)
-// []BankAccountDetails{
-//   {Currency: "EUR", Status: AccountDetailsStatusActive, Deprecated: false, ...},
-// }
+// One set of receiving bank details by its own ID (the 2027Q1 surface;
+// the old profile-wide list endpoint was removed by Wise)
+detail, err := client.GetBankAccountDetails(ctx, detailsID)
+// AccountDetails{State: AccountDetailsStateActive, Country: "GB", Identification: ...}
 ```
 
 Two patterns worth knowing:
@@ -643,13 +642,11 @@ Two patterns worth knowing:
   recipient. Create a transfer to it (from an external-funded quote) and the
   matching currency balance gets credited: the standard way to move money
   _into_ the Multi-Currency Account.
-- **Read display text from `ReceiveOptions`** — each `BankAccountDetails` set
-  carries `LOCAL`/`INTERNATIONAL` receive options whose
-  `Description.CTA` pairs hold the labeled key values (e.g. Label `"IBAN"` →
-  the IBAN to print on an invoice). Prefer non-deprecated sets; a deprecated
-  set is Wise's replacement notice for earlier details.
-  `AccountDetailsStatusAvailable` means the details do not exist yet but can
-  be ordered via Wise's account-details-orders endpoint (not in the SDK yet).
+- **Identification is a typed oneOf** — `detail.Identification` carries
+  exactly one of `BE` (IBAN), `GB` (sort code + account number), or `US`
+  (routing + account number); anything else from the wire is surfaced as a
+  corruption error. Ordering new details still goes through Wise's
+  account-details-orders endpoint (not in the SDK yet).
 
 ### Currencies
 
