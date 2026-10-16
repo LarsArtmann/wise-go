@@ -41,10 +41,15 @@ CLIENT_CALL_RE = re.compile(
     r"|\b(?:fetchByID|listTransfersPage)\("
 )
 SPRINTF_PATH_RE = re.compile(r'fmt\.Sprintf\(\s*"(/[^"]*)"')
+SPRINTF_OPEN_RE = re.compile(r'path\s*:?=\s*fmt\.Sprintf\(\s*$')
 LITERAL_PATH_RE = re.compile(r'path\s*:?=\s*"(/[^"]*)"')
 CALL_WINDOW_PATH_RE = re.compile(r'"(/[^"]*)"')
 FORMAT_VERB_RE = re.compile(r"%[-#0 +]*\d*(?:\.\d+)?[a-zA-Z]")
 VERSION_PREFIX_RE = re.compile(r"^/(?:v\d+|\d{4}Q[1-4]|\{\})(?=/)")
+
+KNOWN_EXEMPTIONS = {
+    "/profiles/{}/balance-statements/{}/statement.{}": "spec declares only the .json variant (same exemption as the spec-conformance gate)",
+}
 
 
 def load_spec(spec_file: str | None, url: str) -> dict:
@@ -70,6 +75,11 @@ def extract_sdk_endpoints(repo: pathlib.Path) -> list[dict]:
             if m:
                 last_path = m.group(1)
                 last_path_line = lineno
+            elif SPRINTF_OPEN_RE.search(line):
+                ahead = CALL_WINDOW_PATH_RE.search("\n".join(lines[lineno : lineno + 2]))
+                if ahead:
+                    last_path = ahead.group(1)
+                    last_path_line = lineno
             method = request_method(line)
             if method is None:
                 continue
@@ -77,7 +87,7 @@ def extract_sdk_endpoints(repo: pathlib.Path) -> list[dict]:
             inline = CALL_WINDOW_PATH_RE.search(window)
             if inline:
                 template = inline.group(1)
-            elif last_path is not None and lineno - last_path_line <= 15:
+            elif last_path is not None:
                 template = last_path
             else:
                 template = None
@@ -214,6 +224,10 @@ def main() -> int:
             tag = "OK" if verdict == "ok" else "PROBLEM"
             print(f"  [{tag}] {method} {norm}" + (f"  ->  {', '.join(matched)}" if verdict != "ok" else ""))
         if verdict == "missing":
+            if norm in KNOWN_EXEMPTIONS:
+                if args.verbose:
+                    print(f"  [EXEMPT] {method} {norm} - {KNOWN_EXEMPTIONS[norm]}")
+                continue
             failures.append(f"MISSING: {method} {norm} matches no path in the live spec")
         elif verdict == "method":
             offered = sorted(set().union(*(index[p] for p in matched))) if matched else []
