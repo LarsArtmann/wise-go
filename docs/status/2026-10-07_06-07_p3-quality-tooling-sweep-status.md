@@ -7,7 +7,9 @@
 > `doc-verify`→`docs/releases/*`, `release-notes-check`, and the `pre-release`
 > app; the art-dupl policy decision (§g1) is answered. The x86_64-darwin and
 > `RequestLog.RetryAfterDelay`-freeze questions are harvested to `TODO_LIST.md`;
-> the rest is routed to `ROADMAP.md`.
+> the rest is routed to `ROADMAP.md`. **Fully resolved 2026-10-16 (maximalist
+> pass): every §b–§g item now carries an inline verdict; archived per the
+> annotate-then-archive rule.**
 
 Session goal: execute the unblocked P3 (Quality & tooling) items from
 TODO_LIST.md end-to-end — READ/UNDERSTAND → break down → execute → verify,
@@ -119,45 +121,45 @@ suite green (`go test .` → ok, 3.8s); `golangci-lint run` → 0 issues.
 
 ## b) PARTIALLY DONE
 
-1. **golangci_lint_ls phantom (webhooks.go:142)** — investigation started,
-   NOT root-caused. Facts assembled:
-   - webhooks.go:142 is exactly the `*mapped, //nolint:branching-flow:panic`
-     line (the documented suppressed dereference).
-   - "File is not properly formatted" is golangci-lint v2's FORMATTER
-     finding message (gci/goimports/gofumpt/golines are configured).
-   - CLI: golangci-lint 2.14.0 (nix store), built with go1.27.1, run inside
-     the devShell with GOEXPERIMENT=jsonv2 + GOTOOLCHAIN=local.
-   - LSP: crushrc wires `golangci_lint_ls` through a host-managed wrapper
-     `~/.local/bin/golangci-lint-lsp-wrapper` → `golangci-lint-langserver`
-     → `golangci-lint` from PATH, with `--env GOTOOLCHAIN auto` and caches
-     pinned to /mnt/buildcache. **The wrapper does NOT set
-     GOEXPERIMENT=jsonv2** — it relies on "inherit the session env", so a
-     session/daemon context without GOEXPERIMENT gets package-load failures
-     (jsonv2 build constraints) and possibly formatter-only verdicts.
-   - Version skew risk: the devShell historically pins v2.13 (ci.yml) while
-     the system/PATH binary is 2.14.0 — if the langserver resolves a
-     different golangci-lint than the CLI shell does, formatter versions
-     disagree → phantom.
-   - Live probe at 06:05: `lsp_diagnostics(webhooks.go)` returned **empty**
-     — the phantom did NOT reproduce this session (it is intermittent).
-   - Related observation: gopls has been reporting a STALE
-     `internal_test.go:4 "bytes" unused` error all session although the
-     package compiles — the LSP layer (gopls AND golangci) sees mid-edit or
-     differently-configured states. Best next probe: restart
-     golangci_lint_ls with GOEXPERIMENT=jsonv2 added to the wrapper, then
-     edit webhooks.go:142 region and watch for the diagnostic; and diff
-     `golangci-lint cache clean` behavior between /mnt/buildcache and the
-     CLI's default cache.
-2. **pre-release full-chain run** — app built and its dirty-tree gate
-   verified, but a complete end-to-end pass (through apidiff, which needs
-   network) has not run on a clean tree yet.
-3. **erraudit class-wide policy** — the substance is already recorded in
-   AGENTS.md (2026-10-07 entries: embedded analyzer = upstream false
-   positives, skip_steps'd, canonical standalone gate governs, never
-   per-finding fixes). Missing: one explicit sentence framing it as the
-   CLASS-WIDE disposition (the TODO's actual ask: "per-finding drift is the
-   worst option").
-4. **All-systems flake coverage** — `nix flake check --all-systems`
+1. ~~**golangci_lint_ls phantom (webhooks.go:142)** — investigation started,~~ done — root-caused 2026-10-07: env divergence; .crushrc redeclares both LSPs with GOEXPERIMENT=jsonv2
+   ~~NOT root-caused. Facts assembled:~~
+   ~~- webhooks.go:142 is exactly the `*mapped, //nolint:branching-flow:panic`~~
+     ~~line (the documented suppressed dereference).~~
+   ~~- "File is not properly formatted" is golangci-lint v2's FORMATTER~~
+     ~~finding message (gci/goimports/gofumpt/golines are configured).~~
+   ~~- CLI: golangci-lint 2.14.0 (nix store), built with go1.27.1, run inside~~
+     ~~the devShell with GOEXPERIMENT=jsonv2 + GOTOOLCHAIN=local.~~
+   ~~- LSP: crushrc wires `golangci_lint_ls` through a host-managed wrapper~~
+     ~~`~/.local/bin/golangci-lint-lsp-wrapper` → `golangci-lint-langserver`~~
+     ~~→ `golangci-lint` from PATH, with `--env GOTOOLCHAIN auto` and caches~~
+     ~~pinned to /mnt/buildcache. **The wrapper does NOT set~~
+     ~~GOEXPERIMENT=jsonv2** — it relies on "inherit the session env", so a~~
+     ~~session/daemon context without GOEXPERIMENT gets package-load failures~~
+     ~~(jsonv2 build constraints) and possibly formatter-only verdicts.~~
+   ~~- Version skew risk: the devShell historically pins v2.13 (ci.yml) while~~
+     ~~the system/PATH binary is 2.14.0 — if the langserver resolves a~~
+     ~~different golangci-lint than the CLI shell does, formatter versions~~
+     ~~disagree → phantom.~~
+   ~~- Live probe at 06:05: `lsp_diagnostics(webhooks.go)` returned **empty**~~
+     ~~— the phantom did NOT reproduce this session (it is intermittent).~~
+   ~~- Related observation: gopls has been reporting a STALE~~
+     ~~`internal_test.go:4 "bytes" unused` error all session although the~~
+     ~~package compiles — the LSP layer (gopls AND golangci) sees mid-edit or~~
+     ~~differently-configured states. Best next probe: restart~~
+     ~~golangci_lint_ls with GOEXPERIMENT=jsonv2 added to the wrapper, then~~
+     ~~edit webhooks.go:142 region and watch for the diagnostic; and diff~~
+     ~~`golangci-lint cache clean` behavior between /mnt/buildcache and the~~
+     ~~CLI's default cache.~~
+2. ~~**pre-release full-chain run** — app built and its dirty-tree gate~~ done — chain ran end-to-end through the v0.13.0 release and again 2026-10-16
+   ~~verified, but a complete end-to-end pass (through apidiff, which needs~~
+   ~~network) has not run on a clean tree yet.~~
+3. ~~**erraudit class-wide policy** — the substance is already recorded in~~ done — AGENTS carries the class-wide disposition (2026-10-07 rewrite)
+   ~~AGENTS.md (2026-10-07 entries: embedded analyzer = upstream false~~
+   ~~positives, skip_steps'd, canonical standalone gate governs, never~~
+   ~~per-finding fixes). Missing: one explicit sentence framing it as the~~
+   ~~CLASS-WIDE disposition (the TODO's actual ask: "per-finding drift is the~~
+   ~~worst option").~~
+4. **All-systems flake coverage** — `nix flake check --all-systems` **→ x86_64-darwin dropped by nixpkgs-26.11; decision memo pending**
    evaluated: aarch64-linux and aarch64-darwin check derivations evaluate
    clean; **x86_64-darwin FAILS EVALUATION because nixpkgs-26.11 dropped
    that system** (external ecosystem change, not a repo defect). Blocked on
@@ -166,37 +168,37 @@ suite green (`go test .` → ok, 3.8s); `golangci-lint run` → 0 issues.
 
 ## c) NOT STARTED
 
-1. **AGENTS.md update for this session's work** — the memory-write sweep
-   was interrupted by this report. Items owed: coverage-guard is now
-   shuffle-proof via TestMain (replace the old "may SKIP under -shuffle"
-   paragraph); new checks/apps (md-go-snippets, release-notes-check,
-   pre-release) + the md-go-validator input/vendorHash/golines-override
-   gotchas; RequestLog.RetryAfterDelay entry semantics; coverage now 93.1%;
-   conformance actuals 180 exchanges / 6 statement variants; art-dupl
-   policy decision; erraudit class-wide framing; x86_64-darwin
-   all-systems blocker.
-2. **TODO_LIST.md harvest** — mark the 11 completed P3 items done with
-   pointers; rewrite the all-systems item with the x86_64-darwin finding;
-   the three decision items get one-line resolutions pointing at
-   AGENTS.md / the plan doc.
-3. **Go 1.27 migration plan document** — designed but not written. Planned
-   shape (docs/planning/2026-10-07_go-1.27-migration-plan.md): flip only
-   when ALL of (1) nixpkgs-unstable's default `pkgs.go` is a stable 1.27.x
-   line, (2) in-house deps (go-branded-id, go-error-family, go-retry)
-   verified on 1.27 (apidiff + race + conformance green), (3) erraudit
-   installs locally under the new toolchain (CI job becomes redundant),
-   (4) buildflow's go-version-auto-configure + go-structure-linter
-   skip_steps are REMOVED (their 1.27 push becomes correct, ending the
-   flipflop war). Single-commit flip (flake pin + GOTOOLCHAIN policy +
-   go.mod directive + docs), single-commit rollback. Today's standing
-   workarounds (buildGoModule go_1_27 for md-go-validator; erraudit
-   CI-only) are the documented cost of waiting.
-4. **File the evidenced tool-repo defects** — BuildFlow three (embedded
-   erraudit false positives at 202b114/3bb229e; `nix run .#reinstall` not
-   switching ~/.nix-profile; file-size-check scanning 0 files in
-   root-package layouts) **plus the new 4th**: md-go-validator's flake
-   cannot build its own package (go pin above). None filed yet; all have
-   captured evidence in AGENTS.md / this report.
+1. ~~**AGENTS.md update for this session's work** — the memory-write sweep~~ done — same day — AGENTS carries every listed item
+   ~~was interrupted by this report. Items owed: coverage-guard is now~~
+   ~~shuffle-proof via TestMain (replace the old "may SKIP under -shuffle"~~
+   ~~paragraph); new checks/apps (md-go-snippets, release-notes-check,~~
+   ~~pre-release) + the md-go-validator input/vendorHash/golines-override~~
+   ~~gotchas; RequestLog.RetryAfterDelay entry semantics; coverage now 93.1%;~~
+   ~~conformance actuals 180 exchanges / 6 statement variants; art-dupl~~
+   ~~policy decision; erraudit class-wide framing; x86_64-darwin~~
+   ~~all-systems blocker.~~
+2. ~~**TODO_LIST.md harvest** — mark the 11 completed P3 items done with~~ done — same day — TODO_LIST Closed sections record it
+   ~~pointers; rewrite the all-systems item with the x86_64-darwin finding;~~
+   ~~the three decision items get one-line resolutions pointing at~~
+   ~~AGENTS.md / the plan doc.~~
+3. ~~**Go 1.27 migration plan document** — designed but not written. Planned~~ done — docs/planning/2026-10-07_go-1.27-migration-plan.md exists
+   ~~shape (docs/planning/2026-10-07_go-1.27-migration-plan.md): flip only~~
+   ~~when ALL of (1) nixpkgs-unstable's default `pkgs.go` is a stable 1.27.x~~
+   ~~line, (2) in-house deps (go-branded-id, go-error-family, go-retry)~~
+   ~~verified on 1.27 (apidiff + race + conformance green), (3) erraudit~~
+   ~~installs locally under the new toolchain (CI job becomes redundant),~~
+   ~~(4) buildflow's go-version-auto-configure + go-structure-linter~~
+   ~~skip_steps are REMOVED (their 1.27 push becomes correct, ending the~~
+   ~~flipflop war). Single-commit flip (flake pin + GOTOOLCHAIN policy +~~
+   ~~go.mod directive + docs), single-commit rollback. Today's standing~~
+   ~~workarounds (buildGoModule go_1_27 for md-go-validator; erraudit~~
+   ~~CI-only) are the documented cost of waiting.~~
+4. ~~**File the evidenced tool-repo defects** — BuildFlow three (embedded~~ done — all four filed: BuildFlow #34 (closed), #35, #36, md-go-validator #8
+   ~~erraudit false positives at 202b114/3bb229e; `nix run .#reinstall` not~~
+   ~~switching ~/.nix-profile; file-size-check scanning 0 files in~~
+   ~~root-package layouts) **plus the new 4th**: md-go-validator's flake~~
+   ~~cannot build its own package (go pin above). None filed yet; all have~~
+   ~~captured evidence in AGENTS.md / this report.~~
 
 ## d) TOTALLY FUCKED UP (own mistakes this session, honestly)
 
@@ -255,111 +257,111 @@ suite green (`go test .` → ok, 3.8s); `golangci-lint run` → 0 issues.
 
 ## f) NEXT (up to 50, ordered by impact)
 
-1. Write the AGENTS.md memory sweep (item c1 — highest leverage for future
-   sessions).
-2. Harvest TODO_LIST.md: mark 11 items done, update all-systems + decision
-   items (c2).
-3. Write docs/planning/2026-10-07_go-1.27-migration-plan.md (c3).
-4. Record art-dupl policy + erraudit class-wide framing in AGENTS.md.
-5. File the 3 BuildFlow defects + 1 md-go-validator defect (evidence in
-   hand; use verify-before-filing + github-voice).
-6. Run `nix run .#pre-release` end-to-end on the (now clean) tree — first
-   full-chain validation including apidiff.
-7. Root-cause the golangci_lint_ls phantom: add GOEXPERIMENT=jsonv2 to the
-   wrapper, restart LSP, force the diagnostic (touch webhooks.go), diff
-   formatter behavior between the wrapper's golangci-lint resolution and
-   the devShell's.
-8. Fix the stale gopls `bytes unused` phantom (restart gopls; if it
-   persists after a clean build, file against gopls or crush LSP wiring).
-9. Install/verify benchstat (`go run golang.org/x/perf/cmd/benchstat@...`)
-   and round-trip the committed baseline through it once.
-10. Decide x86_64-darwin: darwin-pinned nixpkgs input vs dropping the
+1. ~~Write the AGENTS.md memory sweep (item c1 — highest leverage for future~~ done — same day in the AGENTS sweep
+   ~~sessions).~~
+2. ~~Harvest TODO_LIST.md: mark 11 items done, update all-systems + decision~~ done — same day in the TODO harvest
+   ~~items (c2).~~
+3. ~~Write docs/planning/2026-10-07_go-1.27-migration-plan.md (c3).~~ done — docs/planning/2026-10-07_go-1.27-migration-plan.md exists
+4. ~~Record art-dupl policy + erraudit class-wide framing in AGENTS.md.~~ done — AGENTS carries both records
+5. ~~File the 3 BuildFlow defects + 1 md-go-validator defect (evidence in~~ done — all four filed: BuildFlow #34 (closed), #35, #36, md-go-validator #8
+   ~~hand; use verify-before-filing + github-voice).~~
+6. ~~Run `nix run .#pre-release` end-to-end on the (now clean) tree — first~~ done — ran end-to-end through the v0.13.0 release and again 2026-10-16
+   ~~full-chain validation including apidiff.~~
+7. ~~Root-cause the golangci_lint_ls phantom: add GOEXPERIMENT=jsonv2 to the~~ done — root-caused 2026-10-07: GOEXPERIMENT env divergence
+   ~~wrapper, restart LSP, force the diagnostic (touch webhooks.go), diff~~
+   ~~formatter behavior between the wrapper's golangci-lint resolution and~~
+   ~~the devShell's.~~
+8. ~~Fix the stale gopls `bytes unused` phantom (restart gopls; if it~~ done — same root cause; fixed via .crushrc env redeclare
+   ~~persists after a clean build, file against gopls or crush LSP wiring).~~
+9. ~~Install/verify benchstat (`go run golang.org/x/perf/cmd/benchstat@...`)~~ done — benchstat round-trip done 2026-10-11 and again 2026-10-16
+   ~~and round-trip the committed baseline through it once.~~
+10. Decide x86_64-darwin: darwin-pinned nixpkgs input vs dropping the **→ decision memo pending (darwin matrix)**
     system (user decision; either unblocks `--all-systems` as a gate).
-11. Wire `nix flake check --all-systems` (or the evaluable subset) into
+11. Wire `nix flake check --all-systems` (or the evaluable subset) into **→ blocked on the darwin decision**
     pre-release/CI once 10 is decided.
-12. Re-run the six-shuffle suite loop after any future guard change (the
+12. Re-run the six-shuffle suite loop after any future guard change (the **→ standing practice note**
     1/6 catch proves single runs are insufficient).
-13. Promote the coverage floor? 93.1% actual vs 90.0 floor — consider
-    raising the enforced floor to 92% to lock the headroom in.
-14. Add `nix run .#pre-release` mention to CONTRIBUTING's quality-gates
+13. ~~Promote the coverage floor? 93.1% actual vs 90.0 floor — consider~~ done — floor raised to 92 on 2026-10-11
+    ~~raising the enforced floor to 92% to lock the headroom in.~~
+14. Add `nix run .#pre-release` mention to CONTRIBUTING's quality-gates **→ minor docs idea, still open**
     checklist (it is documented in Release gates but not in the checklist).
-15. Extend doc-verify to also gate `docs/releases/*.md` claim COUNTS in
+15. Extend doc-verify to also gate `docs/releases/*.md` claim COUNTS in **→ heavier doc-verify idea, still open**
     historical files against their TAGS (needs tag checkout; heavier).
-16. Add corpus seeds to testdata/ for the three new fuzz targets (checked-in
-    interesting inputs: empty array, single-object, malformed PEM, huge
-    payload header).
-17. Bench the rates single-object fallback path (legacy shape) for parity
+16. ~~Add corpus seeds to testdata/ for the three new fuzz targets (checked-in~~ done — fuzz corpus seeds checked in under testdata/fuzz
+    ~~interesting inputs: empty array, single-object, malformed PEM, huge~~
+    ~~payload header).~~
+17. Bench the rates single-object fallback path (legacy shape) for parity **→ bench idea, still open**
     with the array bench.
-18. Consider a `RequestLog` docs example showing the delay-decision entry
+18. Consider a `RequestLog` docs example showing the delay-decision entry **→ godoc example idea, still open**
     (godoc) so consumers discover RetryAfterDelay.
-19. Evaluate emitting the delay entry ONLY when a Logger is installed
+19. Evaluate emitting the delay entry ONLY when a Logger is installed **→ docs idea, still open**
     (already true) AND document that DelayFunc logging is client-wide, not
     per-request.
-20. Re-check `.buildflow.yml` interplay: does buildflow's test step shuffle
+20. Re-check `.buildflow.yml` interplay: does buildflow's test step shuffle **→ open buildflow-interplay check**
     interact with the new TestMain guard as expected? (Run buildflow once
     and read `.summary.total`, not `findings`.)
-21. After the next buildflow update, re-verify file-size-check still scans
+21. After the next buildflow update, re-verify file-size-check still scans **→ standing re-check after buildflow updates**
     0 files (documented inert) and re-test the erraudit skip rationale.
-22. Re-check md-go-validator releases: when upstream fixes its flake go
+22. Re-check md-go-validator releases: when upstream fixes its flake go **→ watching md-go-validator #8**
     pin, consider consuming `packages.default` instead of vendoring the
     build in checks.md-go-snippets.
-23. VendorHash hygiene: note the go-1.27 vendorHash divergence in
-    vendorHash.nix or a comment (done in flake comment; verify it
-    survives nix fmt).
-24. Consider pinning golangci-lint version in the devShell to match
+23. ~~VendorHash hygiene: note the go-1.27 vendorHash divergence in~~ done — the vendorHash gotcha is recorded in AGENTS Build and Dev
+    ~~vendorHash.nix or a comment (done in flake comment; verify it~~
+    ~~survives nix fmt).~~
+24. Consider pinning golangci-lint version in the devShell to match **→ version-parity idea; the env fix superseded the urgency**
     ci.yml's v2.13 (or bump ci.yml to 2.14) to kill the LSP/CLI version
     skew class.
-25. Sweep remaining ~45 functions under 100% coverage for the next
+25. Sweep remaining ~45 functions under 100% coverage for the next **→ ongoing; the 2026-10-16 batch closed eight more functions**
     headroom push (quotes.go toWire/parseQuoteCreated error paths,
     ott.go ClearSCAChallenge branches, webhooks.go 415/430).
-26. Add a regression test pinning that `Retry-After: 0` emits NO delay
-    entry (currently only implied by the "on retries" test).
-27. Consider a BDD test for TWO consecutive 429s (two delay entries,
-    attempt numbers 1 and 2).
-28. Sandbox live pass (P1) — still the release blocker; pairs with the OTT
+26. ~~Add a regression test pinning that `Retry-After: 0` emits NO delay~~ done — the Retry-After: 0 no-entry case was pinned by the v0.13.0 coverage work
+    ~~entry (currently only implied by the "on retries" test).~~
+27. ~~Consider a BDD test for TWO consecutive 429s (two delay entries,~~ done — two-consecutive-429 sequence pinned by the v0.13.0 BDD regression
+    ~~attempt numbers 1 and 2).~~
+28. Sandbox live pass (P1) — still the release blocker; pairs with the OTT **→ key-gated sandbox lane**
     Q4 flip.
-29. OTT 2026Q4 flip (P1) — blocked on sandbox credentials.
-30. CI re-enable (P2) — then art-dupl warn-first job + erraudit blocking
+29. OTT 2026Q4 flip (P1) — blocked on sandbox credentials. **→ key-gated sandbox lane**
+30. CI re-enable (P2) — then art-dupl warn-first job + erraudit blocking **→ CI resurrection; enable is the remaining user step**
     flip + coverage-badge unfreeze all become actionable.
-31. When CI lands: add md-go-snippets-equivalent (md-go-validator) as a CI
-    step so the gate also runs off-machine.
-32. v1.0.0 tag (P2, user-gated).
-33. Typed recipient Details decision (P2, user-gated).
-34. CACHIX_AUTH_TOKEN / ERRAUDIT_TOKEN secrets (P2, user-gated).
-35. GOEXPERIMENT ergonomics via direnv/home-manager (P2, user-machine) —
-    would ALSO kill the LSP env-divergence class.
-36. Add the CAMT content-type assertion to the spec-conformance statement
+31. ~~When CI lands: add md-go-snippets-equivalent (md-go-validator) as a CI~~ done — the CI nix job runs nix flake check, which includes checks.md-go-snippets
+    ~~step so the gate also runs off-machine.~~
+32. v1.0.0 tag (P2, user-gated). **→ user-gated v1.0.0 decision**
+33. Typed recipient Details decision (P2, user-gated). **→ open decision, user-gated**
+34. CACHIX_AUTH_TOKEN / ERRAUDIT_TOKEN secrets (P2, user-gated). **→ consolidated user ask pending**
+35. ~~GOEXPERIMENT ergonomics via direnv/home-manager (P2, user-machine) —~~ done — the tracked .envrc sets GOEXPERIMENT on cd (use flake + use_go_env)
+    ~~would ALSO kill the LSP env-divergence class.~~
+36. Add the CAMT content-type assertion to the spec-conformance statement **→ minor docs idea, still open**
     variant tally documentation (FEATURES.md statement-format list if it
     enumerates formats).
-37. Check FEATURES.md/CHANGELOG need entries for: Retry-After log line
-    (observability feature), new fuzz/bench coverage, pre-release app —
-    fold into the next release cycle's changelog section now.
-38. Sweep README for a mention of the new pre-release command (release
+37. ~~Check FEATURES.md/CHANGELOG need entries for: Retry-After log line~~ done — all three recorded in the v0.13.0 CHANGELOG section
+    ~~(observability feature), new fuzz/bench coverage, pre-release app —~~
+    ~~fold into the next release cycle's changelog section now.~~
+38. Sweep README for a mention of the new pre-release command (release **→ AGENTS owns the release ritual; README mention still open**
     ritual section if present).
-39. Re-run `nix flake lock` freshness check (md-go-validator input just
-    added; confirm narHash pinned).
-40. Confirm the daemon's commits contain what I wrote (AGENTS gotcha:
-    verify a daemon commit's message vs content for the session's sweep).
-41. Consider extracting the "latest release notes" helper in doc-verify
-    into a shared snippet if a third consumer appears (YAGNI today).
-42. Add `docs/bench/README.md` one-pager (what the files are, how to
-    regenerate) if the dir grows past one baseline.
-43. Evaluate `-count=10` baselines on the next regeneration (6 runs gave a
+39. ~~Re-run `nix flake lock` freshness check (md-go-validator input just~~ done — checks.pin-sync guards input pins hermetically since v0.13.0
+    ~~added; confirm narHash pinned).~~
+40. ~~Confirm the daemon's commits contain what I wrote (AGENTS gotcha:~~ done — standing practice; the daemon-race gotcha is in AGENTS
+    ~~verify a daemon commit's message vs content for the session's sweep).~~
+41. ~~Consider extracting the "latest release notes" helper in doc-verify~~ **Won't implement — YAGNI per the item's own conclusion.**
+    ~~into a shared snippet if a third consumer appears (YAGNI today).~~
+42. ~~Add `docs/bench/README.md` one-pager (what the files are, how to~~ done — docs/bench/README.md exists
+    ~~regenerate) if the dir grows past one baseline.~~
+43. Evaluate `-count=10` baselines on the next regeneration (6 runs gave a **→ open idea for the next regeneration**
     noisy ParseWebhookEvent spread: 1262–1750 ns/op).
-44. Look into the ParseWebhookEvent bench variance (JSON decode of a
+44. Look into the ParseWebhookEvent bench variance (JSON decode of a **→ open idea**
     multi-line payload; -benchtime tuning may stabilize).
-45. Add fuzz target for `parseWiseTimestamp`'s sibling `parseWiseDate`
-    (statement dates) if not covered by the existing timestamp fuzz.
-46. Extend `FuzzNewCurrency` with the Money-currency pairing path
+45. ~~Add fuzz target for `parseWiseTimestamp`'s sibling `parseWiseDate`~~ done — FuzzParseWiseDate exists at helpers_test.go:471
+    ~~(statement dates) if not covered by the existing timestamp fuzz.~~
+46. Extend `FuzzNewCurrency` with the Money-currency pairing path **→ open idea**
     (`toMoney`) if corrupt-currency fixtures aren't already table-covered.
-47. Check whether `readBody`'s size-limit branch (if any) is covered; the
+47. Check whether `readBody`'s size-limit branch (if any) is covered; the **→ open idea**
     unreadable-body test covers the error branch only.
-48. Document the md-go-validator scope decision (living docs + docs/ tree;
-    CHANGELOG has 0 Go blocks) in the check's nix comment (done) and
-    AGENTS.md (pending c1).
-49. Revisit `minExemptStatementVariants` after the sandbox pass — if Wise
+48. ~~Document the md-go-validator scope decision (living docs + docs/ tree;~~ done — AGENTS Build and Dev documents the tool and its scope
+    ~~CHANGELOG has 0 Go blocks) in the check's nix comment (done) and~~
+    ~~AGENTS.md (pending c1).~~
+49. Revisit `minExemptStatementVariants` after the sandbox pass — if Wise **→ sandbox-gated**
     adds formats, the floor message enumerates csv/pdf/xlsx/xml only.
-50. Schedule the next dedup pass (art-dupl manual, per policy) after the
+50. Schedule the next dedup pass (art-dupl manual, per policy) after the **→ standing cadence per the art-dupl policy**
     next feature PR lands.
 
 ## g) QUESTIONS (cannot self-answer)
@@ -371,11 +373,11 @@ suite green (`go test .` → ok, 3.8s); `golangci-lint run` → 0 issues.
    2026-10-07 (P3-resume session): decided as proposed — baseline is
    policy, no enforced gate, revisit warn-first at CI re-enable.
    Recorded in AGENTS.md (art-dupl bullet) and TODO_LIST Closed 2026-10-07.
-2. **x86_64-darwin**: nixpkgs-26.11 dropped the system, so
+2. **x86_64-darwin**: nixpkgs-26.11 dropped the system, so **→ decision memo pending (darwin matrix)**
    `nix flake check --all-systems` can never pass against
    nixpkgs-unstable. Pin a `nixpkgs-26.05-darwin` input for darwin
    outputs, or drop x86_64-darwin from the flake's supported systems?
-3. **RequestLog.RetryAfterDelay API shape**: pre-v1.0-freeze, is the
+3. **RequestLog.RetryAfterDelay API shape**: pre-v1.0-freeze, is the **→ pre-freeze API decision; bundled into the decisions prep**
    delay-decision entry on the existing `Logger`/`RequestLog` channel
    (Method/URL empty, Status=429) acceptable to lock in for v1.0, or do
    you want a dedicated observation interface (e.g. optional

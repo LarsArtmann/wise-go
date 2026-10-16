@@ -102,7 +102,7 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 
 | Method | Path                                                      | Status           | wise-go                                            |
 | ------ | --------------------------------------------------------- | ---------------- | -------------------------------------------------- |
-| GET    | `/balances/account-details/{id}` (2027Q1)                 | FULLY_FUNCTIONAL | `GetBankAccountDetails` (`account_details.go:164`) |
+| GET    | `/balances/account-details/{id}` (2027Q1)                 | FULLY_FUNCTIONAL | `GetBankAccountDetails` (`account_details.go:159`) |
 | POST   | `/v1/profiles/{id}/bank-details`                          | PLANNED          | issue local+international details                  |
 | POST   | `/v1/profiles/{id}/account-details-orders`                | PLANNED          | order account details                              |
 | GET    | `/v1/profiles/{id}/account-details-orders`                | PLANNED          | list orders                                        |
@@ -112,7 +112,7 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 
 | Method | Path                                                                    | Status           | wise-go                                             |
 | ------ | ----------------------------------------------------------------------- | ---------------- | --------------------------------------------------- |
-| GET    | `/v1/profiles/{id}/multi-currency-account`                              | FULLY_FUNCTIONAL | `GetMultiCurrencyAccount` (`account_details.go:30`) |
+| GET    | `/v1/profiles/{id}/multi-currency-account`                              | FULLY_FUNCTIONAL | `GetMultiCurrencyAccount` (`account_details.go:29`) |
 | GET    | `/borderless-accounts-configuration/profiles/{id}/available-currencies` | PLANNED          | balance-eligible currencies                         |
 | GET    | `/borderless-accounts-configuration/profiles/{id}/payin-currencies`     | PLANNED          | details-eligible currencies                         |
 | GET    | `/multi-currency-account/eligibility`                                   | PLANNED          | eligibility by profile or location                  |
@@ -122,7 +122,7 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 | Method | Path                                  | Status           | wise-go                                            |
 | ------ | ------------------------------------- | ---------------- | -------------------------------------------------- |
 | GET    | `/v1/currencies`                      | FULLY_FUNCTIONAL | `ListCurrencies` (`currencies.go:22`)              |
-| GET    | `/v1/rates`                           | FULLY_FUNCTIONAL | `GetExchangeRate` (`rates.go:16`)                  |
+| GET    | `/v1/rates`                           | FULLY_FUNCTIONAL | `GetExchangeRate` (`rates.go:18`)                  |
 | GET    | `/v1/delivery-estimates/{transferId}` | FULLY_FUNCTIONAL | `GetDeliveryEstimate` (`delivery_estimates.go:33`) |
 | GET    | `/comparisons`                        | PLANNED          | provider comparison (tier 2 of the plan)           |
 
@@ -175,7 +175,7 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 | Method | Path                                          | Status           | wise-go                                             |
 | ------ | --------------------------------------------- | ---------------- | --------------------------------------------------- |
 | GET    | `/v2/accounts`                                | FULLY_FUNCTIONAL | `ListRecipients` (`recipients.go:24`)               |
-| POST   | `/v1/accounts`                                | FULLY_FUNCTIONAL | `CreateRecipient` (`recipients.go:106`)             |
+| POST   | `/v1/accounts`                                | FULLY_FUNCTIONAL | `CreateRecipient` (`recipients.go:108`)             |
 | GET    | `/v1/accounts/{id}`                           | FULLY_FUNCTIONAL | `GetRecipient` (`recipients.go:88`)                 |
 | GET    | `/v1/quotes/{id}/account-requirements`        | FULLY_FUNCTIONAL | `GetQuoteAccountRequirements` (`quotes.go:95`)      |
 | POST   | `/v1/quotes/{id}/account-requirements`        | FULLY_FUNCTIONAL | `RefreshQuoteAccountRequirements` (`quotes.go:158`) |
@@ -224,13 +224,13 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 
 | Method | Path                                         | Status           | wise-go                                                |
 | ------ | -------------------------------------------- | ---------------- | ------------------------------------------------------ |
-| GET    | `/2026Q3/one-time-token/status`              | FULLY_FUNCTIONAL | `GetOTTStatus` (`ott.go:226`)                          |
-| POST   | `/2026Q3/one-time-token/sms/trigger`         | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:247`, `OTTChannelSMS`)           |
-| POST   | `/2026Q3/one-time-token/sms/verify`          | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:273`, `OTTChannelSMS`)            |
-| POST   | `/2026Q3/one-time-token/whatsapp/trigger`    | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:247`, `OTTChannelWhatsApp`)      |
-| POST   | `/2026Q3/one-time-token/whatsapp/verify`     | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:273`, `OTTChannelWhatsApp`)       |
-| POST   | `/2026Q3/one-time-token/voice/trigger`       | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:247`, `OTTChannelVoice`)         |
-| POST   | `/2026Q3/one-time-token/voice/verify`        | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:273`, `OTTChannelVoice`)          |
+| GET    | `/2026Q3/one-time-token/status`              | FULLY_FUNCTIONAL | `GetOTTStatus` (`ott.go:225`)                          |
+| POST   | `/2026Q3/one-time-token/sms/trigger`         | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:246`, `OTTChannelSMS`)           |
+| POST   | `/2026Q3/one-time-token/sms/verify`          | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:272`, `OTTChannelSMS`)            |
+| POST   | `/2026Q3/one-time-token/whatsapp/trigger`    | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:246`, `OTTChannelWhatsApp`)      |
+| POST   | `/2026Q3/one-time-token/whatsapp/verify`     | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:272`, `OTTChannelWhatsApp`)       |
+| POST   | `/2026Q3/one-time-token/voice/trigger`       | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:246`, `OTTChannelVoice`)         |
+| POST   | `/2026Q3/one-time-token/voice/verify`        | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:272`, `OTTChannelVoice`)          |
 | POST   | `/application/users/{id}/phone-numbers`      | OUT_OF_SCOPE     | restricted access (client credentials + Wise approval) |
 | DELETE | `/application/users/{id}/phone-numbers/{id}` | OUT_OF_SCOPE     | restricted access (client credentials + Wise approval) |
 
@@ -358,8 +358,8 @@ the plan; bulk payments only on a consumer demand signal).
 | `ProfileType`, `BalanceType`, `TransactionType` enums | FULLY_FUNCTIONAL | `types.go:139,147,164`                                                                    |
 | `InvestmentState` typed enum                          | FULLY_FUNCTIONAL | `types.go:155`; used for balance filtering (`balances.go:43`)                             |
 | `DetailType` typed enum + constants                   | FULLY_FUNCTIONAL | `transactions.go:159`; typed filter for `ListTransactionsRequest.Type`                    |
-| `OneTimeToken` typed credential (unreleased)          | FULLY_FUNCTIONAL | `ott.go:34`; `NewOneTimeToken` validates; typed on every OTT-taking surface               |
-| `OTTAction` open enum (unreleased)                    | FULLY_FUNCTIONAL | `ott.go:155`; `OTTStatus.ActionType` (was bare `string`)                                  |
+| `OneTimeToken` typed credential (unreleased)          | FULLY_FUNCTIONAL | `ott.go:38`; `NewOneTimeToken` validates; typed on every OTT-taking surface               |
+| `OTTAction` open enum (unreleased)                    | FULLY_FUNCTIONAL | `ott.go:154`; `OTTStatus.ActionType` (was bare `string`)                                  |
 | Enum casing normalization (lowercase SDK values)      | FULLY_FUNCTIONAL | `BalanceType` normalized; `ProfileType`/`TransactionType` already lowercase               |
 
 ## Wire format hardening
@@ -379,7 +379,7 @@ the plan; bulk payments only on a consumer demand signal).
 | `VerifyWebhookSignature` (RSA-SHA256 over raw body)     | FULLY_FUNCTIONAL | `webhooks.go:64`; valid/tampered/wrong-key/malformed/empty/5 MiB tested                               |
 | `HeaderWebhookSignature` / `HeaderDeliveryID` constants | FULLY_FUNCTIONAL | `webhooks.go:22,24`; delivery-dedup guidance in README Webhooks section                               |
 | `ClearSCAChallenge` convenience loop                    | FULLY_FUNCTIONAL | `ott.go:322`; triggers, prompts via callback, verifies, repeats until every challenge passed          |
-| `OTTChannel` typed channel enum                         | FULLY_FUNCTIONAL | `ott.go:55`; single lowercase-wire → UPPERCASE-challenge-type mapping                                 |
+| `OTTChannel` typed channel enum                         | FULLY_FUNCTIONAL | `ott.go:54`; single lowercase-wire → UPPERCASE-challenge-type mapping                                 |
 | OTT secrecy: token never in error strings               | FULLY_FUNCTIONAL | `SCAChallengeError.Error()` reports `token issued: true/false` only; value via `TwoFAApprovalToken()` |
 
 ## Build & tooling

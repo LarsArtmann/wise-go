@@ -765,14 +765,17 @@ func TestErrorCodesUniqueAndWellFormed(t *testing.T) {
 	}
 
 	wellFormed := regexp.MustCompile(`^wise\.[a-z0-9_]+(\.[a-z0-9_]+)*$`)
+
 	seen := make(map[string]bool, len(codes))
 	for _, code := range codes {
 		if !wellFormed.MatchString(code) {
 			t.Errorf("code %q is not a lowercase dotted wise.* identifier", code)
 		}
+
 		if seen[code] {
 			t.Errorf("code %q is listed/declared more than once in the catalog", code)
 		}
+
 		seen[code] = true
 	}
 }

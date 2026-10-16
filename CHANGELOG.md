@@ -8,6 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Central, named error catalog** (`errors.go`): every error code the SDK
+  emits is a named constant (51 domain codes alongside the six typed-error
+  codes) — call sites reference the constant, tests pin the wire value. The
+  four response-shape sentinels are exported (`ErrEmptyRateList`,
+  `ErrAccountIdentificationCardinality`, `ErrOTTAlternativesShape`,
+  `ErrTransferRefundAmountMissing`), declared centrally with the `error`
+  interface type, and always returned wrapped so consumers can match them
+  with `errors.Is`. `fetchByID` now takes the named invalid-request code
+  instead of assembling `"wise."+resource+".invalid_request"` at runtime —
+  the runtime assembly had left `wise.user.invalid_request` invisible to
+  every literal grep and absent from any catalog. Pinned by
+  `TestErrorCodesUniqueAndWellFormed`, `TestSentinelsStayInterfaceTyped`,
+  and `TestSentinelsMatchThroughProductionWraps`.
 - `checks.anchor-check` flake check and `nix run .#anchor-check`
   (`scripts/anchor_check.py`): the living-docs line-anchor gate. Every
   `` `Symbol` (`file.go:NN`) `` reference in README/FEATURES/TODO_LIST/

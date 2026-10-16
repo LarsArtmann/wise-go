@@ -823,6 +823,24 @@ Mapper failures (unparseable timestamps, invalid currency codes in a response)
 carry `Corruption` classification — permanent, not retryable — so a blanket
 "retry on transient" wrapper fails fast instead of looping.
 
+Every error the SDK emits is named in one central catalog (`errors.go`): the
+typed errors above with their `ErrorCode()` values, one named constant per
+`errorfamily` error code, and exported sentinel errors for distinct
+response-shape failures. The sentinels are always returned wrapped but stay
+matchable with `errors.Is`:
+
+```go
+if errors.Is(err, wise.ErrEmptyRateList) {
+    fmt.Println("the rates response decoded to zero entries")
+}
+```
+
+The sentinels: `ErrEmptyRateList` (rates payload with zero entries),
+`ErrAccountIdentificationCardinality` (account details `accountIdentification`
+not exactly one member), `ErrOTTAlternativesShape` (SCA challenge alternatives
+neither object nor string form), and `ErrTransferRefundAmountMissing`
+(`transfers#refund` webhook payload without amount/currency).
+
 ## Strong Customer Authentication (SCA)
 
 Some Wise endpoints (balance statements for UK/EEA profiles among them) are

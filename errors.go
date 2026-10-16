@@ -77,7 +77,7 @@ const (
 	errorCodeTransferParsePaymentCreated       = "wise.transfer.parse_payment_created"
 	errorCodeTransferParsePaymentCurrency      = "wise.transfer.parse_payment_currency"
 	errorCodeTransferParsePaymentUpdated       = "wise.transfer.parse_payment_updated"
-	errorCodeUserInvalidRequest                 = "wise.user.invalid_request"
+	errorCodeUserInvalidRequest                = "wise.user.invalid_request"
 	errorCodeUserParseDateOfBirth              = "wise.user.parse_date_of_birth"
 	errorCodeWebhookDecode                     = "wise.webhook.decode"
 	errorCodeWebhookInvalidRequest             = "wise.webhook.invalid_request"

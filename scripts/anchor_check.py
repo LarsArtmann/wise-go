@@ -50,7 +50,7 @@ def find_go_file(repo: Path, rel: str) -> Path | None:
 
 def locate_symbol(text: str, symbol: str) -> int | None:
     pattern = re.compile(rf"\b{re.escape(symbol)}\b")
-    func_pattern = re.compile(rf"func[^(]*\b{re.escape(symbol)}\b")
+    func_pattern = re.compile(rf"\bfunc\b[^=]*\b{re.escape(symbol)}\b")
     func_hit = None
     for lineno, line in enumerate(text.splitlines(), start=1):
         if func_hit is None and func_pattern.search(line):
