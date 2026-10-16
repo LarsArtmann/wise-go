@@ -6,7 +6,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- `checks.anchor-check` flake check and `nix run .#anchor-check`
+  (`scripts/anchor_check.py`): the living-docs line-anchor gate. Every
+  `` `Symbol` (`file.go:NN`) `` reference in README/FEATURES/TODO_LIST/
+  ROADMAP/AGENTS/CONTRIBUTING + top-level `docs/*.md` must still land —
+  the symbol on the cited line (the error reports where it moved, preferring
+  the `func` declaration), bare refs need file + range + non-blank. The
+  first sweep found and fixed 16 drifted FEATURES.md anchors (4 blank-line,
+  12 symbol-moved). Scope is deliberately living docs only: everything under
+  docs/status, docs/planning, docs/reviews and the archived trees is a
+  point-in-time record. Wired into the pre-release chain after doc-verify;
+  `--self-test` covers the four drift classes.
+- `checks.linter-allowlist` flake check: the enabled set in `.golangci.yml`
+  must equal the curated 108-linter allowlist pinned in the check (buildflow's
+  auto-configure re-added `lll` twice on 2026-10-16 alone; the curated-list
+  policy is now a gate instead of memory). Negative-tested with a deliberate
+  `lll` re-add.
+- README "Dependency Injection & Health Checks" section: a compile-verified
+  samber/do v2 composition root with the two-line `healthAdapter` bridging
+  the SDK's `Health` readiness probe into `do.HealthcheckerWithContext`
+  (snippet built against v0.13.0 and master; a first draft that parsed
+  nowhere is exactly why the compile rule exists).
+- `.markdownlint.json` (MD013 off) so on-demand markdownlint runs surface
+  real issues (broken references, duplicate headings) without fighting the
+  repo's long-line style; dprint stays the formatter.
+
+### Changed
+
+- Coverage floor single-sourced: ci.yml carries THE floor (92.0) and the
+  flake test check reads it from there at check time;
+  `checks.coverage-floor-parity` now enforces the shape (exactly one floor
+  in ci.yml, zero hardcoded in flake.nix) instead of comparing two copies.
+- `Describe("Health")` pins the typed-error contract: a 429 surfaces
+  `*RateLimitError` (reachability proven under throttling), a bad key
+  surfaces `*AuthError`, and a retry-exhausted 5xx surfaces the typed
+  `*ServerError` through the `ErrExhausted` chain.
+- `scripts/spec_drift.py` hardening: an extraction-floor guard fails the
+  check when fewer than 40 resolved endpoints are extracted (the silent
+  call-shape/regex-rot class), and the flake app sets
+  `PYTHONDONTWRITEBYTECODE=1`.
 
 ## [0.14.0] - 2026-10-16
 

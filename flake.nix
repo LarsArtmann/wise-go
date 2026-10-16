@@ -163,7 +163,7 @@
                 exit 1
               fi
               awk -v p="$TOTAL" -v f="$FLOOR" 'BEGIN { if ((p+0) < (f+0)) exit 1 }' || {
-                echo "FAIL: coverage $TOTAL% is below the ${FLOOR}% floor (single-sourced from ci.yml)"
+                echo "FAIL: coverage $TOTAL% is below the floor $FLOOR (single-sourced from ci.yml)"
                 exit 1
               }
               runHook postCheck
@@ -194,7 +194,7 @@
               ''
                 FLOOR_CI=$(grep -oE 'p\+0 < [0-9]+(\.[0-9]+)?' "$ciYml" | grep -oE '[0-9]+(\.[0-9]+)?$' | sort -u)
                 COUNT=$(printf '%s\n' "$FLOOR_CI" | grep -c . || true)
-                INLINE_FLAKE=$(grep -c '(p+0) < ' "$flakeNix" || true)
+                INLINE_FLAKE=$(grep -cE '\(p\+0\) < [0-9]' "$flakeNix" || true)
                 if [ -z "$FLOOR_CI" ] || [ "$COUNT" -ne 1 ]; then
                   echo "FAIL: ci.yml must carry exactly one coverage floor (found: '$FLOOR_CI')"
                   exit 1
@@ -309,6 +309,147 @@
               ''
                 cd $src
                 python3 scripts/anchor_check.py --repo .
+                touch $out
+              '';
+
+          # Curated-lister gate: the enabled set in .golangci.yml must equal
+          # the allowlist below. buildflow's auto-configure re-added `lll`
+          # twice on 2026-10-16 alone; this turns the curated-list policy
+          # from memory into a gate. To change the list: edit .golangci.yml
+          # AND this allowlist in the same commit.
+          checks.linter-allowlist =
+            let
+              allowlist = [
+                "arangolint"
+                "asasalint"
+                "asciicheck"
+                "bidichk"
+                "bodyclose"
+                "canonicalheader"
+                "clickhouselint"
+                "containedctx"
+                "contextcheck"
+                "copyloopvar"
+                "cyclop"
+                "decorder"
+                "dogsled"
+                "dupl"
+                "dupword"
+                "durationcheck"
+                "embeddedstructfieldcheck"
+                "err113"
+                "errcheck"
+                "errchkjson"
+                "errname"
+                "errorlint"
+                "exhaustive"
+                "exhaustruct_v5"
+                "exptostd"
+                "fatcontext"
+                "forbidigo"
+                "forcetypeassert"
+                "funlen"
+                "ginkgolinter"
+                "gocheckcompilerdirectives"
+                "gochecknoglobals"
+                "gochecknoinits"
+                "gochecksumtype"
+                "gocognit"
+                "goconst"
+                "gocritic"
+                "gocyclo"
+                "godoclint"
+                "godot"
+                "godox"
+                "goheader"
+                "gomoddirectives"
+                "gomodguard_v2"
+                "goprintffuncname"
+                "gosec"
+                "gosmopolitan"
+                "govet"
+                "grouper"
+                "iface"
+                "importas"
+                "inamedparam"
+                "ineffassign"
+                "interfacebloat"
+                "intrange"
+                "iotamixing"
+                "ireturn"
+                "loggercheck"
+                "maintidx"
+                "makezero"
+                "mirror"
+                "misspell"
+                "mnd"
+                "modernize"
+                "musttag"
+                "nakedret"
+                "nestif"
+                "nilerr"
+                "nilnesserr"
+                "nilnil"
+                "nlreturn"
+                "noctx"
+                "nolintlint"
+                "nonamedreturns"
+                "nosprintfhostport"
+                "paralleltest"
+                "perfsprint"
+                "prealloc"
+                "predeclared"
+                "promlinter"
+                "protogetter"
+                "reassign"
+                "recvcheck"
+                "revive"
+                "rowserrcheck"
+                "sloglint"
+                "spancheck"
+                "sqlclosecheck"
+                "staticcheck"
+                "tagalign"
+                "tagliatelle"
+                "testableexamples"
+                "testifylint"
+                "testpackage"
+                "thelper"
+                "tparallel"
+                "unconvert"
+                "unparam"
+                "unqueryvet"
+                "unused"
+                "usestdlibvars"
+                "usetesting"
+                "varnamelen"
+                "wastedassign"
+                "whitespace"
+                "wrapcheck"
+                "wsl_v5"
+                "zerologlint"
+              ];
+            in
+            pkgs.runCommand "linter-allowlist"
+              {
+                nativeBuildInputs = [
+                  pkgs.gawk
+                  pkgs.diffutils
+                  pkgs.coreutils
+                ];
+                golangciYml = ./.golangci.yml;
+                allowlistFile = pkgs.writeText "linter-allowlist" (lib.concatStringsSep "\n" allowlist);
+              }
+              ''
+                awk '/^  enable:/{f=1;next} f&&/^    - /{sub(/^    - /,"");print;next} f{exit}' "$golangciYml" | sort > actual.txt
+                sort "$allowlistFile" > expected.txt
+                if ! diff -u expected.txt actual.txt; then
+                  echo "FAIL: .golangci.yml enabled-linter set drifted from the curated allowlist"
+                  echo "The curated list is policy (lll was auto-re-added twice on 2026-10-16)."
+                  echo "Change it by editing .golangci.yml AND the allowlist in flake.nix checks.linter-allowlist together."
+                  exit 1
+                fi
+                echo "linter-allowlist OK: enabled set matches the curated allowlist"
                 touch $out
               '';
 
