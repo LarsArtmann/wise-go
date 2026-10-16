@@ -7,6 +7,23 @@ wording for provenance.
 
 ## 2026-10-16 docs-health archive sweep
 
+- `2026-10-07_04-57_v0120-release-session-status.md` — RESOLVED + ARCHIVE:
+  v0.12.0 shipped and verified end-to-end; every §b–§g follow-up carries an
+  inline verdict from the 2026-10-16 maximalist pass (pre-release app,
+  release-notes-check, shuffle-proof guard, RetryAfterDelay, fuzz/bench all
+  shipped; credential-gated and user-gated residuals routed).
+- `2026-10-07_06-07_p3-quality-tooling-sweep-status.md` — RESOLVED + ARCHIVE:
+  the P3 tooling sweep landed (CAMT test, webhook fuzz/bench, conformance
+  guard, coverage batch, md-go-snippets, release-notes-check, pre-release);
+  the 2026-10-16 pass struck the remaining §b–§g items inline.
+- `2026-10-07_06-34_p3-sweep-resume-defect-filing-lsp-rootcause-status.md` —
+  RESOLVED + ARCHIVE: four tool-repo defects filed (#34 closed and absorbed,
+  #35/#36 + md-go-validator #8 watch-gated), LSP phantom root-caused and
+  fixed; the 2026-10-16 pass itemized the previously banner-granular §f.
+- `2026-10-07_07-09_p3-resume-execution-prerelease-green-status.md` — RESOLVED +
+  ARCHIVE: first end-to-end pre-release green + `--shuffle` verified; CI
+  wiring and meta.description shipped since; user-gated residuals routed to
+  the consolidated ask.
 - `2026-10-07_07-35_go-retry-pin-drift-fix-status.md` — RESOLVED + ARCHIVE:
   the pin drift was fixed in-session (`3ed4fb4`); the class was closed
   structurally by `checks.pin-sync` + the peeled-commit realignment in v0.13.0
