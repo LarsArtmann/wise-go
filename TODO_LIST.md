@@ -20,6 +20,15 @@ Source: transfer-category re-audit
 ops; deposit-details pay-in already DEMAND_GATED; the re-audit's
 "banking-partner invoice" row was a false gap — it IS `GetTransferPayoutInfo`).
 
+[ ] Cut v0.14.0 — staged in `[Unreleased]` (breaking `OneTimeToken`/`OTTAction`
+typing, 2027Q1 account-details migration, transfer-category completion,
+spec-drift gate, three new endpoints): `nix run .#pre-release`, tag,
+`gh release create`, proxy + `go get` verification, apidiff vs v0.13.0
+re-check. Consider scratch-verifying bank-sync compiles against master
+(replace/GOWORK) BEFORE the tag — the 21:09 session asserted the
+challenge→clear→replay flow compiles unchanged by reasoning only.
+Source: `docs/status/2026-10-16_21-09_cross-repo-wise-go-audit-sca-typing-session.md` §f13/§f14.
+
 [ ] Run the sandbox live-verification pass (`WISE_SANDBOX_API_KEY`) against the
 five spec-vs-live assumptions settled by the conformance work: statement
 `type` COMPACT/FLAT, `X-idempotence-uuid` on balance creation, statement
@@ -80,6 +89,8 @@ flake inputs moved from `git+ssh` to public `github:` URLs pinned by rev, so CI
 needs no secrets; the workflow file is refreshed (`GOLANGCI_LINT_VERSION`
 v2.13, no-auth nix job, 90% coverage gate). Remaining: push master, re-enable
 the workflow server-side (`gh workflow enable ci`), and watch the first run.
+Add a network `pin-sync` job to ci.yml at the same time (mirroring the
+sandbox-live dispatch pattern).
 Until then the coverage badge stays frozen at its last CI-measured value.
 Source: `docs/status/archived/2026-10-07_03-57_session-status-unblocked-prep-release-readiness.md`.
 **BLOCKED: needs the user's approval to push and enable.**
@@ -163,6 +174,15 @@ spec; today vendored-snapshot staleness is report-only) and where spec-drift
 recurs while CI is disabled (scheduled local run, buildflow step, or
 manual-before-release). Source:
 `docs/status/2026-10-16_19-48_wise-api-spec-drift-check-session.md` §g2/§g3.
+**BLOCKED: user decision.**
+
+[ ] Flake pinning strategy — keep `?rev=<commit-sha>` inputs (the hermetic
+`checks.pin-sync` asserts structural invariants only; the network
+`apps.pin-sync` is the real version detector, firing at pre-release time) or
+switch to version-tag refs (`github:LarsArtmann/go-retry/v0.7.1`, flake.lock
+still pinning the immutable commit) so the hermetic check can catch version
+drift offline. Reverses the documented rev-pinned decision — user call.
+Source: `docs/status/2026-10-07_08-22_v0.13.0-release-pin-sync-drift-discovery-status.md` §g1.
 **BLOCKED: user decision.**
 
 [ ] `nix flake check --all-systems` — verified 2026-10-07: aarch64-linux and

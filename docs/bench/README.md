@@ -43,3 +43,7 @@ error).
   are append-only history; never edit an old one.
 - Benchmarks live in the repo root `bench_test.go`; add a benchmark when a
   parser or mapper becomes a hot path for consumers, not speculatively.
+- Live-fuzz "interesting input" artifacts land in the Go build cache, NOT in
+  `testdata/` — the checked-in seeds already pin the regression shapes, and
+  harvesting cache corpora bloats the repo (decided 2026-10-11; do not
+  relitigate).
