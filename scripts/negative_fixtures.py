@@ -46,14 +46,14 @@ FLAKE_LOCK_FMT = (
 PIN_SYNC_CASES = {
     "ok": (
         GO_MOD,
-        '{\n  input-retry = "github:LarsArtmann/go-retry?rev=%s";\n}\n' % REV_A,
+        f'{{\n  input-retry = "github:LarsArtmann/go-retry?rev={REV_A}";\n}}\n',
         FLAKE_LOCK_FMT.format(rev=REV_A),
         0,
         "1 in-house dependency pins verified",
     ),
     "stale_lock": (
         GO_MOD,
-        '{\n  input-retry = "github:LarsArtmann/go-retry?rev=%s";\n}\n' % REV_B,
+        f'{{\n  input-retry = "github:LarsArtmann/go-retry?rev={REV_B}";\n}}\n',
         FLAKE_LOCK_FMT.format(rev=REV_A),
         1,
         "flake.lock rev",
@@ -67,8 +67,7 @@ PIN_SYNC_CASES = {
     ),
     "missing_input": (
         GO_MOD,
-        '{\n  input-unrelated = "github:LarsArtmann/some-other-repo?rev=%s";\n}\n'
-        % REV_A,
+        f'{{\n  input-unrelated = "github:LarsArtmann/some-other-repo?rev={REV_A}";\n}}\n',
         FLAKE_LOCK_FMT.format(rev=REV_A),
         1,
         "no matching input",

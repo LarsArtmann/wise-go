@@ -24,6 +24,7 @@ wise-go (Go 1.26, buildflow `83db580` binary, source read at `f7029b39e`): `stat
 `simpleDetectorFromCheck` (tools/providers/provider_helpers.go, `f7029b39e`) runs statix's plain `check` mode and parses the output with `FindingsFromOutput` (tools/providers/output_parser.go:111). That parser tries `ParseColonFormat` first — statix's default render is a boxed multi-line format with no `file:line:col: message` colon lines, so it matches nothing — and then falls back to `parseLineFormat` (output_parser.go:82), which creates **one finding per non-empty line**:
 
 ```go
+// skip-validate
 // parseLineFormat parses tool output where each non-empty line is a finding.
 for line := range strings.SplitSeq(output, "\n") {
 ````

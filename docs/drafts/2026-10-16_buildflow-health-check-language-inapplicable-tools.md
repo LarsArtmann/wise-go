@@ -34,6 +34,7 @@ None of these tools' steps are applicable here (the same summary reports "48 not
 `RunHealthChecks` (execution/pipeline.go:90 at `f7029b39e`) health-checks every provider in the post-filter provider list. jest-test's own trigger is language-gated —
 
 ```go
+// skip-validate
 // tools/providers/js_tools.go:37
 Language: dtool.OnlyLanguage(config.LanguageJavaScript),
 ````
