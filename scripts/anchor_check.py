@@ -1,0 +1,139 @@
+#!/usr/bin/env python3
+"""Verify every `file.go:NN` line anchor in the living docs still lands.
+
+The repo's convention is `Symbol` (`file.go:NN`). Two claim shapes are
+checked:
+
+1. `` `Symbol` (`file.go:NN`) `` -- the cited line must contain Symbol as a
+   word; if the symbol moved, the error reports the line where it now lives.
+2. `` `file.go:NN` `` (bare) -- the file must exist, NN must be in range,
+   and the cited line must be non-empty.
+
+Point-in-time docs under docs/status/, docs/planning/, docs/reviews/,
+docs/architecture-understanding/ and every archived/ tree are deliberately
+NOT swept: they are historical records (docs-health annotates/archives them,
+never keeps them line-true). doc-verify gates counts; this gate owns line
+anchors, which rot silently (8 dead anchors 2026-10-16, more re-drifted the
+same evening).
+
+Usage: anchor_check.py [--repo DIR]. Exit 0 clean, 1 drifts, 2 environment.
+"""
+
+from __future__ import annotations
+
+import argparse
+import re
+import sys
+from pathlib import Path
+
+LIVING_DOCS = [
+    "README.md",
+    "FEATURES.md",
+    "TODO_LIST.md",
+    "ROADMAP.md",
+    "AGENTS.md",
+    "CONTRIBUTING.md",
+]
+
+ANCHOR_RE = re.compile(r"`((?:[A-Za-z0-9_.-]+/)*[A-Za-z0-9_-]+\.go):(\d+)`")
+SYMBOL_BEFORE_RE = re.compile(r"`([A-Za-z_][A-Za-z0-9_]*)`\s*\(\s*$")
+
+
+def find_go_file(repo: Path, rel: str) -> Path | None:
+    direct = repo / rel
+    if direct.is_file():
+        return direct
+    matches = [p for p in repo.rglob(rel.split("/")[-1]) if ".git" not in p.parts]
+    hits = [p for p in matches if p.relative_to(repo).as_posix().endswith(rel)]
+    return hits[0] if len(hits) == 1 else None
+
+
+def locate_symbol(text: str, symbol: str) -> int | None:
+    pattern = re.compile(rf"\b{re.escape(symbol)}\b")
+    for lineno, line in enumerate(text.splitlines(), start=1):
+        if pattern.search(line):
+            return lineno
+    return None
+
+
+def check_anchor(repo: Path, doc: Path, match: re.Match, line_no: int) -> str | None:
+    rel, num = match.group(1), int(match.group(2))
+    go_file = find_go_file(repo, rel)
+    if go_file is None:
+        return f"{doc}:{line_no}: anchor `{rel}:{num}` -- file not found in repo"
+    text = go_file.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    if not 1 <= num <= len(lines):
+        return f"{doc}:{line_no}: anchor `{rel}:{num}` -- file has only {len(lines)} lines"
+
+    prefix = doc.read_text(encoding="utf-8")[: match.start()]
+    tail = prefix[-120:]
+    symbol = SYMBOL_BEFORE_RE.search(tail)
+    if symbol is None:
+        cited = lines[num - 1]
+        if not cited.strip():
+            return (
+                f"{doc}:{line_no}: anchor `{rel}:{num}` -- cited line is blank "
+                f"(the anchor drifted)"
+            )
+        return None
+
+    name = symbol.group(1)
+    cited = lines[num - 1]
+    if re.search(rf"\b{re.escape(name)}\b", cited):
+        return None
+    actual = locate_symbol(text, name)
+    where = f", now at {go_file.name}:{actual}" if actual else ", not found in file"
+    return (
+        f"{doc}:{line_no}: anchor `{rel}:{num}` -- expected `{name}` on the "
+        f"cited line{where}"
+    )
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--repo",
+        default=".",
+        help="repo root (default: current directory)",
+    )
+    args = parser.parse_args()
+    repo = Path(args.repo).resolve()
+    if not (repo / "go.mod").is_file():
+        print(f"error: {repo} is not the repo root (no go.mod)", file=sys.stderr)
+        return 2
+
+    docs = [repo / name for name in LIVING_DOCS]
+    docs += sorted((repo / "docs").glob("*.md"))
+    missing = [p.name for p in docs if not p.is_file()]
+    docs = [p for p in docs if p.is_file()]
+    if missing:
+        print(f"warning: living docs not found, skipped: {', '.join(missing)}", file=sys.stderr)
+
+    drifts: list[str] = []
+    anchors = 0
+    for doc in docs:
+        text = doc.read_text(encoding="utf-8")
+        for lineno, line in enumerate(text.splitlines(), start=1):
+            if line.lstrip().startswith(">"):
+                continue
+            for match in ANCHOR_RE.finditer(line):
+                anchors += 1
+                problem = check_anchor(repo, doc, match, lineno)
+                if problem:
+                    drifts.append(problem)
+
+    for drift in drifts:
+        print(f"FAIL: {drift}")
+    if drifts:
+        print(
+            f"anchor-check: {len(drifts)} drifted of {anchors} anchors "
+            f"across {len(docs)} living docs"
+        )
+        return 1
+    print(f"anchor-check: all {anchors} anchors verified across {len(docs)} living docs")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
