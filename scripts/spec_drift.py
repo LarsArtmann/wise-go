@@ -37,24 +37,14 @@ DEFAULT_VENDORED = "docs/reviews/wise-api-openapi.json"
 HTTP_VERBS = {"get", "post", "put", "patch", "delete", "head", "options", "trace"}
 
 CLIENT_CALL_RE = re.compile(
-    r"\bc\.(get|getWithQuery|getWithQueryHeaders|getRaw|post|postWithHeaders|put|patch|delete)\s*\("
+    r"(?:\b(?:c|client)\.(?:get|getWithQuery|getWithQueryHeaders|getRaw|post|postWithHeaders|put|patch|delete)\b)"
+    r"|\b(?:fetchByID|listTransfersPage)\("
 )
-VERB_TO_METHOD = {
-    "get": "GET",
-    "getWithQuery": "GET",
-    "getWithQueryHeaders": "GET",
-    "getRaw": "GET",
-    "post": "POST",
-    "postWithHeaders": "POST",
-    "put": "PUT",
-    "patch": "PATCH",
-    "delete": "DELETE",
-}
-
 SPRINTF_PATH_RE = re.compile(r'fmt\.Sprintf\(\s*"(/[^"]*)"')
 LITERAL_PATH_RE = re.compile(r'path\s*:?=\s*"(/[^"]*)"')
+CALL_WINDOW_PATH_RE = re.compile(r'"(/[^"]*)"')
 FORMAT_VERB_RE = re.compile(r"%[-#0 +]*\d*(?:\.\d+)?[a-zA-Z]")
-VERSION_PREFIX_RE = re.compile(r"^/(?:v\d+|\d{4}Q[1-4])(?=/|$)")
+VERSION_PREFIX_RE = re.compile(r"^/(?:v\d+|\d{4}Q[1-4]|\{\})(?=/)")
 
 
 def load_spec(spec_file: str | None, url: str) -> dict:
@@ -80,11 +70,11 @@ def extract_sdk_endpoints(repo: pathlib.Path) -> list[dict]:
             if m:
                 last_path = m.group(1)
                 last_path_line = lineno
-            call = CLIENT_CALL_RE.search(line)
-            if not call:
+            method = request_method(line)
+            if method is None:
                 continue
             window = "\n".join(lines[lineno - 1 : lineno + 3])
-            inline = SPRINTF_PATH_RE.search(window)
+            inline = CALL_WINDOW_PATH_RE.search(window)
             if inline:
                 template = inline.group(1)
             elif last_path is not None and lineno - last_path_line <= 15:
@@ -94,13 +84,34 @@ def extract_sdk_endpoints(repo: pathlib.Path) -> list[dict]:
             if template:
                 endpoints.append(
                     {
-                        "method": VERB_TO_METHOD[call.group(1)],
+                        "method": method,
                         "template": template,
                         "file": go_file.name,
                         "line": lineno,
                     }
                 )
     return endpoints
+
+
+def request_method(line: str) -> str | None:
+    if CLIENT_CALL_RE.search(line) is None:
+        return None
+    if "fetchByID" in line or "listTransfersPage" in line:
+        return "GET"
+    for fragment, method in (
+        ("getWithQueryHeaders", "GET"),
+        ("getWithQuery", "GET"),
+        ("getRaw", "GET"),
+        ("get", "GET"),
+        ("postWithHeaders", "POST"),
+        ("post", "POST"),
+        ("put", "PUT"),
+        ("patch", "PATCH"),
+        ("delete", "DELETE"),
+    ):
+        if re.search(r"\b(?:c|client)\." + fragment + r"\b", line):
+            return method
+    return None
 
 
 def normalize_sdk_path(template: str) -> str:
