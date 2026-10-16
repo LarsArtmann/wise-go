@@ -296,14 +296,14 @@ the plan; bulk payments only on a consumer demand signal).
 | Bearer-token authentication             | FULLY_FUNCTIONAL | `client.go:397` `setHeaders`                                                            |
 | Sandbox environment (`WithSandbox`)     | FULLY_FUNCTIONAL | `options.go:64`; `SandboxURL` const in `types.go:24`                                    |
 | Custom base URL (`WithBaseURL`)         | FULLY_FUNCTIONAL | `options.go:71`                                                                         |
-| Custom HTTP timeout (`WithTimeout`)     | FULLY_FUNCTIONAL | `options.go:78`                                                                         |
-| Custom retry policy (`WithRetry`)       | FULLY_FUNCTIONAL | `options.go:86`; exponential backoff with jitter via go-retry                           |
-| Custom HTTP client (`WithHTTPClient`)   | FULLY_FUNCTIONAL | `options.go:97`; accepts `Doer` interface (`client.go:35`)                              |
-| Correlation ID (`WithCorrelationID`)    | FULLY_FUNCTIONAL | `options.go:110`; sets `X-External-Correlation-Id` header on all requests               |
-| Retry with backoff (429, 5xx, network)  | FULLY_FUNCTIONAL | `client.go:128` `isRetryableError`; `Retry-After` honored via `DelayFunc` (capped)      |
-| `Authenticate(ctx)`                     | FULLY_FUNCTIONAL | `client.go:157`; delegates to `ListProfiles`                                            |
-| `Health(ctx)`                           | FULLY_FUNCTIONAL | `client.go:167`; delegates to `Authenticate`                                            |
-| `WithUserAgent` option (v0.11.0)        | FULLY_FUNCTIONAL | `options.go:81`; custom `User-Agent` on every request, default preserved (BDD)          |
+| Custom HTTP timeout (`WithTimeout`)     | FULLY_FUNCTIONAL | `options.go:95`                                                                         |
+| Custom retry policy (`WithRetry`)       | FULLY_FUNCTIONAL | `options.go:103`; exponential backoff with jitter via go-retry                          |
+| Custom HTTP client (`WithHTTPClient`)   | FULLY_FUNCTIONAL | `options.go:114`; accepts `Doer` interface (`client.go:41`)                              |
+| Correlation ID (`WithCorrelationID`)    | FULLY_FUNCTIONAL | `options.go:127`; sets `X-External-Correlation-Id` header on all requests               |
+| Retry with backoff (429, 5xx, network)  | FULLY_FUNCTIONAL | `client.go:145` `isRetryableError`; `Retry-After` honored via `DelayFunc` (capped)      |
+| `Authenticate(ctx)`                     | FULLY_FUNCTIONAL | `client.go:174`; delegates to `ListProfiles`                                            |
+| `Health(ctx)`                           | FULLY_FUNCTIONAL | `client.go:184`; delegates to `Authenticate`                                            |
+| `WithUserAgent` option (v0.11.0)        | FULLY_FUNCTIONAL | `options.go:88`; custom `User-Agent` on every request, default preserved (BDD)          |
 | Shared-client concurrency (v0.11.0)     | FULLY_FUNCTIONAL | `wise_test.go:246`; 16 parallel requests, per-request correlation-ID isolation, `-race` |
 
 ## Transaction behavior
