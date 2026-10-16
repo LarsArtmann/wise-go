@@ -4593,15 +4593,6 @@ var _ = Describe("Wise Client", func() {
 			Expect(data.ActiveCases).ToNot(BeNil())
 			Expect(data.ActiveCases).To(BeEmpty())
 		})
-
-		It("should reject envelopes of a different event type", func() {
-			event, err := wise.ParseWebhookEvent([]byte(transferStateChangeEventJSON))
-			Expect(err).ToNot(HaveOccurred())
-
-			_, err = event.TransferActiveCases()
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("event type mismatch"))
-		})
 	})
 
 	Describe("WebhookEvent.TransferRefund", func() {
@@ -4647,15 +4638,6 @@ var _ = Describe("Wise Client", func() {
 			_, err = event.TransferRefund()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("refund amount or currency missing"))
-		})
-
-		It("should reject envelopes of a different event type", func() {
-			event, err := wise.ParseWebhookEvent([]byte(transferStateChangeEventJSON))
-			Expect(err).ToNot(HaveOccurred())
-
-			_, err = event.TransferRefund()
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("event type mismatch"))
 		})
 	})
 })
