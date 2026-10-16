@@ -1831,6 +1831,28 @@ var _ = Describe("Wise Client", func() {
 				Expect(quote.ID.Get()).To(Equal("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"))
 			})
 		})
+
+		Context("with a zero profile ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetQuote(
+					context.Background(),
+					wise.ProfileID{},
+					wise.NewQuoteID("11144c35-9fe8-4c32-b7fd-d05c2a7734bf"),
+				)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("profileID is required"))
+			})
+		})
+
+		Context("with a zero quote ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetQuote(
+					context.Background(), wise.NewProfileID(12345), wise.QuoteID{},
+				)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("quoteID is required"))
+			})
+		})
 	})
 
 	Describe("GetQuoteAccountRequirements", func() {
@@ -2435,6 +2457,121 @@ var _ = Describe("Wise Client", func() {
 				Expect(err.Error()).To(ContainSubstring("originalTransferId is required"))
 			})
 		})
+
+		Context("with a zero profile ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.CreateThirdPartyTransfer(context.Background(),
+					wise.CreateThirdPartyTransferRequest{
+						ProfileID:          wise.ProfileID{},
+						TargetAccount:      wise.NewRecipientID(7839323),
+						QuoteID:            wise.NewQuoteID("3522e360-356a-4e37-9f99-94a21898d8fa"),
+						OriginalTransferID: "4711",
+					})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("profileID is required"))
+			})
+		})
+
+		Context("with a zero target account", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.CreateThirdPartyTransfer(context.Background(),
+					wise.CreateThirdPartyTransferRequest{
+						ProfileID:          wise.NewProfileID(12345),
+						TargetAccount:      wise.RecipientID{},
+						QuoteID:            wise.NewQuoteID("3522e360-356a-4e37-9f99-94a21898d8fa"),
+						OriginalTransferID: "4711",
+					})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("targetAccount is required"))
+			})
+		})
+
+		Context("with a zero quote UUID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.CreateThirdPartyTransfer(context.Background(),
+					wise.CreateThirdPartyTransferRequest{
+						ProfileID:          wise.NewProfileID(12345),
+						TargetAccount:      wise.NewRecipientID(7839323),
+						QuoteID:            wise.QuoteID{},
+						OriginalTransferID: "4711",
+					})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("quoteUuid is required"))
+			})
+		})
+
+		Context("with a business originator and source account", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v1/profiles/12345/third-party-transfers",
+					func(w http.ResponseWriter, r *http.Request) {
+						var body map[string]any
+						Expect(json.UnmarshalRead(r.Body, &body)).To(Succeed())
+						Expect(body["sourceAccount"]).To(Equal(float64(1527389)))
+
+						originator, ok := body["originator"].(map[string]any)
+						Expect(ok).To(BeTrue())
+						Expect(originator["legalEntityType"]).To(Equal("BUSINESS"))
+						Expect(originator["nationality"]).To(Equal("DE"))
+						Expect(originator["businessRegistrationCode"]).To(Equal("HRB 12345"))
+						Expect(originator["businessRegistrationDate"]).To(Equal("2020-03-01"))
+						Expect(originator["accountDetails"]).To(Equal("DE89370400440532013000"))
+
+						name, ok := originator["name"].(map[string]any)
+						Expect(ok).To(BeTrue())
+						Expect(name["fullName"]).To(Equal("Muster GmbH"))
+
+						address, ok := originator["address"].(map[string]any)
+						Expect(ok).To(BeTrue())
+						Expect(address["stateCode"]).To(Equal("BY"))
+						Expect(address["postCode"]).To(Equal("80331"))
+
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.MarshalWrite(w, raw.ThirdPartyTransfer{
+							ID:                 16521641,
+							User:               4342275,
+							TargetAccount:      7839323,
+							SourceAccount:      new(int64(1527389)),
+							Quote:              "3522e360-356a-4e37-9f99-94a21898d8fa",
+							Status:             "incoming_payment_waiting",
+							SourceCurrency:     "EUR",
+							SourceValue:        1000,
+							TargetCurrency:     "GBP",
+							TargetValue:        850,
+							OriginalTransferID: "4712",
+							Created:            "2026-10-16 10:47:49",
+						})
+					})
+			})
+
+			It("should serialize every optional originator field", func() {
+				sourceAccount := wise.NewRecipientID(1527389)
+				transfer, err := client.CreateThirdPartyTransfer(context.Background(),
+					wise.CreateThirdPartyTransferRequest{
+						ProfileID:          wise.NewProfileID(12345),
+						OriginalTransferID: "4712",
+						TargetAccount:      wise.NewRecipientID(7839323),
+						SourceAccount:      &sourceAccount,
+						QuoteID:            wise.NewQuoteID("3522e360-356a-4e37-9f99-94a21898d8fa"),
+						Reference:          "invoice 43",
+						Originator: wise.Originator{
+							LegalEntityType: wise.OriginatorLegalEntityTypeBusiness,
+							Reference:       "CST-2991993",
+							Name:            wise.OriginatorName{FullName: "Muster GmbH"},
+							Nationality:     "DE",
+							BusinessRegistrationCode: "HRB 12345",
+							BusinessRegistrationDate: time.Date(2020, 3, 1, 0, 0, 0, 0, time.UTC),
+							AccountDetails:           "DE89370400440532013000",
+							Address: wise.OriginatorAddress{
+								FirstLine: "Marienplatz 8", City: "M\u00fcnchen",
+								StateCode: "BY", CountryCode: "DE", PostCode: "80331",
+							},
+						},
+					})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(transfer.ID.Get()).To(Equal(int64(16521641)))
+				Expect(transfer.SourceAccount.Get()).To(Equal(int64(1527389)))
+			})
+		})
 	})
 
 	Describe("GetThirdPartyTransfer", func() {
@@ -2485,6 +2622,26 @@ var _ = Describe("Wise Client", func() {
 				nfErr, ok := errors.AsType[*wise.NotFoundError](err)
 				Expect(ok).To(BeTrue(), "expected *wise.NotFoundError, got %T: %v", err, err)
 				Expect(nfErr.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+
+		Context("with a zero profile ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetThirdPartyTransfer(
+					context.Background(), wise.ProfileID{}, wise.NewTransferID(16521640),
+				)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("profileID is required"))
+			})
+		})
+
+		Context("with a zero transfer ID", func() {
+			It("should return a rejection without calling the API", func() {
+				_, err := client.GetThirdPartyTransfer(
+					context.Background(), wise.NewProfileID(12345), wise.TransferID{},
+				)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("transferID is required"))
 			})
 		})
 	})
@@ -3757,6 +3914,39 @@ var _ = Describe("Wise Client", func() {
 				Expect(detail.Identification.GB.AccountNumber).To(Equal("12345678"))
 				Expect(detail.Identification.BE).To(BeNil())
 				Expect(detail.Identification.US).To(BeNil())
+			})
+		})
+
+		Context("with a GB response without an institution address", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/2027Q1/balances/account-details/14000003",
+					func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.MarshalWrite(w, raw.AccountDetails{
+							ID:                14000003,
+							ProfileID:         12345,
+							State:             "ACTIVE",
+							AccountHolderName: "Sarah Jenkins",
+							Country:           "GB",
+							AccountIdentification: raw.AccountIdentification{
+								GB: &raw.GBAccountIdentification{
+									BIC:           "TRWIGB2L",
+									IBAN:          "GB29NWBK60161331926819",
+									SortCode:      "230801",
+									AccountNumber: "12345678",
+								},
+							},
+						})
+					})
+			})
+
+			It("should map the institution address as nil", func() {
+				detail, err := client.GetBankAccountDetails(
+					context.Background(), wise.NewAccountDetailsID(14000003),
+				)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(detail.Identification.GB).ToNot(BeNil())
+				Expect(detail.Identification.GB.InstitutionAddress).To(BeNil())
 			})
 		})
 

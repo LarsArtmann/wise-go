@@ -176,7 +176,7 @@ func TestBalanceAmountCents(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			if got := BalanceAmount{Value: tt.value}.Cents(); got != tt.want {
+			if got := (BalanceAmount{Value: tt.value}).Cents(); got != tt.want {
 				t.Errorf("Cents() = %d, want %d", got, tt.want)
 			}
 		})
