@@ -906,6 +906,12 @@ errors include `status_code` and, when Wise sent its structured envelope, the
 first granular code as `wise_code`. The full reference of granular codes lives
 in [docs/error-codes.md](docs/error-codes.md).
 
+One error type carries its verdict in headers instead of the body:
+`SCAChallengeError` (403 + Wise's two-factor headers) never contains granular
+codes. Clear the challenge through the one-time-token endpoints, then retry
+with the token from `TwoFAApprovalToken()`; the full flow is in
+[Strong Customer Authentication](#strong-customer-authentication-sca).
+
 ## Strong Customer Authentication (SCA)
 
 Some Wise endpoints (balance statements for UK/EEA profiles among them) are

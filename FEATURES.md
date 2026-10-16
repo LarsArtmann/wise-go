@@ -335,16 +335,23 @@ the plan; bulk payments only on a consumer demand signal).
 
 | Feature                                           | Status           | Evidence                                                            |
 | ------------------------------------------------- | ---------------- | ------------------------------------------------------------------- |
-| `APIError` base type                              | FULLY_FUNCTIONAL | `errors.go:42`; embeds into all subtypes; carries `Headers` (`:49`) |
-| `RateLimitError` (HTTP 429) with `RetryAfter`     | FULLY_FUNCTIONAL | `errors.go:71`; parses delta-seconds + HTTP-date                    |
-| `RateLimitError.RateLimitedBy` (429 header)       | FULLY_FUNCTIONAL | `errors.go:75`; captures `X-Rate-Limited-By` header                 |
-| `AuthError` (HTTP 401, 403)                       | FULLY_FUNCTIONAL | `errors.go:103`                                                     |
-| `SCAChallengeError` (403 + 2FA headers, v0.6.0)   | FULLY_FUNCTIONAL | `errors.go:116`; `TwoFAApprovalToken()` returns the OTT             |
-| `WithSCAApprovalToken` option (v0.6.0)            | FULLY_FUNCTIONAL | `options.go:161`; sends cleared OTT as `x-2fa-approval`             |
-| `NotFoundError` (HTTP 404)                        | FULLY_FUNCTIONAL | `errors.go:142`                                                     |
-| `ServerError` (HTTP 5xx)                          | FULLY_FUNCTIONAL | `errors.go:151`                                                     |
+| `APIError` base type                              | FULLY_FUNCTIONAL | `errors.go:241`; embeds into all subtypes; carries `Headers` (`:252`) and `Details` (`:255`) |
+| `BadRequestError` (HTTP 400)                      | FULLY_FUNCTIONAL | `errors.go:423`; granular reason codes arrive in `Details`           |
+| `RateLimitError` (HTTP 429) with `RetryAfter`     | FULLY_FUNCTIONAL | `errors.go:320`; parses delta-seconds + HTTP-date                    |
+| `RateLimitError.RateLimitedBy` (429 header)       | FULLY_FUNCTIONAL | `errors.go:324`; captures `X-Rate-Limited-By` header                 |
+| `AuthError` (HTTP 401, 403)                       | FULLY_FUNCTIONAL | `errors.go:357`                                                      |
+| `SCAChallengeError` (403 + 2FA headers, v0.6.0)   | FULLY_FUNCTIONAL | `errors.go:373`; `TwoFAApprovalToken()` returns the OTT              |
+| `WithSCAApprovalToken` option (v0.6.0)            | FULLY_FUNCTIONAL | `options.go:161`; sends cleared OTT as `x-2fa-approval`              |
+| `NotFoundError` (HTTP 404)                        | FULLY_FUNCTIONAL | `errors.go:410`                                                      |
+| `ServerError` (HTTP 5xx)                          | FULLY_FUNCTIONAL | `errors.go:432`                                                      |
 | `ErrorCode()` / `ErrorFamily()` / `IsRetryable()` | FULLY_FUNCTIONAL | All implement go-error-family interfaces                            |
-| `errors.As` matching                              | FULLY_FUNCTIONAL | Demonstrated in README; tested                                      |
+| `errors.AsType` matching                          | FULLY_FUNCTIONAL | Demonstrated in README; tested                                       |
+| `APIError.Details` structured error envelope      | FULLY_FUNCTIONAL | `errors.go:255`; Wise's `errors[].code`/`message` per entry, wire order |
+| `WiseErrorCode` open enum (14 documented codes)   | FULLY_FUNCTIONAL | `errors.go:195`; unknown wire values pass through                    |
+| Curated code sentinels (11) + `APIError.Is`       | FULLY_FUNCTIONAL | `errors.go:142` sentinels; `Is` (`errors.go:306`) matches `Details` codes through any wrap |
+| `APIError.HasCode(WiseErrorCode)`                 | FULLY_FUNCTIONAL | `errors.go:286`; open-enum matcher for uncurated codes               |
+| `wise_code` in `ErrorContext()`                   | FULLY_FUNCTIONAL | `errors.go:263` (APIError) and `errors.go:337` (RateLimitError); first granular code |
+| Granular-code reference doc                       | FULLY_FUNCTIONAL | `docs/error-codes.md`; code, sentinel, status context, retry guidance |
 
 ## Type system
 

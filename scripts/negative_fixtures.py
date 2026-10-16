@@ -2,15 +2,17 @@
 """Negative fixtures for scripts/pin_sync.py and scripts/spec_drift.py.
 
 Every fixture here encodes a failure mode the scripts once shipped with or
-could regress into: the pin-sync trio (flake.lock drifting from flake.nix, a
-flake tag lagging go.mod, a go.mod dep with no flake input at all), the
-unpinned-input shape, and the spec-drift quartet (unparseable live spec, an
-SDK path the spec no longer has, a stale vendored snapshot under
---fail-on-drift, and the same drift in warn-only mode).
+could regress into: the pin-sync quartet (flake.lock drifting from flake.nix,
+a flake tag lagging go.mod, a go.mod dep with no flake input at all, an
+unpinned input) plus the consistent baseline, and the spec-drift quartet
+(unparseable live spec, an SDK path the spec no longer has, a stale vendored
+snapshot under --fail-on-drift, and the same drift in warn-only mode).
 
-Run hermetically (no network): every case passes an explicit --spec-file or
-uses --offline, so nothing is fetched. Wired into `nix flake check` as
-checks.script-fixtures; runnable directly:
+All fixtures are generated into a tempdir at run time, never committed: the
+repo-scan tooling treats a committed fixture go.mod as a real module (go mod
+tidy wants to "fix" it), and the check sandbox mounts the source tree
+read-only. Wired into `nix flake check` as checks.script-fixtures; runnable
+directly:
 
     python3 scripts/negative_fixtures.py
 """
@@ -23,35 +25,95 @@ import subprocess
 import sys
 import tempfile
 
-PIN_SYNC_CASES = [
-    ("ok", 0, "2 in-house dependency pins verified"),
-    ("stale_lock", 1, "flake.lock rev"),
-    ("tag_mismatch", 1, "does not match go.mod"),
-    ("missing_input", 1, "no matching input"),
-    ("unpinned", 1, "not immutably pinned"),
-]
+REV_A = "a" * 40
+REV_B = "b" * 40
 
-SPEC_DRIFT_CASES = [
-    ("broken_json", "@broken@", 3, "could not load live spec"),
-    (
-        "missing_endpoint",
-        ["--spec-file", "@testdata@/spec_drift/minimal_live.json"],
-        1,
-        "problem(s)",
+GO_MOD = """module fixture
+
+go 1.26
+
+require (
+\tgithub.com/larsartmann/go-retry v0.7.1
+)
+"""
+
+FLAKE_LOCK_FMT = (
+    '{{"nodes":{{"root":{{"inputs":{{}}}},"go-retry":{{"locked":{{"type":"github",'
+    '"owner":"LarsArtmann","repo":"go-retry","rev":"{rev}"}}}}}},"version":7}}\n'
+)
+
+# name -> (go.mod, flake.nix, flake.lock rev, expected exit, expected substring)
+PIN_SYNC_CASES = {
+    "ok": (
+        GO_MOD,
+        '{\n  input-retry = "github:LarsArtmann/go-retry?rev=%s";\n}\n' % REV_A,
+        FLAKE_LOCK_FMT.format(rev=REV_A),
+        0,
+        "1 in-house dependency pins verified",
     ),
+    "stale_lock": (
+        GO_MOD,
+        '{\n  input-retry = "github:LarsArtmann/go-retry?rev=%s";\n}\n' % REV_B,
+        FLAKE_LOCK_FMT.format(rev=REV_A),
+        1,
+        "flake.lock rev",
+    ),
+    "tag_mismatch": (
+        GO_MOD,
+        '{\n  input-retry = "github:LarsArtmann/go-retry/v0.6.0";\n}\n',
+        FLAKE_LOCK_FMT.format(rev=REV_A),
+        1,
+        "does not match go.mod",
+    ),
+    "missing_input": (
+        GO_MOD,
+        "{\n  input-unrelated = \"github:LarsArtmann/some-other-repo?rev=%s\";\n}\n"
+        % REV_A,
+        FLAKE_LOCK_FMT.format(rev=REV_A),
+        1,
+        "no matching input",
+    ),
+    "unpinned": (
+        GO_MOD,
+        '{\n  input-retry = "github:LarsArtmann/go-retry";\n}\n',
+        FLAKE_LOCK_FMT.format(rev=REV_A),
+        1,
+        "not immutably pinned",
+    ),
+}
+
+# name -> (inline spec content or None, extra args, expected exit, expected substring)
+SPEC_DRIFT_CASES = [
+    ("broken_json", "not json {{{", ["--spec-file", "@broken@"], 3, "could not load live spec"),
+    ("missing_endpoint", None, ["--spec-file", "@minimal@"], 1, "problem(s)"),
     (
         "stale_snapshot_failing",
-        ["--spec-file", "@testdata@/spec_drift/plus_one.json", "--fail-on-drift"],
+        None,
+        [
+            "--spec-file",
+            "@plus_one@",
+            "--fail-on-drift",
+        ],
         2,
         "all endpoints match",
     ),
     (
         "stale_snapshot_warn_only",
-        ["--spec-file", "@testdata@/spec_drift/plus_one.json"],
+        None,
+        ["--spec-file", "@plus_one@"],
         0,
         "all endpoints match",
     ),
 ]
+
+
+def write_pin_sync_fixtures(root: pathlib.Path) -> None:
+    for name, (go_mod, flake, lock, _exit, _substr) in PIN_SYNC_CASES.items():
+        case = root / name
+        case.mkdir(parents=True)
+        (case / "go.mod").write_text(go_mod)
+        (case / "flake.nix").write_text(flake)
+        (case / "flake.lock").write_text(lock)
 
 
 def main() -> int:
@@ -66,7 +128,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--testdata-dir",
-        help="fixture root (defaults to <scripts-dir>/testdata)",
+        help="spec-drift fixture root (defaults to <scripts-dir>/testdata)",
     )
     args = parser.parse_args()
 
@@ -80,35 +142,45 @@ def main() -> int:
         if args.testdata_dir
         else scripts_dir / "testdata"
     )
-    repo_root = pathlib.Path(args.repo_root) if args.repo_root else scripts_dir.parent
+    repo_root = (
+        pathlib.Path(args.repo_root)
+        if args.repo_root
+        else scripts_dir.parent
+    )
 
-    # The broken-spec fixture is generated, not committed: the check sandbox
-    # mounts the source tree read-only, so nothing may be written into it.
     with tempfile.TemporaryDirectory() as tmp:
-        broken = pathlib.Path(tmp) / "broken.json"
-        broken.write_text("not json {{{")
-        return run_all(scripts_dir, testdata, repo_root, broken)
+        tmpdir = pathlib.Path(tmp)
+        pin_root = tmpdir / "pin_sync"
+        write_pin_sync_fixtures(pin_root)
+        minimal = tmpdir / "minimal_live.json"
+        minimal.write_text((testdata / "spec_drift" / "minimal_live.json").read_text())
+        return run_all(scripts_dir, pin_root, minimal, testdata, repo_root)
 
 
 def run_all(
     scripts_dir: pathlib.Path,
+    pin_root: pathlib.Path,
+    minimal: pathlib.Path,
     testdata: pathlib.Path,
     repo_root: pathlib.Path,
-    broken: pathlib.Path,
 ) -> int:
-
     failures: list[str] = []
     ran = 0
-    for name, expect_exit, expect_substr in PIN_SYNC_CASES:
+    for name, (
+        go_mod,
+        flake,
+        lock,
+        expect_exit,
+        expect_substr,
+    ) in PIN_SYNC_CASES.items():
         ran += 1
-        root = testdata / "pin_sync" / name
         result = subprocess.run(
             [
                 sys.executable,
                 str(scripts_dir / "pin_sync.py"),
                 "--offline",
                 "--root",
-                str(root),
+                str(pin_root / name),
             ],
             capture_output=True,
             text=True,
@@ -124,12 +196,19 @@ def run_all(
                 f"pin_sync/{name}: output missing {expect_substr!r}\n{output.strip()}"
             )
 
-    for name, extra, expect_exit, expect_substr in SPEC_DRIFT_CASES:
+    for name, inline_spec, extra, expect_exit, expect_substr in SPEC_DRIFT_CASES:
         ran += 1
-        raw = ["--spec-file", str(broken)] if isinstance(extra, str) else extra
+        spec_file = minimal
+        if inline_spec is not None:
+            spec_file = minimal.with_name(f"{name}.json")
+            spec_file.write_text(inline_spec)
         spec_args = [
-            a.replace("@testdata@", str(testdata)).replace("@broken@", str(broken))
-            for a in raw
+            a.replace("@minimal@", str(minimal))
+            .replace("@broken@", str(spec_file))
+            .replace(
+                "@plus_one@", str(testdata / "spec_drift" / "plus_one.json")
+            )
+            for a in extra
         ]
         result = subprocess.run(
             [
