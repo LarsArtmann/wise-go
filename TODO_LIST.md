@@ -7,19 +7,19 @@ Completed work lives in [CHANGELOG.md](CHANGELOG.md), never here.
 
 ## P1 — Release readiness
 
-[ ] Execute the remaining SUPERB Pareto plan items
-(`docs/planning/2026-10-16_19-45_SUPERB-pareto-plan-transfer-truth-close-and-fleet-hygiene.md`;
-M1/M2/M3/M6/M7 shipped 2026-10-16, M5 `ListTransferPayments` + M8
-`GetUSCombinedReceipt` + M9 `GetTransferNOC` landed same evening
-(`19ab4e5`, `3c185f7`), M10 typed webhook payloads in flight): remaining
-M4 live smoke (user key), M12 README SCA/OTP endpoint matrix, M13
-inventory-honesty remainder (the 44-method count sweep landed 2026-10-16;
-the 16 added 2027Q1 paths are triaged under the spec-drift hardening item
-below), M14 live-smoke harness, M15 originator transfers.
+[ ] Execute the remaining SUPERB Pareto plan items — sequenced by
+`docs/planning/2026-10-16_21-45_SUPERB-v0.14-release-close-ci-resurrection-and-gate-hardening.md`.
+Of the 19:45 plan: M1/M2/M3/M5/M6/M7/M8/M9/M10/M15 ALL shipped 2026-10-16
+(typed webhook payloads + originator transfers landed 21:16-21:44;
+46-method surface, count claims synced `41b09dc`; art-dupl CI job
+scaffolded `cb7b271`). Remaining: M4 live smoke (user key), M12 SCA/OTP
+README matrix (plan task M14), M13 remainder (2027Q1 path triage → plan
+task M10), M14 smoke-harness decision (plan task M18), plus the v0.14.0
+release close (plan tasks M1-M3) and CI resurrection (plan task M4).
 Source: transfer-category re-audit
-`docs/reviews/2026-10-16_transfer-category-reaudit.md` (true category ~15
-ops; deposit-details pay-in already DEMAND_GATED; the re-audit's
-"banking-partner invoice" row was a false gap — it IS `GetTransferPayoutInfo`).
+`docs/reviews/2026-10-16_transfer-category-reaudit.md` (annotated 2026-10-16:
+deposit-details pay-in already DEMAND_GATED; the re-audit's "banking-partner
+invoice" row was a false gap — it IS `GetTransferPayoutInfo`).
 
 [ ] Cut v0.14.0 — staged in `[Unreleased]` (breaking `OneTimeToken`/`OTTAction`
 typing, 2027Q1 account-details migration, transfer-category completion,
