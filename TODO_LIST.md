@@ -7,16 +7,19 @@ Completed work lives in [CHANGELOG.md](CHANGELOG.md), never here.
 
 ## P1 — Release readiness
 
-[ ] Error-system excellence epic — execute
+[x] Error-system excellence epic — EXECUTED 2026-10-16 (same evening; errata in
+the plan's "Execution errata" section)
 `docs/planning/2026-10-16_22-29_SUPERB-pareto-plan-error-system-excellence.md`
-(25 medium / ~108 fine tasks). Core (1% tier): `APIError.Details` structured
-envelope exposure (today `newAPIError` discards it), `WiseErrorCode` open enum
-from the spec census, curated wave-1 `errors.Is` code-sentinels via
-`APIError.Is`, `BadRequestError` (ROADMAP:276). Then: mapping-matrix tests,
+(25 medium / ~108 fine tasks). Shipped: `APIError.Details` structured envelope
+(no longer discarded by `newAPIError`), `WiseErrorCode` open enum (14 census
+codes), 11 wave-1 `errors.Is` code-sentinels via `APIError.Is` + `HasCode`,
+`BadRequestError` (ROADMAP 400 idea resolved), mapping-matrix tests,
 `wise_code` context key, README decision-tree guide, compile-verified snippets
-(vs v0.13.0 AND master), `docs/error-codes.md`, envelope fuzzing, conformance
-fixtures, bank-sync matching recipe, final no-regression audit. Builds on the
-2026-10-16 central catalog (57 named codes + 4 sentinels, shipped); declined
+(master green; ≤v0.14.0 absent by design), `docs/error-codes.md`, envelope
+fuzzing (1.75M execs clean), conformance armed-vs-vacuous boundary test,
+bank-sync matching recipe, no-regression audit. Wave-2 sentinels and Ginkgo
+consolidation DECIDED (declined/skip; recorded in the errata). Builds on the
+2026-10-16 central catalog (58 named codes + 15 sentinels now); declined
 dispositions stay declined.
 
 [ ] Execute the remaining SUPERB Pareto plan items — sequenced by
