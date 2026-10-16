@@ -33,6 +33,12 @@ const (
 const (
 	webhookSubscriptionsAPIVersion = "2026Q4"
 	ottAPIVersion                  = "2026Q3"
+	// accountDetailsAPIVersion pins the receiving-bank-details surface. Wise
+	// relocated it from /v1/profiles/{id}/account-details to
+	// /balances/account-details/{id} in the 2027Q1 spec roll (live probe
+	// 2026-10-16: /v1 → 404, /2026Q4 and /2027Q1 → 401 auth-gated); the vendored
+	// spec's server URL is authoritative.
+	accountDetailsAPIVersion = "2027Q1"
 )
 
 // Doer is the interface for an HTTP client. *http.Client satisfies this.

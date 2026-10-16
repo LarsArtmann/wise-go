@@ -63,6 +63,11 @@ type CustomerTransactionIDBrand struct{}
 
 func (CustomerTransactionIDBrand) Name() string { return "CustomerTransaction" }
 
+// AccountDetailsBrand is a phantom type for AccountDetailsID.
+type AccountDetailsBrand struct{}
+
+func (AccountDetailsBrand) Name() string { return "AccountDetails" }
+
 // ProfileID is a strongly-typed identifier for Wise profiles.
 type ProfileID = id.ID[ProfileBrand, int64]
 
@@ -106,6 +111,12 @@ type WebhookSubscriptionID = id.ID[WebhookSubscriptionBrand, string]
 // transfer (wire "customerTransactionId", a UUID). Wise deduplicates create
 // attempts by it and echoes it back on the created transfer.
 type CustomerTransactionID = id.ID[CustomerTransactionIDBrand, string]
+
+// AccountDetailsID is a strongly-typed identifier for one set of receiving
+// bank details (wire "id" of the /balances/account-details surface, added in
+// the 2027Q1 roll). It is a distinct int64 ID space from profiles, balances,
+// and accounts.
+type AccountDetailsID = id.ID[AccountDetailsBrand, int64]
 
 // NewProfileID creates a new ProfileID from an int64 value.
 func NewProfileID(v int64) ProfileID {
@@ -163,6 +174,11 @@ func NewWebhookSubscriptionID(v string) WebhookSubscriptionID {
 // UUID value.
 func NewCustomerTransactionID(v string) CustomerTransactionID {
 	return id.NewID[CustomerTransactionIDBrand](v)
+}
+
+// NewAccountDetailsID creates a new AccountDetailsID from an int64 value.
+func NewAccountDetailsID(v int64) AccountDetailsID {
+	return id.NewID[AccountDetailsBrand](v)
 }
 
 // requireID turns a zero branded ID into a Rejection carrying the endpoint
