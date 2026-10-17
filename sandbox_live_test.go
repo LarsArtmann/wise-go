@@ -7,8 +7,11 @@ package wise_test
 
 import (
 	"context"
+	"errors"
+	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -97,4 +100,218 @@ func TestSandboxLiveGetTransfer(t *testing.T) {
 
 	t.Logf("transfer %d: status=%s source=%s target=%s",
 		transferID, transfer.Status, transfer.Source, transfer.Target)
+}
+
+// firstSandboxProfile returns the key's first profile (sandbox accounts ship
+// a personal and a business one) as the stand-in profile for read paths.
+func firstSandboxProfile(t *testing.T, client *wise.Client) wise.Profile {
+	t.Helper()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	profiles, err := client.ListProfiles(ctx)
+	if err != nil {
+		t.Fatalf("ListProfiles: %v", err)
+	}
+	if len(profiles) == 0 {
+		t.Fatal("ListProfiles returned no profiles — unexpected for a valid sandbox key")
+	}
+
+	return profiles[0]
+}
+
+// TestSandboxLiveGetExchangeRate pins the /v1/rates wire shape against the
+// live sandbox (assumption #4 of the 2026-10-17 verification pass): both the
+// current and the historical lookup decode, and the rate timestamp — the
+// no-millis numeric-zone layout that broke naive parsing in production — is
+// non-zero.
+func TestSandboxLiveGetExchangeRate(t *testing.T) {
+	client := newSandboxClient(t)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	current, err := client.GetExchangeRate(ctx, wise.Currency("EUR"), wise.Currency("USD"), time.Time{})
+	if err != nil {
+		t.Fatalf("GetExchangeRate(EUR/USD, current): %v", err)
+	}
+	if current.Rate <= 0 {
+		t.Errorf("current rate %v is not positive", current.Rate)
+	}
+	if current.Time.IsZero() {
+		t.Error("current rate Time is zero — the timestamp did not decode")
+	}
+
+	historical, err := client.GetExchangeRate(
+		ctx, wise.Currency("EUR"), wise.Currency("USD"), time.Now().UTC().Add(-24*time.Hour))
+	if err != nil {
+		t.Fatalf("GetExchangeRate(EUR/USD, -24h): %v", err)
+	}
+	if historical.Rate <= 0 {
+		t.Errorf("historical rate %v is not positive", historical.Rate)
+	}
+	if historical.Time.IsZero() {
+		t.Error("historical rate Time is zero — the timestamp did not decode")
+	}
+
+	t.Logf("rates: current=%f@%s historical=%f@%s",
+		current.Rate, current.Time.Format(time.RFC3339),
+		historical.Rate, historical.Time.Format(time.RFC3339))
+}
+
+// TestSandboxLiveFundTransferNotFound pins the funding-error contract
+// (assumption #5, verified SDK-side 2026-10-17): funding a nonexistent
+// transfer surfaces Wise's typed 404. The wire body arrives as
+// application/json with the router-shaped envelope — the spec's text/plain
+// note applies to domain funding errors only.
+func TestSandboxLiveFundTransferNotFound(t *testing.T) {
+	client := newSandboxClient(t)
+	profile := firstSandboxProfile(t, client)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	_, err := client.FundTransfer(ctx, profile.ID, wise.NewTransferID(1))
+	notFound, ok := errors.AsType[*wise.NotFoundError](err)
+	if !ok {
+		t.Fatalf("FundTransfer(nonexistent): expected *NotFoundError, got %v", err)
+	}
+	if notFound.StatusCode != http.StatusNotFound {
+		t.Errorf("FundTransfer(nonexistent) status = %d, want 404", notFound.StatusCode)
+	}
+}
+
+// raiseSandboxSCAChallenge triggers Wise's strong-customer-authentication
+// flow by requesting a statement file for a real balance: sandbox statements
+// are SCA-protected regardless of profile type (2026-10-17 lane evidence).
+func raiseSandboxSCAChallenge(t *testing.T, client *wise.Client) *wise.SCAChallengeError {
+	t.Helper()
+
+	profile := firstSandboxProfile(t, client)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	balances, err := client.ListBalances(ctx, profile.ID)
+	if err != nil {
+		t.Fatalf("ListBalances: %v", err)
+	}
+	if len(balances) == 0 {
+		t.Fatal("ListBalances returned no balances — expected the pre-funded sandbox balances")
+	}
+
+	_, err = client.GetStatement(ctx, wise.GetStatementRequest{
+		ProfileID: profile.ID,
+		BalanceID: balances[0].ID,
+		Currency:  balances[0].Currency,
+		From:      time.Now().UTC().Add(-30 * 24 * time.Hour),
+		To:        time.Now().UTC(),
+		Format:    wise.StatementFormatCSV,
+	})
+	challenge, ok := errors.AsType[*wise.SCAChallengeError](err)
+	if !ok {
+		t.Fatalf("GetStatement: expected *SCAChallengeError, got %v", err)
+	}
+
+	return challenge
+}
+
+// TestSandboxLiveSCAChallengeShape pins the SCA wire contract end to end:
+// HTTP 403 with the verdict and one-time token in the x-2fa-approval
+// headers, classified as *SCAChallengeError (never a plain *AuthError),
+// with the OTT retrievable via TwoFAApprovalToken and never rendered into
+// the error string.
+func TestSandboxLiveSCAChallengeShape(t *testing.T) {
+	client := newSandboxClient(t)
+	challenge := raiseSandboxSCAChallenge(t, client)
+
+	if challenge.StatusCode != http.StatusForbidden {
+		t.Errorf("SCA challenge status = %d, want 403", challenge.StatusCode)
+	}
+	if verdict := challenge.Headers.Get(wise.HeaderTwoFAApprovalResult); verdict == "" {
+		t.Error("x-2fa-approval-result header is empty — the SCA verdict is missing")
+	}
+	if challenge.TwoFAApprovalToken().IsZero() {
+		t.Error("SCA challenge carried no one-time token — cannot clear the challenge")
+	}
+
+	var asError error = challenge
+	if _, ok := errors.AsType[*wise.AuthError](asError); ok {
+		t.Error("SCA challenge classified as *AuthError — must be *SCAChallengeError")
+	}
+	if message := challenge.Error(); message == "" || strings.Contains(message, string(challenge.TwoFAApprovalToken())) {
+		t.Errorf("SCA challenge error string is empty or leaks the one-time token")
+	}
+}
+
+// TestSandboxLiveGetOTTStatus walks the OTT lifecycle against the quarterly
+// versioned surface (2026Q4 since the 2026-10-16 rollover): an SCA-raised
+// token resolves to a status with the statement action, a bounded validity
+// window, and one pending SIGNATURE challenge with no phone alternatives.
+func TestSandboxLiveGetOTTStatus(t *testing.T) {
+	client := newSandboxClient(t)
+	challenge := raiseSandboxSCAChallenge(t, client)
+
+	ott := challenge.TwoFAApprovalToken()
+	if ott.IsZero() {
+		t.Fatal("SCA challenge carried no one-time token — cannot query OTT status")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	status, err := client.GetOTTStatus(ctx, ott)
+	if err != nil {
+		t.Fatalf("GetOTTStatus: %v", err)
+	}
+	if status.ActionType != wise.OTTAction("BALANCE__GET_STATEMENT") {
+		t.Errorf("OTT action = %q, want BALANCE__GET_STATEMENT", status.ActionType)
+	}
+	if status.Validity <= 0 || status.Validity > time.Hour {
+		t.Errorf("OTT validity = %s, want within (0, 1h]", status.Validity)
+	}
+
+	pending := status.PendingRequired()
+	if len(pending) == 0 {
+		t.Fatal("OTT status reports no pending required challenges")
+	}
+	// SIGNATURE is not in the curated challenge-type constants (open enum —
+	// sandbox presents it; SMS/WhatsApp/voice would be clearable via phone).
+	if pending[0].Primary.Type != wise.OTTChallengeType("SIGNATURE") {
+		t.Errorf("pending challenge type = %q, want SIGNATURE", pending[0].Primary.Type)
+	}
+	if len(pending[0].Alternatives) != 0 {
+		t.Errorf("SIGNATURE challenge unexpectedly offers %d alternatives — the sandbox web login is the only clear path", len(pending[0].Alternatives))
+	}
+}
+
+// TestSandboxLiveCreateBalanceLocked pins the sandbox's balance-creation
+// lock (2026-10-17 lane evidence): creation answers 403 with Wise's
+// top-level-code-only envelope (non.existing.balance, no errors[]). The
+// request shape — including the mandatory X-idempotence-uuid header — is
+// exercised for real; only the outcome is sandbox-specific.
+func TestSandboxLiveCreateBalanceLocked(t *testing.T) {
+	client := newSandboxClient(t)
+	profile := firstSandboxProfile(t, client)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	_, err := client.CreateBalance(ctx, wise.CreateBalanceRequest{
+		ProfileID: profile.ID,
+		Currency:  wise.Currency("JPY"),
+		Type:      wise.BalanceTypeStandard,
+		Name:      "wise-go sandbox probe",
+	})
+	authErr, ok := errors.AsType[*wise.AuthError](err)
+	if !ok {
+		t.Fatalf("CreateBalance: expected *AuthError (403), got %v", err)
+	}
+	if authErr.StatusCode != http.StatusForbidden {
+		t.Errorf("CreateBalance status = %d, want 403", authErr.StatusCode)
+	}
+	if !strings.Contains(authErr.Message, "non.existing.balance") {
+		t.Errorf("CreateBalance 403 message %q does not carry the sandbox lock code non.existing.balance", authErr.Message)
+	}
 }
