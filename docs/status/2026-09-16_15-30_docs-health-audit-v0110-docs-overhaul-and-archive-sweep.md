@@ -31,18 +31,18 @@
 
 ## b) PARTIALLY DONE
 
-1. **Inline-annotation depth on the largest f-tables.** For 50-row wishlists (05-15, 12-16, 02-53, 03-32, 17-14, 18-15, 15-41) I struck every row whose verdict I could determine from code (15–24 rows each); the remaining bare rows are genuinely open/routed ideas (sandbox scenarios, tier-3/4 APIs, property tests) whose "open" status is the correct signal — the corrected banners carry the routing. A maximalist pass could verdict literally every row.
-2. **HTML/D2 artifact annotation** — classified and justified as LEAVE (now written into AGENTS), but not banner-annotated per file; same residual as the previous pass left it.
-3. **TODO_LIST micro-batch compression** — six ≤30-min quality items (statement content-types, webhook spec-example fixture, webhook pagination-shape check, `ListProfileWebhookSubscriptions` godoc example, `wise.Version`, plus related) are bundled into ONE row to keep the list scannable; splitting into six rows would make progress tracking finer-grained.
-4. **15-41 §b items** (b.1–b.6) were resolved via the corrected banner rather than per-item inline strikes (they are prose paragraphs, not numbered items).
-5. **CHANGELOG conventions question** (should contributor-infra changes get a standing "Internal" subsection? — 15-41 §f.42) noticed, still undecided, not routed.
+1. ~~**Inline-annotation depth on the largest f-tables.** For 50-row wishlists (05-15, 12-16, 02-53, 03-32, 17-14, 18-15, 15-41) I struck every row whose verdict I could determine from code (15–24 rows each); the remaining bare rows are genuinely open/routed ideas (sandbox scenarios, tier-3/4 APIs, property tests) whose "open" status is the correct signal — the corrected banners carry the routing. A maximalist pass could verdict literally every row.~~ done — the 2026-10-16 maximalist pass applied per-item verdicts to the successor reports
+2. **HTML/D2 artifact annotation** — classified and justified as LEAVE (now written into AGENTS), but not banner-annotated per file; same residual as the previous pass left it. **→ AGENTS.md codifies the LEAVE-ALONE rule; annotating HTML adds no value**
+3. ~~**TODO_LIST micro-batch compression** — six ≤30-min quality items (statement content-types, webhook spec-example fixture, webhook pagination-shape check, `ListProfileWebhookSubscriptions` godoc example, `wise.Version`, plus related) are bundled into ONE row to keep the list scannable; splitting into six rows would make progress tracking finer-grained.~~ done — TODO_LIST rebuilt repeatedly since; micro-batch rows split where useful
+4. ~~**15-41 §b items** (b.1–b.6) were resolved via the corrected banner rather than per-item inline strikes (they are prose paragraphs, not numbered items).~~ done — resolved via the corrected banner; superseded by later maximalist passes
+5. ~~**CHANGELOG conventions question** (should contributor-infra changes get a standing "Internal" subsection? — 15-41 §f.42) noticed, still undecided, not routed.~~ **NOT-DO — same disposition as f.15.**
 
 ## c) NOT STARTED (open work observed this session, none of it executable docs-only)
 
-1. **All user-gated items** (TODO_LIST P2): sandbox API key + first live run; `v1.0.0` tag; typed recipient `Details` decision (six reports old); `CACHIX_AUTH_TOKEN`; CI push + `gh workflow enable ci`; ADR 003 acceptance → go-retry migration; direnv/home-manager GOEXPERIMENT pin.
-2. **P1 release work**: GitHub Release objects for v0.10.0 + v0.11.0 (gated); gofumpt/govulncheck/gorelease version pins (unblocked, not started this session).
-3. **P3 quality/tooling batch** (just harvested): coverage-floor parity in `checks.test`, erraudit pass over the v0.11.0 webhook/OTT code + curated config + CI gate, SECURITY.md, doc-verify fail-on-empty hardening, CONTRIBUTING updates, the six-item micro-batch.
-4. **ROADMAP long-tail** (WithMetrics, `Page[T]`, service-client refactor post-v1.0, tier-3/4 APIs, OAuth/app-level webhooks, blog) — demand-gated, untouched.
+1. **All user-gated items** (TODO_LIST P2): sandbox API key + first live run; `v1.0.0` tag; typed recipient `Details` decision (six reports old); `CACHIX_AUTH_TOKEN`; CI push + `gh workflow enable ci`; ADR 003 acceptance → go-retry migration; direnv/home-manager GOEXPERIMENT pin. **→ TODO_LIST P2 carries the user-gated set**
+2. ~~**P1 release work**: GitHub Release objects for v0.10.0 + v0.11.0 (gated); gofumpt/govulncheck/gorelease version pins (unblocked, not started this session).~~ done — pins landed in ci.yml; Release objects published 2026-10-07
+3. ~~**P3 quality/tooling batch** (just harvested): coverage-floor parity in `checks.test`, erraudit pass over the v0.11.0 webhook/OTT code + curated config + CI gate, SECURITY.md, doc-verify fail-on-empty hardening, CONTRIBUTING updates, the six-item micro-batch.~~ done — coverage floor, erraudit gate, SECURITY.md, doc-verify hardening, CONTRIBUTING, and the micro-batch all shipped
+4. **ROADMAP long-tail** (WithMetrics, `Page[T]`, service-client refactor post-v1.0, tier-3/4 APIs, OAuth/app-level webhooks, blog) — demand-gated, untouched. **→ ROADMAP Axis 1/3 long-tail**
 5. **No Go source was modified this session** — by design (docs-health run); the codebase state is exactly as v0.11.0 shipped it.
 
 ## d) TOTALLY FUCKED UP (honest accounting — nothing shipped is broken; these are my process failures)
@@ -56,74 +56,74 @@
 
 ## e) WHAT WE SHOULD IMPROVE
 
-1. **Bulk destructive/structural commands get a one-unit smoke test first** — one `git mv`, one file, verify, then loop. The 20-fatal batch was entirely avoidable.
-2. **"Script touched it → view before edit" must be mechanical, not remembered.** This session paid the tax twice on the same file; the rule is in AGENTS-adjacent lessons three times over. Consider: never issue an `edit` in the same minute-window as an annotate-script run on the same path.
-3. **Shape-check before spec** — one `sed -n` on the target section (prose vs table vs duplicate row-ids) before writing annotate specs would have saved four failed calls.
-4. **Verify-then-write for every number in NEW content**, not just for claims inherited from old docs — the `+7 types` near-miss is the same class as the fabricated cachix SHA (2026-08-21).
-5. **Run the archive ~~ gate BEFORE the move, not after** — the 7 pre-existing failures were known from the session's first gate check; fixing them in place first would have made the move a single clean step.
-6. **Standard daemon-commit audit step for doc-heavy runs**: `git show --stat` + rename-status + a full stale-reference grep (done) PLUS a bounded re-read of the N largest diffs (not done — add it).
-7. **The 41 vs 39 counting basis should be stated once, canonically** — "41 `*Client` methods (39 endpoint methods + `Authenticate`/`Health`)" appears in the audit doc now; AGENTS/ROADMAP/FEATURES should keep quoting the `go doc -all` number and pointing at the audit for the derivation, so the 31/32/33/37/41 drift class never returns.
+1. ~~**Bulk destructive/structural commands get a one-unit smoke test first** — one `git mv`, one file, verify, then loop. The 20-fatal batch was entirely avoidable.~~ done — one-unit smoke tests are standard practice; annotate tooling is dry-run-first
+2. ~~**"Script touched it → view before edit" must be mechanical, not remembered.** This session paid the tax twice on the same file; the rule is in AGENTS-adjacent lessons three times over. Consider: never issue an `edit` in the same minute-window as an annotate-script run on the same path.~~ done — script-touched-view-before-edit is a standing rule (incident narratives)
+3. ~~**Shape-check before spec** — one `sed -n` on the target section (prose vs table vs duplicate row-ids) before writing annotate specs would have saved four failed calls.~~ done — annotate.go emit-keys + shape checks mechanized the shape-check step
+4. ~~**Verify-then-write for every number in NEW content**, not just for claims inherited from old docs — the `+7 types` near-miss is the same class as the fabricated cachix SHA (2026-08-21).~~ done — verify-then-write pinned by the compile-the-snippet rule class
+5. ~~**Run the archive ~~ gate BEFORE the move, not after** — the 7 pre-existing failures were known from the session's first gate check; fixing them in place first would have made the move a single clean step.~~ done — the archive gate runs BEFORE `git mv` since the 2026-10-15 corpus pass
+6. **Standard daemon-commit audit step for doc-heavy runs**: `git show --stat` + rename-status + a full stale-reference grep (done) PLUS a bounded re-read of the N largest diffs (not done — add it). **→ daemon-commit spot-checks remain the practice (AGENTS daemon gotcha)**
+7. ~~**The 41 vs 39 counting basis should be stated once, canonically** — "41 `*Client` methods (39 endpoint methods + `Authenticate`/`Health`)" appears in the audit doc now; AGENTS/ROADMAP/FEATURES should keep quoting the `go doc -all` number and pointing at the audit for the derivation, so the 31/32/33/37/41 drift class never returns.~~ done — the audit doc carries the canonical counting basis; doc-verify gates counts
 
 ## f) Up to 50 things we should get done next (impact-ordered; ⏳ = user-gated)
 
 > Top ~14 are TODO_LIST-grade (already routed this session); the rest are ROADMAP fuel. Sources: this session's verification + the archived 15-41/14-16/12-29 f-lists.
 
-1. ⏳ **Publish GitHub Release objects for v0.10.0 + v0.11.0** — tags proxied, notes drafted for v0.10.0, cut v0.11.0 notes from CHANGELOG (TODO P1).
-2. **Pin gofumpt (`ci.yml:92`), govulncheck (`ci.yml:113`), gorelease (apidiff app)** — kill `@latest` (TODO P1).
-3. ⏳ **CI go-live** — push master + `gh workflow enable ci` + watch the first green run; unfreezes the coverage badge and exercises the 90% gate (TODO P2).
-4. ⏳ **`v1.0.0` tag** — audit is green and now current through the 41-method v0.11.0 surface; only approval remains (TODO P2).
-5. ⏳ **Sandbox key → first live run** — validates the FundTransfer empty-body semantics, still the highest-risk unverified behavior (TODO P2).
-6. ⏳ **ADR 003 acceptance → go-retry migration** (executor swap, delete `classifyExhaustedRetries`, `Retry-After` via `DelayFunc`) (TODO P2).
-7. ⏳ **Typed recipient `Details` decision** — six reports old; the v1.0 audit says the map can be frozen (TODO P2).
-8. ⏳ **`CACHIX_AUTH_TOKEN`** secret + confirm the cache (TODO P2).
-9. **Mirror the 90% coverage floor into `checks.test`** — local parity with the CI gate (TODO P3).
-10. **erraudit pass over the v0.11.0 webhook/OTT code + curated config + CI gate** (TODO P3).
-11. **`.github/SECURITY.md`** — vulnerability reporting path for a published SDK (TODO P3).
-12. **`doc-verify` hardening** — fail loudly on empty extraction; cover ROADMAP/audit count claims (TODO P3).
-13. **CONTRIBUTING** — apidiff/doc-verify apps, 90% gate, Ginkgo `-count` note (TODO P3).
-14. **Quality micro-batch** — statement PDF/XLSX content-type assertions; webhook spec-example fixture; `ListProfileWebhookSubscriptions` pagination-shape verify; its godoc example; `wise.Version` (TODO P3).
-15. Decide the CHANGELOG "Internal" subsection convention (15-41 §f.42, noticed this session, unrouted until now — fold into 13).
-16. ⏳ **App-level webhook scope** (client-credentials token model + `TestWebhookSubscription`) — deferred decision (ROADMAP).
-17. **Webhook end-to-end README quickstart** — subscribe → verify → parse in one block (ROADMAP raw idea).
-18. **`ParseWebhookEvent` RFC3339 fast path** — 34µs bench dominated by timestamp trials (ROADMAP).
-19. **Commit a benchstat baseline file** (ROADMAP).
-20. **gopls/LSP config-skew fix** — stop the ~70-warnings/session CLI-vs-LSP divergence tax (ROADMAP).
-21. **`nix flake check --all-systems`** — aarch64/darwin coverage (ROADMAP).
-22. **Decide `Authenticate()`'s future** now that `GetMe` exists (ROADMAP).
-23. **2026Q4 bump ritual note** — `webhookAPIVersion`/`quarterlyAPIVersion` upgrade path (ROADMAP).
-24. **Typed `BadRequestError`** for 400s (ROADMAP design idea).
-25. **Circuit breaker** — only on a consumer demand signal (ROADMAP).
-26. **GoReleaser-style release automation** (ROADMAP).
-27. **`WithMetrics` hook** — Prometheus/OTel (ROADMAP Axis 3).
-28. **Fuzz smoke job in CI** (30s for the two fuzz targets) — optional (archived 14-16 §f.21).
-29. **Fast-path sweep for remaining `@latest` in CI beyond the three known** (archived 14-16 §f.41; partially covered by item 2).
-30. **Verify the v0.11.0 tag object** points at the intended commit (done for v0.10.0 in 15-41 §f.10; v0.11.0 spot-verified via `git rev-parse` this session — a one-line formal check remains).
-31. **Re-check `sandbox-live.yml` alignment** after any CI change (archived 14-16 §f.47; verified consistent this session — recurring guard).
-32. **`gitignore`/residue sweep** — confirm no dangling `reports/` references in tooling configs (archived 15-41 §f.43).
-33. **`.github/ISSUE_TEMPLATE/config.yml`** — blank-issues toggle + discussion link (archived 15-41 §f.34).
-34. **Review `dependabot.yml` coverage** (workflows + Go modules) (archived 15-41 §f.36).
-35. **Cross-link ADRs from AGENTS.md** ("Money" bullet → ADR 001, retry bullets → ADR 003) (archived 15-41 §f.26).
-36. **README docs table**: `docs/adr/` index + status-report pointers (archived 15-41 §f.25).
-37. **Godoc example for `VerifyWebhookSignature` + `ParseWebhookEvent` composition** (archived 15-41 §f.30).
-38. **`VerifyAndParseWebhookEvent` helper** — revisit ONLY on user demand (decided against; archived 14-16 §f.43).
-39. **Cross-check `wise-api-core-schemas.json` against the webhook schemas** — the small spec predates the webhook work (archived 14-16 §f.39).
-40. **Property tests for Money cents conversion** (ROADMAP).
-41. **`Quote` residual fields** (`rateExpirationTime`, `targetAmountAllowed`, `user`) (ROADMAP).
-42. **`Page[T]` generalization** — third paginated endpoint trigger (ROADMAP).
-43. **Service-client refactor** — post-v1.0 sequencing stands (ROADMAP Axis 4).
-44. **Tier-3/4 APIs per demand** (addresses, balance-capacity, batch groups, OAuth, simulations) (ROADMAP).
-45. **Blog/design-story update** — the retry-typed-error + OTT-secrecy finds are the material (ROADMAP).
-46. **Daemon-commit full-sweep review** — bounded re-read of the largest diffs in each auto-commit batch (this session's e.6).
-47. **Ginkgo `-count` note verification** — confirm CONTRIBUTING lands it (tracks item 13).
-48. **Raise the coverage gate 90% → 91%** once webhook payload tests mature (archived 15-41 §f.33).
-49. **Mark the 3 runnable examples in README** (archived 15-41 §f.49).
-50. **HARVEST this report's f-list** — items 1–14 are pre-routed; 15 and 30 are the only new TODO-grade items; the rest are ROADMAP (this session's successor pass).
+1. ~~⏳ **Publish GitHub Release objects for v0.10.0 + v0.11.0** — tags proxied, notes drafted for v0.10.0, cut v0.11.0 notes from CHANGELOG (TODO P1).~~ done — gh release list 2026-10-17: v0.10.0 through v0.14.0 all published
+2. ~~**Pin gofumpt (`ci.yml:92`), govulncheck (`ci.yml:113`), gorelease (apidiff app)** — kill `@latest` (TODO P1).~~ done — tool installs pinned via env versions in ci.yml; erraudit pinned pseudo-version
+3. ⏳ **CI go-live** — push master + `gh workflow enable ci` + watch the first green run; unfreezes the coverage badge and exercises the 90% gate (TODO P2). **→ TODO_LIST P2 (Re-enable CI on GitHub)**
+4. ⏳ **`v1.0.0` tag** — audit is green and now current through the 41-method v0.11.0 surface; only approval remains (TODO P2). **→ TODO_LIST P2 (Lock the public API at v1.0)**
+5. ⏳ **Sandbox key → first live run** — validates the FundTransfer empty-body semantics, still the highest-risk unverified behavior (TODO P2). **→ TODO_LIST sandbox live-verification pass + P2 sandbox integration tests**
+6. ~~⏳ **ADR 003 acceptance → go-retry migration** (executor swap, delete `classifyExhaustedRetries`, `Retry-After` via `DelayFunc`) (TODO P2).~~ done — executed 2026-09-16; go-retry executor shipped in v0.12.0 (ADR 003)
+7. ⏳ **Typed recipient `Details` decision** — six reports old; the v1.0 audit says the map can be frozen (TODO P2). **→ TODO_LIST P2 (Typed recipient Details)**
+8. ⏳ **`CACHIX_AUTH_TOKEN`** secret + confirm the cache (TODO P2). **→ TODO_LIST P2 (CACHIX_AUTH_TOKEN)**
+9. ~~**Mirror the 90% coverage floor into `checks.test`** — local parity with the CI gate (TODO P3).~~ done — checks.coverage-floor-parity shipped v0.14.0; floor raised 90 to 92 percent (measured 92.8)
+10. ~~**erraudit pass over the v0.11.0 webhook/OTT code + curated config + CI gate** (TODO P3).~~ done — erraudit job live in ci.yml; canonical invocation exit 0
+11. ~~**`.github/SECURITY.md`** — vulnerability reporting path for a published SDK (TODO P3).~~ done — .github/SECURITY.md exists
+12. ~~**`doc-verify` hardening** — fail loudly on empty extraction; cover ROADMAP/audit count claims (TODO P3).~~ done — doc-verify covers docs/releases count claims since 2026-10-07
+13. ~~**CONTRIBUTING** — apidiff/doc-verify apps, 90% gate, Ginkgo `-count` note (TODO P3).~~ done — CONTRIBUTING carries the apidiff/doc-verify apps and the Ginkgo -count note
+14. ~~**Quality micro-batch** — statement PDF/XLSX content-type assertions; webhook spec-example fixture; `ListProfileWebhookSubscriptions` pagination-shape verify; its godoc example; `wise.Version` (TODO P3).~~ done — statement variants in the conformance floors; webhook godoc examples ship; wise.Version since v0.12.0
+15. ~~Decide the CHANGELOG "Internal" subsection convention (15-41 §f.42, noticed this session, unrouted until now — fold into 13).~~ **NOT-DO — fifteen versions shipped without it; conventional sections suffice.**
+16. ⏳ **App-level webhook scope** (client-credentials token model + `TestWebhookSubscription`) — deferred decision (ROADMAP). **→ ROADMAP Medium-term (application-level webhook subscriptions)**
+17. **Webhook end-to-end README quickstart** — subscribe → verify → parse in one block (ROADMAP raw idea). **→ ROADMAP raw ideas (webhook quickstart)**
+18. **`ParseWebhookEvent` RFC3339 fast path** — 34µs bench dominated by timestamp trials (ROADMAP). **→ ROADMAP raw ideas (ParseWebhookEvent fast path)**
+19. ~~**Commit a benchstat baseline file** (ROADMAP).~~ done — docs/bench 2026-10-07 and 2026-10-16 baselines committed
+20. ~~**gopls/LSP config-skew fix** — stop the ~70-warnings/session CLI-vs-LSP divergence tax (ROADMAP).~~ done — LSP phantom root-caused (GOEXPERIMENT env) and fixed via .crushrc 2026-10-07
+21. **`nix flake check --all-systems`** — aarch64/darwin coverage (ROADMAP). **→ TODO_LIST P3 Decisions (nix flake check --all-systems; x86_64-darwin external)**
+22. **Decide `Authenticate()`'s future** now that `GetMe` exists (ROADMAP). **→ ROADMAP raw ideas (Authenticate future) + TODO_LIST Health decision**
+23. ~~**2026Q4 bump ritual note** — `webhookAPIVersion`/`quarterlyAPIVersion` upgrade path (ROADMAP).~~ done — AGENTS.md Conventions carries the rollover-independence + probe procedure
+24. ~~**Typed `BadRequestError`** for 400s (ROADMAP design idea).~~ done — shipped 2026-10-16: 400s surface BadRequestError (wise.bad_request)
+25. **Circuit breaker** — only on a consumer demand signal (ROADMAP). **→ ROADMAP raw ideas (circuit breaker)**
+26. **GoReleaser-style release automation** (ROADMAP). **→ ROADMAP raw ideas (release-process automation)**
+27. **`WithMetrics` hook** — Prometheus/OTel (ROADMAP Axis 3). **→ ROADMAP Axis 3 (WithMetrics)**
+28. **Fuzz smoke job in CI** (30s for the two fuzz targets) — optional (archived 14-16 §f.21). **→ ROADMAP raw ideas (CI fuzz smoke job, added 2026-10-17)**
+29. ~~**Fast-path sweep for remaining `@latest` in CI beyond the three known** (archived 14-16 §f.41; partially covered by item 2).~~ done — no @latest installs remain in ci.yml
+30. ~~**Verify the v0.11.0 tag object** points at the intended commit (done for v0.10.0 in 15-41 §f.10; v0.11.0 spot-verified via `git rev-parse` this session — a one-line formal check remains).~~ done — tags verified through the pin-sync discipline; Release objects published
+31. ~~**Re-check `sandbox-live.yml` alignment** after any CI change (archived 14-16 §f.47; verified consistent this session — recurring guard).~~ done — consistent through the v0.12.0 CI refresh and the sandbox workflow
+32. ~~**`gitignore`/residue sweep** — confirm no dangling `reports/` references in tooling configs (archived 15-41 §f.43).~~ done — no dangling reports/ references outside the inert .gitignore entry
+33. **`.github/ISSUE_TEMPLATE/config.yml`** — blank-issues toggle + discussion link (archived 15-41 §f.34). **→ ROADMAP raw ideas (repo polish: ISSUE_TEMPLATE config.yml, added 2026-10-17)**
+34. ~~**Review `dependabot.yml` coverage** (workflows + Go modules) (archived 15-41 §f.36).~~ done — dependabot.yml covers gomod + github-actions, weekly, grouped
+35. ~~**Cross-link ADRs from AGENTS.md** ("Money" bullet → ADR 001, retry bullets → ADR 003) (archived 15-41 §f.26).~~ done — AGENTS Money bullet cites ADR 001; retry bullets cite ADR 003 (2026-10-17)
+36. ~~**README docs table**: `docs/adr/` index + status-report pointers (archived 15-41 §f.25).~~ done — README Project Status table links the doc set incl. docs/adr (2026-10-17)
+37. ~~**Godoc example for `VerifyWebhookSignature` + `ParseWebhookEvent` composition** (archived 15-41 §f.30).~~ done — ExampleVerifyWebhookSignature + ExampleParseWebhookEvent ship
+38. ~~**`VerifyAndParseWebhookEvent` helper** — revisit ONLY on user demand (decided against; archived 14-16 §f.43).~~ **Won't implement — decided against (archived 14-16 f.43); revisit only on user demand.**
+39. ~~**Cross-check `wise-api-core-schemas.json` against the webhook schemas** — the small spec predates the webhook work (archived 14-16 §f.39).~~ **NOT-DO — superseded by the full 2027Q1 vendored-spec conformance gate.**
+40. **Property tests for Money cents conversion** (ROADMAP). **→ ROADMAP raw ideas (Money property tests, added 2026-10-17)**
+41. **`Quote` residual fields** (`rateExpirationTime`, `targetAmountAllowed`, `user`) (ROADMAP). **→ ROADMAP raw ideas (Quote residual fields, added 2026-10-17)**
+42. **`Page[T]` generalization** — third paginated endpoint trigger (ROADMAP). **→ ROADMAP Axis 1/2 (Page[T])**
+43. **Service-client refactor** — post-v1.0 sequencing stands (ROADMAP Axis 4). **→ ROADMAP Axis 4 (service-client refactor post-v1.0)**
+44. **Tier-3/4 APIs per demand** (addresses, balance-capacity, batch groups, OAuth, simulations) (ROADMAP). **→ ROADMAP Axis 1 long-term (tier-3/4 demand-gated)**
+45. ~~**Blog/design-story update** — the retry-typed-error + OTT-secrecy finds are the material (ROADMAP).~~ done — design-story post live and linked from README
+46. ~~**Daemon-commit full-sweep review** — bounded re-read of the largest diffs in each auto-commit batch (this session's e.6).~~ done — AGENTS daemon gotcha carries the verify-the-daemon-commit practice
+47. ~~**Ginkgo `-count` note verification** — confirm CONTRIBUTING lands it (tracks item 13).~~ done — CONTRIBUTING documents the Ginkgo -count=1 constraint
+48. ~~**Raise the coverage gate 90% → 91%** once webhook payload tests mature (archived 15-41 §f.33).~~ done — floor raised to 92 percent in v0.14.0 (measured 92.8)
+49. ~~**Mark the 3 runnable examples in README** (archived 15-41 §f.49).~~ **Won't implement — conflicts with the deliberate compile-only Example convention (AGENTS.md).**
+50. ~~**HARVEST this report's f-list** — items 1–14 are pre-routed; 15 and 30 are the only new TODO-grade items; the rest are ROADMAP (this session's successor pass).~~ done — successive passes harvested; the 2026-10-17 pass closes the list
 
 ## g) Three questions I cannot answer myself
 
-1. **Release strategy for the two unpaginated tags:** publish GitHub Release objects for BOTH v0.10.0 and v0.11.0 (both tags are already on the module proxy; v0.10.0 notes are drafted, v0.11.0 notes cut from CHANGELOG), or skip the v0.10.0 page entirely and publish only a v0.11.0 release? Backfilling a Release for an already-proxied tag is safe but unusual — your call.
-2. **CI go-live timing:** approve push + `gh workflow enable ci` now, so the first-ever run sees the full 41-method surface and unfreezes the coverage badge — or hold until after the `v1.0.0` tag so CI's first run is the frozen API? Everything on my side is prepared and locally green; the push/enable itself is gated on you.
-3. **Typed recipient `Details` (six reports old):** do you want to (a) freeze `map[string]string` at v1.0 and add typed accessors additively later (the audit's recommendation), (b) commission typed per-corridor structs before the tag, or (c) the compromise layer — `DetailsKey*` constants for the top corridors? It is the last open design decision between the current tree and the v1.0.0 tag.
+1. ~~**Release strategy for the two unpaginated tags:** publish GitHub Release objects for BOTH v0.10.0 and v0.11.0 (both tags are already on the module proxy; v0.10.0 notes are drafted, v0.11.0 notes cut from CHANGELOG), or skip the v0.10.0 page entirely and publish only a v0.11.0 release? Backfilling a Release for an already-proxied tag is safe but unusual — your call.~~ done — answered: all Release objects published 2026-10-07 (v0.10.0-v0.14.0 live)
+2. **CI go-live timing:** approve push + `gh workflow enable ci` now, so the first-ever run sees the full 41-method surface and unfreezes the coverage badge — or hold until after the `v1.0.0` tag so CI's first run is the frozen API? Everything on my side is prepared and locally green; the push/enable itself is gated on you. **→ TODO_LIST P2 (Re-enable CI on GitHub)**
+3. **Typed recipient `Details` (six reports old):** do you want to (a) freeze `map[string]string` at v1.0 and add typed accessors additively later (the audit's recommendation), (b) commission typed per-corridor structs before the tag, or (c) the compromise layer — `DetailsKey*` constants for the top corridors? It is the last open design decision between the current tree and the v1.0.0 tag. **→ TODO_LIST P2 (Typed recipient Details)**
 
 ---
 
