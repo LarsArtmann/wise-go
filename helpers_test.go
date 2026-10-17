@@ -19,7 +19,12 @@ func TestClassifyTransactionType(t *testing.T) {
 		totalCents int64
 		want       TransactionType
 	}{
-		{name: "card payment debit", wiseType: DetailTypeCardPayment, totalCents: -1000, want: TransactionTypeCard},
+		{
+			name:       "card payment debit",
+			wiseType:   DetailTypeCardPayment,
+			totalCents: -1000,
+			want:       TransactionTypeCard,
+		},
 		{
 			name:       "card payment credit still card (not refund)",
 			wiseType:   DetailTypeCardPayment,
@@ -32,16 +37,61 @@ func TestClassifyTransactionType(t *testing.T) {
 			totalCents: 0,
 			want:       TransactionTypeCard,
 		},
-		{name: "card refund positive", wiseType: DetailTypeCardRefund, totalCents: 2500, want: TransactionTypeRefund},
-		{name: "card refund zero", wiseType: DetailTypeCardRefund, totalCents: 0, want: TransactionTypeCard},
-		{name: "transfer", wiseType: DetailTypeTransfer, totalCents: 10000, want: TransactionTypeTransfer},
-		{name: "payment", wiseType: DetailTypePayment, totalCents: -5000, want: TransactionTypePayment},
-		{name: "conversion", wiseType: DetailTypeConversion, totalCents: -10000, want: TransactionTypeExchange},
-		{name: "exchange alias", wiseType: DetailTypeExchange, totalCents: 5000, want: TransactionTypeExchange},
+		{
+			name:       "card refund positive",
+			wiseType:   DetailTypeCardRefund,
+			totalCents: 2500,
+			want:       TransactionTypeRefund,
+		},
+		{
+			name:       "card refund zero",
+			wiseType:   DetailTypeCardRefund,
+			totalCents: 0,
+			want:       TransactionTypeCard,
+		},
+		{
+			name:       "transfer",
+			wiseType:   DetailTypeTransfer,
+			totalCents: 10000,
+			want:       TransactionTypeTransfer,
+		},
+		{
+			name:       "payment",
+			wiseType:   DetailTypePayment,
+			totalCents: -5000,
+			want:       TransactionTypePayment,
+		},
+		{
+			name:       "conversion",
+			wiseType:   DetailTypeConversion,
+			totalCents: -10000,
+			want:       TransactionTypeExchange,
+		},
+		{
+			name:       "exchange alias",
+			wiseType:   DetailTypeExchange,
+			totalCents: 5000,
+			want:       TransactionTypeExchange,
+		},
 		{name: "fee", wiseType: DetailTypeFee, totalCents: -50, want: TransactionTypeFee},
-		{name: "unknown positive is credit", wiseType: "SOMETHING_NEW", totalCents: 1000, want: TransactionTypeCredit},
-		{name: "unknown negative is debit", wiseType: "SOMETHING_NEW", totalCents: -1000, want: TransactionTypeDebit},
-		{name: "unknown zero is debit", wiseType: "SOMETHING_NEW", totalCents: 0, want: TransactionTypeDebit},
+		{
+			name:       "unknown positive is credit",
+			wiseType:   "SOMETHING_NEW",
+			totalCents: 1000,
+			want:       TransactionTypeCredit,
+		},
+		{
+			name:       "unknown negative is debit",
+			wiseType:   "SOMETHING_NEW",
+			totalCents: -1000,
+			want:       TransactionTypeDebit,
+		},
+		{
+			name:       "unknown zero is debit",
+			wiseType:   "SOMETHING_NEW",
+			totalCents: 0,
+			want:       TransactionTypeDebit,
+		},
 		{
 			name:       "sub-cent amount is debit (cents floor)",
 			wiseType:   "SOMETHING_NEW",
@@ -369,12 +419,32 @@ func TestMoneyString(t *testing.T) {
 		want  string
 	}{
 		{name: "zero", money: Money{Cents: 0, Currency: Currency("EUR")}, want: "EUR 0.00"},
-		{name: "positive round", money: Money{Cents: 1234, Currency: Currency("USD")}, want: "USD 12.34"},
-		{name: "positive with cents", money: Money{Cents: 12345, Currency: Currency("EUR")}, want: "EUR 123.45"},
-		{name: "negative", money: Money{Cents: -5000, Currency: Currency("GBP")}, want: "GBP -50.00"},
-		{name: "negative with cents", money: Money{Cents: -12345, Currency: Currency("EUR")}, want: "EUR -123.45"},
+		{
+			name:  "positive round",
+			money: Money{Cents: 1234, Currency: Currency("USD")},
+			want:  "USD 12.34",
+		},
+		{
+			name:  "positive with cents",
+			money: Money{Cents: 12345, Currency: Currency("EUR")},
+			want:  "EUR 123.45",
+		},
+		{
+			name:  "negative",
+			money: Money{Cents: -5000, Currency: Currency("GBP")},
+			want:  "GBP -50.00",
+		},
+		{
+			name:  "negative with cents",
+			money: Money{Cents: -12345, Currency: Currency("EUR")},
+			want:  "EUR -123.45",
+		},
 		{name: "single cent", money: Money{Cents: 1, Currency: Currency("USD")}, want: "USD 0.01"},
-		{name: "large amount", money: Money{Cents: 999999999, Currency: Currency("EUR")}, want: "EUR 9999999.99"},
+		{
+			name:  "large amount",
+			money: Money{Cents: 999999999, Currency: Currency("EUR")},
+			want:  "EUR 9999999.99",
+		},
 	}
 
 	for _, tt := range tests {
@@ -461,7 +531,11 @@ func FuzzParseWiseTimestamp(f *testing.F) {
 		// Zoneless layout input must yield UTC.
 		if _, wantErr := time.Parse("2006-01-02T15:04:05", s); wantErr == nil {
 			if got.Location() != time.UTC {
-				t.Fatalf("parseWiseTimestamp(%q) zoneless layout must be UTC, got %v", s, got.Location())
+				t.Fatalf(
+					"parseWiseTimestamp(%q) zoneless layout must be UTC, got %v",
+					s,
+					got.Location(),
+				)
 			}
 		}
 	})
@@ -544,7 +618,7 @@ func validWiseCurrency(s string) bool {
 		return false
 	}
 
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		if s[i] < 'A' || s[i] > 'Z' {
 			return false
 		}
@@ -580,7 +654,12 @@ func FuzzToMoney(f *testing.F) {
 		nonRepresentable := math.IsNaN(value) || math.IsInf(value, 0) || math.Abs(value) > 9.2e16
 		if nonRepresentable {
 			if err == nil {
-				t.Fatalf("toMoney(%v, %q) = %+v, want corruption for a non-representable amount", value, currency, money)
+				t.Fatalf(
+					"toMoney(%v, %q) = %+v, want corruption for a non-representable amount",
+					value,
+					currency,
+					money,
+				)
 			}
 
 			return
@@ -595,7 +674,11 @@ func FuzzToMoney(f *testing.F) {
 		}
 
 		if money.Cents != int64(math.Round(value*100)) {
-			t.Errorf("Cents = %d, want %d (round-half-away-from-zero contract)", money.Cents, int64(math.Round(value*100)))
+			t.Errorf(
+				"Cents = %d, want %d (round-half-away-from-zero contract)",
+				money.Cents,
+				int64(math.Round(value*100)),
+			)
 		}
 
 		if (value > 0 && money.Cents < 0) || (value < 0 && money.Cents > 0) {
@@ -646,7 +729,12 @@ func TestMoneyCentsRoundTripProperty(t *testing.T) {
 		}
 
 		if money.Cents != cents {
-			t.Fatalf("cents round-trip broke at %d: value %v mapped back to %d", cents, value, money.Cents)
+			t.Fatalf(
+				"cents round-trip broke at %d: value %v mapped back to %d",
+				cents,
+				value,
+				money.Cents,
+			)
 		}
 	}
 }

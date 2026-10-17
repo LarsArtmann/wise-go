@@ -65,6 +65,7 @@ func toMoney(a raw.BalanceAmount) (Money, error) {
 	}
 
 	if math.IsNaN(a.Value) || math.Abs(a.Value) > maxRepresentableUnits {
+		//nolint:err113 // error-context convention: mapper messages carry the raw wire value
 		return Money{}, errorfamily.WrapCorruption(
 			fmt.Errorf("amount %v is outside the representable cent range", a.Value),
 			errorCodeMoneyParse,
