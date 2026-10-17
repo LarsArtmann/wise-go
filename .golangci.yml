@@ -293,7 +293,7 @@ linters:
         text: unused
         linters:
           - unused
-      - source: "//nolint:branching-flow:"
+      - source: '//nolint:branching-flow:'
         linters:
           - nolintlint
     paths:
@@ -314,5 +314,5 @@ formatters:
     paths:
       - _templ\.go$
 issues:
-  max-issues-per-linter: 50
-  max-same-issues: 10
+  max-issues-per-linter: 0
+  max-same-issues: 0
