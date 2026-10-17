@@ -195,7 +195,8 @@
         "go-nix-helpers": "go-nix-helpers",
         "go-retry": "go-retry",
         "md-go-validator": "md-go-validator",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "systems": "systems_2"
       }
     },
     "systems": {
@@ -212,6 +213,17 @@
         "repo": "default",
         "type": "github"
       }
+    },
+    "systems_2": {
+      "locked": {
+        "path": "./nix/systems",
+        "type": "path"
+      },
+      "original": {
+        "path": "./nix/systems",
+        "type": "path"
+      },
+      "parent": []
     },
     "treefmt-nix": {
       "inputs": {

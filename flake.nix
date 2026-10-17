@@ -34,6 +34,12 @@
       flake = false;
     };
 
+    # D5 (docs/planning/2026-10-16_decision-memos.md): the check matrix is
+    # the default systems minus x86_64-darwin (nixpkgs-26.11 no longer ships
+    # it, nothing consumes it). Overriding this input also fixes go-nix-
+    # helpers' transitive systems follow. Reversible: re-add the string.
+    systems.url = "path:./nix/systems";
+
     # Source-only: built in checks.md-go-snippets with this repo's nixpkgs
     # (go 1.27 for the tool's go.mod floor — its own flake currently pins a
     # go too old to build it, so its packages.default is not consumable).
@@ -97,15 +103,6 @@
       };
     in
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
-      # D5 (docs/planning/2026-10-16_decision-memos.md): x86_64-darwin is
-      # dropped from the check matrix — nixpkgs-26.11 no longer ships it, no
-      # consumer builds on it. Reversible: re-add the string.
-      systems = [
-        "x86_64-linux"
-        "aarch64-linux"
-        "aarch64-darwin"
-      ];
-
       imports = [
         inputs.go-nix-helpers.flakeModules.go-standard
         inputs.git-hooks.flakeModule
