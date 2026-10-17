@@ -27,7 +27,9 @@ import argparse
 import json
 import pathlib
 import re
+import subprocess  # nosec B404 -- shells to the repo's own go/parser extractor only
 import sys
+import tempfile
 import urllib.error
 import urllib.request
 
@@ -53,6 +55,11 @@ KNOWN_EXEMPTIONS = {
     "/profiles/{d}/balance-statements/{d}/statement.{s}": "spec declares only the .json variant (same exemption as the spec-conformance gate)",
 }
 
+# The Go extractor lives under testdata/ so the go toolchain ignores it as a
+# module package (no build, lint, or coverage impact on the SDK module); it is
+# invoked file-mode via `go run`, stdlib-only.
+GO_EXTRACTOR = pathlib.Path(__file__).resolve().parent / "testdata" / "specdriftext" / "main.go"
+
 # Extraction floor: a call-shape change (new wrapper idiom the regexes do not
 # know) silently shrinks the extracted surface and the check would then pass
 # while comparing far fewer endpoints than the SDK really has. 43 endpoints at
@@ -60,6 +67,37 @@ KNOWN_EXEMPTIONS = {
 # tighter as the surface grows. --min-endpoints overrides it for intentional
 # surface changes.
 EXTRACTION_FLOOR = 40
+
+
+def extract_sdk_endpoints_go(repo: pathlib.Path) -> list[dict]:
+    """Run the go/parser extractor; a failed run is extraction-broken (exit 3)."""
+    if not GO_EXTRACTOR.exists():
+        raise RuntimeError(f"go extractor missing: {GO_EXTRACTOR}")
+    with tempfile.TemporaryDirectory() as tmp:
+        env = {
+            "GOCACHE": str(pathlib.Path(tmp) / "gocache"),
+            "GOPATH": str(pathlib.Path(tmp) / "gopath"),
+            "GOTOOLCHAIN": "local",
+            "GOFLAGS": "",
+            "HOME": str(pathlib.Path(tmp)),
+            "PATH": __import__("os").environ.get("PATH", "/usr/bin:/bin"),
+        }
+        proc = subprocess.run(  # nosec B603 -- fixed argv, repo-owned tool, stdlib-only
+            ["go", "run", str(GO_EXTRACTOR), str(repo)],
+            capture_output=True,
+            text=True,
+            check=False,
+            env=env,
+            timeout=300,
+        )
+        if proc.returncode != 0:
+            raise RuntimeError(
+                f"go extractor failed (exit {proc.returncode}): {proc.stderr.strip()[:500]}"
+            )
+    endpoints = json.loads(proc.stdout)
+    if not isinstance(endpoints, list):
+        raise RuntimeError("go extractor returned non-list output")
+    return endpoints
 
 
 def load_spec(spec_file: str | None, url: str) -> dict:
@@ -283,6 +321,12 @@ def main() -> int:
         help="override the extraction floor (intentional surface changes)",
     )
     parser.add_argument(
+        "--extractor",
+        choices=("go", "regex"),
+        default="go",
+        help="endpoint extractor: go (AST-based, default) or regex (legacy, parity tests)",
+    )
+    parser.add_argument(
         "--verbose",
         action="store_true",
         help="list every extracted endpoint and its match",
@@ -307,7 +351,14 @@ def main() -> int:
         return 3
     index = build_spec_index(live)
 
-    endpoints = extract_sdk_endpoints(repo)
+    try:
+        if args.extractor == "go":
+            endpoints = extract_sdk_endpoints_go(repo)
+        else:
+            endpoints = extract_sdk_endpoints(repo)
+    except (RuntimeError, json.JSONDecodeError, OSError) as err:
+        print(f"FAIL: SDK endpoint extraction broken: {err}", file=sys.stderr)
+        return 3
     unique = {(e["method"], normalize_sdk_path(e["template"])) for e in endpoints}
     if not unique:
         print(

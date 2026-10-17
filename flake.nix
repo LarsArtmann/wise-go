@@ -338,7 +338,10 @@
           checks.script-fixtures =
             pkgs.runCommand "script-fixtures"
               {
-                nativeBuildInputs = [ pkgs.python3 ];
+                nativeBuildInputs = [
+                  pkgs.python3
+                  pkgs.go
+                ];
                 src = lib.fileset.toSource {
                   root = ./.;
                   fileset = lib.fileset.unions [
@@ -355,6 +358,9 @@
               ''
                 cd $src
                 export PYTHONDONTWRITEBYTECODE=1
+                export GOCACHE=$TMPDIR/specdrift-gocache
+                export GOPATH=$TMPDIR/specdrift-gopath
+                export GOTOOLCHAIN=local
                 python3 scripts/negative_fixtures.py --repo-root .
                 touch $out
               '';
@@ -713,9 +719,11 @@
                 runtimeInputs = [
                   pkgs.python3
                   pkgs.git
+                  pkgs.go
                 ];
                 text = ''
                   export PYTHONDONTWRITEBYTECODE=1
+                  export GOTOOLCHAIN=local
                   exec python3 ${./scripts/spec_drift.py} --repo "$(git rev-parse --show-toplevel 2>/dev/null || pwd)" "$@"
                 '';
               };
