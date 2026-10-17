@@ -1076,7 +1076,7 @@ if err != nil {
 
 The one-time-token endpoints (`GetOTTStatus`, `TriggerOTT`, `VerifyOTT`,
 `ClearSCAChallenge`) live on the quarterly versioned surface
-(`/2026Q3/one-time-token/...`) and authorize with the same personal API
+(`/2026Q4/one-time-token/...`) and authorize with the same personal API
 token. The OTT is a distinct type, `wise.OneTimeToken` (construct with
 `wise.NewOneTimeToken`), so it can never be passed where an OTP code or any
 other string is expected. Challenges that no phone channel can clear (e.g. a

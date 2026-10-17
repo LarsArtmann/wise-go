@@ -44,8 +44,8 @@ account requirements and the two-pass refresh), recipients, transfers
 (including receipts, US combined receipt, NOC documents, payments-list and
 MT103 payout info), funding, delivery estimates, exchange rates,
 transfer-requirements validation — plus webhook subscription CRUD and typed
-event parsing on the quarterly surfaces (subscriptions 2026Q4,
-OTT 2026Q3 — each rolls over independently), SCA one-time-token endpoints
+event parsing on the quarterly surfaces (subscriptions and OTT both
+2026Q4 — each rolls over independently), SCA one-time-token endpoints
 that clear challenges programmatically, and `GetBankAccountDetails` on the
 2027Q1 account-details surface (spec roll caught by `nix run .#spec-drift`).
 

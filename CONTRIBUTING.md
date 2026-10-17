@@ -290,7 +290,7 @@ each version tag on GitHub and fails on a stale rev.
 
 ### Quarterly API-surface rollover ritual
 
-Wise versions some surfaces by quarter (`2026Q3`, `2026Q4`); the webhook
+Wise versions some surfaces by quarter (`2026Q4`, `2027Q1`); the webhook
 subscription CRUD and the OTT endpoints roll over INDEPENDENTLY (see
 AGENTS.md). The 2026Q4 flip proved that a value-flip is not done until the
 straggler grep is clean — a stale path in a comment or doc survives every
@@ -302,7 +302,7 @@ test. The ritual:
 2. **Flip** — change the version constant in `client.go`
    (`webhookSubscriptionsAPIVersion` / `ottAPIVersion`). The two roll over
    independently; never move both because one moved.
-3. **Straggler grep** — `grep -rn "2026Q3" --include='*.go' .` (the old
+3. **Straggler grep** — `grep -rn "<flipped-from quarter>" --include='*.go' .` (the old
    value) must come back empty outside changelog/history; update any
    comment, test path, or doc that still names the old prefix.
 4. **Changelog** — record the flip under `[Unreleased]`.

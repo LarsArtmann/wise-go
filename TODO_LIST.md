@@ -19,13 +19,6 @@ five spec-vs-live assumptions settled by the conformance work: statement
 `details.type` enum, `/v1/rates` array shape, text/plain funding errors.
 Source: docs/planning/archived/2026-09-16_16-54_pareto-plan-openapi-conformance-green.md, 2026-09-16.
 
-[ ] Flip `ottAPIVersion` 2026Q3 → 2026Q4 once the OTT surface verifies live.
-The OTT surface is **probe-blind**: unauthenticated requests to `/one-time-token/*`
-404 on every prefix including the known-good 2026Q3, so Q4 cannot be verified
-without credentials. Procedure: with `WISE_SANDBOX_API_KEY` (pairs with the sandbox
-pass above), probe `GET /2026Q4/one-time-token/status` for a non-404, change
-`ottAPIVersion` in `client.go`, run `go test ./...`, commit. Probes 2026-10-05.
-
 ## P2 — User-gated
 
 [ ] Add credentialed Wise sandbox integration tests — the workflow

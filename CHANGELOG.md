@@ -16,6 +16,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   for unauthenticated quotes). `pricingConfiguration` stays unparsed
   (complex object, no consumer demand yet).
 
+### Changed
+
+- **OTT surface rolled 2026Q3 → 2026Q4** (`ottAPIVersion` in `client.go`):
+  the SCA one-time-token endpoints now call `/2026Q4/one-time-token/...`.
+  Verified live 2026-10-16 with the first credentialed sandbox probe: the
+  handler answers app-level `ott_not_found` on every served prefix
+  (2026Q2..2027Q1) while unknown prefixes (`9999Q1`, `2027Q2`) get the
+  router-level `Not Found` body — Q4 behaves identically to the known-good
+  Q3. No wire-shape change; mock tests and doc references updated in
+  lockstep. The 2027Q1 canonicalization (per the live spec's server URL)
+  stays with the tracked spec-refresh item.
+
 ## [0.15.0] - 2026-10-17
 
 ### Added
