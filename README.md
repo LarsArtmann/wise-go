@@ -18,10 +18,12 @@ Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise'
 > end-to-end — profiles, users, balances, transactions and statement file downloads
 > (CSV/PDF/XLSX/CAMT.053/MT940/QIF), exchange rates, quotes (with `paymentOptions`
 > fees), recipients, transfers (create / get / list / cancel / **fund** /
-> receipt / MT103 payout info), delivery estimates, and transfer-requirements
-> validation — plus webhook subscriptions with typed event decoding, webhook
-> signature verification, programmatic SCA challenge clearing (one-time-token
-> endpoints), observability hooks, and balance lifecycle management. See
+> receipt / MT103 payout info / payments list / US combined receipt / Indian
+> NOC), third-party (originator) transfers, delivery estimates, and
+> transfer-requirements validation — plus webhook subscriptions with typed event
+> decoding, webhook signature verification, programmatic SCA challenge clearing
+> (one-time-token endpoints), observability hooks, and balance lifecycle
+> management. See
 > [FEATURES.md](FEATURES.md) for the honest inventory and [ROADMAP.md](ROADMAP.md)
 > for what's next.
 
@@ -40,7 +42,7 @@ Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise'
   - [Balances](#balances)
   - [Transactions](#transactions)
   - [Statements](#statements)
-  - [Transfer receipts & MT103](#transfer-receipts--mt103)
+  - [Transfer receipts & payout paperwork](#transfer-receipts--payout-paperwork)
   - [Quotes](#quotes)
   - [Recipients](#recipients)
   - [Exchange rates](#exchange-rates)
@@ -390,7 +392,7 @@ descriptions. Like the JSON statement, the endpoint is **SCA-protected** for
 UK/EEA profiles — see
 [SCA](#strong-customer-authentication-sca).
 
-### Transfer receipts & MT103
+### Transfer receipts & payout paperwork
 
 `GetTransferReceipt` downloads the branded confirmation receipt for a
 paid-out transfer as raw PDF bytes. Wise answers 404 until the transfer
@@ -408,6 +410,20 @@ corridors):
 
 ```go
 info, err := client.GetTransferPayoutInfo(ctx, transferID)
+```
+
+The rest of the payout paperwork set, all raw-byte downloads unless noted:
+
+```go
+// Completed funding payments of a transfer ([]TransferPayment)
+payments, err := client.ListTransferPayments(ctx, transferID)
+
+// US combined receipt (transfer confirmation + funding proof in one PDF;
+// required by some US institutions). 404 = does not exist yet.
+usPdf, err := client.GetUSCombinedReceipt(ctx, transferID)
+
+// Indian FIRC no-objection certificate. 404 before payout = not issued yet.
+noc, err := client.GetTransferNOC(ctx, transferID)
 ```
 
 ### Quotes
@@ -514,6 +530,32 @@ A rejected funding (e.g. `FundingErrorCodeBalanceInsufficientFunds`) is a
 _successful API call that declined_ — top up the balance and call `FundTransfer`
 again. `ErrorCode` is an open enum: known codes are constants, unknown codes
 pass through. The endpoint is SCA-protected for UK/EEA profiles.
+
+Moving money **on behalf of a third-party originator** — your own quote funds
+the transfer, but the compliance data names the real originator. Reuse the
+same `Originator.Reference` for every transfer of one originator (Wise keys
+compliance on it); `OriginalTransferID` is your idempotency key:
+
+```go
+transfer, err := client.CreateThirdPartyTransfer(ctx, wise.CreateThirdPartyTransferRequest{
+    ProfileID:          profileID,
+    OriginalTransferID: "our-originator-transfer-correlation-id",
+    TargetAccount:      recipientID,
+    QuoteID:            quoteID,
+    Reference:          "INV-2026-014",
+    Originator: wise.Originator{
+        LegalEntityType: wise.OriginatorLegalEntityTypePrivate,
+        Reference:       "originator-ref-42",
+        Name:            wise.OriginatorName{GivenName: "Ana", FamilyName: "Martins"},
+        DateOfBirth:     time.Date(1988, 4, 12, 0, 0, 0, 0, time.UTC),
+        Nationality:     "PT",
+        Address: wise.OriginatorAddress{
+            FirstLine: "Rua das Flores 12", City: "Lisboa", CountryCode: "PT", PostCode: "1200-192",
+        },
+    },
+})
+// fetch it back with client.GetThirdPartyTransfer(ctx, profileID, transferID)
+```
 
 ### Core transfer flow: quote → recipient → transfer
 
@@ -1187,7 +1229,14 @@ silent unless `WISE_TEST_TRANSFER_ID` names a transfer the key owns.
 
 ## Project Status
 
-See [FEATURES.md](FEATURES.md) for the full feature inventory by status and [ROADMAP.md](ROADMAP.md) for long-term direction.
+| Doc                                        | What it holds                                                                  |
+| ------------------------------------------ | ------------------------------------------------------------------------------ |
+| [FEATURES.md](FEATURES.md)                 | Honest feature inventory by status, including the per-endpoint coverage matrix |
+| [ROADMAP.md](ROADMAP.md)                   | Long-term direction and raw ideas                                              |
+| [CONTRIBUTING.md](CONTRIBUTING.md)         | Development setup, quality gates, release process                              |
+| [CHANGELOG.md](CHANGELOG.md)               | What changed in each version                                                   |
+| [docs/adr/](docs/adr/)                     | Architecture decision records (Money, package boundary, retry executor)        |
+| [docs/error-codes.md](docs/error-codes.md) | Every granular Wise error code: sentinel, typical status, retry guidance       |
 
 ## Contributing
 
