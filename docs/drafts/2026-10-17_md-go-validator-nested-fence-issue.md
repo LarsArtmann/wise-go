@@ -7,6 +7,7 @@ The fence scanner toggles on any line starting with `` ``` `` and never records 
 `````markdown
 ````← 4-backtick fence: literal text per CommonMark
 ```go
+// skip-validate // illustrative reproduction of the defect being filed, not real Go
 this is (not) valid go {
 ````
 `````
