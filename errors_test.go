@@ -529,6 +529,19 @@ func TestMapQuoteParseErrorsAreCorruption(t *testing.T) {
 				return err
 			},
 		},
+		{
+			name: "unparseable rate_expiration_time",
+			call: func() error {
+				wireQuote := raw.Quote{
+					ID: "quote-1", SourceCurrency: "EUR", TargetCurrency: "USD",
+					CreatedTime: "2023-01-15T10:30:00Z", ExpirationTime: "2023-01-15T11:00:00Z",
+					RateExpirationTime: "not-a-timestamp",
+				}
+				_, err := mapQuote(wireQuote, ProfileID{})
+
+				return err
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -544,6 +557,60 @@ func TestMapQuoteParseErrorsAreCorruption(t *testing.T) {
 				t.Errorf("Classify() = %v, want Corruption (error: %v)", family, err)
 			}
 		})
+	}
+}
+
+func TestMapQuoteResidualWireFields(t *testing.T) {
+	t.Parallel()
+
+	wireQuote := raw.Quote{
+		ID:                            "quote-1",
+		SourceCurrency:                "EUR",
+		TargetCurrency:                "USD",
+		CreatedTime:                   "2023-01-15T10:30:00Z",
+		ExpirationTime:                "2023-01-15T11:00:00Z",
+		PreferredPayIn:                "IDEAL",
+		RateExpirationTime:            "2023-01-15T10:35:00Z",
+		TargetAmountAllowed:           true,
+		User:                          42,
+	}
+
+	quote, err := mapQuote(wireQuote, ProfileID{})
+	if err != nil {
+		t.Fatalf("mapQuote() error = %v", err)
+	}
+
+	if quote.PreferredPayIn != PayIn("IDEAL") {
+		t.Errorf("PreferredPayIn = %q, want IDEAL", quote.PreferredPayIn)
+	}
+
+	wantRateExpiration := time.Date(2023, time.January, 15, 10, 35, 0, 0, time.UTC)
+	if !quote.RateExpirationTime.Equal(wantRateExpiration) {
+		t.Errorf("RateExpirationTime = %v, want %v", quote.RateExpirationTime, wantRateExpiration)
+	}
+
+	if !quote.TargetAmountAllowed {
+		t.Error("TargetAmountAllowed = false, want true")
+	}
+
+	if quote.User != NewUserID(42) {
+		t.Errorf("User = %v, want 42", quote.User.Get())
+	}
+
+	absent, err := mapQuote(raw.Quote{
+		ID: "quote-2", SourceCurrency: "EUR", TargetCurrency: "USD",
+		CreatedTime: "2023-01-15T10:30:00Z", ExpirationTime: "2023-01-15T11:00:00Z",
+	}, ProfileID{})
+	if err != nil {
+		t.Fatalf("mapQuote(absent) error = %v", err)
+	}
+
+	if !absent.RateExpirationTime.IsZero() {
+		t.Errorf("absent RateExpirationTime = %v, want zero", absent.RateExpirationTime)
+	}
+
+	if !absent.User.IsZero() {
+		t.Errorf("absent User = %v, want zero", absent.User.Get())
 	}
 }
 
@@ -891,6 +958,7 @@ func TestErrorCodesUniqueAndWellFormed(t *testing.T) {
 		errorCodeQuoteParsePaymentOptionDelivery,
 		errorCodeQuoteParsePaymentOptionSource,
 		errorCodeQuoteParsePaymentOptionTarget,
+		errorCodeQuoteParseRateExpiration,
 		errorCodeQuoteParseSourceCurrency,
 		errorCodeQuoteParseTargetCurrency,
 		errorCodeRatesEmptyResponse,

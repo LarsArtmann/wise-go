@@ -374,6 +374,11 @@ func mapQuote(quote raw.Quote, profileID ProfileID) (*Quote, error) {
 
 	notices := mapQuoteNotices(quote.Notices)
 
+	rateExpiration, rateExpErr := parseQuoteRateExpiration(quote)
+	if rateExpErr != nil {
+		return nil, rateExpErr
+	}
+
 	return &Quote{
 		ID:                            id.NewID[QuoteBrand](quote.ID),
 		Source:                        source,
@@ -389,9 +394,32 @@ func mapQuote(quote raw.Quote, profileID ProfileID) (*Quote, error) {
 		ProvidedAmountType:            QuoteProvidedAmountType(quote.ProvidedAmountType),
 		GuaranteedTargetAmountAllowed: quote.GuaranteedTargetAmountAllowed,
 		GuaranteedTargetAmount:        quote.GuaranteedTargetAmount,
+		PreferredPayIn:                PayIn(quote.PreferredPayIn),
+		RateExpirationTime:            rateExpiration,
+		TargetAmountAllowed:           quote.TargetAmountAllowed,
+		User:                          NewUserID(quote.User),
 		PaymentOptions:                options,
 		Notices:                       notices,
 	}, nil
+}
+
+// parseQuoteRateExpiration parses a quote's optional rateExpirationTime.
+// Absent stays the zero time; a present-but-unparseable value is corruption.
+func parseQuoteRateExpiration(quote raw.Quote) (time.Time, error) {
+	if quote.RateExpirationTime == "" {
+		return time.Time{}, nil
+	}
+
+	rateExpiration, err := parseWiseTimestamp(quote.RateExpirationTime)
+	if err != nil {
+		return time.Time{}, errorfamily.WrapCorruption(
+			err,
+			errorCodeQuoteParseRateExpiration,
+			fmt.Sprintf("parse rateExpirationTime %q", quote.RateExpirationTime),
+		)
+	}
+
+	return rateExpiration, nil
 }
 
 // parseQuoteCreated parses a quote's createdTime and expirationTime. Both

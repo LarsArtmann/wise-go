@@ -57,6 +57,7 @@ const (
 	errorCodeQuoteParsePaymentOptionDelivery   = "wise.quote.parse_payment_option_delivery"
 	errorCodeQuoteParsePaymentOptionSource     = "wise.quote.parse_payment_option_source"
 	errorCodeQuoteParsePaymentOptionTarget     = "wise.quote.parse_payment_option_target"
+	errorCodeQuoteParseRateExpiration          = "wise.quote.parse_rate_expiration"
 	errorCodeQuoteParseSourceCurrency          = "wise.quote.parse_source_currency"
 	errorCodeQuoteParseTargetCurrency          = "wise.quote.parse_target_currency"
 	errorCodeRatesEmptyResponse                = "wise.rates.empty_response"

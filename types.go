@@ -370,6 +370,10 @@ type Quote struct {
 	ProvidedAmountType            QuoteProvidedAmountType
 	GuaranteedTargetAmountAllowed bool
 	GuaranteedTargetAmount        bool
+	PreferredPayIn                PayIn
+	RateExpirationTime            time.Time
+	TargetAmountAllowed           bool
+	User                          UserID // Zero when Wise omits the field (unauthenticated quotes).
 	PaymentOptions                []QuotePaymentOption
 	Notices                       []QuoteNotice
 }

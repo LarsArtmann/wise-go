@@ -242,6 +242,10 @@ type Quote struct {
 	ProvidedAmountType            string               `json:"providedAmountType"`
 	GuaranteedTargetAmountAllowed bool                 `json:"guaranteedTargetAmountAllowed"`
 	GuaranteedTargetAmount        bool                 `json:"guaranteedTargetAmount"`
+	PreferredPayIn                string               `json:"preferredPayIn"`
+	RateExpirationTime            string               `json:"rateExpirationTime"`
+	TargetAmountAllowed           bool                 `json:"targetAmountAllowed"`
+	User                          int64                `json:"user"`
 	PaymentOptions                []QuotePaymentOption `json:"paymentOptions"`
 	Notices                       []QuoteNotice        `json:"notices"`
 }
