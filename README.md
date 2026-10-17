@@ -1246,8 +1246,14 @@ runs the same suite on manual dispatch (`workflow_dispatch`). Add the
 `WISE_SANDBOX_API_KEY` secret to the repository first; dispatching without it
 is a green no-op (all tests skip, visible as `SKIP` lines in the log). Current
 coverage: a `GetMe` smoke test, a `ListTransfers` read (must succeed — the
-endpoint is not SCA-protected), and a `GetTransfer` by-ID test that stays
-silent unless `WISE_TEST_TRANSFER_ID` names a transfer the key owns.
+endpoint is not SCA-protected), a `GetTransfer` by-ID test that stays
+silent unless `WISE_TEST_TRANSFER_ID` names a transfer the key owns, plus
+five contract tests pinning the 2026-10-17 sandbox lane — exchange-rate
+shape (current + historical), the typed funding-404, the SCA challenge
+wire contract (403 + one-time-token headers, no token leak), the OTT
+status lifecycle on the quarterly surface, and CreateBalance idempotency
+(replaying the same idempotency key returns the already-created balance).
+Credentialed run green 2026-10-17.
 
 ## Project Status
 
