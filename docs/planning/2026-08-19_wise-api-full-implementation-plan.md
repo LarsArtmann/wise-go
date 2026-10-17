@@ -4,7 +4,7 @@
 **Source:** [docs.wise.com/api-reference](https://docs.wise.com/api-reference)
 **Current SDK version:** v0.7.0 (plan baseline; SDK is now v0.12.0)
 
-> **Update (2026-10-07 docs-health pass):** tier 1 is fully shipped — ~~row 5 (`GetQuoteAccountRequirements`, still PLANNED)~~ shipped in v0.9.0. The SDK is now **v0.12.0** with 41 `*Client` methods; the full per-endpoint coverage matrix lives in `FEATURES.md`, and open tier-2/3/4 work is tracked in `TODO_LIST.md` (bounded tasks) and `ROADMAP.md` (strategy). Earlier banner: ~~the SDK is now v0.8.1, tier-1 fully shipped except row 5~~ (2026-08-21).
+> **Update (2026-10-17 docs-health pass):** tier 1 is fully shipped — ~~row 5 (`GetQuoteAccountRequirements`, still PLANNED)~~ shipped in v0.9.0 (struck in the table below). Tier 2 shipped except row 23 (`/v1/comparisons`, still PLANNED). The SDK is now **v0.14.0** with **46 `*Client` methods across 17 resources** — the transfer category completed 2026-10-16 (payments list, US combined receipt, NOC) plus third-party (originator) transfers, and bank details migrated to Wise's 2027Q1 `GET /balances/account-details/{id}` surface. The full per-endpoint coverage matrix lives in `FEATURES.md`, and open tier-2/3/4 work is tracked in `TODO_LIST.md` (bounded tasks) and `ROADMAP.md` (strategy). Earlier banner: ~~the SDK is now v0.12.0 with 41 methods~~ (2026-10-07); ~~v0.8.1, tier-1 fully shipped except row 5~~ (2026-08-21).
 
 ---
 
@@ -45,7 +45,7 @@ This plan maps the full API surface, applies Pareto prioritisation, and defines 
 | 2  | Quotes         | POST   | `/v3/quotes`                                | `CreateUnauthenticatedQuote(ctx, CreateQuoteRequest)` | DONE    |
 | 3  | Quotes         | POST   | `/v3/profiles/{profileId}/quotes`           | `CreateQuote(ctx, ProfileID, CreateQuoteRequest)`     | DONE    |
 | 4  | Quotes         | GET    | `/v3/profiles/{profileId}/quotes/{quoteId}` | `GetQuote(ctx, ProfileID, QuoteID)`                   | DONE    |
-| 5  | Quotes         | GET    | `/v1/quotes/{quoteId}/account-requirements` | `GetQuoteAccountRequirements(ctx, QuoteID)`           | PLANNED |
+| 5  | Quotes         | GET    | `/v1/quotes/{quoteId}/account-requirements` | `GetQuoteAccountRequirements(ctx, QuoteID)`           | ~~PLANNED~~ shipped v0.9.0 (+ two-pass refresh) |
 | 6  | Recipients     | GET    | `/v2/accounts`                              | `ListRecipients(ctx, ListRecipientsRequest)`          | DONE    |
 | 7  | Recipients     | GET    | `/v1/accounts/{accountId}`                  | `GetRecipient(ctx, RecipientID)`                      | DONE    |
 | 8  | Recipients     | POST   | `/v1/accounts`                              | `CreateRecipient(ctx, CreateRecipientRequest)`        | DONE    |

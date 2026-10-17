@@ -88,8 +88,8 @@ lands in nixpkgs-unstable (lock pulled to 1.26.8 on 2026-10-17) — clears
 all 9 govulncheck stdlib vulns (GO-2026-6603..6617, fixed in 1.26.9) and
 shrinks the vulnix advisory set; then re-verify vendor FOD hashes and the
 full buildflow run (govulncheck/vulnix are the ONLY remaining
-warning-class findings). Track BuildFlow #66/#67 and the branching-flow
-#15/#16 consumer-side cleanups. Source:
+warning-class findings). Track the BuildFlow #66/#67 and
+branching-flow #15/#16 consumer-side cleanups. Source:
 `docs/status/2026-10-17_01-43_buildflow-warning-surface-zero-and-gate-repair-status.md` §b1/§f.
 
 [ ] Rewrite the `spec_drift.py` extractor on stdlib `go/parser` — kills the

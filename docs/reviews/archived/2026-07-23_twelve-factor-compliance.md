@@ -10,6 +10,12 @@
 > are tagged + GitHub Release objects published (v0.12.0, 2026-10-07), the client
 > concurrency test ships (`wise_test.go`), gofumpt is version-pinned in CI. ~~retry-composition
 > guidance + transport redaction note~~ still routed to README/ROADMAP.
+>
+> **Resolved + ARCHIVED (2026-10-17 docs-health pass):** every numbered
+> recommendation (factor-level lists and the P1-P4 action plan) now carries an
+> inline verdict; the two routed README notes live in ROADMAP raw ideas
+> (added 2026-10-17). The one permanently-open item — CI execution — is the
+> user-gated `gh workflow enable ci` tracked in TODO_LIST P2.
 
 **Assessment date:** 2026-07-23\
 **Repository:** `github.com/larsartmann/wise-go`\

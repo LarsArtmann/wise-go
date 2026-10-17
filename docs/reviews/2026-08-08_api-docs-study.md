@@ -12,6 +12,13 @@
 > demand-gated; OB-package and JOSE remain declined (ROADMAP non-goals);
 > x-trace-id stays WONT (intermediary-set). This study remains the canonical
 > gap map cited from AGENTS.md — keep it in place.
+>
+> **Surface update (2026-10-17):** the shipped surface now stands at
+> **46 `*Client` methods across 17 resources** (v0.14.0): the transfer
+> paperwork trio (payments list, US combined receipt, NOC) and the
+> third-party (originator) create/get pair landed, and bank details moved to
+> Wise's 2027Q1 `GET /balances/account-details/{id}` surface. The routed
+> "still open" set above is unchanged; FEATURES.md owns the live matrix.
 
 **Date:** 2026-08-08
 **Sources:** [changelog](https://docs.wise.com/changelog) | [API reference](https://docs.wise.com/api-reference) | [environments](https://docs.wise.com/guides/developer/environments)
