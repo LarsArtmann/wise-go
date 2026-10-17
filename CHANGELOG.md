@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- `Quote` now surfaces the four residual wire fields from the spec's quote
+  schema: `PreferredPayIn` (typed `PayIn`), `RateExpirationTime`
+  (`time.Time`, optional — absent stays the zero time, present-but-garbage
+  is corruption via the new `wise.quote.parse_rate_expiration` catalog
+  code), `TargetAmountAllowed` (`bool`), and `User` (typed `UserID`, zero
+  for unauthenticated quotes). `pricingConfiguration` stays unparsed
+  (complex object, no consumer demand yet).
+
 ## [0.15.0] - 2026-10-17
 
 ### Added

@@ -564,15 +564,15 @@ func TestMapQuoteResidualWireFields(t *testing.T) {
 	t.Parallel()
 
 	wireQuote := raw.Quote{
-		ID:                            "quote-1",
-		SourceCurrency:                "EUR",
-		TargetCurrency:                "USD",
-		CreatedTime:                   "2023-01-15T10:30:00Z",
-		ExpirationTime:                "2023-01-15T11:00:00Z",
-		PreferredPayIn:                "IDEAL",
-		RateExpirationTime:            "2023-01-15T10:35:00Z",
-		TargetAmountAllowed:           true,
-		User:                          42,
+		ID:                  "quote-1",
+		SourceCurrency:      "EUR",
+		TargetCurrency:      "USD",
+		CreatedTime:         "2023-01-15T10:30:00Z",
+		ExpirationTime:      "2023-01-15T11:00:00Z",
+		PreferredPayIn:      "IDEAL",
+		RateExpirationTime:  "2023-01-15T10:35:00Z",
+		TargetAmountAllowed: true,
+		User:                42,
 	}
 
 	quote, err := mapQuote(wireQuote, ProfileID{})
