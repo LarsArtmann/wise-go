@@ -13,25 +13,30 @@ itself is a bank-sync-repo change. Point its error handling at the matching
 recipes in `docs/error-codes.md` and sweep its `errors.AsType`-only handling
 for the sentinel idioms (AGENTS.md carries the sweep guidance).
 
-[ ] Run the sandbox live-verification pass (`WISE_SANDBOX_API_KEY`) against the
-five spec-vs-live assumptions settled by the conformance work: statement
-`type` COMPACT/FLAT, `X-idempotence-uuid` on balance creation, statement
-`details.type` enum, `/v1/rates` array shape, text/plain funding errors.
-Source: docs/planning/archived/2026-09-16_16-54_pareto-plan-openapi-conformance-green.md, 2026-09-16.
+[x] ~~Run the sandbox live-verification pass (`WISE_SANDBOX_API_KEY`) against the
+five spec-vs-live assumptions settled by the conformance work~~ DONE
+2026-10-17: `/v1/rates` VERIFIED, funding-errors VERIFIED SDK-side,
+COMPACT/FLAT PARTIAL (server accepts both; content SCA-gated),
+`X-idempotence-uuid` PARTIAL (header accepted; sandbox locks balance creation
+entirely), `details.type` BLOCKED (same SCA gate). Evidence:
+`docs/status/2026-10-17_08-00_sandbox-lane-first-live-pass-ott-q4-flip-and-sca-automation.md`.
+Residuals 1+3 parked behind the sandbox SCA web login (single capped attempt
+per session).
 
 ## P2 — User-gated
 
-[ ] Add credentialed Wise sandbox integration tests — the workflow
-(`.github/workflows/sandbox-live.yml`, active, dispatch-gated) and test skeleton
-(`sandbox_live_test.go`) are key-drop-ready; only a first recorded run against
-`api.wise-sandbox.com` is missing, plus a CHANGELOG entry once a run succeeds.
-Skip path re-verified 2026-10-07 (no key → clean SKIP, suite green).
+[ ] Convert the sandbox lane's evidence into permanent key-gated live tests
+(`sandbox_live_test.go`): rates shape (current + historical), `GetOTTStatus`
+on 2026Q4 (raise via statement 403), funding-404 typing, SCA-challenge shape,
+and the CreateBalance sandbox-lock verdict. First credentialed run recorded
+2026-10-17 (see CHANGELOG); keyless skip path re-verified.
 Carried since `docs/status/archived/2026-08-08_05-15_wise-sandbox-integration-status.md`.
-**BLOCKED: needs a sandbox API key (`WISE_SANDBOX_API_KEY`) from the user.**
 
 [ ] Lock the public API at v1.0 — audit is green (re-audit + growth lineage in
 `docs/reviews/2026-08-21_v1.0-api-audit.md`, growth lineage maintained through
 the current 46-method surface); remaining: tag `v1.0.0`.
+User decision 2026-10-17: hold v1.0.0 — v0.16.0 (breaking allowed) ships the
+sandbox lane instead; revisit the tag once the v1 blockers in ROADMAP clear.
 **BLOCKED: needs the user's explicit approval (tagging is irreversible).**
 
 [ ] `RequestLog.RetryAfterDelay` API freeze — lock the delay-decision-entry shape

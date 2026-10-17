@@ -15,6 +15,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   code), `TargetAmountAllowed` (`bool`), and `User` (typed `UserID`, zero
   for unauthenticated quotes). `pricingConfiguration` stays unparsed
   (complex object, no consumer demand yet).
+- **First credentialed sandbox-live run recorded** (2026-10-17):
+  `TestSandboxLive` green against `api.wise-sandbox.com` — `GetMe`
+  (personal profile 200157260, "Franco Orozco"), `ListTransfers` (0
+  transfers), and the `GetTransfer` skip path. Credentialed runs are
+  key-gated (`WISE_SANDBOX_API_KEY`); keyless runs SKIP cleanly.
+- **Five spec-vs-live assumptions settled** by the same probe session
+  (evidence + procedure:
+  `docs/status/2026-10-17_08-00_sandbox-lane-first-live-pass-ott-q4-flip-and-sca-automation.md`):
+  `/v1/rates` array shape VERIFIED (current + historical pairs decode,
+  `Time` non-zero); funding-error handling VERIFIED SDK-side
+  (`FundTransfer` on a nonexistent transfer surfaces a typed 404); the
+  statement `type` COMPACT/FLAT contract PARTIAL (both values accepted by
+  the server; statement CONTENT is SCA-gated behind a SIGNATURE challenge
+  in sandbox); `X-idempotence-uuid` on balance creation PARTIAL (header
+  accepted, but sandbox locks balance creation entirely — 403
+  `non.existing.balance` on every profile/type combination); the
+  statement `details.type` enum BLOCKED (same SCA gate). Residuals for
+  the two SCA-gated assumptions are parked behind the sandbox web login.
+- **Two live-only wire shapes recorded** in `docs/error-codes.md`: Wise
+  also answers with a top-level-`code`-only error envelope
+  (`{"code":"non.existing.balance"}`, no `errors[]` array) —
+  `APIError.Message` renders the raw body there — and funding-404s arrive
+  as `application/json` (the spec's `text/plain` contract applies to
+  domain funding errors, not router 404s).
 
 ### Changed
 
