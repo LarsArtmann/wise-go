@@ -14,9 +14,9 @@ gh workflow enable ci
 
 Then push any non-docs commit to master (docs-only pushes are filtered by
 `paths-ignore`, and tag pushes do not trigger `on: push`). Expected first-run
-shape: 8 jobs fan out — `build-and-test`, `lint`, `govulncheck`, `erraudit`
+shape: 9 jobs fan out — `build-and-test`, `lint`, `govulncheck`, `erraudit`
 (warn), `art-dupl` (warn), `coverage-badge` (master push only), `nix`,
-`pin-sync`. Local pre-release exit 0 at the tag is the expectation baseline;
+`pin-sync`, and `fuzz-smoke` (3s per fuzz target, auto-discovered). Local pre-release exit 0 at the tag is the expectation baseline;
 the runbook below covers the CI-only failure classes.
 
 ## 2) Triage runbook (CI-only failure classes)
