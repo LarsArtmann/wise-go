@@ -795,8 +795,9 @@ func Example_errorMatchingSentinels() {
 }
 
 // Branch on any granular Wise wire code, including ones without a curated
-// sentinel: WiseErrorCode is an open enum and unknown wire values pass
-// through HasCode unmodified.
+// sentinel (here unexpected.error, on a 5xx): WiseErrorCode is an open enum,
+// HasCode is promoted onto every typed error, and the status drives which
+// type to extract.
 //
 //nolint:testableexamples // documentation-only; constructs a real client
 func ExampleAPIError_HasCode() {
@@ -811,18 +812,19 @@ func ExampleAPIError_HasCode() {
 		return
 	}
 
-	apiErr, ok := errors.AsType[*wise.APIError](err)
+	srv, ok := errors.AsType[*wise.ServerError](err)
 	if !ok {
 		return
 	}
 
-	if apiErr.HasCode(wise.WiseErrorCodeRateLimitExceeded) {
-		fmt.Println("throttled; back off, then retry")
+	if srv.HasCode(wise.WiseErrorCodeUnexpectedError) {
+		fmt.Println("wise-side failure; retry only while the error stays retryable")
 	}
 }
 
 // Read Wise's structured error envelope: one entry per wire error, each with
-// its granular code and Wise's own message.
+// its granular code and Wise's own message. Details is promoted onto every
+// typed error; the status decides which type to extract.
 //
 //nolint:testableexamples // documentation-only; constructs a real client
 func ExampleAPIError_Details() {
@@ -837,12 +839,12 @@ func ExampleAPIError_Details() {
 		return
 	}
 
-	apiErr, ok := errors.AsType[*wise.APIError](err)
+	nf, ok := errors.AsType[*wise.NotFoundError](err)
 	if !ok {
 		return
 	}
 
-	for _, detail := range apiErr.Details {
+	for _, detail := range nf.Details {
 		fmt.Printf("%s: %s\n", detail.Code, detail.Message)
 	}
 }

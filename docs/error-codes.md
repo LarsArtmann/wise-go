@@ -66,13 +66,14 @@ if errors.Is(err, wise.ErrResourceNotFound) {
     fmt.Println("gone; refresh before retrying")
 }
 
-// Any code (open enum):
-if apiErr, ok := errors.AsType[*wise.APIError](err); ok {
-    if apiErr.HasCode(wise.WiseErrorCodeNotValid) {
+// Any code (open enum). Status drives the type — a 400 is *BadRequestError —
+// and HasCode/Details are promoted onto every typed error:
+if br, ok := errors.AsType[*wise.BadRequestError](err); ok {
+    if br.HasCode(wise.WiseErrorCodeNotValid) {
         fmt.Println("do not retry; fix the request")
     }
 
-    for _, detail := range apiErr.Details {
+    for _, detail := range br.Details {
         fmt.Printf("%s: %s\n", detail.Code, detail.Message)
     }
 }

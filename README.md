@@ -881,7 +881,9 @@ Three matchers, one decision tree:
    the match.
 3. **Any other granular code?** (the open enum — Wise adds codes over time) —
    read the structured details with `APIError.Details` or branch with
-   `APIError.HasCode`.
+   `APIError.HasCode`. Both are promoted onto **every** typed error, so
+   extract the type your HTTP status maps to (table above) and call them
+   there.
 
 ```go
 transfers, err := client.ListTransfers(ctx, listReq)
@@ -893,13 +895,15 @@ if err != nil {
         fmt.Println("resource gone; refresh before retrying")
     }
 
-    // Any code (curated or not) branches on the structured details:
-    if apiErr, ok := errors.AsType[*wise.APIError](err); ok {
-        for _, detail := range apiErr.Details {
+    // Any code (curated or not) branches on the structured details. The
+    // status drives the type — here a 400 is *BadRequestError — and
+    // HasCode/Details are promoted onto every typed error:
+    if br, ok := errors.AsType[*wise.BadRequestError](err); ok {
+        for _, detail := range br.Details {
             fmt.Printf("wise says %q: %s\n", detail.Code, detail.Message)
         }
 
-        if apiErr.HasCode(wise.WiseErrorCodeNotValid) {
+        if br.HasCode(wise.WiseErrorCodeNotValid) {
             fmt.Println("wise rejected a value as not valid; do not retry")
         }
     }

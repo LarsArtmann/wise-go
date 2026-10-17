@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-10-17
+
 ### Added
 
 - **Structured error surface** (`errors.go`): non-2xx responses no longer
@@ -93,6 +95,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   check when fewer than 40 resolved endpoints are extracted (the silent
   call-shape/regex-rot class), and the flake app sets
   `PYTHONDONTWRITEBYTECODE=1`.
+
+### Breaking changes and migration
+
+The breaking surface is the error hierarchy only — no endpoint, method
+signature, or type anywhere else changed. All three rows have mechanical
+migrations:
+
+| v0.14.0                      | v0.15.0                                                                                                                                              | Migration                                                                                                                                                                                                                                     |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| HTTP 400s surfaced as bare `*APIError` | 400s surface as `*BadRequestError` (`wise.bad_request`, Rejection family, non-retryable)                                                   | Change `errors.AsType[*wise.APIError]` to `errors.AsType[*wise.BadRequestError]`. The promoted surface is identical (`StatusCode`, `Message`, `Body`, `Headers`, `Details`, `HasCode`, `ErrorContext`), so the handler body does not change.   |
+| Granular 400 reason codes were only visible by parsing the raw body    | Wise's structured envelope is retained in `APIError.Details` (`[]WiseErrorDetail{Code WiseErrorCode, Message string}`, wire order; `Message` byte-identical to before) | Delete manual body-JSON parsing; read `Details` (or the unchanged `Message`). The first granular code also lands in `ErrorContext()` as `wise_code` for log pipelines.                                                                        |
+| Branching on a wire code meant extracting a type first                 | 11 curated wave-1 codes match by value: `errors.Is(err, wise.ErrX)` works through any `fmt.Errorf("%w")` wrap chain and through every typed subtype    | Replace message/substring matching with the sentinels (`ErrNotValid`, `ErrInvalidValue`, `ErrParameterMissing`, `ErrParameterInvalid`, `ErrInvalidRequest`, `ErrUnauthorized`, `ErrForbidden`, `ErrResourceNotFound`, `ErrOperationNotSupported`, `ErrRateLimitExceeded`, `ErrSystemError`); codes without a sentinel go through `HasCode` on the extracted type. |
+
+```go
+// Before (v0.14.0): a 400 arrived here.
+if apiErr, ok := errors.AsType[*wise.APIError](err); ok {
+    fmt.Println(apiErr.StatusCode)
+}
+
+// After (v0.15.0): 400s are a distinct type; the promoted surface is the same.
+if br, ok := errors.AsType[*wise.BadRequestError](err); ok {
+    fmt.Println(br.StatusCode, br.Details)
+}
+
+// Curated wire codes match by value, wrap-proof — preferred where one exists:
+if errors.Is(err, wise.ErrNotValid) {
+    fmt.Println("wise rejected a value; fix the request, do not retry")
+}
+```
+
+Unchanged: every other status's type (`AuthError`, `NotFoundError`,
+`RateLimitError`, `ServerError`, `SCAChallengeError`, bare `*APIError` for
+the remaining statuses), all endpoint signatures, and the flattened
+`Message` byte-for-byte. Reference: `docs/error-codes.md` and the README
+error-handling decision tree.
 
 ## [0.14.0] - 2026-10-16
 
