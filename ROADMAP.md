@@ -11,21 +11,23 @@ library that is obviously correct, obviously typed, and obviously safe to depend
 Every monetary amount is `Money` (cents paired with `Currency`). Every entity ID is
 branded. Every error is typed and classifiable. Every API call retries intelligently.
 
-As of 2026-10-16 (v0.13.0 + a staged v0.14.0), the type-safety redesign is
+As of 2026-10-17 (v0.14.0 shipped; the structured error surface staged in
+`[Unreleased]`), the type-safety redesign is
 complete, the core transfer flow — and with it the whole transfer category —
 is live END TO END (quotes, recipients, transfers, funding, delivery
 estimates, transfer-requirements and account-requirements validation,
-exchange rates, payments-list/receipts/US receipt/NOC),
+exchange rates, payments-list/receipts/US receipt/NOC, third-party
+(originator) transfers),
 the tier-2 surface shipped: users, statement files in all six formats, webhook
 signature verification, balance lifecycle (create/direct-get/total-funds),
 Multi-Currency Account + bank details (on Wise's 2027Q1 surface), and
-currency reference data — 44
-`*Client` methods across 16 resources, plus webhook subscriptions with typed
+currency reference data — 46
+`*Client` methods across 17 resources, plus webhook subscriptions with typed
 event decoding, programmatic SCA challenge clearing (one-time-token endpoints,
 every OTT-taking surface typed via `OneTimeToken`), a spec-drift gate against
 the live OpenAPI bundle, and
 observability (WithLogger, per-request correlation IDs) under the
-existing retry/error architecture. v0.9.0 through v0.13.0
+existing retry/error architecture. v0.9.0 through v0.14.0
 have shipped; the v1.0 audit (`docs/reviews/2026-08-21_v1.0-api-audit.md`) found
 nothing blocking the tag (re-audited 2026-09-13; the v0.11.0 OTT additions are
 covered by the audit's growth-lineage note). The roadmap expands the surface
@@ -36,8 +38,8 @@ preserving the architectural decisions that make the codebase maintainable.
 
 Today: tiers 1 and 2 of
 `docs/planning/2026-08-19_wise-api-full-implementation-plan.md` are complete,
-and the transfer category is complete end to end — 44 `*Client` methods
-across 16 resources. The core transfer flow is live: quotes (including
+and the transfer category is complete end to end — 46 `*Client` methods
+across 17 resources. The core transfer flow is live: quotes (including
 account requirements and the two-pass refresh), recipients, transfers
 (including receipts, US combined receipt, NOC documents, payments-list and
 MT103 payout info), funding, delivery estimates, exchange rates,
@@ -92,10 +94,12 @@ that clear challenges programmatically, and `GetBankAccountDetails` on the
 
 **Release state:** shipped as **v0.9.0** (2026-08-21), **v0.10.0**
 (2026-09-13), **v0.11.0** (2026-09-14), **v0.12.0** and **v0.13.0**
-(2026-10-07; tags on origin and served by the module proxy, GitHub Release
-objects published 2026-10-07). A v0.14.0 carrying the breaking
+(2026-10-07), and **v0.14.0** (2026-10-16; tags on origin and served by the
+module proxy, GitHub Release objects published). v0.14.0 carried the breaking
 `OneTimeToken`/`OTTAction` typing, the 2027Q1 account-details migration, and
-the three completed transfer-category endpoints is staged in `[Unreleased]`.
+the transfer-category completion (payments list, US combined receipt, NOC,
+originator transfers); the structured error surface (sentinels,
+`BadRequestError`, central catalog) is staged in `[Unreleased]`.
 The v1.0 audit is
 green and re-audited 2026-09-13 at the 33-method surface
 (`docs/reviews/2026-08-21_v1.0-api-audit.md` — refreshed inventory, godoc pass,
@@ -152,7 +156,7 @@ full analysis lives at `docs/brainstorming/2026-07-18_data-model-review.html`.
 - **CI hardening** — `nix flake check` no longer skips the build; gofumpt format
   check added to the lint job.
 
-### Shipped (unreleased, 2026-10-16)
+### Shipped in v0.14.0 (2026-10-16)
 
 - **`OneTimeToken` typed credential + `OTTAction` open enum** — every
   OTT-taking surface (`GetOTTStatus`, `TriggerOTT`, `VerifyOTT`,
@@ -229,10 +233,11 @@ is clear.
 
 ### Trigger: resource count crosses ~6–8 — REACHED
 
-The SDK now has 16 resources (profiles, users, balances, multi-currency account,
-bank details, transactions/statements, transfers/receipts, funding, quotes,
+The SDK now has 17 resources (profiles, users, balances, multi-currency account,
+bank details, transactions/statements, transfers/receipts,
+third-party transfers, funding, quotes,
 recipients, exchange rates, delivery estimates, transfer requirements,
-currencies, webhooks, SCA one-time tokens) and 41 `*Client` methods on the flat
+currencies, webhooks, SCA one-time tokens) and 46 `*Client` methods on the flat
 `client.X` surface — the core
 flow including `FundTransfer` is complete (2026-08-21). The threshold documented
 here
@@ -293,6 +298,11 @@ scheduled work:
 - **Default `User-Agent` from `wise.Version`** — or a `Client.Version()` accessor; consumers currently identify via `WithUserAgent` only.
 - **Upstream BuildFlow proposals** — a fleet-wide pin-sync step and rev-aware gomod-check warnings on `go.mod` changes.
 - **crush-config lessons** — pipe-masking as fleet lesson; "`ps` for live buildflow before running gates in daemon-managed repos"; the compile-the-snippet-you-ship rule as a fleet checklist item.
+- **Consumer-guidance README notes (twelve-factor review residue)** — retry-composition guidance (consumer retries multiplying SDK retries) and a transport-redaction note for injected `WithHTTPClient` middleware.
+- **`Quote` residual wire fields** — `rateExpirationTime`, `targetAmountAllowed`, `user` (parse when a consumer needs them).
+- **Property tests for `Money` cents conversion** — fuzz/table coverage over the `toMoney` boundary.
+- **CI fuzz smoke job** — 30s run of the four fuzz targets once CI is enabled.
+- **Repo polish** — `.github/ISSUE_TEMPLATE/config.yml` (blank-issues toggle + discussions link); a session-claim convention for parallel Crush sessions (2026-10-16 22:44 §g3).
 
 ## Release strategy
 
@@ -305,7 +315,10 @@ scheduled work:
   events, and SCA one-time-token endpoints; v0.12.0 the OpenAPI conformance
   gate, spec-native statement types, branded idempotency keys, and the
   go-retry executor; v0.13.0 the Retry-After delay-entry log, pin-sync gate,
-  and the one-command pre-release chain.
+  and the one-command pre-release chain; v0.14.0 the typed
+  `OneTimeToken`/`OTTAction` credentials, the 2027Q1 account-details
+  migration, and the transfer-category completion (originator transfers,
+  payments list, US combined receipt, NOC).
 - **v1.0** — public API freeze. After v1.0, breaking changes require v2 and a
   deliberate migration path.
 

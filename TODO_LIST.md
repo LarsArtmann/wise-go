@@ -7,43 +7,11 @@ Completed work lives in [CHANGELOG.md](CHANGELOG.md), never here.
 
 ## P1 — Release readiness
 
-[x] Error-system excellence epic — EXECUTED 2026-10-16 (same evening; errata in
-the plan's "Execution errata" section)
-`docs/planning/2026-10-16_22-29_SUPERB-pareto-plan-error-system-excellence.md`
-(25 medium / ~108 fine tasks). Shipped: `APIError.Details` structured envelope
-(no longer discarded by `newAPIError`), `WiseErrorCode` open enum (14 census
-codes), 11 wave-1 `errors.Is` code-sentinels via `APIError.Is` + `HasCode`,
-`BadRequestError` (ROADMAP 400 idea resolved), mapping-matrix tests,
-`wise_code` context key, README decision-tree guide, compile-verified snippets
-(master green; ≤v0.14.0 absent by design), `docs/error-codes.md`, envelope
-fuzzing (1.75M execs clean), conformance armed-vs-vacuous boundary test,
-bank-sync matching recipe, no-regression audit. Wave-2 sentinels and Ginkgo
-consolidation DECIDED (declined/skip; recorded in the errata). Builds on the
-2026-10-16 central catalog (58 named codes + 15 sentinels now); declined
-dispositions stay declined.
-
-[ ] Execute the remaining SUPERB Pareto plan items — sequenced by
-`docs/planning/2026-10-16_21-45_SUPERB-v0.14-release-close-ci-resurrection-and-gate-hardening.md`.
-Of the 19:45 plan: M1/M2/M3/M5/M6/M7/M8/M9/M10/M15 ALL shipped 2026-10-16
-(typed webhook payloads + originator transfers landed 21:16-21:44;
-46-method surface, count claims synced `41b09dc`; art-dupl CI job
-scaffolded `cb7b271`). M12 SCA/OTP README matrix landed too (`703d80a`).
-Remaining: M4 live smoke (user key), M13 remainder (2027Q1 path triage → plan
-task M10), M14 smoke-harness decision (plan task M18), plus the v0.14.0
-release close (plan tasks M1-M3) and CI resurrection (plan task M4).
-Source: transfer-category re-audit
-`docs/reviews/2026-10-16_transfer-category-reaudit.md` (annotated 2026-10-16:
-deposit-details pay-in already DEMAND_GATED; the re-audit's "banking-partner
-invoice" row was a false gap — it IS `GetTransferPayoutInfo`).
-
-[ ] Cut v0.14.0 — staged in `[Unreleased]` (breaking `OneTimeToken`/`OTTAction`
-typing, 2027Q1 account-details migration, transfer-category completion,
-spec-drift gate, three new endpoints): `nix run .#pre-release`, tag,
-`gh release create`, proxy + `go get` verification, apidiff vs v0.13.0
-re-check. Consider scratch-verifying bank-sync compiles against master
-(replace/GOWORK) BEFORE the tag — the 21:09 session asserted the
-challenge→clear→replay flow compiles unchanged by reasoning only.
-Source: `docs/status/2026-10-16_21-09_cross-repo-wise-go-audit-sca-typing-session.md` §f13/§f14.
+[ ] Cut v0.15.0 — the structured error surface staged in `[Unreleased]` is
+breaking (HTTP 400 now surfaces `*BadRequestError`; `APIError.Details` is new
+public surface; 11 code-sentinels). Run `nix run .#pre-release`, cut release
+notes, and point bank-sync at the matching recipe in `docs/error-codes.md`
+when it bumps its pin (AGENTS.md carries the sweep guidance).
 
 [ ] Run the sandbox live-verification pass (`WISE_SANDBOX_API_KEY`) against the
 five spec-vs-live assumptions settled by the conformance work: statement
@@ -70,7 +38,7 @@ Carried since `docs/status/archived/2026-08-08_05-15_wise-sandbox-integration-st
 
 [ ] Lock the public API at v1.0 — audit is green (re-audit + growth lineage in
 `docs/reviews/2026-08-21_v1.0-api-audit.md`, growth lineage maintained through
-the current 44-method surface); remaining: tag `v1.0.0`.
+the current 46-method surface); remaining: tag `v1.0.0`.
 **BLOCKED: needs the user's explicit approval (tagging is irreversible).**
 
 [ ] `RequestLog.RetryAfterDelay` API freeze — lock the delay-decision-entry shape
@@ -120,53 +88,15 @@ lands in nixpkgs-unstable (lock pulled to 1.26.8 on 2026-10-17) — clears
 all 9 govulncheck stdlib vulns (GO-2026-6603..6617, fixed in 1.26.9) and
 shrinks the vulnix advisory set; then re-verify vendor FOD hashes and the
 full buildflow run (govulncheck/vulnix are the ONLY remaining
-warning-class findings). Track BuildFlow #66/#67 and branching-flow
-#15/#16 for the consumer-side cleanups. Source:
+warning-class findings). Track BuildFlow #66/#67 and the branching-flow
+#15/#16 consumer-side cleanups. Source:
 `docs/status/2026-10-17_01-43_buildflow-warning-surface-zero-and-gate-repair-status.md` §b1/§f.
 
-[ ] Harden `spec_drift.py` — REMAINDER: triage the 16 added 2027Q1
-paths into the FEATURES.md matrix (payment-instruments, settlement/
-allocations, saml2, simulation/*, gpi-tracking, cases/files, login/saml2/sso,
-plus the `/auth/jose/playground/jwsjwe` method change). Longer arc: rewrite
-the regex extractor on stdlib `go/parser` (kills the call-shape-bug class).
-DONE 2026-10-16: extraction-floor guard (fail below 40 resolved endpoints,
-negative-tested at 44) and `PYTHONDONTWRITEBYTECODE=1` in the flake app
-(recorded in CHANGELOG). Source: `docs/status/2026-10-16_19-48_wise-api-spec-drift-check-session.md` §f.
-DONE 2026-10-16 (remainder): the 2027Q1 triage is IN FEATURES (Bank account
-details + Multi-currency account sections, FULLY_FUNCTIONAL/PLANNED/DEMAND_GATED);
-spec-drift reports 43 unique endpoints, 0 drift against 2027Q1. Remaining for a
-future session: only the `go/parser` extractor rewrite. ~~~Triage the 16 added
-2027Q1 paths~~~ (verified against FEATURES.md 2026-10-16 late).
-
-[ ] ~~Persist negative-scenario tests for the two Python gates
-(`scripts/pin_sync.py`, `scripts/spec_drift.py`) — crafted stale-pin /
-removed-path / broken-JSON fixtures wired into flake checks; both scripts are
-currently verified by manual gauntlets only.~~ DONE 2026-10-16:
-`checks.script-fixtures` (in `nix flake check`) runs
-`scripts/negative_fixtures.py` — 9/9 cases (pin-sync: ok/stale-lock/
-tag-mismatch/missing-input/unpinned; spec-drift: broken-JSON/missing-endpoint/
---fail-on-drift/warn-only), each asserted on exit code AND output substring,
-hermetic. pin-sync fixtures are generated into a tempdir because committed
-fixture go.mod files trip buildflow's go-mod-tidy detection.
-
-[ ] ~~Cut a fresh benchstat baseline at the next release tag — the committed
-one predates `BenchmarkParseWiseTimestamp` and ends with a junk
-`exit status 1` line (benchstat tolerates both; append-only forbids editing).~~
-DONE 2026-10-16: `docs/bench/2026-10-16_v0140_baseline.txt` cut at the v0.14.0
-tag (six captures) + README table row.
-
-[ ] ~~File the two BuildFlow display defects upstream after a
-verify-before-filing pass: (a) "9 tools unavailable" persists after installing
-the tools and purging the result cache while `buildflow doctor` passes them;
-(b) the findings counter reports rendered output lines, not findings (27
-"statix warnings" where `statix check .` shows 2).~~ DONE 2026-10-16, with
-corrected diagnoses: (a) the 9 are language-INAPPLICABLE tools (jest/vitest/
-interrogate in a Go-only repo), not installed-but-unavailable tools —
-[BuildFlow #65](https://github.com/LarsArtmann/BuildFlow/issues/65);
-(b) root-caused to `FindingsFromOutput`'s line-per-finding fallback parsing
-statix's multi-line render —
-[BuildFlow #64](https://github.com/LarsArtmann/BuildFlow/issues/64).
-Source: 2026-10-11 19:20 session §f2; repro evidence 2026-10-16 23:06 run.
+[ ] Rewrite the `spec_drift.py` extractor on stdlib `go/parser` — kills the
+call-shape-bug class (the regex extractor already needed a manual fix for the
+`c.request` method-variable indirection). The extraction-floor guard and the
+2027Q1 FEATURES triage shipped 2026-10-16 (CHANGELOG). Source:
+`docs/status/2026-10-16_19-48_wise-api-spec-drift-check-session.md` §f.
 
 [ ] Continue the AGENTS.md prune — 2026-10-16 pass moved the five worst
 incident narratives to `docs/reviews/2026-10-16_agents-incident-narratives.md`
@@ -176,14 +106,24 @@ bullets; do it bullet-by-bullet with the carry-every-concept rule, not in bulk.
 Source: 21:45 plan M24/T87.
 
 [ ] Consume the committed `benchstat` baseline
-(`docs/bench/2026-10-07_v0120_baseline.txt`) in the next perf-touching PR.
-Note: the README rerun commands are now execution-verified (six separate
+(`docs/bench/2026-10-16_v0140_baseline.txt`) in the next perf-touching PR.
+Note: the README rerun commands are execution-verified (six separate
 `-count 1` invocations; Ginkgo bans `-count>1`), and benchstat is NOT in the
 devShell — install with `go install golang.org/x/perf/cmd/benchstat@latest`.
 
+[ ] Buildflow/infra micro-batch (01-55 warning-zero session §f): full-diff
+`.golangci.yml` against the pre-`ce52551` state (confirm only `lll` + the
+exclusions rule were lost); verify + file the md-go-validator nested-fence
+extraction defect upstream; comment the bandit/pytest line-fallback
+reproductions on BuildFlow #64; delete the migrated
+`~/.cache/buildflow/buildflow.db` once a fresh run confirms it is no longer
+read; disposition the lingering `interrogate` WARN (install to devShell or
+exclude). Source:
+`docs/status/2026-10-17_01-55_buildflow-warning-zero-full-session-status.md`.
+
 ### Decisions (P3)
 
-[ ] `Health` code-half — after (or with) the docs fix above, decide: keep
+[ ] `Health` code-half — decide: keep
 `Health` as the retried readiness probe as-is, give it a fail-fast path
 (`MaxAttempts=1`-style, health probes should not spend ~2 min in the retry
 executor), and/or add a `VerifyCredentials` alias if any consumer depends on
@@ -223,6 +163,13 @@ Recommendation + options written: `docs/planning/2026-10-16_decision-memos.md` D
 Source: `docs/status/2026-10-07_08-22_v0.13.0-release-pin-sync-drift-discovery-status.md` §g1.
 **BLOCKED: user decision.**
 
+[ ] `BUILDFLOW_NO_RESULT_CACHE=1` standing default — make the result-cache
+bypass the standing buildflow invocation shape until BuildFlow #67 fixes the
+cache scoping (the 01-55 session measured ~0% hit rate, so the cost is
+near-zero), or keep it opt-in for parallel-session nights.
+**BLOCKED: user decision.** Source:
+`docs/status/2026-10-17_01-55_buildflow-warning-zero-full-session-status.md` §g3.
+
 [ ] `nix flake check --all-systems` — verified 2026-10-07: aarch64-linux and
 aarch64-darwin evaluate clean; x86_64-darwin FAILS EXTERNALLY (nixpkgs-26.11
 dropped that system, not a flake bug). Decide: pin a nixpkgs-26.05-darwin
@@ -231,9 +178,11 @@ input for darwin checks, or drop x86_64-darwin from the check matrix.
 `docs/planning/2026-10-16_decision-memos.md` D5 (drop x86_64-darwin;
 reversible one-liner if a consumer appears) — also ask #7 in
 `docs/planning/2026-10-16_open-user-asks.md`.
+
+[ ] Go 1.27 toolchain migration — execute
 `docs/planning/2026-10-07_go-1.27-migration-plan.md` (4 unlock conditions,
-single-commit flip/rollback). Condition-1 probe 2026-10-07: `nix eval
-nixpkgs#go.version` = 1.26.8 → not met. Execution is blocked on those
-conditions (nixpkgs stable 1.27, in-house deps verified on 1.27, erraudit local install,
-buildflow skip_steps removal). Source:
+single-commit flip/rollback) when its conditions hold. Latest probe:
+nixpkgs lock at go 1.26.8 (2026-10-17) → condition 1 not met. Blocked on:
+nixpkgs stable 1.27, in-house deps verified on 1.27, erraudit local install,
+buildflow skip_steps removal. Source:
 `docs/status/2026-10-07_03-45_buildflow-red-to-green-repair-status.md` §g1.
