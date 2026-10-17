@@ -5,6 +5,7 @@ import (
 	"encoding/json/v2"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -52,10 +53,23 @@ func fetchByID[T any, B any, V comparable](
 // toMoney converts a raw BalanceAmount to a validated Money value.
 // A malformed amount is permanent response corruption, never a retryable
 // failure, so the error is classified as Corruption.
+// maxRepresentableUnits keeps value*100 within int64 cent range; a larger
+// magnitude has no defined float-to-int conversion and would silently map to
+// garbage cents, so it is corruption at the boundary instead.
+const maxRepresentableUnits = 9.2e16
+
 func toMoney(a raw.BalanceAmount) (Money, error) {
 	currency, err := NewCurrency(a.Currency)
 	if err != nil {
 		return Money{}, errorfamily.WrapCorruption(err, errorCodeMoneyParse, fmt.Sprintf("currency %q", a.Currency))
+	}
+
+	if math.IsNaN(a.Value) || math.Abs(a.Value) > maxRepresentableUnits {
+		return Money{}, errorfamily.WrapCorruption(
+			fmt.Errorf("amount %v is outside the representable cent range", a.Value),
+			errorCodeMoneyParse,
+			fmt.Sprintf("amount %v %q", a.Value, a.Currency),
+		)
 	}
 
 	return Money{Cents: a.Cents(), Currency: currency}, nil

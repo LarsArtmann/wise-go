@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go/internal/raw"
 )
 
@@ -536,4 +537,116 @@ func FuzzNewCurrency(f *testing.F) {
 			t.Fatalf("NewCurrency(%q) = %q, want the input verbatim", s, got)
 		}
 	})
+}
+
+func validWiseCurrency(s string) bool {
+	if len(s) != 3 {
+		return false
+	}
+
+	for i := 0; i < 3; i++ {
+		if s[i] < 'A' || s[i] > 'Z' {
+			return false
+		}
+	}
+
+	return true
+}
+
+func FuzzToMoney(f *testing.F) {
+	f.Add(12.34, "EUR")
+	f.Add(0.0, "USD")
+	f.Add(-5.55, "GBP")
+	f.Add(1e15, "JPY")
+	f.Add(0.005, "eur")
+	f.Add(1.0, "")
+	f.Add(1.0, "EURO")
+	f.Add(1.0, "EU1")
+	f.Add(math.MaxFloat64/1e10, "USD")
+	f.Add(math.NaN(), "USD")
+	f.Add(math.Inf(-1), "USD")
+
+	f.Fuzz(func(t *testing.T, value float64, currency string) {
+		money, err := toMoney(raw.BalanceAmount{Value: value, Currency: currency})
+
+		if !validWiseCurrency(currency) {
+			if err == nil {
+				t.Fatalf("toMoney(%v, %q) = %+v, want currency error", value, currency, money)
+			}
+
+			return
+		}
+
+		nonRepresentable := math.IsNaN(value) || math.IsInf(value, 0) || math.Abs(value) > 9.2e16
+		if nonRepresentable {
+			if err == nil {
+				t.Fatalf("toMoney(%v, %q) = %+v, want corruption for a non-representable amount", value, currency, money)
+			}
+
+			return
+		}
+
+		if err != nil {
+			t.Fatalf("toMoney(%v, %q) unexpected error: %v", value, currency, err)
+		}
+
+		if string(money.Currency) != currency {
+			t.Errorf("Currency = %q, want %q", money.Currency, currency)
+		}
+
+		if money.Cents != int64(math.Round(value*100)) {
+			t.Errorf("Cents = %d, want %d (round-half-away-from-zero contract)", money.Cents, int64(math.Round(value*100)))
+		}
+
+		if (value > 0 && money.Cents < 0) || (value < 0 && money.Cents > 0) {
+			t.Errorf("sign not preserved: value %v mapped to %d cents", value, money.Cents)
+		}
+	})
+}
+
+func TestToMoneyNonRepresentableAmountIsCorruption(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		value float64
+	}{
+		{name: "NaN", value: math.NaN()},
+		{name: "positive infinity", value: math.Inf(1)},
+		{name: "negative infinity", value: math.Inf(-1)},
+		{name: "beyond int64 cents", value: 1e300},
+		{name: "just past the guard", value: 9.3e16},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			money, err := toMoney(raw.BalanceAmount{Value: tt.value, Currency: "EUR"})
+			if err == nil {
+				t.Fatalf("toMoney(%v) = %+v, want error", tt.value, money)
+			}
+
+			if family := errorfamily.Classify(err); family != errorfamily.Corruption {
+				t.Errorf("Classify() = %v, want Corruption (error: %v)", family, err)
+			}
+		})
+	}
+}
+
+func TestMoneyCentsRoundTripProperty(t *testing.T) {
+	t.Parallel()
+
+	for cents := int64(-1_000_000_000); cents <= 1_000_000_000; cents += 977 {
+		value := float64(cents) / 100
+
+		money, err := toMoney(raw.BalanceAmount{Value: value, Currency: "EUR"})
+		if err != nil {
+			t.Fatalf("toMoney(%v) unexpected error: %v", value, err)
+		}
+
+		if money.Cents != cents {
+			t.Fatalf("cents round-trip broke at %d: value %v mapped back to %d", cents, value, money.Cents)
+		}
+	}
 }
