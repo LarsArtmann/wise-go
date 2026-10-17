@@ -7,14 +7,14 @@
 > security-window checklist pre-staged, D6 memo written, doc-truth synced,
 > 25-group art-dupl baseline recorded, bench baseline cut (geomean −1.85%),
 > extractor rewritten on go/parser (parity-equal, 43 endpoints), Quote fields
-> + money-boundary guard landed (the fuzz found a real bug), fuzz-smoke CI
-> job spec'd, issue templates configured, M15 part 1 (57→47.4 KB), M22
-> banner-grade, D5 applied (`--all-systems` exit 0), v1.0 lineage refreshed
-> (tag still user-gated). User-gated remainders: CI enable, sandbox key,
-> decisions D2–D6, v1.0.0 tag, §g rulings (M22 resolved conservatively).
-> M15 second pass to <30 KB stays open in TODO_LIST. M9 window still closed
-> (nixpkgs at 1.26.8).
-
+>
+> - money-boundary guard landed (the fuzz found a real bug), fuzz-smoke CI
+>   job spec'd, issue templates configured, M15 part 1 (57→47.4 KB), M22
+>   banner-grade, D5 applied (`--all-systems` exit 0), v1.0 lineage refreshed
+>   (tag still user-gated). User-gated remainders: CI enable, sandbox key,
+>   decisions D2–D6, v1.0.0 tag, §g rulings (M22 resolved conservatively).
+>   M15 second pass to <30 KB stays open in TODO_LIST. M9 window still closed
+>   (nixpkgs at 1.26.8).
 
 **Date:** 2026-10-17 03:40 CEST
 **Planner:** docs-health-verified backlog + pareto-planning skill (user's `.md`+mermaid format instruction wins over the skill's HTML default — flagged per the override rule)
