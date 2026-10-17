@@ -14,7 +14,8 @@
 > gap map cited from AGENTS.md — keep it in place.
 >
 > **Surface update (2026-10-17):** the shipped surface now stands at
-> **46 `*Client` methods across 17 resources** (v0.14.0): the transfer
+> **46 `*Client` methods across 17 resources** (v0.15.0, unchanged method
+> count — v0.15.0 shipped the structured error surface, no new endpoints): the transfer
 > paperwork trio (payments list, US combined receipt, NOC) and the
 > third-party (originator) create/get pair landed, and bank details moved to
 > Wise's 2027Q1 `GET /balances/account-details/{id}` surface. The routed
@@ -224,3 +225,13 @@ Previous endpoint-based versions remain available.
 11. **mTLS support** — `api-mtls.wise.com` / `api-mtls.wise-sandbox.com` endpoints
 12. **OAuth token endpoint** — consolidated auth (Mar 2026)
 13. **Global API versioning** — `2026Q4` header support when it becomes required
+
+---
+
+**Archive-grade disposition (2026-10-17, v0.15.0 train M22):** banner-grade
+RE-AFFIRMED. This file stays live as the canonical gap map cited from
+AGENTS.md; the banner above is the single refreshed surface, per-row tier
+strikes add no information beyond it, and the open routed work is tracked
+where it is acted on (FEATURES.md matrix, TODO_LIST, ROADMAP). Re-open the
+archive-grade question only when the banner alone can no longer carry the
+truth.

@@ -2,9 +2,9 @@
 
 **Date:** 2026-08-19
 **Source:** [docs.wise.com/api-reference](https://docs.wise.com/api-reference)
-**Current SDK version:** v0.7.0 (plan baseline; SDK is now v0.12.0)
+**Current SDK version:** v0.7.0 (plan baseline; SDK is now v0.15.0)
 
-> **Update (2026-10-17 docs-health pass):** tier 1 is fully shipped — ~~row 5 (`GetQuoteAccountRequirements`, still PLANNED)~~ shipped in v0.9.0 (struck in the table below). Tier 2 shipped except row 23 (`/v1/comparisons`, still PLANNED). The SDK is now **v0.14.0** with **46 `*Client` methods across 17 resources** — the transfer category completed 2026-10-16 (payments list, US combined receipt, NOC) plus third-party (originator) transfers, and bank details migrated to Wise's 2027Q1 `GET /balances/account-details/{id}` surface. The full per-endpoint coverage matrix lives in `FEATURES.md`, and open tier-2/3/4 work is tracked in `TODO_LIST.md` (bounded tasks) and `ROADMAP.md` (strategy). Earlier banner: ~~the SDK is now v0.12.0 with 41 methods~~ (2026-10-07); ~~v0.8.1, tier-1 fully shipped except row 5~~ (2026-08-21).
+> **Update (2026-10-17 docs-health pass):** tier 1 is fully shipped — ~~row 5 (`GetQuoteAccountRequirements`, still PLANNED)~~ shipped in v0.9.0 (struck in the table below). Tier 2 shipped except row 23 (`/v1/comparisons`, still PLANNED). The SDK is now **v0.15.0** with **46 `*Client` methods across 17 resources** (v0.15.0 shipped the structured error surface, no endpoint changes) — the transfer category completed 2026-10-16 (payments list, US combined receipt, NOC) plus third-party (originator) transfers, and bank details migrated to Wise's 2027Q1 `GET /balances/account-details/{id}` surface. The full per-endpoint coverage matrix lives in `FEATURES.md`, and open tier-2/3/4 work is tracked in `TODO_LIST.md` (bounded tasks) and `ROADMAP.md` (strategy). Earlier banner: ~~the SDK is now v0.12.0 with 41 methods~~ (2026-10-07); ~~v0.8.1, tier-1 fully shipped except row 5~~ (2026-08-21).
 
 ---
 
@@ -204,3 +204,12 @@ The following are documented but deliberately excluded from the initial implemen
 - PCI-sensitive card details.
 - Partner support cases.
 - Sandbox simulation endpoints (testing-only).
+
+---
+
+**Archive-grade disposition (2026-10-17, v0.15.0 train M22):** banner-grade
+RE-AFFIRMED. The tier tables are historical planning artifacts whose live
+truth (shipped/planned/routed per endpoint) is maintained in FEATURES.md,
+TODO_LIST.md, and ROADMAP.md; per-row strikes here would duplicate that
+maintenance. This file stays live with its refreshed banner until the tier
+framework itself is retired.
