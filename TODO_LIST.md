@@ -7,11 +7,14 @@ Completed work lives in [CHANGELOG.md](CHANGELOG.md), never here.
 
 ## P1 — Release readiness
 
-[ ] Bump bank-sync's wise-go pin to v0.15.0 — bank-sync compiles UNMODIFIED
-against the v0.15.0 tree (replace-compile verified 2026-10-17); the pin bump
-itself is a bank-sync-repo change. Point its error handling at the matching
-recipes in `docs/error-codes.md` and sweep its `errors.AsType`-only handling
-for the sentinel idioms (AGENTS.md carries the sweep guidance).
+[x] ~~Bump bank-sync's wise-go pin to v0.15.0~~ DONE 2026-10-17 (as v0.16.0,
+skipping the intermediate): go.mod + flake input/lock + vendorHash dance +
+check-dep-alignment green; SCA mock paths flipped Q3→Q4 with the SDK;
+sentinel-sweep verdict recorded in bank-sync AGENTS/07 (keep AsType at all
+four sites — sentinels would narrow router-404 handling). Committed locally;
+bank-sync push stays user-gated. Parallel-session note: internal/server was
+mid-refactor (default_selection) during the bump — its transient breakage is
+that session's, verified unrelated to the pin.
 
 [x] ~~Run the sandbox live-verification pass (`WISE_SANDBOX_API_KEY`) against the
 five spec-vs-live assumptions settled by the conformance work~~ DONE
