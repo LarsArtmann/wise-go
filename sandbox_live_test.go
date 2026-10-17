@@ -114,6 +114,7 @@ func firstSandboxProfile(t *testing.T, client *wise.Client) wise.Profile {
 	if err != nil {
 		t.Fatalf("ListProfiles: %v", err)
 	}
+
 	if len(profiles) == 0 {
 		t.Fatal("ListProfiles returned no profiles — unexpected for a valid sandbox key")
 	}
@@ -139,6 +140,7 @@ func TestSandboxLiveGetExchangeRate(t *testing.T) {
 	if current.Rate <= 0 {
 		t.Errorf("current rate %v is not positive", current.Rate)
 	}
+
 	if current.Time.IsZero() {
 		t.Error("current rate Time is zero — the timestamp did not decode")
 	}
@@ -151,6 +153,7 @@ func TestSandboxLiveGetExchangeRate(t *testing.T) {
 	if historical.Rate <= 0 {
 		t.Errorf("historical rate %v is not positive", historical.Rate)
 	}
+
 	if historical.Time.IsZero() {
 		t.Error("historical rate Time is zero — the timestamp did not decode")
 	}
@@ -209,6 +212,7 @@ func raiseSandboxSCAChallenge(t *testing.T, client *wise.Client) *wise.SCAChalle
 		To:        time.Now().UTC(),
 		Format:    wise.StatementFormatCSV,
 	})
+
 	challenge, ok := errors.AsType[*wise.SCAChallengeError](err)
 	if !ok {
 		t.Fatalf("GetStatement: expected *SCAChallengeError, got %v", err)
@@ -229,9 +233,11 @@ func TestSandboxLiveSCAChallengeShape(t *testing.T) {
 	if challenge.StatusCode != http.StatusForbidden {
 		t.Errorf("SCA challenge status = %d, want 403", challenge.StatusCode)
 	}
+
 	if verdict := challenge.Headers.Get(wise.HeaderTwoFAApprovalResult); verdict == "" {
 		t.Error("x-2fa-approval-result header is empty — the SCA verdict is missing")
 	}
+
 	if challenge.TwoFAApprovalToken().IsZero() {
 		t.Error("SCA challenge carried no one-time token — cannot clear the challenge")
 	}
@@ -240,7 +246,9 @@ func TestSandboxLiveSCAChallengeShape(t *testing.T) {
 	if _, ok := errors.AsType[*wise.AuthError](asError); ok {
 		t.Error("SCA challenge classified as *AuthError — must be *SCAChallengeError")
 	}
-	if message := challenge.Error(); message == "" || strings.Contains(message, string(challenge.TwoFAApprovalToken())) {
+
+	message := challenge.Error()
+	if message == "" || strings.Contains(message, string(challenge.TwoFAApprovalToken())) {
 		t.Errorf("SCA challenge error string is empty or leaks the one-time token")
 	}
 }
@@ -254,6 +262,7 @@ func TestSandboxLiveGetOTTStatus(t *testing.T) {
 	challenge := raiseSandboxSCAChallenge(t, client)
 
 	ott := challenge.TwoFAApprovalToken()
+
 	if ott.IsZero() {
 		t.Fatal("SCA challenge carried no one-time token — cannot query OTT status")
 	}
@@ -273,6 +282,7 @@ func TestSandboxLiveGetOTTStatus(t *testing.T) {
 	}
 
 	pending := status.PendingRequired()
+
 	if len(pending) == 0 {
 		t.Fatal("OTT status reports no pending required challenges")
 	}
@@ -281,6 +291,7 @@ func TestSandboxLiveGetOTTStatus(t *testing.T) {
 	if pending[0].Primary.Type != wise.OTTChallengeType("SIGNATURE") {
 		t.Errorf("pending challenge type = %q, want SIGNATURE", pending[0].Primary.Type)
 	}
+
 	if len(pending[0].Alternatives) != 0 {
 		t.Errorf("SIGNATURE challenge unexpectedly offers %d alternatives — the sandbox web login is the only clear path", len(pending[0].Alternatives))
 	}
@@ -320,6 +331,7 @@ func TestSandboxLiveCreateBalanceIdempotent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateBalance(NOK, replay): %v", err)
 	}
+
 	if second.ID != first.ID {
 		t.Errorf("idempotent replay returned balance %d, want the original %d", second.ID.Get(), first.ID.Get())
 	}
