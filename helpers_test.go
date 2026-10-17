@@ -1,6 +1,7 @@
 package wise
 
 import (
+	"math"
 	"strings"
 	"testing"
 	"time"
