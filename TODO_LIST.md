@@ -94,34 +94,36 @@ track the BuildFlow #66/#67 and
 branching-flow #15/#16 consumer-side cleanups. Source:
 `docs/status/2026-10-17_01-43_buildflow-warning-surface-zero-and-gate-repair-status.md` §b1/§f.
 
-[ ] Rewrite the `spec_drift.py` extractor on stdlib `go/parser` — kills the
-call-shape-bug class (the regex extractor already needed a manual fix for the
-`c.request` method-variable indirection). The extraction-floor guard and the
-2027Q1 FEATURES triage shipped 2026-10-16 (CHANGELOG). Source:
-`docs/status/2026-10-16_19-48_wise-api-spec-drift-check-session.md` §f.
+[x] ~~Rewrite the `spec_drift.py` extractor on stdlib `go/parser`~~ DONE
+2026-10-17 (v0.15.0 train M16): `scripts/testdata/specdriftext/main.go` (AST
+walk incl. the `c.request` method-parameter binding), parity-equal with the
+regex extractor at 43 endpoints (`scripts/spec_drift_parity.py`), all 9
+negative fixtures green, live spec-drift exit 0.
 
-[ ] Continue the AGENTS.md prune — 2026-10-16 pass moved the five worst
-incident narratives to `docs/reviews/2026-10-16_agents-incident-narratives.md`
-(57,987 → 53,216 bytes, zero constraint loss) but the plan's <30 KB target
-needs a dedicated compression pass over the ~40 remaining 400-900 B constraint
-bullets; do it bullet-by-bullet with the carry-every-concept rule, not in bulk.
-Source: 21:45 plan M24/T87.
+[ ] Continue the AGENTS.md prune — part 1 done 2026-10-17 (v0.15.0 train M15):
+57,097 → 47,354 bytes with every concept carried (narratives compressed to
+their evidence pointers; one erraudit split-brain fixed). Remaining: the
+<30 KB target needs a second pass over the remaining mid-size bullets;
+carry-every-concept rule stays. Source: 21:45 plan M24/T87.
 
 [ ] Consume the committed `benchstat` baseline
-(`docs/bench/2026-10-16_v0140_baseline.txt`) in the next perf-touching PR.
-Note: the README rerun commands are execution-verified (six separate
-`-count 1` invocations; Ginkgo bans `-count>1`), and benchstat is NOT in the
-devShell — install with `go install golang.org/x/perf/cmd/benchstat@latest`.
+(`docs/bench/2026-10-17_v0150_baseline.txt`) in the next perf-touching PR.
+Verdict 2026-10-17 (M25): NO benchmarked-path change shipped post-v0.15.0
+(Quote mapper + the money guard are not in the benchmark set), so there was
+nothing to compare — the convention is armed for the first real one. The
+capture-hygiene rule (idle machine, capture at the tag) is written in
+`docs/bench/README.md`; a polluted parallel-load capture showed +73% geomean
+with identical B/op and was discarded. benchstat is NOT in the devShell —
+install with `go install golang.org/x/perf/cmd/benchstat@latest`.
 
-[ ] Buildflow/infra micro-batch (01-55 warning-zero session §f): full-diff
-`.golangci.yml` against the pre-`ce52551` state (confirm only `lll` + the
-exclusions rule were lost); verify + file the md-go-validator nested-fence
-extraction defect upstream; comment the bandit/pytest line-fallback
-reproductions on BuildFlow #64; delete the migrated
-`~/.cache/buildflow/buildflow.db` once a fresh run confirms it is no longer
-read; disposition the lingering `interrogate` WARN (install to devShell or
-exclude). Source:
-`docs/status/2026-10-17_01-55_buildflow-warning-zero-full-session-status.md`.
+[x] ~~Buildflow/infra micro-batch~~ DONE 2026-10-17 (v0.15.0 train M14):
+T56 full-diff confirms only `lll` was lost (no exclusions rule); T57 nested-
+fence defect reproduced at source and filed (md-go-validator [#11](https://github.com/LarsArtmann/md-go-validator/issues/11));
+T58 bandit/pytest line-fallback reproductions measured mechanically and
+commented on BuildFlow [#64](https://github.com/LarsArtmann/BuildFlow/issues/64) (3 issues → 47 lines; 0 tests → 5
+lines); T59 legacy `buildflow.db` proven unread (mtime unchanged across a
+full run) and deleted; T60 `interrogate` identified (Python docstring-
+coverage) and skip_steps'd with rationale.
 
 ### Decisions (P3)
 
