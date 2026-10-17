@@ -5,6 +5,16 @@ inline as `~~item~~ done at <hash>`, `Won't implement`, `NOT-DO`, or routed to
 TODO_LIST/ROADMAP. Do not open an archived file unless you need the original
 wording for provenance.
 
+## 2026-10-17 docs-health archive sweep
+
+- `2026-09-16_15-30_docs-health-audit-v0110-docs-overhaul-and-archive-sweep.md` —
+  RESOLVED + ARCHIVE: the last live 2026-0x-era status report. Every numbered
+  item in §b/§c/§e/§f/§g carries an inline verdict (50/50 f-items verified
+  against code or routed); §d is the deliberate unstruck process-failure
+  record. Its follow-up queue (CI pins, SECURITY.md, coverage floor, erraudit
+  gate, doc-verify hardening, CONTRIBUTING, the micro-batch) all shipped by
+  v0.14.0; the user-gated set lives in TODO_LIST P2.
+
 ## 2026-10-16 docs-health archive sweep
 
 - `2026-10-07_03-45_buildflow-red-to-green-repair-status.md` — RESOLVED +

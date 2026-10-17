@@ -1,6 +1,8 @@
 # Status: Docs-Health Full Audit (v0.11.0 Living-Doc Overhaul + Annotate/Archive Sweep) — 2026-09-16 15:30 CEST
 
 > **Superseded (2026-10-07 docs-health pass):** the v0.11.0 living-doc overhaul and the 21-file archive sweep landed (`57766d6`). ~~six living docs brought to v0.11.0 truth~~ → now v0.12.0 truth (see the 2026-10-07 pass). Its follow-up items (§b–§f: CI re-enable, release objects, sandbox key, coverage floor, SECURITY.md, quality micro-batch, `doc-verify` extension to `docs/releases/`) are all resolved or routed to TODO_LIST.md. Retained as the canonical record of the ANNOTATE/ARCHIVE convention.
+>
+> **Resolved + ARCHIVED (2026-10-17 docs-health pass):** every numbered item in §b, §c, §e, §f, and §g now carries an inline verdict (50/50 f-items: shipped items verified against code/gates, the rest routed to TODO_LIST/ROADMAP or decided-against). §d stays unstruck by design — it is the honest process-failure record, and its lessons are codified in the skill tooling and incident narratives.
 
 **Session scope:** the user ordered "View ALL `**/2026-0*` files! Execute the docs-health SKILL!" with all six living docs superb and fully-done reports archived with inline strikethroughs. This report covers ONLY that run. **No Go source was modified.**
 **Format note:** written as `.md` per explicit user instruction (the status-report skill's canonical format is HTML — one-off override, not propagated; same override as the 2026-09-13 reports).

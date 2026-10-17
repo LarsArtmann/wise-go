@@ -281,10 +281,10 @@ These are not compliance failures:
 
 ### P3: Add optional sandbox verification
 
-1. Create a manually triggered or protected sandbox integration workflow.
-2. Keep live credentials out of pull requests and fork workflows.
-3. Use the same module/toolchain setup as production checks.
-4. Record which endpoints are covered and distinguish sandbox failures from unit-test failures.
+1. ~~Create a manually triggered or protected sandbox integration workflow.~~ done — sandbox-live.yml shipped (ecdc738), dispatch-gated
+2. ~~Keep live credentials out of pull requests and fork workflows.~~ done — key from the WISE_SANDBOX_API_KEY secret; fork-safe skip verified 2026-10-07
+3. ~~Use the same module/toolchain setup as production checks.~~ done — the workflow runs through the repo flake devShell
+4. ~~Record which endpoints are covered and distinguish sandbox failures from unit-test failures.~~ done — sandbox_live_test.go skeleton + per-assumption checks; first run pending the key
 
 **Why third:** It validates the external backing-service contract while preserving hermetic, credential-free PR tests.
 
