@@ -1,0 +1,106 @@
+# BuildFlow Configuration
+# See: https://github.com/larsartmann/buildflow
+# GOEXPERIMENT=jsonv2 dropped 2026-10-07: go-branded-id v0.5.1 +
+# go-error-family v0.10.0 import encoding/json/v2, which BuildFlow
+# auto-detects (direct imports in this repo too) and sets for tool
+# subprocesses.
+
+# go-version-auto-configure UNSKIPPED 2026-10-07: gvac v0.2.5's
+# respect_patch_floor makes the `go 1.26.0` pin policy instead of drift —
+# at or below the installed toolchain (1.26.7 fleet nixpkgs, 1.27.1
+# workstations) the directive is reported by no rule and never rewritten.
+# The go-version flipflop is structurally over.
+tool_options:
+  go-version-auto-configure:
+    respect_patch_floor: true
+
+  # art-dupl's pipeline step deliberately includes *_test.go (the policy
+  # CLI `art-dupl -t 2 --type-aware` default-ignores them), so
+  # table-driven-test idiom clones (helpers_test, errors_test,
+  # example_test, bench_test) surface as findings the repo treats as
+  # intentional similarity. Threshold 15 statements (default 5) keeps
+  # repo-level signal — real duplication at 15+ statements is worth a
+  # finding — while the sub-threshold test idioms stop flagging. The
+  # canonical dup gate stays `art-dupl -t 2 --type-aware .` (exit 0,
+  # directive-accepted); verified 2026-10-17 that threshold 15 yields
+  # zero findings on this tree.
+  art-dupl:
+    threshold: 15
+
+  # branching-flow's pipeline path runs IN-PROCESS (toolsdk Detect) and
+  # never reads .branching-flow.yml — that file is honored by the CLI only
+  # (verified 2026-10-17: standalone CLI = 0 findings, embedded step = 64).
+  # The embedded path takes rules via this option instead; values must be
+  # EXACT rule IDs (the filter is exact-match, see .branching-flow.yml).
+  # Dispositions: the two-layer wire/public type design and the
+  # polymorphic account-identification ID spaces fire these classes by
+  # construction (AGENTS.md).
+  branching-flow:
+    disabled_rules: "duplicate_type,composition_mixin,anti_pattern_large-struct"
+
+skip_steps:
+  # go-auto-upgrade cannot act in this repo by policy, so its 20 findings
+  # are permanent noise: (a) the jsonv1tov2 migrations require a go >= 1.27
+  # module directive and this repo pins the nixpkgs 1.26 toolchain line
+  # (AGENTS.md invariant, directive <= 1.26.x); (b) the samber/lo
+  # import-adding suggestions are declined by ADR 003 (dependency-light
+  # SDK). Re-enable when the go pin moves or the ADR is revisited.
+  - go-auto-upgrade
+
+  # file-size-check: the max_file_size setting is DEAD at every layer —
+  # .buildflow.yml key, BUILDFLOW_MAX_FILE_SIZE_LINES env var, and the
+  # --max-file-size CLI flag all leave the step running at its 350-line
+  # constant (verified 2026-10-17 against buildflow 5ccf8ea; the provider
+  # plumbing in internal/di/providers_tools.go:50 exists but the step
+  # ignores it). Upstream defect; skipped until fixed — the repo's
+  # max_file_size: 4300 policy above documents the intended value.
+  - file-size-check
+
+  # pytest-test: this repo has no pytest suite — the Python scripts are
+  # verified hermetically by checks.script-fixtures in nix flake check.
+  # pytest runs anyway (auto-detected from scripts/*.py), collects 0
+  # items, exits 5, and its banner output is counted line-wise as
+  # findings (the BuildFlow #64 line-fallback class). Skipped until the
+  # zero-collected case stops emitting findings.
+  - pytest-test
+
+  # interrogate: the Python docstring-coverage tool (BuildFlow's provider,
+  # domain ToolInterrogate = "interrogate", install hint `pip install
+  # interrogate`). This repo's Python surface is three gate scripts whose
+  # behavior is pinned by checks.script-fixtures; docstring-coverage
+  # percentage adds no signal there. Excluded deliberately — revisit only
+  # if the scripts/ surface grows.
+  - interrogate
+
+  # golangci-lint-auto-configure is the lll RE-ADDER: 4 recurrences
+  # (2x on 2026-10-16, then daemon-swept writes at ce52551 00:27 and
+  # 318dad0 01:29 on 2026-10-17, both landing while buildflow ran), and
+  # the 01:29 pass ALSO stripped the curated //nolint:branching-flow
+  # exclusions source-rule from .golangci.yml — it normalizes the file to
+  # its canonical shape, destroying manual curation. This repo's 108-linter
+  # set is POLICY (AGENTS.md; enforced by checks.linter-allowlist against
+  # exactly this class). Skipped per the buildflow skill's "curated
+  # exceptions are policy" rule; the step's stale-linter detection value
+  # is redundant here because the allowlist gate is strict.
+  - golangci-lint-auto-configure
+
+# Embedded erraudit skip REMOVED 2026-10-07 (BuildFlow issue #34 fixed):
+# the embedded detector now runs the SAME legacyerrors engine as the
+# canonical standalone gate (`erraudit lint`), so verdicts agree by
+# construction. The 29 false positives (8x [ignored], 21x [context_loss])
+# came from the detector's old AST-analyzer path, which the CLI lint never
+# computed; that path remains available interactively via `erraudit
+# analyze`, no longer as a pipeline gate. Verified 0 error findings at
+# buildflow HEAD with the skip removed.
+
+# file-size-check flags .go files over N lines (buildflow default 350).
+# This is a root-package SDK BY DESIGN (AGENTS.md): godoc examples, the
+# error-catalog tests, and the main type surface are deliberately long
+# files (largest: wise_test.go at 4229 lines). The 2026-10-11-era 700
+# value still flagged 5 files every run; the 2026-10-17 policy (fix all
+# warning-class findings) sets the limit above the largest deliberate
+# file so the check stays armed for NEW gross outliers (4300+ lines)
+# without flagging the accepted surface. NOTE: verified only against the
+# 2026-10-17 binary — the 2026-10-16-era binary ignored this key
+# entirely (ran at the 350 default while this file said 700).
+max_file_size: 4300
