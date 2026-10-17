@@ -676,6 +676,17 @@
                     done < <(awk '/^```/ { infence = !infence; next } !infence' "$f" | grep -oE '\]\([^)]+\)' | sed -E 's/^\]\(//; s/\)$//' | grep -vE '^(https?://|mailto:|#)' || true)
                   done
 
+                  # The LATEST release notes become the live GitHub body
+                  # verbatim: session-log/process prose (a "Published ... via
+                  # gh release create" meta header shipped on v0.15.0) has no
+                  # business in a public release. Historical files keep their
+                  # headers — only the latest file is a living claim.
+                  latest="$(find docs/releases -name '*-release-notes.md' 2>/dev/null | sort -V | tail -1)"
+                  if grep -qE '^> Published .*via `gh release create' "''${latest}"; then
+                    echo "FAIL: ''${latest}: session-log 'Published ... via gh release create' meta header in the file that becomes the live release body"
+                    status=1
+                  fi
+
                   if [ "$status" -eq 0 ]; then
                     echo "release-notes-check: all release-notes files clean"
                   fi
