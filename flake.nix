@@ -724,6 +724,7 @@
                 text = ''
                   export PYTHONDONTWRITEBYTECODE=1
                   export GOTOOLCHAIN=local
+                  export WISE_GO_SPEC_DRIFT_EXTRACTOR=${./scripts/testdata/specdriftext/main.go}
                   exec python3 ${./scripts/spec_drift.py} --repo "$(git rev-parse --show-toplevel 2>/dev/null || pwd)" "$@"
                 '';
               };

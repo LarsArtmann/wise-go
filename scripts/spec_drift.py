@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import pathlib
 import re
 import subprocess  # nosec B404 -- shells to the repo's own go/parser extractor only
@@ -57,8 +58,12 @@ KNOWN_EXEMPTIONS = {
 
 # The Go extractor lives under testdata/ so the go toolchain ignores it as a
 # module package (no build, lint, or coverage impact on the SDK module); it is
-# invoked file-mode via `go run`, stdlib-only.
-GO_EXTRACTOR = pathlib.Path(__file__).resolve().parent / "testdata" / "specdriftext" / "main.go"
+# invoked file-mode via `go run`, stdlib-only. In the nix store the script is
+# copied alone, so the flake app passes the store path via env.
+GO_EXTRACTOR = pathlib.Path(
+    os.environ.get("WISE_GO_SPEC_DRIFT_EXTRACTOR")
+    or (pathlib.Path(__file__).resolve().parent / "testdata" / "specdriftext" / "main.go")
+)
 
 # Extraction floor: a call-shape change (new wrapper idiom the regexes do not
 # know) silently shrinks the extracted surface and the check would then pass
@@ -80,7 +85,7 @@ def extract_sdk_endpoints_go(repo: pathlib.Path) -> list[dict]:
             "GOTOOLCHAIN": "local",
             "GOFLAGS": "",
             "HOME": str(pathlib.Path(tmp)),
-            "PATH": __import__("os").environ.get("PATH", "/usr/bin:/bin"),
+            "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
         }
         proc = subprocess.run(  # nosec B603 -- fixed argv, repo-owned tool, stdlib-only
             ["go", "run", str(GO_EXTRACTOR), str(repo)],
