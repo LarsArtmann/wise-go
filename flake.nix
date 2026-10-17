@@ -659,7 +659,7 @@
                     while read -r target; do
                       echo "FAIL: $f: repo-relative link target '$target' (GitHub Release bodies need absolute URLs)"
                       status=1
-                    done < <(grep -oE '\]\([^)]+\)' "$f" | sed -E 's/^\]\(//; s/\)$//' | grep -vE '^(https?://|mailto:|#)' || true)
+                    done < <(awk '/^```/ { infence = !infence; next } !infence' "$f" | grep -oE '\]\([^)]+\)' | sed -E 's/^\]\(//; s/\)$//' | grep -vE '^(https?://|mailto:|#)' || true)
                   done
 
                   if [ "$status" -eq 0 ]; then
