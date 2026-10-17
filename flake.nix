@@ -97,6 +97,15 @@
       };
     in
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
+      # D5 (docs/planning/2026-10-16_decision-memos.md): x86_64-darwin is
+      # dropped from the check matrix — nixpkgs-26.11 no longer ships it, no
+      # consumer builds on it. Reversible: re-add the string.
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+        "aarch64-darwin"
+      ];
+
       imports = [
         inputs.go-nix-helpers.flakeModules.go-standard
         inputs.git-hooks.flakeModule
