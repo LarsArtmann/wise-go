@@ -49,4 +49,3 @@ Language: dtool.OnlyLanguage(config.LanguageJavaScript),
 ## To verify
 
 Full run on wise-go (or any Go-only repo): the "unavailable" list contains only Go-ecosystem tools actually referenced by the pipeline (in wise-go's case: zero), and the JS/TS + Python entries no longer appear.
-

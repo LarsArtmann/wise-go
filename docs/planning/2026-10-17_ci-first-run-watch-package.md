@@ -23,14 +23,14 @@ the runbook below covers the CI-only failure classes.
 
 These fail on CI but pass locally; none of them indicate an SDK defect.
 
-| Class | Signature | Fix |
-| --- | --- | --- |
-| Env | `GOEXPERIMENT` missing → `bytes imported and not used` / `undefined: json` phantoms | Already pinned workflow-wide (`env.GOEXPERIMENT: jsonv2`); if a new job is added it inherits, do not re-declare per-step. |
-| Permissions | `coverage-badge` push rejected (403) | Workflow `permissions: contents: write` is set at job level; check repo Settings → Actions → Workflow permissions = "Read and write". |
-| Permissions | `erraudit` install fails | Expected without `ERRAUDIT_TOKEN` secret; job is `continue-on-error` by design. Becomes blocking only after the secret exists. |
-| Toolchain | `requires go1.27 or later` | A dep bumped past the 1.26 pin; check `grep '^go ' go.mod` first (the go-directive drift class), then pin the dep back. |
-| Cache | golangci-lint OOM/timeout at 5m | Re-run once; persistent → bump `--timeout`, never lint-config. |
-| Cachix | Push warning in `nix` job | By design (`continue-on-error`) until cache name + `CACHIX_AUTH_TOKEN` are verified (open question g2). |
+| Class       | Signature                                                                           | Fix                                                                                                                                   |
+| ----------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Env         | `GOEXPERIMENT` missing → `bytes imported and not used` / `undefined: json` phantoms | Already pinned workflow-wide (`env.GOEXPERIMENT: jsonv2`); if a new job is added it inherits, do not re-declare per-step.             |
+| Permissions | `coverage-badge` push rejected (403)                                                | Workflow `permissions: contents: write` is set at job level; check repo Settings → Actions → Workflow permissions = "Read and write". |
+| Permissions | `erraudit` install fails                                                            | Expected without `ERRAUDIT_TOKEN` secret; job is `continue-on-error` by design. Becomes blocking only after the secret exists.        |
+| Toolchain   | `requires go1.27 or later`                                                          | A dep bumped past the 1.26 pin; check `grep '^go ' go.mod` first (the go-directive drift class), then pin the dep back.               |
+| Cache       | golangci-lint OOM/timeout at 5m                                                     | Re-run once; persistent → bump `--timeout`, never lint-config.                                                                        |
+| Cachix      | Push warning in `nix` job                                                           | By design (`continue-on-error`) until cache name + `CACHIX_AUTH_TOKEN` are verified (open question g2).                               |
 
 Not CI-only but seen before: `nix flake check` on the runner needs the same
 public `github:` inputs as locally (no SSH since the 2026-09-13 migration) —

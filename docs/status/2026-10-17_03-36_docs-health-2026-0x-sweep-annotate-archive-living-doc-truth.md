@@ -124,7 +124,7 @@ first audit against the v0.14.0 release state (no earlier baseline claimed).
    line as (1).
 3. **AGENTS.md size** — the prune did not advance this session (my edits are
    net-positive bytes). Still ~56 KB: over the 30 KB flag and the checklist's
-   >50 KB fail line. The dedicated compression pass (T87) remains queued.
+   > 50 KB fail line. The dedicated compression pass (T87) remains queued.
 4. **TODO_LIST P1 composition** — "P1 — Release readiness" now holds one
    executable row (Cut v0.15.0) and two key-gated rows (sandbox pass, OTT
    flip). Arguably the gated pair belongs under P2; left in P1 because they
@@ -176,7 +176,7 @@ first audit against the v0.14.0 release state (no earlier baseline claimed).
    I verified the diff AFTER applying, not before. The line-addressed
    `repair` path was the right tool from the second attempt onward.
 5. **A wrong diagnosis almost became a bulk rewrite.** I "found" leading
-   spaces on the P1/P2 list lines by misreading awk's `NR: ` separator as
+   spaces on the P1/P2 list lines by misreading awk's `NR:` separator as
    indentation, then ran a python pass to strip them — the pass was a no-op
    (lines were already flush; the real problem was the scoping rule). A bulk
    scripted rewrite based on an unverified byte-level diagnosis is the
@@ -294,10 +294,10 @@ first audit against the v0.14.0 release state (no earlier baseline claimed).
    only truly executable P1 row. Move the gated pair under P2, or keep P1 as
    "release-train blockers regardless of gate"?
 3. **AGENTS.md size policy:** the verify-checklist flags >30 KB and fails
-   >50 KB; the file is ~56 KB and the <30 KB target needs a dedicated
-   compression session with real constraint-loss risk. Prioritize that pass
-   now, or after v0.15.0 ships? (I will not bulk-compress without your word —
-   every bullet there was paid for.)
+   > 50 KB; the file is ~56 KB and the <30 KB target needs a dedicated
+   > compression session with real constraint-loss risk. Prioritize that pass
+   > now, or after v0.15.0 ships? (I will not bulk-compress without your word —
+   > every bullet there was paid for.)
 
 ---
 

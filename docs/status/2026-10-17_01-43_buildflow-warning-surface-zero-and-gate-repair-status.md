@@ -56,18 +56,18 @@
 
 ## f) Next things to get done (routed: P1 = TODO_LIST-grade, P2 = soon, P3 = roadmap/upstream tracking)
 
-| # | Item | Where |
-|---|------|-------|
-| 1 | Re-run `nix flake update nixpkgs` when go 1.26.9 lands in unstable; re-measure govulncheck/vulnix; FOD check | P1 — quiet window |
-| 2 | Track BuildFlow #66 (max_file_size dead); on fix: drop file-size-check skip, keep 4300 policy | P2 — upstream |
-| 3 | Track BuildFlow #67 (cache contamination); on fix: drop `BUILDFLOW_NO_RESULT_CACHE=1` posture | P2 — upstream |
-| 4 | Track branching-flow #15 (glob knob no-op); on fix: simplify .branching-flow.yml comments | P2 — upstream |
-| 5 | Track branching-flow #16 (embedded ignores yaml); on fix: drop tool_options duplication, keep yaml as single source | P2 — upstream |
-| 6 | Decide go-1.27 unlock conditions (erraudit local, nixpkgs 1.27, deps verified) — flips jsonv1tov2 + samber/lo classes and allows un-skipping go-auto-upgrade | P3 — existing plan |
-| 7 | HARVEST: route §f of this report + the 00:07 + 22:44 reports into TODO_LIST/ROADMAP | P1 — docs-health |
-| 8 | AGENTS.md <30 KB prune (compression half, T87) — my three new bullets added ~2 KB | P2 — existing TODO |
-| 9 | Consider extracting the shared devShellExtraPackages tool list into go-nix-helpers defaults (fleet-wide: dprint/ruff/vulnix/python tools recur everywhere) | P3 — go-nix-helpers |
-| 10 | Re-enable `checks.script-fixtures`-style hermetic negative test for the branching-flow exact-match behavior? (upstream test exists; fleet regression guard optional) | P3 |
+| #  | Item                                                                                                                                                                 | Where               |
+| -- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| 1  | Re-run `nix flake update nixpkgs` when go 1.26.9 lands in unstable; re-measure govulncheck/vulnix; FOD check                                                         | P1 — quiet window   |
+| 2  | Track BuildFlow #66 (max_file_size dead); on fix: drop file-size-check skip, keep 4300 policy                                                                        | P2 — upstream       |
+| 3  | Track BuildFlow #67 (cache contamination); on fix: drop `BUILDFLOW_NO_RESULT_CACHE=1` posture                                                                        | P2 — upstream       |
+| 4  | Track branching-flow #15 (glob knob no-op); on fix: simplify .branching-flow.yml comments                                                                            | P2 — upstream       |
+| 5  | Track branching-flow #16 (embedded ignores yaml); on fix: drop tool_options duplication, keep yaml as single source                                                  | P2 — upstream       |
+| 6  | Decide go-1.27 unlock conditions (erraudit local, nixpkgs 1.27, deps verified) — flips jsonv1tov2 + samber/lo classes and allows un-skipping go-auto-upgrade         | P3 — existing plan  |
+| 7  | HARVEST: route §f of this report + the 00:07 + 22:44 reports into TODO_LIST/ROADMAP                                                                                  | P1 — docs-health    |
+| 8  | AGENTS.md <30 KB prune (compression half, T87) — my three new bullets added ~2 KB                                                                                    | P2 — existing TODO  |
+| 9  | Consider extracting the shared devShellExtraPackages tool list into go-nix-helpers defaults (fleet-wide: dprint/ruff/vulnix/python tools recur everywhere)           | P3 — go-nix-helpers |
+| 10 | Re-enable `checks.script-fixtures`-style hermetic negative test for the branching-flow exact-match behavior? (upstream test exists; fleet regression guard optional) | P3                  |
 
 (Kept at 10 deliberately: items 1-7 are the live surface; anything more is already tracked upstream or in existing TODO rows — adding filler here would be entombment, not routing.)
 

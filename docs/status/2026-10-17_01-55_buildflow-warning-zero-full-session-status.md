@@ -67,58 +67,58 @@
 
 ## f) Next things (50, tiered: P1 = now/this week, P2 = soon, P3 = roadmap/tracking — brainstorm fuel for HARVEST, not commitments)
 
-| # | Item | Tier |
-|---|------|------|
-| 1 | `nix flake update nixpkgs` when go 1.26.9 lands; re-measure govulncheck/vulnix; vendor FOD check | P1 |
-| 2 | Decide `BUILDFLOW_NO_RESULT_CACHE=1` standing default until #67 (§g3) | P1 |
-| 3 | docs-health HARVEST: this + 00:07 + 22:44 reports → TODO_LIST/ROADMAP | P1 |
-| 4 | Full-diff `.golangci.yml` vs pre-`ce52551` state — confirm ONLY lll + the exclusions rule were lost, nothing else curated (honest verify gap from the restore) | P1 |
-| 5 | `buildflow doctor` full sweep post-swap (freshness + 19 checks) | P2 |
-| 6 | Track BuildFlow #66 → drop file-size skip, keep 4300 policy | P2 |
-| 7 | Track BuildFlow #67 → drop cache-bypass posture; investigate 654 MB `cache.db` growth while in there | P2 |
-| 8 | Track branching-flow #16 → drop tool_options duplication, yaml becomes single source | P2 |
-| 9 | Track branching-flow #15 → simplify `.branching-flow.yml` + the AGENTS gotcha | P3 |
-| 10 | AGENTS.md <30 KB prune (T87 compression half; this session added ~3 KB) | P2 |
-| 11 | go-1.27 unlock probe (flips jsonv1tov2 + samber/lo, un-skips go-auto-upgrade, retires GOEXPERIMENT) | P2 |
-| 12 | Delete legacy `/home/lars/.cache/buildflow/buildflow.db` once migration is confirmed complete (advisory-sanctioned) | P2 |
-| 13 | Confirm the legacy db is no longer READ post-swap (preflight advisory should be gone — verify in next run's preflight) | P3 |
-| 14 | Verify the daemon swept this session's last artifacts correctly (report file, TODO_LIST row, supersession annotation) | P2 |
-| 15 | Comment tonight's bandit/pytest line-fallback instances on BuildFlow #64 as live reproductions | P3 |
-| 16 | md-go-validator nested-fence extraction defect (§c6): verify at source, file upstream | P2 |
-| 17 | Clean the two drafts' stray tails (bare fence + Crush attribution at EOF) | P3 |
-| 18 | Fleet sweep: which sibling repos need statix.toml / structure-linter excludes / branching-flow tool_options (one-time list) | P3 |
-| 19 | `buildflow timings` baseline reset after the binary swap (ms-scale regression verdict keeps firing) — find the reset command or ignore deliberately | P3 |
-| 20 | vulnix scan target: `nix build .# -o result` to refresh the stale `./result` symlink it scans | P3 |
-| 21 | `interrogate` tool: identify WHICH interrogate buildflow means, install to devShell or exclude deliberately (one lingering WARN line) | P3 |
-| 22 | Duplicate golangci-lint binaries in PATH (nix store + /run/current-system) — system-level cleanup (NixOS config, not repo) | P3 |
-| 23 | A `--strict` findings-gate trial run — document the expected failure set (blocked vuln classes) as the new normal | P3 |
-| 24 | After #65: verify the "9 tools unavailable" header count drops; consider a non-alarming render upstream | P3 |
-| 25 | linter-allowlist check's error message text is stale ("re-added twice on 2026-10-16") — update to reflect the auto-configure skip | P3 |
-| 26 | Mechanize the post-lockfile eval (item e3): tiny flake app or docs ritual line | P3 |
-| 27 | Consider nixpkgs channel discipline: unstable (churn: pytest removal) vs 26.11 stable (vuln lag) — a policy decision with tonight as evidence | P3 |
-| 28 | Understand buildflow's step accounting arithmetic (60+3+7+53 > 72 total across banners) — doc issue candidate | P3 |
-| 29 | Examine what `--go-upgrade-blame all` actually produced (flag from the original command, output never inspected) | P3 |
-| 30 | pre-release chain: add the cache-bypass env + post-update eval into the chain's buildflow invocation, if it invokes buildflow | P3 |
-| 31 | Re-run `nix run .#pin-sync` (network mode) post-nixpkgs-bump to re-confirm in-house revs (hermetic check already green) | P3 |
-| 32 | Coverage badge still frozen (CI disabled) — re-enable CI remains the standing unblocker (pre-existing) | P2 |
-| 33 | spec_drift account-details MISSING drift (2027Q1 path move) — pre-existing AGENTS TODO, untouched this session | P2 |
-| 34 | Bank-sync error-recipe follow-through (pre-existing, surfaced in 00:07 §b4) | P2 |
-| 35 | Add tracking rows for #66/#67/#15/#16 as dedicated TODO_LIST entries if one-row-per-defect is preferred over the grouped security-window row | P3 |
-| 36 | docs-health ANNOTATE the 00:07 report's b3 (BuildFlow defects list) with #66/#67 + tonight's reproductions | P3 |
-| 37 | Consider upstreaming "art-dupl step honors the CLI's test-exclusion default" as an option instead of threshold tuning | P3 |
-| 38 | Fleet-template the statix.toml (dotted-assignment style is a LarsArtmann flake convention) | P3 |
-| 39 | Periodic audit that `// skip-validate` blocks in docs still carry illustrative content (guard against the escape hatch hiding real rot) | P3 |
-| 40 | pytest alternative disposition: if the fleet wants pytest, add a trivial scripts suite instead of the skip | P3 |
-| 41 | Keep `.branching-flow.yml` and `tool_options` in sync until #16 — consider a one-line flake check or AGENTS reminder cadence | P3 |
-| 42 | Report cadence: write reports AFTER the tree is final (lesson d7) — process note for the next session | P3 |
-| 43 | Shell function/alias that wraps gate commands with pipefail (e3/d3 repeat-offense countermeasure) | P3 |
-| 44 | When #63 (auto-configure WithUserDisabled) lands: revisit whether to re-enable golangci-lint-auto-configure here | P3 |
-| 45 | Re-verify `checks.script-fixtures` expectations after tonight's scripts edits (bandit/mypy changes) — fixtures passed post-edit (9/9), but re-confirm in the sandbox battery next `nix flake check` | P3 |
-| 46 | Sweep AGENTS.md for the now-fixed classes' stale phrasing (e.g. "9 tools unavailable" references, art-dupl group counts) after upstream fixes land | P3 |
-| 47 | Consider exporting the devShellExtraPackages tool list as a go-nix-helpers default (fleet recurrence: dprint/ruff/vulnix/python) | P3 |
-| 48 | Investigate the earlier turn-1 observation that buildflow's full-run link scan counts changed (126→37 markdown files in scope across runs — exclusion-set difference worth understanding) | P3 |
-| 49 | Verify the restored `.golangci.yml` exclusions rule still suppresses what webhooks.go needs (next full lint run confirmed green — one more explicit `buildflow -s golangci-lint --format finding` for the record) | P3 |
-| 50 | Meta: execute 1–9 before adding more backlog — the live surface is small; the blocked items dominate | P1 |
+| #  | Item                                                                                                                                                                                                              | Tier |
+| -- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 1  | `nix flake update nixpkgs` when go 1.26.9 lands; re-measure govulncheck/vulnix; vendor FOD check                                                                                                                  | P1   |
+| 2  | Decide `BUILDFLOW_NO_RESULT_CACHE=1` standing default until #67 (§g3)                                                                                                                                             | P1   |
+| 3  | docs-health HARVEST: this + 00:07 + 22:44 reports → TODO_LIST/ROADMAP                                                                                                                                             | P1   |
+| 4  | Full-diff `.golangci.yml` vs pre-`ce52551` state — confirm ONLY lll + the exclusions rule were lost, nothing else curated (honest verify gap from the restore)                                                    | P1   |
+| 5  | `buildflow doctor` full sweep post-swap (freshness + 19 checks)                                                                                                                                                   | P2   |
+| 6  | Track BuildFlow #66 → drop file-size skip, keep 4300 policy                                                                                                                                                       | P2   |
+| 7  | Track BuildFlow #67 → drop cache-bypass posture; investigate 654 MB `cache.db` growth while in there                                                                                                              | P2   |
+| 8  | Track branching-flow #16 → drop tool_options duplication, yaml becomes single source                                                                                                                              | P2   |
+| 9  | Track branching-flow #15 → simplify `.branching-flow.yml` + the AGENTS gotcha                                                                                                                                     | P3   |
+| 10 | AGENTS.md <30 KB prune (T87 compression half; this session added ~3 KB)                                                                                                                                           | P2   |
+| 11 | go-1.27 unlock probe (flips jsonv1tov2 + samber/lo, un-skips go-auto-upgrade, retires GOEXPERIMENT)                                                                                                               | P2   |
+| 12 | Delete legacy `/home/lars/.cache/buildflow/buildflow.db` once migration is confirmed complete (advisory-sanctioned)                                                                                               | P2   |
+| 13 | Confirm the legacy db is no longer READ post-swap (preflight advisory should be gone — verify in next run's preflight)                                                                                            | P3   |
+| 14 | Verify the daemon swept this session's last artifacts correctly (report file, TODO_LIST row, supersession annotation)                                                                                             | P2   |
+| 15 | Comment tonight's bandit/pytest line-fallback instances on BuildFlow #64 as live reproductions                                                                                                                    | P3   |
+| 16 | md-go-validator nested-fence extraction defect (§c6): verify at source, file upstream                                                                                                                             | P2   |
+| 17 | Clean the two drafts' stray tails (bare fence + Crush attribution at EOF)                                                                                                                                         | P3   |
+| 18 | Fleet sweep: which sibling repos need statix.toml / structure-linter excludes / branching-flow tool_options (one-time list)                                                                                       | P3   |
+| 19 | `buildflow timings` baseline reset after the binary swap (ms-scale regression verdict keeps firing) — find the reset command or ignore deliberately                                                               | P3   |
+| 20 | vulnix scan target: `nix build .# -o result` to refresh the stale `./result` symlink it scans                                                                                                                     | P3   |
+| 21 | `interrogate` tool: identify WHICH interrogate buildflow means, install to devShell or exclude deliberately (one lingering WARN line)                                                                             | P3   |
+| 22 | Duplicate golangci-lint binaries in PATH (nix store + /run/current-system) — system-level cleanup (NixOS config, not repo)                                                                                        | P3   |
+| 23 | A `--strict` findings-gate trial run — document the expected failure set (blocked vuln classes) as the new normal                                                                                                 | P3   |
+| 24 | After #65: verify the "9 tools unavailable" header count drops; consider a non-alarming render upstream                                                                                                           | P3   |
+| 25 | linter-allowlist check's error message text is stale ("re-added twice on 2026-10-16") — update to reflect the auto-configure skip                                                                                 | P3   |
+| 26 | Mechanize the post-lockfile eval (item e3): tiny flake app or docs ritual line                                                                                                                                    | P3   |
+| 27 | Consider nixpkgs channel discipline: unstable (churn: pytest removal) vs 26.11 stable (vuln lag) — a policy decision with tonight as evidence                                                                     | P3   |
+| 28 | Understand buildflow's step accounting arithmetic (60+3+7+53 > 72 total across banners) — doc issue candidate                                                                                                     | P3   |
+| 29 | Examine what `--go-upgrade-blame all` actually produced (flag from the original command, output never inspected)                                                                                                  | P3   |
+| 30 | pre-release chain: add the cache-bypass env + post-update eval into the chain's buildflow invocation, if it invokes buildflow                                                                                     | P3   |
+| 31 | Re-run `nix run .#pin-sync` (network mode) post-nixpkgs-bump to re-confirm in-house revs (hermetic check already green)                                                                                           | P3   |
+| 32 | Coverage badge still frozen (CI disabled) — re-enable CI remains the standing unblocker (pre-existing)                                                                                                            | P2   |
+| 33 | spec_drift account-details MISSING drift (2027Q1 path move) — pre-existing AGENTS TODO, untouched this session                                                                                                    | P2   |
+| 34 | Bank-sync error-recipe follow-through (pre-existing, surfaced in 00:07 §b4)                                                                                                                                       | P2   |
+| 35 | Add tracking rows for #66/#67/#15/#16 as dedicated TODO_LIST entries if one-row-per-defect is preferred over the grouped security-window row                                                                      | P3   |
+| 36 | docs-health ANNOTATE the 00:07 report's b3 (BuildFlow defects list) with #66/#67 + tonight's reproductions                                                                                                        | P3   |
+| 37 | Consider upstreaming "art-dupl step honors the CLI's test-exclusion default" as an option instead of threshold tuning                                                                                             | P3   |
+| 38 | Fleet-template the statix.toml (dotted-assignment style is a LarsArtmann flake convention)                                                                                                                        | P3   |
+| 39 | Periodic audit that `// skip-validate` blocks in docs still carry illustrative content (guard against the escape hatch hiding real rot)                                                                           | P3   |
+| 40 | pytest alternative disposition: if the fleet wants pytest, add a trivial scripts suite instead of the skip                                                                                                        | P3   |
+| 41 | Keep `.branching-flow.yml` and `tool_options` in sync until #16 — consider a one-line flake check or AGENTS reminder cadence                                                                                      | P3   |
+| 42 | Report cadence: write reports AFTER the tree is final (lesson d7) — process note for the next session                                                                                                             | P3   |
+| 43 | Shell function/alias that wraps gate commands with pipefail (e3/d3 repeat-offense countermeasure)                                                                                                                 | P3   |
+| 44 | When #63 (auto-configure WithUserDisabled) lands: revisit whether to re-enable golangci-lint-auto-configure here                                                                                                  | P3   |
+| 45 | Re-verify `checks.script-fixtures` expectations after tonight's scripts edits (bandit/mypy changes) — fixtures passed post-edit (9/9), but re-confirm in the sandbox battery next `nix flake check`               | P3   |
+| 46 | Sweep AGENTS.md for the now-fixed classes' stale phrasing (e.g. "9 tools unavailable" references, art-dupl group counts) after upstream fixes land                                                                | P3   |
+| 47 | Consider exporting the devShellExtraPackages tool list as a go-nix-helpers default (fleet recurrence: dprint/ruff/vulnix/python)                                                                                  | P3   |
+| 48 | Investigate the earlier turn-1 observation that buildflow's full-run link scan counts changed (126→37 markdown files in scope across runs — exclusion-set difference worth understanding)                         | P3   |
+| 49 | Verify the restored `.golangci.yml` exclusions rule still suppresses what webhooks.go needs (next full lint run confirmed green — one more explicit `buildflow -s golangci-lint --format finding` for the record) | P3   |
+| 50 | Meta: execute 1–9 before adding more backlog — the live surface is small; the blocked items dominate                                                                                                              | P1   |
 
 ## g) Questions I cannot figure out myself
 

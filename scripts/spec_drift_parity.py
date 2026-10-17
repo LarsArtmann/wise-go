@@ -11,13 +11,12 @@ the SDK's call shapes. Exit 0 = parity, 1 = drift between extractors.
 
 from __future__ import annotations
 
-import json
 import pathlib
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
-import spec_drift  # noqa: E402 -- sibling module import by design
+import spec_drift
 
 
 def main() -> int:

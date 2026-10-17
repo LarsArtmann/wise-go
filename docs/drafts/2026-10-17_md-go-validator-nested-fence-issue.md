@@ -2,14 +2,16 @@
 
 ## Problem
 
-The fence scanner toggles on any line starting with ` ``` ` and never records the opening fence's length (`pkg/extractor.go:111`, `startCodeBlock` at `pkg/extractor.go:141`). Under CommonMark, a fence opened with N backticks is only closed by a closing sequence of at least N backticks — so a 4-backtick fence containing a ` ```go ` block is literal text, not a nested fence. The extractor still extracts and validates the inner block, and fails files that are correct Markdown:
+The fence scanner toggles on any line starting with `` ``` `` and never records the opening fence's length (`pkg/extractor.go:111`, `startCodeBlock` at `pkg/extractor.go:141`). Under CommonMark, a fence opened with N backticks is only closed by a closing sequence of at least N backticks — so a 4-backtick fence containing a `` ```go `` block is literal text, not a nested fence. The extractor still extracts and validates the inner block, and fails files that are correct Markdown:
 
-```markdown
-````            ← 4-backtick fence: literal text per CommonMark
+`````markdown
+````← 4-backtick fence: literal text per CommonMark
 ```go
 this is (not) valid go {
-```
 ````
+`````
+
+`````
 ```
 
 ## Repro (v1.3.0, built from the v1.3.0 tag source)
@@ -31,3 +33,4 @@ Track the opening fence's backtick count at `startCodeBlock` and only accept a c
 
 ---
 💘 Generated with Crush
+`````

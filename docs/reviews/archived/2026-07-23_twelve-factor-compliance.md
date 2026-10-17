@@ -222,9 +222,9 @@ The repository defines no long-running process types, workers, or web server. It
 **Recommendations:**
 
 1. Run the complete Nix check in CI. **→ same verdict as the P1 item: user-gated CI enable**
-~~2. Add an optional, credentialed sandbox integration workflow, never as a required fork-safe PR check.~~ done — sandbox-live.yml shipped (ecdc738), dispatch-gated, fork-safe
-~~3. Pin or verify tool versions for the manual path.~~ done — CI tool versions pinned; devShell pins the toolchain
-~~4. Keep test fixtures and sandbox behavior aligned with the documented wire formats.~~ done — spec-conformance gate keeps fixtures aligned with the wire formats
+   ~~2. Add an optional, credentialed sandbox integration workflow, never as a required fork-safe PR check.~~ done — sandbox-live.yml shipped (ecdc738), dispatch-gated, fork-safe
+   ~~3. Pin or verify tool versions for the manual path.~~ done — CI tool versions pinned; devShell pins the toolchain
+   ~~4. Keep test fixtures and sandbox behavior aligned with the documented wire formats.~~ done — spec-conformance gate keeps fixtures aligned with the wire formats
 
 ### XI. Logs — Not applicable to the library; good non-interference
 

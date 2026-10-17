@@ -62,7 +62,12 @@ KNOWN_EXEMPTIONS = {
 # copied alone, so the flake app passes the store path via env.
 GO_EXTRACTOR = pathlib.Path(
     os.environ.get("WISE_GO_SPEC_DRIFT_EXTRACTOR")
-    or (pathlib.Path(__file__).resolve().parent / "testdata" / "specdriftext" / "main.go")
+    or (
+        pathlib.Path(__file__).resolve().parent
+        / "testdata"
+        / "specdriftext"
+        / "main.go"
+    )
 )
 
 # Extraction floor: a call-shape change (new wrapper idiom the regexes do not
