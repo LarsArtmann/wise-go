@@ -195,6 +195,15 @@ client := wise.New("key",
 )
 ```
 
+**Retry composition — multiply carefully.** The SDK already retries the
+transient class (429, 5xx, network) with backoff and `Retry-After` honoring;
+a consumer-side retry loop around SDK calls multiplies with it (5 SDK
+attempts × 3 loop passes = 15 hits per logical operation, each backing off).
+Set `WithRetry` to the total attempts you want and let the SDK own the
+delays; if you loop anyway, stop when the error is not retryable (`IsRetryable`
+is absent on Rejection-family errors like auth and 4xx) so permanent
+failures fail fast instead of pacing out.
+
 ### Observability
 
 ```go
@@ -243,6 +252,13 @@ client := wise.New("api-token",
 
 The same `WithHTTPClient` pattern covers custom root CAs, corporate proxies,
 and connection-pool tuning; retries, logging, and typed errors work unchanged.
+
+> **Injected transports see everything.** A custom `Transport` (or
+> `http.RoundTripper` middleware) observes the `Authorization` header and the
+> full request/response bodies — bank details, balances, transfer amounts.
+> Whatever you log or forward from that layer must be redacted accordingly;
+> the SDK's own `RequestLog` deliberately carries metadata only (method, URL,
+> status, duration, attempt), never bodies or tokens.
 
 ## API Reference
 
