@@ -106,7 +106,7 @@ def extract_sdk_endpoints_go(repo: pathlib.Path) -> list[dict]:
             )
     endpoints = json.loads(proc.stdout)
     if not isinstance(endpoints, list):
-        raise RuntimeError("go extractor returned non-list output")
+        raise TypeError("go extractor returned non-list output")
     return endpoints
 
 

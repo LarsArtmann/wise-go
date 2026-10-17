@@ -326,7 +326,7 @@ the plan; bulk payments only on a consumer demand signal).
 | Cross-currency transaction mapping                       | FULLY_FUNCTIONAL     | `transactions.go:135` `mapExchange`; uses transaction currency, not request currency |
 | `Transaction.Exchange` (`*TransactionExchange`)          | FULLY_FUNCTIONAL     | `types.go:119`; nil for non-conversion transactions                                  |
 | `EndOfStatementBalance` exposure                         | FULLY_FUNCTIONAL     | `types.go:192`; surfaced as `Money` on `ListTransactionsResponse`                    |
-| `Transaction.Date` UTC semantics                         | PARTIALLY_FUNCTIONAL | `helpers.go:75` parses as UTC; Wise sends no TZ — documented in field comment        |
+| `Transaction.Date` UTC semantics                         | PARTIALLY_FUNCTIONAL | `users.go:137` `parseWiseDate` parses as UTC; Wise sends no TZ — documented in field comment |
 | Pagination                                               | PLANNED              | Wise returns all transactions in one response; no endpoint requires it yet           |
 
 ## Balance filtering behavior
@@ -354,7 +354,7 @@ the plan; bulk payments only on a consumer demand signal).
 | `errors.AsType` matching                          | FULLY_FUNCTIONAL | Demonstrated in README; tested                                                                      |
 | `APIError.Details` structured error envelope      | FULLY_FUNCTIONAL | `errors.go:255`; Wise's `errors[].code`/`message` per entry, wire order                             |
 | `WiseErrorCode` open enum (14 documented codes)   | FULLY_FUNCTIONAL | `errors.go:195`; unknown wire values pass through                                                   |
-| Curated code sentinels (11) + `APIError.Is`       | FULLY_FUNCTIONAL | `ErrNotValid` (`errors.go:121`) ... `Is` (`errors.go:306`) matches `Details` codes through any wrap |
+| Curated code sentinels (11) + `APIError.Is`       | FULLY_FUNCTIONAL | `ErrNotValid` (`errors.go:124`) ... `Is` (`errors.go:307`) matches `Details` codes through any wrap |
 | `APIError.HasCode(WiseErrorCode)`                 | FULLY_FUNCTIONAL | `errors.go:286`; open-enum matcher for uncurated codes                                              |
 | `wise_code` in `ErrorContext()`                   | FULLY_FUNCTIONAL | `errors.go:276` (APIError) and `errors.go:342` (RateLimitError); first granular code                |
 | Granular-code reference doc                       | FULLY_FUNCTIONAL | `docs/error-codes.md`; code, sentinel, status context, retry guidance                               |
@@ -380,7 +380,7 @@ the plan; bulk payments only on a consumer demand signal).
 | Feature                                        | Status           | Evidence                                                  |
 | ---------------------------------------------- | ---------------- | --------------------------------------------------------- |
 | Tolerant timestamp parsing (4 layouts)         | FULLY_FUNCTIONAL | `helpers.go` `parseWiseTimestamp`; zoneless = UTC         |
-| Outgoing query timestamps as UTC `Z` (v0.8.1)  | FULLY_FUNCTIONAL | `helpers.go:148` `formatWiseTimestamp`; Wise 422s offsets |
+| Outgoing query timestamps as UTC `Z` (v0.8.1)  | FULLY_FUNCTIONAL | `helpers.go:167` `formatWiseTimestamp`; Wise 422s offsets |
 | `ListBalances` `types` query param (v0.5.3)    | FULLY_FUNCTIONAL | `balances.go:18,23`; live API 400s without it             |
 | Mapper errors classified `Corruption` (v0.5.2) | FULLY_FUNCTIONAL | `internal_test.go`; fail-fast instead of retry loops      |
 
