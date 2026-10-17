@@ -43,6 +43,22 @@ Unknown codes: Wise adds codes over time. They flow through `Details` and
 `HasCode` unmodified — switch on the constants for known cases and handle the
 default explicitly.
 
+## Envelope variants observed live
+
+Wise also emits two error-body shapes the structured-envelope parser does not
+cover (both observed in the sandbox, 2026-10-17):
+
+- **Top-level-`code`-only**: `{"code":"non.existing.balance"}` — a single
+  `code` with no `errors[]` array. `APIError.Details` stays empty (it parses
+  only the structured envelope) and `Message` renders the raw body verbatim;
+  branch on a substring of `APIError.Body` when you need the code.
+- **Router-shaped 404 on quarterly surfaces**: `{"error":"Not Found"}` — the
+  gateway's body for an unknown version prefix, as opposed to the app-level
+  `{"code":"ott_not_found"}` a served prefix returns. This discriminates
+  quarterly rollovers (see CONTRIBUTING.md) rather than consumer errors.
+  Related wire fact: funding-404s arrive as `application/json` — the spec's
+  `text/plain` note applies to domain funding errors only.
+
 ## Typed errors by HTTP status
 
 The status line drives the type; see the README's error table for the full

@@ -296,9 +296,15 @@ AGENTS.md). The 2026Q4 flip proved that a value-flip is not done until the
 straggler grep is clean — a stale path in a comment or doc survives every
 test. The ritual:
 
-1. **Probe** — confirm the new prefix answers non-404 on the surface.
-   Unauthenticated probes 404 on some surfaces even when live (e.g.
-   `one-time-token`); those need sandbox credentials (see TODO_LIST.md).
+1. **Probe** — discriminate by BODY SHAPE, not by status code: served and
+   unknown prefixes both answer 404, but a served prefix returns an
+   app-level body (`{"code":"ott_not_found"}` on the OTT surface) while an
+   unknown prefix returns the router-level body
+   (`{"error":"Not Found"}`). Probe with sandbox credentials where
+   available — unauthenticated probes are blind on some surfaces (404 on
+   every prefix, including known-good ones). Served window measured
+   2026-10-17: the current quarter plus one quarter each way
+   (2026Q2..2027Q1).
 2. **Flip** — change the version constant in `client.go`
    (`webhookSubscriptionsAPIVersion` / `ottAPIVersion`). The two roll over
    independently; never move both because one moved.
