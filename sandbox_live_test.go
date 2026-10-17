@@ -137,6 +137,7 @@ func TestSandboxLiveGetExchangeRate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetExchangeRate(EUR/USD, current): %v", err)
 	}
+
 	if current.Rate <= 0 {
 		t.Errorf("current rate %v is not positive", current.Rate)
 	}
@@ -150,6 +151,7 @@ func TestSandboxLiveGetExchangeRate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetExchangeRate(EUR/USD, -24h): %v", err)
 	}
+
 	if historical.Rate <= 0 {
 		t.Errorf("historical rate %v is not positive", historical.Rate)
 	}
@@ -176,10 +178,12 @@ func TestSandboxLiveFundTransferNotFound(t *testing.T) {
 	defer cancel()
 
 	_, err := client.FundTransfer(ctx, profile.ID, wise.NewTransferID(1))
+
 	notFound, ok := errors.AsType[*wise.NotFoundError](err)
 	if !ok {
 		t.Fatalf("FundTransfer(nonexistent): expected *NotFoundError, got %v", err)
 	}
+
 	if notFound.StatusCode != http.StatusNotFound {
 		t.Errorf("FundTransfer(nonexistent) status = %d, want 404", notFound.StatusCode)
 	}
@@ -200,6 +204,7 @@ func raiseSandboxSCAChallenge(t *testing.T, client *wise.Client) *wise.SCAChalle
 	if err != nil {
 		t.Fatalf("ListBalances: %v", err)
 	}
+
 	if len(balances) == 0 {
 		t.Fatal("ListBalances returned no balances — expected the pre-funded sandbox balances")
 	}
@@ -274,9 +279,11 @@ func TestSandboxLiveGetOTTStatus(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetOTTStatus: %v", err)
 	}
+
 	if status.ActionType != wise.OTTAction("BALANCE__GET_STATEMENT") {
 		t.Errorf("OTT action = %q, want BALANCE__GET_STATEMENT", status.ActionType)
 	}
+
 	if status.Validity <= 0 || status.Validity > time.Hour {
 		t.Errorf("OTT validity = %s, want within (0, 1h]", status.Validity)
 	}
@@ -293,7 +300,8 @@ func TestSandboxLiveGetOTTStatus(t *testing.T) {
 	}
 
 	if len(pending[0].Alternatives) != 0 {
-		t.Errorf("SIGNATURE challenge unexpectedly offers %d alternatives — the sandbox web login is the only clear path", len(pending[0].Alternatives))
+		t.Errorf("SIGNATURE challenge unexpectedly offers %d alternatives, want none",
+			len(pending[0].Alternatives))
 	}
 }
 
@@ -323,6 +331,7 @@ func TestSandboxLiveCreateBalanceIdempotent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateBalance(NOK): %v", err)
 	}
+
 	if first.ID.IsZero() || first.Currency != wise.Currency("NOK") || first.Type != wise.BalanceTypeStandard {
 		t.Errorf("CreateBalance(NOK) returned %+v — unexpected shape for a fresh creation", first)
 	}
