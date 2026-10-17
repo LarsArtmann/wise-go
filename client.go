@@ -27,12 +27,13 @@ const (
 // legacy /v1../v4 paths. The OpenAPI spec's server URL is authoritative; when
 // a quarter rolls over, update the surface's constant after verifying the
 // paths still resolve against the live API. The two families roll over
-// independently: webhook subscriptions verified live on 2026Q4 (2026-10-05),
-// while the one-time-token surface could not be probed (404 on every prefix,
-// including the known-good 2026Q3) and stays parked until it verifies.
+// independently: webhook subscriptions verified live on 2026Q4
+// (2026-10-05), one-time-token on 2026Q4 (2026-10-16 credentialed sandbox
+// probe: app-level ott_not_found on Q4 vs router-level 404 on the 9999Q1
+// control; the sandbox serves the handler on 2026Q2..2027Q1).
 const (
 	webhookSubscriptionsAPIVersion = "2026Q4"
-	ottAPIVersion                  = "2026Q3"
+	ottAPIVersion                  = "2026Q4"
 	// accountDetailsAPIVersion pins the receiving-bank-details surface. Wise
 	// relocated it from /v1/profiles/{id}/account-details to
 	// /balances/account-details/{id} in the 2027Q1 spec roll (live probe

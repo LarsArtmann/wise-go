@@ -126,7 +126,7 @@ var _ = Describe("OTT (SCA one-time-token endpoints)", func() {
 
 	Describe("GetOTTStatus", func() {
 		It("should fetch and parse the challenge state", func() {
-			mux.HandleFunc("/2026Q3/one-time-token/status", ottHandler(http.MethodGet, func(
+			mux.HandleFunc("/2026Q4/one-time-token/status", ottHandler(http.MethodGet, func(
 				w http.ResponseWriter, _ *http.Request,
 			) {
 				w.Header().Set("Content-Type", "application/json")
@@ -155,7 +155,7 @@ var _ = Describe("OTT (SCA one-time-token endpoints)", func() {
 		})
 
 		It("should decode string-form alternatives leniently", func() {
-			mux.HandleFunc("/2026Q3/one-time-token/status", ottHandler(http.MethodGet, exemptResponseSchema(func(
+			mux.HandleFunc("/2026Q4/one-time-token/status", ottHandler(http.MethodGet, exemptResponseSchema(func(
 				w http.ResponseWriter, _ *http.Request,
 			) {
 				w.Header().Set("Content-Type", "application/json")
@@ -173,7 +173,7 @@ var _ = Describe("OTT (SCA one-time-token endpoints)", func() {
 		})
 
 		It("should treat an empty challenge list as cleared", func() {
-			mux.HandleFunc("/2026Q3/one-time-token/status", ottHandler(http.MethodGet, func(
+			mux.HandleFunc("/2026Q4/one-time-token/status", ottHandler(http.MethodGet, func(
 				w http.ResponseWriter, _ *http.Request,
 			) {
 				w.Header().Set("Content-Type", "application/json")
@@ -195,7 +195,7 @@ var _ = Describe("OTT (SCA one-time-token endpoints)", func() {
 		})
 
 		It("should surface API errors without leaking the OTT", func() {
-			mux.HandleFunc("/2026Q3/one-time-token/status", ottHandler(http.MethodGet, func(
+			mux.HandleFunc("/2026Q4/one-time-token/status", ottHandler(http.MethodGet, func(
 				w http.ResponseWriter, _ *http.Request,
 			) {
 				w.WriteHeader(http.StatusForbidden)
@@ -208,7 +208,7 @@ var _ = Describe("OTT (SCA one-time-token endpoints)", func() {
 		})
 
 		It("should classify a malformed response as corruption", func() {
-			mux.HandleFunc("/2026Q3/one-time-token/status", ottHandler(http.MethodGet, exemptResponseSchema(func(
+			mux.HandleFunc("/2026Q4/one-time-token/status", ottHandler(http.MethodGet, exemptResponseSchema(func(
 				w http.ResponseWriter, _ *http.Request,
 			) {
 				w.Header().Set("Content-Type", "application/json")
@@ -223,7 +223,7 @@ var _ = Describe("OTT (SCA one-time-token endpoints)", func() {
 
 	Describe("TriggerOTT", func() {
 		It("should POST the channel trigger and return the phone hint", func() {
-			mux.HandleFunc("/2026Q3/one-time-token/sms/trigger", ottHandler(http.MethodPost, func(
+			mux.HandleFunc("/2026Q4/one-time-token/sms/trigger", ottHandler(http.MethodPost, func(
 				w http.ResponseWriter, r *http.Request,
 			) {
 				body, readErr := io.ReadAll(r.Body)
@@ -254,7 +254,7 @@ var _ = Describe("OTT (SCA one-time-token endpoints)", func() {
 
 	Describe("VerifyOTT", func() {
 		It("should POST the OTP code and return the updated status", func() {
-			mux.HandleFunc("/2026Q3/one-time-token/sms/verify", ottHandler(http.MethodPost, func(
+			mux.HandleFunc("/2026Q4/one-time-token/sms/verify", ottHandler(http.MethodPost, func(
 				w http.ResponseWriter, r *http.Request,
 			) {
 				Expect(r.Header.Get("Content-Type")).To(Equal("application/json"))
@@ -275,7 +275,7 @@ var _ = Describe("OTT (SCA one-time-token endpoints)", func() {
 		})
 
 		It("should surface a wrong code as a typed API error", func() {
-			mux.HandleFunc("/2026Q3/one-time-token/sms/verify", ottHandler(http.MethodPost, func(
+			mux.HandleFunc("/2026Q4/one-time-token/sms/verify", ottHandler(http.MethodPost, func(
 				w http.ResponseWriter, _ *http.Request,
 			) {
 				w.WriteHeader(http.StatusBadRequest)
@@ -303,21 +303,21 @@ var _ = Describe("OTT (SCA one-time-token endpoints)", func() {
 				verifies    atomic.Int64
 			)
 
-			mux.HandleFunc("/2026Q3/one-time-token/status", ottHandler(http.MethodGet, func(
+			mux.HandleFunc("/2026Q4/one-time-token/status", ottHandler(http.MethodGet, func(
 				w http.ResponseWriter, _ *http.Request,
 			) {
 				statusCalls.Add(1)
 				w.Header().Set("Content-Type", "application/json")
 				_, _ = w.Write([]byte(ottStatusJSON(ottSMSChallengeJSON, 3600, "BALANCE__GET_STATEMENT")))
 			}))
-			mux.HandleFunc("/2026Q3/one-time-token/sms/trigger", ottHandler(http.MethodPost, func(
+			mux.HandleFunc("/2026Q4/one-time-token/sms/trigger", ottHandler(http.MethodPost, func(
 				w http.ResponseWriter, _ *http.Request,
 			) {
 				triggers.Add(1)
 				w.Header().Set("Content-Type", "application/json")
 				_, _ = w.Write([]byte(`{"obfuscatedPhoneNo":"*********8888"}`))
 			}))
-			mux.HandleFunc("/2026Q3/one-time-token/sms/verify", ottHandler(http.MethodPost, func(
+			mux.HandleFunc("/2026Q4/one-time-token/sms/verify", ottHandler(http.MethodPost, func(
 				w http.ResponseWriter, _ *http.Request,
 			) {
 				verifies.Add(1)
@@ -352,7 +352,7 @@ var _ = Describe("OTT (SCA one-time-token endpoints)", func() {
 		It("should clear a second remaining challenge in a second round", func() {
 			var verifies atomic.Int64
 
-			mux.HandleFunc("/2026Q3/one-time-token/status", ottHandler(http.MethodGet, func(
+			mux.HandleFunc("/2026Q4/one-time-token/status", ottHandler(http.MethodGet, func(
 				w http.ResponseWriter, _ *http.Request,
 			) {
 				w.Header().Set("Content-Type", "application/json")
@@ -361,13 +361,13 @@ var _ = Describe("OTT (SCA one-time-token endpoints)", func() {
 					{"primaryChallenge": {"type": "SMS"}, "alternatives": [], "required": true, "passed": false}
 				]`, 3600, "BALANCE__GET_STATEMENT")))
 			}))
-			mux.HandleFunc("/2026Q3/one-time-token/sms/trigger", ottHandler(http.MethodPost, func(
+			mux.HandleFunc("/2026Q4/one-time-token/sms/trigger", ottHandler(http.MethodPost, func(
 				w http.ResponseWriter, _ *http.Request,
 			) {
 				w.Header().Set("Content-Type", "application/json")
 				_, _ = w.Write([]byte(`{"obfuscatedPhoneNo":"*********8888"}`))
 			}))
-			mux.HandleFunc("/2026Q3/one-time-token/sms/verify", ottHandler(http.MethodPost, func(
+			mux.HandleFunc("/2026Q4/one-time-token/sms/verify", ottHandler(http.MethodPost, func(
 				w http.ResponseWriter, _ *http.Request,
 			) {
 				round := verifies.Add(1)
@@ -396,19 +396,19 @@ var _ = Describe("OTT (SCA one-time-token endpoints)", func() {
 		})
 
 		It("should clear via an alternative when the primary is not the channel", func() {
-			mux.HandleFunc("/2026Q3/one-time-token/status", ottHandler(http.MethodGet, func(
+			mux.HandleFunc("/2026Q4/one-time-token/status", ottHandler(http.MethodGet, func(
 				w http.ResponseWriter, _ *http.Request,
 			) {
 				w.Header().Set("Content-Type", "application/json")
 				_, _ = w.Write([]byte(ottStatusJSON(ottPINWithSMSAlternativeJSON, 3600, "BALANCE__GET_STATEMENT")))
 			}))
-			mux.HandleFunc("/2026Q3/one-time-token/sms/trigger", ottHandler(http.MethodPost, func(
+			mux.HandleFunc("/2026Q4/one-time-token/sms/trigger", ottHandler(http.MethodPost, func(
 				w http.ResponseWriter, _ *http.Request,
 			) {
 				w.Header().Set("Content-Type", "application/json")
 				_, _ = w.Write([]byte(`{"obfuscatedPhoneNo":"*********8888"}`))
 			}))
-			mux.HandleFunc("/2026Q3/one-time-token/sms/verify", ottHandler(http.MethodPost, func(
+			mux.HandleFunc("/2026Q4/one-time-token/sms/verify", ottHandler(http.MethodPost, func(
 				w http.ResponseWriter, _ *http.Request,
 			) {
 				w.Header().Set("Content-Type", "application/json")
@@ -424,7 +424,7 @@ var _ = Describe("OTT (SCA one-time-token endpoints)", func() {
 		})
 
 		It("should reject when no phone channel can clear the challenge", func() {
-			mux.HandleFunc("/2026Q3/one-time-token/status", ottHandler(http.MethodGet, func(
+			mux.HandleFunc("/2026Q4/one-time-token/status", ottHandler(http.MethodGet, func(
 				w http.ResponseWriter, _ *http.Request,
 			) {
 				w.Header().Set("Content-Type", "application/json")
@@ -441,13 +441,13 @@ var _ = Describe("OTT (SCA one-time-token endpoints)", func() {
 		})
 
 		It("should abort when the code provider fails", func() {
-			mux.HandleFunc("/2026Q3/one-time-token/status", ottHandler(http.MethodGet, func(
+			mux.HandleFunc("/2026Q4/one-time-token/status", ottHandler(http.MethodGet, func(
 				w http.ResponseWriter, _ *http.Request,
 			) {
 				w.Header().Set("Content-Type", "application/json")
 				_, _ = w.Write([]byte(ottStatusJSON(ottSMSChallengeJSON, 3600, "BALANCE__GET_STATEMENT")))
 			}))
-			mux.HandleFunc("/2026Q3/one-time-token/sms/trigger", ottHandler(http.MethodPost, func(
+			mux.HandleFunc("/2026Q4/one-time-token/sms/trigger", ottHandler(http.MethodPost, func(
 				w http.ResponseWriter, _ *http.Request,
 			) {
 				w.Header().Set("Content-Type", "application/json")

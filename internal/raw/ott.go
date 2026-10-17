@@ -3,7 +3,7 @@ package raw
 import "encoding/json/jsontext"
 
 // OTTResponse is the wire representation of Wise's one-time-token (OTT)
-// status, served by GET /2026Q3/one-time-token/status and as the 200 body of
+// status, served by GET /2026Q4/one-time-token/status and as the 200 body of
 // the per-channel verify endpoints. Unknown fields are ignored by the JSON
 // decoder so Wise can add fields without breaking the SDK.
 type OTTResponse struct {

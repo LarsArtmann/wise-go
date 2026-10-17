@@ -81,7 +81,7 @@ that clear challenges programmatically, and `GetBankAccountDetails` on the
   payloads for `transfers#state-change`, `transfers#payout-failure`, and
   `balances#credit`; unknown event types pass through.
 - **SCA one-time-token endpoints** — `GetOTTStatus`, `TriggerOTT`, `VerifyOTT`,
-  and the `ClearSCAChallenge` convenience loop (`/2026Q3/one-time-token/...`).
+  and the `ClearSCAChallenge` convenience loop (`/2026Q4/one-time-token/...`).
 - **`WithUserAgent`** + `Profile.UserID`/`PublicID` + client concurrency pinned
   by test.
 - **v0.12.0 — correctness + conformance** — the OpenAPI spec-conformance gate

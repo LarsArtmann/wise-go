@@ -218,7 +218,7 @@ func exemptResponseSchema(next http.HandlerFunc) http.HandlerFunc {
 }
 
 // versionedSegment matches the leading version segments the SDK puts into
-// paths (/v1../v4 and the quarterly surfaces, e.g. /2026Q3 or /2026Q4) while
+// paths (/v1../v4 and the quarterly surfaces, e.g. /2026Q4 or /2027Q1) while
 // the spec templates carry
 // no version prefix at all (versioning lives in the spec server URL).
 var versionedSegment = regexp.MustCompile(`^(v[0-9]+|[0-9]{4}Q[1-4])$`)

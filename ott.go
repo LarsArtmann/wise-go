@@ -218,7 +218,7 @@ func ottHeaders(ott OneTimeToken) map[string]string {
 }
 
 // GetOTTStatus retrieves the challenge state of a one-time token
-// (GET /2026Q3/one-time-token/status): which challenges must be passed to
+// (GET /2026Q4/one-time-token/status): which challenges must be passed to
 // clear it, their types and alternatives, the remaining validity, and the
 // authorized action. The personal API token authorizes the call; the OTT is
 // the one issued in the x-2fa-approval header of an [SCAChallengeError].
@@ -239,7 +239,7 @@ func (c *Client) GetOTTStatus(ctx context.Context, ott OneTimeToken) (*OTTStatus
 }
 
 // TriggerOTT sends the one-time password for the given channel to the
-// user's verified phone number (POST /2026Q3/one-time-token/{channel}/trigger).
+// user's verified phone number (POST /2026Q4/one-time-token/{channel}/trigger).
 // The OTP arrives out of band; submit it with [Client.VerifyOTT]. Triggering
 // is required before verifying. On the sandbox no real SMS is sent and the
 // OTP is always "111111".
@@ -265,7 +265,7 @@ func (c *Client) TriggerOTT(ctx context.Context, ott OneTimeToken, channel OTTCh
 }
 
 // VerifyOTT submits the one-time password for the given channel
-// (POST /2026Q3/one-time-token/{channel}/verify) and returns the OTT's
+// (POST /2026Q4/one-time-token/{channel}/verify) and returns the OTT's
 // updated status: an empty pending-required set means the challenge is
 // cleared and the SCA-protected request can be retried, optionally with the
 // OTT in the x-2fa-approval header via [WithSCAApprovalToken].
