@@ -78,9 +78,9 @@ The evidence below is based on the repository at the assessment date. A library 
 
 **Recommendations:**
 
-1. Make the Nix shell and `nix flake check` the canonical supported path in CI and contributor documentation.
-2. Add a simple, documented dependency/toolchain verification command for non-Nix users, including the expected Go version and `GOEXPERIMENT`.
-3. Ensure release builds use the same locked dependency/toolchain path as CI.
+~~1. Make the Nix shell and `nix flake check` the canonical supported path in CI and contributor documentation.~~ done — nix is the canonical path in CONTRIBUTING and the ci.yml nix job
+~~2. Add a simple, documented dependency/toolchain verification command for non-Nix users, including the expected Go version and `GOEXPERIMENT`.~~ done — CONTRIBUTING documents GOEXPERIMENT and the expected Go version
+~~3. Ensure release builds use the same locked dependency/toolchain path as CI.~~ done — releases build through the flake-pinned toolchain (pre-release chain)
 
 ### III. Config — Partial, appropriate for a library
 
@@ -99,10 +99,10 @@ The evidence below is based on the repository at the assessment date. A library 
 
 **Recommendations:**
 
-1. Keep the library API explicit; do not add implicit environment reads to `wise.New`.
-2. Add consumer documentation showing a safe pattern such as reading `WISE_API_KEY` in the application boundary and passing it to the SDK.
-3. Document that `WithBaseURL` is intended for deployment configuration and that custom URLs must be validated by the consuming application.
-4. Consider validating an empty API key or documenting the intentional unauthenticated-request behavior more prominently. This is an API usability decision, not a direct Twelve-Factor requirement.
+~~1. Keep the library API explicit; do not add implicit environment reads to `wise.New`.~~ done — no env reads in wise.New; the env-var-free library was preserved
+~~2. Add consumer documentation showing a safe pattern such as reading `WISE_API_KEY` in the application boundary and passing it to the SDK.~~ done — README DI section shows the env-to-New boundary pattern
+~~3. Document that `WithBaseURL` is intended for deployment configuration and that custom URLs must be validated by the consuming application.~~ done — README Configuration documents WithBaseURL for deployment config
+~~4. Consider validating an empty API key or documenting the intentional unauthenticated-request behavior more prominently. This is an API usability decision, not a direct Twelve-Factor requirement.~~ done — empty-key behavior documented on New godoc (sends no Authorization header)
 
 ### IV. Backing services — Strong
 
@@ -138,10 +138,10 @@ The evidence below is based on the repository at the assessment date. A library 
 
 **Recommendations:**
 
-1. Add a CI job that runs `nix flake check` end to end, not only the lighter checks.
-2. Define a release workflow that builds/tests a tagged commit and publishes the Go module from that immutable tag.
-3. Record release identifiers and migration notes in `CHANGELOG.md`; never mutate a published release.
-4. Keep runtime configuration in the consuming application, separate from the library artifact.
+~~1. Add a CI job that runs `nix flake check` end to end, not only the lighter checks.~~ done — ci.yml nix job runs the full check; execution user-gated (TODO_LIST P2)
+~~2. Define a release workflow that builds/tests a tagged commit and publishes the Go module from that immutable tag.~~ done — releases ship via the pre-release chain + annotated tags + gh release (v0.12.0-v0.14.0)
+~~3. Record release identifiers and migration notes in `CHANGELOG.md`; never mutate a published release.~~ done — CHANGELOG is append-only; per-version release notes are gate-checked
+~~4. Keep runtime configuration in the consuming application, separate from the library artifact.~~ done — library stays env-var-free; configuration remains caller-owned
 
 ### VI. Processes — Strong for the library boundary; application-owned for runtime
 
@@ -215,10 +215,10 @@ The repository defines no long-running process types, workers, or web server. It
 
 **Recommendations:**
 
-1. Run the complete Nix check in CI.
-2. Add an optional, credentialed sandbox integration workflow, never as a required fork-safe PR check.
-3. Pin or verify tool versions for the manual path.
-4. Keep test fixtures and sandbox behavior aligned with the documented wire formats.
+1. Run the complete Nix check in CI. **→ same verdict as the P1 item: user-gated CI enable**
+~~2. Add an optional, credentialed sandbox integration workflow, never as a required fork-safe PR check.~~ done — sandbox-live.yml shipped (ecdc738), dispatch-gated, fork-safe
+~~3. Pin or verify tool versions for the manual path.~~ done — CI tool versions pinned; devShell pins the toolchain
+~~4. Keep test fixtures and sandbox behavior aligned with the documented wire formats.~~ done — spec-conformance gate keeps fixtures aligned with the wire formats
 
 ### XI. Logs — Not applicable to the library; good non-interference
 
@@ -263,19 +263,19 @@ These are not compliance failures:
 
 ### P1: Make release and CI evidence complete
 
-1. Add a GitHub Actions job for full `nix flake check`.
-2. Verify that the Nix test derivation, formatting check, and all expected lint checks pass in a clean CI environment.
-3. Add a tagged-release workflow that validates the tag, runs the canonical checks, and publishes the module from that immutable revision.
-4. Update `FEATURES.md` and `TODO_LIST.md` when the checks are actually proven, not merely configured.
+~~1. Add a GitHub Actions job for full `nix flake check`.~~ done — nix job runs the full check in ci.yml (refreshed 14523ae); first execution rides the user-gated CI enable
+2. Verify that the Nix test derivation, formatting check, and all expected lint checks pass in a clean CI environment. **→ same user-gated CI enable (TODO_LIST P2)**
+~~3. Add a tagged-release workflow that validates the tag, runs the canonical checks, and publishes the module from that immutable revision.~~ done — releases ship via the pre-release chain + annotated tags + gh release (v0.12.0-v0.14.0 with Release objects)
+~~4. Update `FEATURES.md` and `TODO_LIST.md` when the checks are actually proven, not merely configured.~~ done — FEATURES Build-and-tooling rows and TODO_LIST track the CI-enabled state truthfully
 
 **Why first:** This closes the largest observable gap between a reproducible development setup and a reproducible published artifact.
 
 ### P2: Clarify the library/application configuration boundary
 
-1. Add README guidance for mapping application environment variables to `wise.New`.
-2. Document the expected handling of `WISE_API_KEY`, sandbox selection, custom endpoint, timeout, and retry values at the application boundary.
-3. Add redaction guidance for injected HTTP transports and middleware.
-4. Document retry composition so consumer-level retries do not multiply SDK-level retries unexpectedly.
+~~1. Add README guidance for mapping application environment variables to `wise.New`.~~ done — the DI and Health Checks section shows the os.Getenv boundary pattern
+~~2. Document the expected handling of `WISE_API_KEY`, sandbox selection, custom endpoint, timeout, and retry values at the application boundary.~~ done — README Configuration documents sandbox/endpoint/timeout/retry options
+3. Add redaction guidance for injected HTTP transports and middleware. **→ ROADMAP raw ideas (transport-redaction note, added 2026-10-17)**
+4. Document retry composition so consumer-level retries do not multiply SDK-level retries unexpectedly. **→ ROADMAP raw ideas (retry-composition note, added 2026-10-17)**
 
 **Why second:** These changes improve real deployments without introducing hidden global configuration into the library.
 

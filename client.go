@@ -61,6 +61,11 @@ type Client struct {
 }
 
 // New creates a new Wise API client with the given API key and options.
+//
+// An empty apiKey is passed through: requests are sent without the
+// Authorization header (Wise's unauthenticated endpoints, such as the
+// public quote preview, still work). Validate credentials explicitly with
+// Authenticate.
 func New(apiKey string, opts ...Option) *Client {
 	cfg := defaultConfig()
 	cfg.apiKey = apiKey
