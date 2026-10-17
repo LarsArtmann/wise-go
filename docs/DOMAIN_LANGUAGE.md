@@ -38,6 +38,8 @@ Immutable objects defined by attributes.
 | TransactionExchange | Currency-conversion details on a transaction | From/to amounts in cents, rate; nil for non-conversion transactions                                                                  |
 | Money               | Paired cents + currency value object         | `Money{Cents int64, Currency Currency}`; no arithmetic by design (see AGENTS.md)                                                     |
 | WebhookEventType    | Which domain event triggers a delivery       | Open enum (33 documented constants); open by design so unseen event types never break handlers                                       |
+| WiseErrorCode       | Wise's granular machine-readable wire code   | Open enum (`not.valid`, `resource_not_found`, ...); unknown wire values pass through `Details`/`HasCode` unmodified (v0.15.0)         |
+| WiseErrorDetail     | One entry of Wise's structured error envelope | `{Code WiseErrorCode, Message string}` in wire order; `Message` is Wise's own text, never SDK-authored (v0.15.0)                     |
 
 ## Entities (extended)
 
@@ -56,6 +58,8 @@ Immutable objects defined by attributes.
 | Account details       | A receiving-bank-details set (per-currency account identification block) keyed by its own ID, not by profile | `GetBankAccountDetails` on the relocated 2027Q1 path; `AccountIdentification` is a spec oneOf (BE/GB/US), exactly one member present                   |
 | Transfer originator   | The ultimate party originating transferred funds (amount, address, legal identity)                           | `CreateTransferOriginator`/`GetTransferOriginator` (v0.14.0); `OriginatorName`/`OriginatorAddress` wire values are toWire-mapped                       |
 | Typed webhook payload | The event-specific struct decoded from a delivery envelope's payload                                         | `TransferActiveCasesData`/`TransferRefundData` (v0.14.0) alongside the generic `WebhookResource`; unknown event types keep the raw payload             |
+| Code sentinel         | A package-level error standing for one Wise wire code                                                        | 11 curated wave-1 sentinels (`ErrNotValid`, ...); `errors.Is` matches them through any wrap chain via `APIError.Is` comparing `Details` (v0.15.0)      |
+| Typed error (by status) | The concrete error type the HTTP status selects                                                            | 400 → `*BadRequestError` (v0.15.0), 401/403 → `*AuthError`, 403+2FA → `*SCAChallengeError`, 404 → `*NotFoundError`, 429 → `*RateLimitError`, 5xx → `*ServerError`; the status — never the body code — drives the type |
 
 ## Raw vs Result Types
 
