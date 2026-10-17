@@ -311,8 +311,8 @@ the plan; bulk payments only on a consumer demand signal).
 | Custom HTTP client (`WithHTTPClient`)   | FULLY_FUNCTIONAL | `options.go:114`; accepts `Doer` interface (`client.go:41`)                                                                                              |
 | Correlation ID (`WithCorrelationID`)    | FULLY_FUNCTIONAL | `options.go:127`; sets `X-External-Correlation-Id` header on all requests                                                                                |
 | Retry with backoff (429, 5xx, network)  | FULLY_FUNCTIONAL | `client.go:145` `isRetryableError`; `Retry-After` honored via `DelayFunc` (capped)                                                                       |
-| `Authenticate(ctx)`                     | FULLY_FUNCTIONAL | `client.go:180`; delegates to `ListProfiles`                                                                                                             |
-| `Health(ctx)`                           | FULLY_FUNCTIONAL | `client.go:190`; credential-validating readiness probe (authenticated `ListProfiles` through the retry executor — not a cheap liveness check; see godoc) |
+| `Authenticate(ctx)`                     | FULLY_FUNCTIONAL | `client.go:185`; delegates to `ListProfiles`                                                                                                             |
+| `Health(ctx)`                           | FULLY_FUNCTIONAL | `client.go:202`; credential-validating readiness probe (authenticated `ListProfiles` through the retry executor — not a cheap liveness check; see godoc) |
 | `WithUserAgent` option (v0.11.0)        | FULLY_FUNCTIONAL | `options.go:88`; custom `User-Agent` on every request, default preserved (BDD)                                                                           |
 | Shared-client concurrency (v0.11.0)     | FULLY_FUNCTIONAL | `wise_test.go:246`; 16 parallel requests, per-request correlation-ID isolation, `-race`                                                                  |
 
