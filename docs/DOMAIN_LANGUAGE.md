@@ -5,12 +5,12 @@ Inspired by Domain-Driven Design (DDD) Ubiquitous Language.
 
 ## Glossary
 
-| Term                   | Definition                                                                                                                                                                                               | Context          |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| wise-go                | The Go SDK for the Wise API                                                                                                                                                                              | Project name     |
-| Wise                   | The financial platform (formerly TransferWise)                                                                                                                                                           | External service |
-| API Key                | Bearer token for authenticating with the Wise API                                                                                                                                                        | Authentication   |
-| Sandbox                | Wise test environment at `api.wise-sandbox.com` (V2; V1 `api.sandbox.transferwise.tech` deprecated June 30, 2026)                                                                                        | Development      |
+| Term                         | Definition                                                                                                                                                                                                                        | Context                        |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| wise-go                      | The Go SDK for the Wise API                                                                                                                                                                                                       | Project name                   |
+| Wise                         | The financial platform (formerly TransferWise)                                                                                                                                                                                    | External service               |
+| API Key                      | Bearer token for authenticating with the Wise API                                                                                                                                                                                 | Authentication                 |
+| Sandbox                      | Wise test environment at `api.wise-sandbox.com` (V2; V1 `api.sandbox.transferwise.tech` deprecated June 30, 2026)                                                                                                                 | Development                    |
 | Quarterly versioned surfaces | The quarterly versioned API bases that host endpoint families absent from the legacy `/v1../v4` paths: webhook subscriptions and SCA one-time-token on `2026Q4`, bank account details on `2027Q1` — each rolls over independently | Webhooks, SCA, Account details |
 
 ## Entities

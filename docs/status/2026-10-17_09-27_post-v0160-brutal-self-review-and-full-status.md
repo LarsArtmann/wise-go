@@ -31,7 +31,7 @@ No — with one self-correction above (the 7+1-vs-8/8 phrasing, fixed). The assu
 
 ### How are we doing on tests?
 
-- The live suite is now the strongest part of the lane: 8 key-gated tests, honest SKIP paths, idempotency-key-stable mutations. 
+- The live suite is now the strongest part of the lane: 8 key-gated tests, honest SKIP paths, idempotency-key-stable mutations.
 - Honest weaknesses: `TestSandboxLiveCreateBalanceIdempotent` assumes `profiles[0]` ordering and a sandbox reset without a foreign NOK balance (acceptable sandbox tradeoffs, undocumented in the test — should be); my credentialed reruns omitted `-count=1` (results were real — durations differ — but the README recipe is stricter than my discipline); assumptions 1+3 remain un-pinnable until an SCA web-flow session exists.
 - Fuzz/conformance/race gates all green and untouched by this session's changes.
 
@@ -39,28 +39,28 @@ No — with one self-correction above (the 7+1-vs-8/8 phrasing, fixed). The assu
 
 ## a) FULLY DONE
 
-| Item | Evidence |
-| --- | --- |
-| **v0.16.0 released end-to-end** | Pre-release chain green incl. `--shuffle`; apidiff = 4 additive `Quote` fields only (gorelease itself suggested v0.16.0); annotated tag `8f2cdb7`; master + tag pushed; GitHub prerelease created; proxy indexed; clean-dir `go get` + consumer compile-and-run verified. |
-| **Assumption #2 corrected: PARTIAL → VERIFIED** | Sandbox balance creation WORKS (standard + savings), identical `X-idempotence-uuid` replay returns the same balance. Corrected in CHANGELOG + TODO_LIST + AGENTS pre-tag; lesson ("single-probe 403 verdicts are provisional") recorded. |
-| **M1 — lane recorded** | CHANGELOG: first credentialed run, 5-assumption verdicts, 2 wire findings, tests entry; TODO strikes + v1.0.0-hold note; AGENTS sandbox-lane gotcha. Commit `f08e404` (+ daemon-swept corrections, contents verified). |
-| **M2 — five permanent live tests** | Rates (current+historical), funding-404 typing, SCA shape (403 + OTT headers, no token leak), `GetOTTStatus` on 2026Q4 (action/validity/SIGNATURE/zero-alternatives), CreateBalance idempotency. 7 PASS + 1 env-gated SKIP with key; all SKIP keyless. Commit `8bc9756`. |
-| **M9 — probe + envelope docs** | CONTRIBUTING rollover step 1 rewritten (body-shape discriminator, blind unauthenticated probes, served window); `docs/error-codes.md` envelope-variants section. Commit `ff70f45`. |
-| **M14 — gotcha recurrence notes** | Sweep recurrence (`92bab25`→`594a23a`) added to the modernizer bullet; lll recurrence verified already covered. |
-| **M10 — gate battery** | `nix flake check` (also closing the carried flake.lock-nixpkgs-bump question), spec-drift (43 endpoints, 0 drift), lint 0, race green, doc-verify, release-notes-check. |
-| **M12 — daemon audit `93601d1..HEAD`** | Every heuristic commit's file set matches surrounding session work; only damage = known sweep `92bab25` (repaired `594a23a`). Config integrity verified (go 1.26.0, caps 50/10, .buildflow.yml 106 lines). |
-| **M7 — bank-sync → v0.16.0** | go.mod + flake input `/v0.16.0` + flake.lock + vendorHash dance + check-dep-alignment green; SCA mocks flipped Q3→Q4; sentinel-sweep verdict recorded in bank-sync AGENTS/07 (KEEP AsType — sentinels would narrow router-404 handling); wise+sync packages build and test green on the new pin. Committed locally via daemon sweeps (`2cd56f2b`/`ba9944fe`/`4051cbac`), three-way state verified consistent. |
-| **Doc freshness** | FEATURES sandbox row DISABLED→FULLY_FUNCTIONAL; README sandbox section lists the new coverage (commit `49a1e28`); release notes `docs/releases/v0.16.0-release-notes.md`; CHANGELOG section cut with empty `[Unreleased]`. |
-| **Session records** | 09:15 status report + this report (07:15 factual fix folded in). |
+| Item                                            | Evidence                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **v0.16.0 released end-to-end**                 | Pre-release chain green incl. `--shuffle`; apidiff = 4 additive `Quote` fields only (gorelease itself suggested v0.16.0); annotated tag `8f2cdb7`; master + tag pushed; GitHub prerelease created; proxy indexed; clean-dir `go get` + consumer compile-and-run verified.                                                                                                                                     |
+| **Assumption #2 corrected: PARTIAL → VERIFIED** | Sandbox balance creation WORKS (standard + savings), identical `X-idempotence-uuid` replay returns the same balance. Corrected in CHANGELOG + TODO_LIST + AGENTS pre-tag; lesson ("single-probe 403 verdicts are provisional") recorded.                                                                                                                                                                      |
+| **M1 — lane recorded**                          | CHANGELOG: first credentialed run, 5-assumption verdicts, 2 wire findings, tests entry; TODO strikes + v1.0.0-hold note; AGENTS sandbox-lane gotcha. Commit `f08e404` (+ daemon-swept corrections, contents verified).                                                                                                                                                                                        |
+| **M2 — five permanent live tests**              | Rates (current+historical), funding-404 typing, SCA shape (403 + OTT headers, no token leak), `GetOTTStatus` on 2026Q4 (action/validity/SIGNATURE/zero-alternatives), CreateBalance idempotency. 7 PASS + 1 env-gated SKIP with key; all SKIP keyless. Commit `8bc9756`.                                                                                                                                      |
+| **M9 — probe + envelope docs**                  | CONTRIBUTING rollover step 1 rewritten (body-shape discriminator, blind unauthenticated probes, served window); `docs/error-codes.md` envelope-variants section. Commit `ff70f45`.                                                                                                                                                                                                                            |
+| **M14 — gotcha recurrence notes**               | Sweep recurrence (`92bab25`→`594a23a`) added to the modernizer bullet; lll recurrence verified already covered.                                                                                                                                                                                                                                                                                               |
+| **M10 — gate battery**                          | `nix flake check` (also closing the carried flake.lock-nixpkgs-bump question), spec-drift (43 endpoints, 0 drift), lint 0, race green, doc-verify, release-notes-check.                                                                                                                                                                                                                                       |
+| **M12 — daemon audit `93601d1..HEAD`**          | Every heuristic commit's file set matches surrounding session work; only damage = known sweep `92bab25` (repaired `594a23a`). Config integrity verified (go 1.26.0, caps 50/10, .buildflow.yml 106 lines).                                                                                                                                                                                                    |
+| **M7 — bank-sync → v0.16.0**                    | go.mod + flake input `/v0.16.0` + flake.lock + vendorHash dance + check-dep-alignment green; SCA mocks flipped Q3→Q4; sentinel-sweep verdict recorded in bank-sync AGENTS/07 (KEEP AsType — sentinels would narrow router-404 handling); wise+sync packages build and test green on the new pin. Committed locally via daemon sweeps (`2cd56f2b`/`ba9944fe`/`4051cbac`), three-way state verified consistent. |
+| **Doc freshness**                               | FEATURES sandbox row DISABLED→FULLY_FUNCTIONAL; README sandbox section lists the new coverage (commit `49a1e28`); release notes `docs/releases/v0.16.0-release-notes.md`; CHANGELOG section cut with empty `[Unreleased]`.                                                                                                                                                                                    |
+| **Session records**                             | 09:15 status report + this report (07:15 factual fix folded in).                                                                                                                                                                                                                                                                                                                                              |
 
 ## b) PARTIALLY DONE
 
-| Item | State | Remaining |
-| --- | --- | --- |
+| Item                                | State                                                                                                | Remaining                                                                                                             |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | **M11 — buildflow findings review** | Closed on expired artifact + standing policy (warning classes pre-dispositioned, no error severity). | A fresh `GOTOOLCHAIN=auto buildflow --fix --build-mode=full` would make it actually DONE; second session carrying it. |
-| **pkg.go.dev verification** | Proxy + `go get` verified; `/fetch` triggered. | Page render never confirmed (≤1h normal lag). |
-| **Sandbox assumptions 1+3** | Verdicts recorded (PARTIAL/BLOCKED, SCA-gated). | Full close needs the M8 web-login attempt (user-gated Q1). |
-| **Coverage number** | Floors still met in flake check. | Local re-measure post-new-tests never done; badge frozen until CI (M26). |
+| **pkg.go.dev verification**         | Proxy + `go get` verified; `/fetch` triggered.                                                       | Page render never confirmed (≤1h normal lag).                                                                         |
+| **Sandbox assumptions 1+3**         | Verdicts recorded (PARTIAL/BLOCKED, SCA-gated).                                                      | Full close needs the M8 web-login attempt (user-gated Q1).                                                            |
+| **Coverage number**                 | Floors still met in flake check.                                                                     | Local re-measure post-new-tests never done; badge frozen until CI (M26).                                              |
 
 ## c) NOT STARTED
 
@@ -99,6 +99,7 @@ Nothing unrecoverable shipped. The honest fuck-up ledger, ranked:
 ## f) Up to 50 things to get done next
 
 **Release/publish tail (quick):**
+
 1. Verify pkg.go.dev rendered v0.16.0 (fetch the version page).
 2. bank-sync: push the pin-bump commits (user-gated — see g).
 3. Watch the parallel bank-sync session's `internal/server` refactor land green; rerun full bank-sync battery after.
