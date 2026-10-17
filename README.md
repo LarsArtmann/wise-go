@@ -886,7 +886,9 @@ Three matchers, one decision tree:
    there.
 
 ```go
-transfers, err := client.ListTransfers(ctx, listReq)
+transfers, err := client.ListTransfers(ctx, wise.ListTransfersRequest{
+    ProfileID: wise.NewProfileID(12345), // optional, defaults to personal profile
+})
 if err != nil {
     // Curated Wise codes match by value through any wrap chain:
     if errors.Is(err, wise.ErrRateLimitExceeded) {
