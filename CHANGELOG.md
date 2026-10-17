@@ -74,6 +74,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `docs/bench/2026-10-16_v0140_baseline.txt` — benchstat baseline cut at the
   v0.14.0 tag (six `-count 1` captures); the new comparison target per
   `docs/bench/README.md`.
+- A `pin-sync` CI job running `nix run .#pin-sync` — the network half of the
+  dependency-pin gate (the hermetic `checks.pin-sync` inside
+  `nix flake check` verifies pin shape only; the job resolves each `go.mod`
+  version tag on GitHub and asserts it points at the flake `rev`).
 
 ### Changed
 
