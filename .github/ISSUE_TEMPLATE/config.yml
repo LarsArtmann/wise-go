@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions & ideas
+    url: https://github.com/LarsArtmann/wise-go/discussions
+    about: Ask how to use the SDK or propose an endpoint/API-shape idea before filing a feature request.
+  - name: Documentation
+    url: https://github.com/LarsArtmann/wise-go/tree/master/docs
+    about: Error-code reference, endpoint inventory, and release notes live in-tree.
