@@ -118,9 +118,7 @@
         "nixpkgs": [
           "nixpkgs"
         ],
-        "systems": [
-          "systems"
-        ],
+        "systems": "systems",
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
@@ -197,20 +195,23 @@
         "go-nix-helpers": "go-nix-helpers",
         "go-retry": "go-retry",
         "md-go-validator": "md-go-validator",
-        "nixpkgs": "nixpkgs",
-        "systems": "systems"
+        "nixpkgs": "nixpkgs"
       }
     },
     "systems": {
       "locked": {
-        "path": "./nix/systems",
-        "type": "path"
+        "lastModified": 1791244623,
+        "narHash": "sha256-uuanbkFk8a313Zfrxdcz8Us/yQtaxNnKJtX8v0ZPpd8=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "d36eeed142f88b5a636f2e3856a53c61654cf29b",
+        "type": "github"
       },
       "original": {
-        "path": "./nix/systems",
-        "type": "path"
-      },
-      "parent": []
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
     },
     "treefmt-nix": {
       "inputs": {

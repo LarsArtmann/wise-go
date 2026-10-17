@@ -220,7 +220,7 @@ first audit against the v0.14.0 release state (no earlier baseline claimed).
 > Sources: this session's verification + the routed queues it left behind.
 > Items without a "routed" mark are the residue THIS report adds.
 
-1. ⏳ **Cut v0.15.0** — the structured error surface in `[Unreleased]` is
+1. ✅ ~~**Cut v0.15.0** — the structured error surface in `[Unreleased]` is~~ SHIPPED 2026-10-17: tag `415cce4` (pre-release chain exit 0, GitHub Release live, proxy + clean-dir `go get` verified); the original
    breaking (400s → `*BadRequestError`, 11 sentinels, `Details`); pre-release
    chain + release notes + bank-sync recipe pointer (routed: TODO P1).
 2. ⏳ **Security window: nixpkgs → go 1.26.9** when it lands (9 stdlib vulns
@@ -237,48 +237,47 @@ first audit against the v0.14.0 release state (no earlier baseline claimed).
 7. ⏳ **`Health` code-half decision** (routed: TODO P3 Decisions).
 8. ⏳ **Spec-drift `--fail-on-drift` posture** (routed: TODO P3 Decisions).
 9. ⏳ **Flake pinning strategy (rev vs tag)** (routed: TODO P3 Decisions).
-10. ⏳ **Darwin check matrix** (routed: TODO P3 Decisions).
+10. ✅ ~~**Darwin check matrix**~~ APPLIED 2026-10-17 (D5 option b under the train's blanket execution order, reversible): `go-standard.systems` 3-system list, `--all-systems` exit 0 (`03ad312`).
 11. ⏳ **`BUILDFLOW_NO_RESULT_CACHE` standing default** (routed: TODO P3
     Decisions, new this session).
-12. **Buildflow/infra micro-batch** — golangci full-diff vs pre-`ce52551`;
+12. ✅ ~~**Buildflow/infra micro-batch**~~ DONE 2026-10-17 (T56–T60: only `lll` lost; nested-fence filed as md-go-validator#11; #64 reproductions measured + commented; legacy db deleted after mtime proof; interrogate skip_steps'd) —
     md-go-validator nested-fence defect (verify + file); #64 reproduction
     comments; legacy `buildflow.db` cleanup; `interrogate` disposition
     (routed: TODO P3, new this session).
-13. **AGENTS.md <30 KB compression pass** — bullet-by-bullet under
+13. 🟡 **AGENTS.md <30 KB compression pass** — PART 1 done 2026-10-17 (`a84bc35`: 57,097 → 47,354 bytes, zero constraint loss, one split-brain fixed); the second pass to <30 KB stays open — bullet-by-bullet under
     carry-every-concept; now also carries a rubric FAIL (>50 KB) on the
     verify-checklist (routed: TODO P3; the rubric line is new).
-14. **Rewrite `spec_drift.py` extractor on `go/parser`** (routed: TODO P3).
-15. **Retry-composition + transport-redaction README notes** (routed: ROADMAP
+14. ✅ ~~**Rewrite `spec_drift.py` extractor on `go/parser`**~~ DONE 2026-10-17 (`92b8f2f`: AST extractor parity-equal at 43 endpoints, fixtures 9/9, live drift exit 0).
+15. ✅ ~~**Retry-composition + transport-redaction README notes**~~ DONE 2026-10-17 (`bef6e2a`; routed: ROADMAP
     raw ideas, new this session).
-16. **`Quote` residual wire fields** — `rateExpirationTime`,
+16. ✅ ~~**`Quote` residual wire fields**~~ DONE 2026-10-17 (all four incl. `preferredPayIn`; corruption-pinned; `bd584ca`) — original:
     `targetAmountAllowed`, `user` (routed: ROADMAP, new this session).
-17. **Property tests for `Money` cents conversion** (routed: ROADMAP, new).
-18. **CI fuzz smoke job** once CI runs (routed: ROADMAP, new).
-19. **Repo polish** — `.github/ISSUE_TEMPLATE/config.yml` (blank-issues
+17. ✅ ~~**Property tests for `Money` cents conversion**~~ DONE 2026-10-17 — the fuzz found a REAL boundary bug (non-representable amounts mapped to garbage cents) and `toMoney` now rejects them as Corruption (`2e64a4d`).
+18. ✅ ~~**CI fuzz smoke job**~~ SPEC'D 2026-10-17 (`4d3343d`: auto-discovering 3s-per-target job landed in ci.yml; activates with the workflow enable).
+19. ✅ ~~**Repo polish** — `.github/ISSUE_TEMPLATE/config.yml`~~ DONE 2026-10-17 (`7e51ede`, discussions enabled repo-side) — original:
     toggle); session-claim convention for parallel sessions (routed: ROADMAP,
     new).
-20. **api-docs-study §2 tier-table maximalist strike pass** — would make the
-    kept review archive-grade (new; see §b.1).
-21. **Implementation-plan tier-2/3 per-row verdicts** (new; see §b.2).
-22. **TODO P1 retitle/ruling** — key-gated rows under P1 vs P2 (new; §g.2).
-23. **DOMAIN_LANGUAGE: error-system terms** — `WiseErrorCode`, code-sentinel,
+20. ✅ ~~**api-docs-study §2 tier-table maximalist strike pass**~~ RESOLVED 2026-10-17 (`963d094`): banner-grade re-affirmed with a disposition footer — per-row strikes would duplicate FEATURES/TODO maintenance (§g1 was unanswered; conservative default taken).
+21. ✅ ~~**Implementation-plan tier-2/3 per-row verdicts**~~ RESOLVED with #20 (same disposition, `963d094`).
+22. ⏳ **TODO P1 retitle/ruling** — key-gated rows under P1 vs P2 (new; §g.2) — v0.15.0 train kept the ruling untouched; still awaiting.
+23. ✅ ~~**DOMAIN_LANGUAGE: error-system terms**~~ DONE 2026-10-17 (`73003c5`: WiseErrorCode, WiseErrorDetail, code sentinel, status-driven typed errors). Original observation:
     `Details` envelope semantics are new domain vocabulary since the 00-07
     session verified 22/22 terms (new observation this session).
 24. **FEATURES external-claims cadence** — the 215-operation live-preview
     census is dated 2026-09-16 (within quarterly cadence, but schedule the
     re-sweep; new observation).
-25. **Verify the daemon swept the FEATURES anchor re-pin** (the one file
+25. ✅ ~~**Verify the daemon swept the FEATURES anchor re-pin**~~ VERIFIED (daemon commits carried it; anchors green through the session, incl. re-pinning four MORE drifted anchors after the Quote/money edits — caught by the buildflow full run, `846b3bb`). Original:
     uncommitted at report time).
-26. **Run the pre-release chain before the v0.15.0 tag** — includes the
+26. ✅ ~~**Run the pre-release chain before the v0.15.0 tag**~~ DONE (exit 0 at the tag, T15). Original:
     network `spec-drift` + `apidiff` legs (ritual).
 27. **Bank-sync pin bump → `docs/error-codes.md` recipe follow-through**
     (their repo; AGENTS gotcha carries the pointer).
-28. **Annotate THIS report inline when its f-items ship** — the
+28. ✅ ~~**Annotate THIS report inline when its f-items ship**~~ DONE — this annotation pass IS that ritual (2026-10-17, v0.15.0 train M27). Original:
     annotate-then-archive ritual this session just performed on its own
     predecessor (ritual).
 29. **Fleet pin-drift sweep** — port `checks.pin-sync` to the sibling flakes
     (pre-existing ROADMAP raw idea; untouched).
-30. **Consume the v0.14.0 benchstat baseline in the next perf-touching PR**
+30. ✅ ~~**Consume the v0.14.0 benchstat baseline in the next perf-touching PR**~~ RESOLVED 2026-10-17: the v0.15.0 baseline was CUT (`e9d1f41`, geomean −1.85% vs v0.14.0, quiet-machine hygiene rule added) and the M25 verdict recorded — no benchmarked-path change shipped, nothing to compare; the convention is armed. Original:
     (routed: TODO P3).
 
 ## g) Three questions I cannot figure out myself

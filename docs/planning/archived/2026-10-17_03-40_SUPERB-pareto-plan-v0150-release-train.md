@@ -1,5 +1,21 @@
 # SUPERB Pareto Plan — v0.15.0 Release Train (Error Surface) + Full Backlog
 
+> **COMPLETED 2026-10-17** (execution report in the session log; archived per
+> the annotate-then-archive ritual). Shipped: M1–M14, M16–M22, M24–M26 —
+> v0.15.0 tagged (`415cce4`, GitHub Release + proxy live), bank-sync proven
+> unbroken, CI watch package written (`docs/planning/2026-10-17_ci-first-run-watch-package.md`),
+> security-window checklist pre-staged, D6 memo written, doc-truth synced,
+> 25-group art-dupl baseline recorded, bench baseline cut (geomean −1.85%),
+> extractor rewritten on go/parser (parity-equal, 43 endpoints), Quote fields
+> + money-boundary guard landed (the fuzz found a real bug), fuzz-smoke CI
+> job spec'd, issue templates configured, M15 part 1 (57→47.4 KB), M22
+> banner-grade, D5 applied (`--all-systems` exit 0), v1.0 lineage refreshed
+> (tag still user-gated). User-gated remainders: CI enable, sandbox key,
+> decisions D2–D6, v1.0.0 tag, §g rulings (M22 resolved conservatively).
+> M15 second pass to <30 KB stays open in TODO_LIST. M9 window still closed
+> (nixpkgs at 1.26.8).
+
+
 **Date:** 2026-10-17 03:40 CEST
 **Planner:** docs-health-verified backlog + pareto-planning skill (user's `.md`+mermaid format instruction wins over the skill's HTML default — flagged per the override rule)
 **Baseline:** v0.14.0 tagged + released; `[Unreleased]` carries the structured error surface (9 Added + 3 Changed bullets); 46 `*Client` methods / 17 resources; ALL local gates green as of the 03:36 docs-health pass (build, vet, lint 0, markdownlint 0, doc-verify, spec-drift exit 0 vs live 2027Q1, `nix flake check` all passed)
