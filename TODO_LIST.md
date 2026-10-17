@@ -7,11 +7,11 @@ Completed work lives in [CHANGELOG.md](CHANGELOG.md), never here.
 
 ## P1 — Release readiness
 
-[ ] Cut v0.15.0 — the structured error surface staged in `[Unreleased]` is
-breaking (HTTP 400 now surfaces `*BadRequestError`; `APIError.Details` is new
-public surface; 11 code-sentinels). Run `nix run .#pre-release`, cut release
-notes, and point bank-sync at the matching recipe in `docs/error-codes.md`
-when it bumps its pin (AGENTS.md carries the sweep guidance).
+[ ] Bump bank-sync's wise-go pin to v0.15.0 — bank-sync compiles UNMODIFIED
+against the v0.15.0 tree (replace-compile verified 2026-10-17); the pin bump
+itself is a bank-sync-repo change. Point its error handling at the matching
+recipes in `docs/error-codes.md` and sweep its `errors.AsType`-only handling
+for the sentinel idioms (AGENTS.md carries the sweep guidance).
 
 [ ] Run the sandbox live-verification pass (`WISE_SANDBOX_API_KEY`) against the
 five spec-vs-live assumptions settled by the conformance work: statement
@@ -70,25 +70,27 @@ lines in the `erraudit` job to make the gate blocking.
 
 [ ] Re-enable CI on GitHub — the auth blocker is RESOLVED (2026-09-13): all
 flake inputs moved from `git+ssh` to public `github:` URLs pinned by rev, so CI
-needs no secrets; the workflow file is refreshed (`GOLANGCI_LINT_VERSION`
-v2.13, no-auth nix job, 90% coverage gate). Remaining: push master, re-enable
-the workflow server-side (`gh workflow enable ci`), and watch the first run.
-Add a network `pin-sync` job to ci.yml at the same time (mirroring the
-sandbox-live dispatch pattern).
+needs no secrets; the workflow file is refreshed (8 jobs incl. the network
+`pin-sync` job, 92.0 coverage gate single-sourced, tool pins).
+Remaining: `gh workflow enable ci` (🟡 user word) and the first-run watch —
+triage runbook + badge checklist + art-dupl promotion criteria are written in
+`docs/planning/2026-10-17_ci-first-run-watch-package.md`.
 Until then the coverage badge stays frozen at its last CI-measured value.
-Source: `docs/status/archived/2026-10-07_03-57_session-status-unblocked-prep-release-readiness.md`.
-**BLOCKED: needs the user's approval to push and enable.**
+**BLOCKED: needs the user's approval to enable.**
 
 ## P3 — Quality & tooling (unblocked)
 
 ### Open
 
 [ ] Security window: re-run `nix flake update nixpkgs` when go **1.26.9**
-lands in nixpkgs-unstable (lock pulled to 1.26.8 on 2026-10-17) — clears
+lands in nixpkgs-unstable (locked nixpkgs `55bfb4d` still ships **1.26.8**,
+re-probed 2026-10-17 on the v0.15.0 train — window NOT open) — clears
 all 9 govulncheck stdlib vulns (GO-2026-6603..6617, fixed in 1.26.9) and
-shrinks the vulnix advisory set; then re-verify vendor FOD hashes and the
-full buildflow run (govulncheck/vulnix are the ONLY remaining
-warning-class findings). Track the BuildFlow #66/#67 and
+shrinks the vulnix advisory set. The update procedure is pre-staged as a
+click-through checklist:
+`docs/planning/2026-10-17_security-window-checklist.md` (vendor FOD →
+flake check → full buildflow → re-measure govulncheck/vulnix). Then
+track the BuildFlow #66/#67 and
 branching-flow #15/#16 consumer-side cleanups. Source:
 `docs/status/2026-10-17_01-43_buildflow-warning-surface-zero-and-gate-repair-status.md` §b1/§f.
 

@@ -1,6 +1,6 @@
-# Decision Memos — 2026-10-16 (post-v0.14.0)
+# Decision Memos — 2026-10-16 (post-v0.14.0; D6 added 2026-10-17)
 
-Five pending design decisions, each with context, options, and a
+Six pending design decisions, each with context, options, and a
 recommendation. Items that need only Lars's word (not analysis) live in
 `2026-10-16_open-user-asks.md` instead.
 
@@ -110,3 +110,35 @@ evaluate clean). No known consumer builds wise-go on x86_64-darwin.
 maintenance for a system nothing consumes; the decision is reversible in
 one line if an x86_64-darwin consumer appears. Filed as ask #7 in
 `2026-10-16_open-user-asks.md`.
+
+## D6. `BUILDFLOW_NO_RESULT_CACHE=1` standing default (added 2026-10-17)
+
+**Context.** The 2026-10-17 01:55 full buildflow run diagnosed cross-repo
+result-cache contamination: 37 findings carried bimi-lens paths (sibling
+repo, active parallel session, shared `~/.cache/buildflow`), while wise-go's
+own surface was clean. `BUILDFLOW_NO_RESULT_CACHE=1` eliminates the class
+completely (filed [BuildFlow #67](https://github.com/LarsArtmann/BuildFlow/issues/67)).
+The same run measured a ~0% cache hit rate, so the bypass costs essentially
+nothing today.
+
+**Options.**
+
+- (a) Standing default until #67 lands — every buildflow invocation in this
+  repo sets the bypass (invocation shape: `BUILDFLOW_NO_RESULT_CACHE=1
+  buildflow …`, or an alias/export in the session preamble). Cost: the
+  (near-zero) hit rate; benefit: the contamination class cannot recur, even
+  on unattended parallel-session nights, without anyone remembering the flag.
+- (b) Keep it opt-in — set it only when a sibling session is known active.
+  Cost: requires knowing what else is running (the exact thing unattended
+  nights lose track of); the 37-finding false alarm cost triage time once
+  already.
+
+**Recommendation.** (a), standing default until BuildFlow #67 fixes the
+cache scoping, then flip back in the same sweep that drops the other
+consumer-side workarounds (branching-flow #15/#16 and the #66
+file-size-check re-enable). The bypass is one env var — reversible in a
+line — and the failure
+mode it prevents (cross-repo findings poisoning a gate verdict) is far more
+expensive than a 0% hit rate. Written as ask in
+`2026-10-17_03-40_SUPERB-pareto-plan-v0150-release-train.md` erratum 2;
+decision entry added here 2026-10-17.
