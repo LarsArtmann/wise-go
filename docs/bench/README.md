@@ -8,6 +8,14 @@ a release tag, named `<date>_<tag>_baseline.txt`.
 | -------------------------------------------------------------- | ----------- |
 | [2026-10-07_v0120_baseline.txt](2026-10-07_v0120_baseline.txt) | v0.12.0     |
 | [2026-10-16_v0140_baseline.txt](2026-10-16_v0140_baseline.txt) | v0.14.0     |
+| [2026-10-17_v0150_baseline.txt](2026-10-17_v0150_baseline.txt) | v0.15.0     |
+
+Capture hygiene (learned 2026-10-17): run the six captures on an otherwise
+idle machine and cut the baseline at the tag (a `git worktree add` of the tag
+keeps the working tree free). A capture taken while builds and flake checks
+ran in parallel showed a uniform +73% geomean with byte-identical B/op —
+pure environment noise; the quiet recapture of the same tag measured
+−1.85% geomean, all benchmarks `~`.
 
 ## Rerun and compare
 
