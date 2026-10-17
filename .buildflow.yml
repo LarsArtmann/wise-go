@@ -64,6 +64,14 @@ skip_steps:
   # zero-collected case stops emitting findings.
   - pytest-test
 
+  # interrogate: the Python docstring-coverage tool (BuildFlow's provider,
+  # domain ToolInterrogate = "interrogate", install hint `pip install
+  # interrogate`). This repo's Python surface is three gate scripts whose
+  # behavior is pinned by checks.script-fixtures; docstring-coverage
+  # percentage adds no signal there. Excluded deliberately — revisit only
+  # if the scripts/ surface grows.
+  - interrogate
+
   # golangci-lint-auto-configure is the lll RE-ADDER: 4 recurrences
   # (2x on 2026-10-16, then daemon-swept writes at ce52551 00:27 and
   # 318dad0 01:29 on 2026-10-17, both landing while buildflow ran), and
