@@ -17,19 +17,22 @@ for the sentinel idioms (AGENTS.md carries the sweep guidance).
 five spec-vs-live assumptions settled by the conformance work~~ DONE
 2026-10-17: `/v1/rates` VERIFIED, funding-errors VERIFIED SDK-side,
 COMPACT/FLAT PARTIAL (server accepts both; content SCA-gated),
-`X-idempotence-uuid` PARTIAL (header accepted; sandbox locks balance creation
-entirely), `details.type` BLOCKED (same SCA gate). Evidence:
+`X-idempotence-uuid` VERIFIED (creation round-trips; idempotent replay
+returns the same balance — the initially recorded 403 lock was transient),
+`details.type` BLOCKED (same SCA gate). Evidence:
 `docs/status/2026-10-17_08-00_sandbox-lane-first-live-pass-ott-q4-flip-and-sca-automation.md`.
 Residuals 1+3 parked behind the sandbox SCA web login (single capped attempt
 per session).
 
 ## P2 — User-gated
 
-[ ] Convert the sandbox lane's evidence into permanent key-gated live tests
-(`sandbox_live_test.go`): rates shape (current + historical), `GetOTTStatus`
-on 2026Q4 (raise via statement 403), funding-404 typing, SCA-challenge shape,
-and the CreateBalance sandbox-lock verdict. First credentialed run recorded
-2026-10-17 (see CHANGELOG); keyless skip path re-verified.
+[x] ~~Convert the sandbox lane's evidence into permanent key-gated live tests
+(`sandbox_live_test.go`)~~ DONE 2026-10-17: five new key-gated tests —
+rates shape (current + historical), `GetOTTStatus` on 2026Q4 (raised via
+statement 403), funding-404 typing, SCA-challenge shape, and
+CreateBalance idempotency (assumption #2 upgraded to VERIFIED when the
+initially recorded sandbox lock stopped reproducing). Keyless runs SKIP
+cleanly; credentialed run green 2026-10-17.
 Carried since `docs/status/archived/2026-08-08_05-15_wise-sandbox-integration-status.md`.
 
 [ ] Lock the public API at v1.0 — audit is green (re-audit + growth lineage in

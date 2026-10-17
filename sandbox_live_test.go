@@ -286,32 +286,41 @@ func TestSandboxLiveGetOTTStatus(t *testing.T) {
 	}
 }
 
-// TestSandboxLiveCreateBalanceLocked pins the sandbox's balance-creation
-// lock (2026-10-17 lane evidence): creation answers 403 with Wise's
-// top-level-code-only envelope (non.existing.balance, no errors[]). The
-// request shape — including the mandatory X-idempotence-uuid header — is
-// exercised for real; only the outcome is sandbox-specific.
-func TestSandboxLiveCreateBalanceLocked(t *testing.T) {
+// TestSandboxLiveCreateBalanceIdempotent pins the balance-creation contract
+// (assumption #2, upgraded to VERIFIED 2026-10-17 after the initially
+// recorded 403 lock stopped reproducing): creation round-trips in sandbox,
+// and re-sending the same X-idempotence-uuid returns the already-created
+// balance instead of erroring or duplicating. The fixed idempotency key and
+// currency keep repeated test runs non-mutating after the first — every
+// later run replays the same balance.
+func TestSandboxLiveCreateBalanceIdempotent(t *testing.T) {
 	client := newSandboxClient(t)
 	profile := firstSandboxProfile(t, client)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	_, err := client.CreateBalance(ctx, wise.CreateBalanceRequest{
-		ProfileID: profile.ID,
-		Currency:  wise.Currency("JPY"),
-		Type:      wise.BalanceTypeStandard,
-		Name:      "wise-go sandbox probe",
-	})
-	authErr, ok := errors.AsType[*wise.AuthError](err)
-	if !ok {
-		t.Fatalf("CreateBalance: expected *AuthError (403), got %v", err)
+	req := wise.CreateBalanceRequest{
+		ProfileID:      profile.ID,
+		Currency:       wise.Currency("NOK"),
+		Type:           wise.BalanceTypeStandard,
+		Name:           "wise-go sandbox live test",
+		IdempotencyKey: "6f2a9c34-8e17-4b5d-a0f2-93c1e7b8d4a6",
 	}
-	if authErr.StatusCode != http.StatusForbidden {
-		t.Errorf("CreateBalance status = %d, want 403", authErr.StatusCode)
+
+	first, err := client.CreateBalance(ctx, req)
+	if err != nil {
+		t.Fatalf("CreateBalance(NOK): %v", err)
 	}
-	if !strings.Contains(authErr.Message, "non.existing.balance") {
-		t.Errorf("CreateBalance 403 message %q does not carry the sandbox lock code non.existing.balance", authErr.Message)
+	if first.ID.IsZero() || first.Currency != wise.Currency("NOK") || first.Type != wise.BalanceTypeStandard {
+		t.Errorf("CreateBalance(NOK) returned %+v — unexpected shape for a fresh creation", first)
+	}
+
+	second, err := client.CreateBalance(ctx, req)
+	if err != nil {
+		t.Fatalf("CreateBalance(NOK, replay): %v", err)
+	}
+	if second.ID != first.ID {
+		t.Errorf("idempotent replay returned balance %d, want the original %d", second.ID.Get(), first.ID.Get())
 	}
 }

@@ -28,9 +28,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   (`FundTransfer` on a nonexistent transfer surfaces a typed 404); the
   statement `type` COMPACT/FLAT contract PARTIAL (both values accepted by
   the server; statement CONTENT is SCA-gated behind a SIGNATURE challenge
-  in sandbox); `X-idempotence-uuid` on balance creation PARTIAL (header
-  accepted, but sandbox locks balance creation entirely — 403
-  `non.existing.balance` on every profile/type combination); the
+  in sandbox); `X-idempotence-uuid` on balance creation VERIFIED — the
+  initially recorded sandbox lock (403 `non.existing.balance`) stopped
+  reproducing within hours: creation round-trips for standard AND savings
+  balances, and an identical `X-idempotence-uuid` replay returns the
+  already-created balance; the
   statement `details.type` enum BLOCKED (same SCA gate). Residuals for
   the two SCA-gated assumptions are parked behind the sandbox web login.
 - **Two live-only wire shapes recorded** in `docs/error-codes.md`: Wise
@@ -39,6 +41,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `APIError.Message` renders the raw body there — and funding-404s arrive
   as `application/json` (the spec's `text/plain` contract applies to
   domain funding errors, not router 404s).
+- **Permanent key-gated sandbox live tests** (`sandbox_live_test.go`):
+  `TestSandboxLiveGetExchangeRate` (current + historical, timestamps
+  decode), `TestSandboxLiveFundTransferNotFound` (typed 404),
+  `TestSandboxLiveSCAChallengeShape` (403 + OTT headers + no token
+  leak), `TestSandboxLiveGetOTTStatus` (2026Q4 surface: statement
+  action, bounded validity, pending SIGNATURE challenge), and
+  `TestSandboxLiveCreateBalanceIdempotent` (creation round-trip +
+  idempotent replay). Credentialed runs are gated on
+  `WISE_SANDBOX_API_KEY`; keyless runs skip cleanly.
 
 ### Changed
 
