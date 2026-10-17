@@ -492,7 +492,7 @@
                 sort "$allowlistFile" > expected.txt
                 if ! diff -u expected.txt actual.txt; then
                   echo "FAIL: .golangci.yml enabled-linter set drifted from the curated allowlist"
-                  echo "The curated list is policy (lll was auto-re-added twice on 2026-10-16)."
+                  echo "The curated list is policy; buildflow's auto-configure step is skipped (BuildFlow #63 watch), so drift means a manual or tooling edit."
                   echo "Change it by editing .golangci.yml AND the allowlist in flake.nix checks.linter-allowlist together."
                   exit 1
                 fi

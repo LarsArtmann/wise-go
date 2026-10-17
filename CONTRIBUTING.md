@@ -249,6 +249,15 @@ methods" outliving the 37-method surface) is exactly what it catches.
 `apidiff` reports removed or changed exported API against the latest tag;
 run it before any release.
 
+**Markdownlint is on-demand, not gated** (decided 2026-10-11: MD013 fights the
+repo's long-line style, and dprint already owns markdown formatting). When you
+want a lint pass over docs, run it explicitly:
+
+```bash
+markdownlint --ignore node_modules --ignore 'docs/status/archived/**' \
+  --ignore 'docs/planning/archived/**' --ignore 'docs/reviews/archived/**' '**/*.md'
+```
+
 ### Release gates
 
 ```bash

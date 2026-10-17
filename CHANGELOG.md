@@ -64,6 +64,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `.markdownlint.json` (MD013 off) so on-demand markdownlint runs surface
   real issues (broken references, duplicate headings) without fighting the
   repo's long-line style; dprint stays the formatter.
+- `checks.script-fixtures` flake check: `scripts/negative_fixtures.py` runs
+  9 negative scenarios against the two Python gates — pin-sync (ok /
+  stale-lock / tag-mismatch / missing-input / unpinned) and spec-drift
+  (broken-JSON / missing-endpoint / `--fail-on-drift` / warn-only) — each
+  asserted on exit code AND an output substring. Hermetic: every case passes
+  `--offline` or `--spec-file`; fixture go.mod files are generated into a
+  tempdir because committed ones trip buildflow's go-mod-tidy detection.
+- `docs/bench/2026-10-16_v0140_baseline.txt` — benchstat baseline cut at the
+  v0.14.0 tag (six `-count 1` captures); the new comparison target per
+  `docs/bench/README.md`.
 
 ### Changed
 

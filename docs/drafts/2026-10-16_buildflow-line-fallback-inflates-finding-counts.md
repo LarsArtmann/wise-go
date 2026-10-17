@@ -40,8 +40,3 @@ statix renders each finding as ~13 lines (rule header, source box, underline, la
 
 On any repo with ≥1 statix finding: `buildflow -s statix` reports the same count as `statix check . --oneline | wc -l`, and the summary's finding count equals the structured finding count.
 
-```
----
-
-💘 Generated with Crush
-```
