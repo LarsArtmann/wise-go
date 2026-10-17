@@ -11,8 +11,8 @@ library that is obviously correct, obviously typed, and obviously safe to depend
 Every monetary amount is `Money` (cents paired with `Currency`). Every entity ID is
 branded. Every error is typed and classifiable. Every API call retries intelligently.
 
-As of 2026-10-17 (v0.14.0 shipped; the structured error surface staged in
-`[Unreleased]`), the type-safety redesign is
+As of 2026-10-17 (v0.15.0 shipped; the structured error surface is live), the
+type-safety redesign is
 complete, the core transfer flow — and with it the whole transfer category —
 is live END TO END (quotes, recipients, transfers, funding, delivery
 estimates, transfer-requirements and account-requirements validation,
@@ -94,12 +94,14 @@ that clear challenges programmatically, and `GetBankAccountDetails` on the
 
 **Release state:** shipped as **v0.9.0** (2026-08-21), **v0.10.0**
 (2026-09-13), **v0.11.0** (2026-09-14), **v0.12.0** and **v0.13.0**
-(2026-10-07), and **v0.14.0** (2026-10-16; tags on origin and served by the
-module proxy, GitHub Release objects published). v0.14.0 carried the breaking
+(2026-10-07), **v0.14.0** (2026-10-16), and **v0.15.0** (2026-10-17; tags on
+origin and served by the module proxy, GitHub Release objects published).
+v0.14.0 carried the breaking
 `OneTimeToken`/`OTTAction` typing, the 2027Q1 account-details migration, and
 the transfer-category completion (payments list, US combined receipt, NOC,
-originator transfers); the structured error surface (sentinels,
-`BadRequestError`, central catalog) is staged in `[Unreleased]`.
+originator transfers); v0.15.0 shipped the structured error surface
+(code sentinels, `BadRequestError`, `APIError.Details`, the central catalog)
+with `*BadRequestError` on 400s as its one breaking change.
 The v1.0 audit is
 green and re-audited 2026-09-13 at the 33-method surface
 (`docs/reviews/2026-08-21_v1.0-api-audit.md` — refreshed inventory, godoc pass,
