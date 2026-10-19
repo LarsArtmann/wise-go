@@ -85,6 +85,7 @@
         ./ott_test.go
         ./sandbox_live_test.go
         ./readme_guard_test.go
+        ./api_version_consistency_test.go
         ./spec_conformance_test.go
         ./zz_spec_conformance_coverage_test.go
         ./docs/reviews/wise-api-openapi.json
