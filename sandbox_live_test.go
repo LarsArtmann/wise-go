@@ -4,6 +4,12 @@ package wise_test
 // ONLY when WISE_SANDBOX_API_KEY is set; without the variable every test in
 // this file skips, so local `go test ./...` and CI stay network-free.
 // See the README "Sandbox verification" section for how to run them.
+//
+// Run them with -count=1: Go caches passing results, and a cached PASS says
+// nothing about today's wire. The tests also assume the sandbox account state
+// documented per test (profile ordering, the fixed idempotency key); a sandbox
+// reset or a concurrently mutated account can fail them for environmental
+// rather than contractual reasons.
 
 import (
 	"context"
@@ -103,7 +109,10 @@ func TestSandboxLiveGetTransfer(t *testing.T) {
 }
 
 // firstSandboxProfile returns the key's first profile (sandbox accounts ship
-// a personal and a business one) as the stand-in profile for read paths.
+// a personal and a business one) as the stand-in profile for read paths. Wise
+// does not contractually guarantee profile order; if these tests fail at
+// profile-shaped seams after a sandbox change, check the ordering assumption
+// here before suspecting the wire contract.
 func firstSandboxProfile(t *testing.T, client *wise.Client) wise.Profile {
 	t.Helper()
 
@@ -311,7 +320,10 @@ func TestSandboxLiveGetOTTStatus(t *testing.T) {
 // and re-sending the same X-idempotence-uuid returns the already-created
 // balance instead of erroring or duplicating. The fixed idempotency key and
 // currency keep repeated test runs non-mutating after the first — every
-// later run replays the same balance.
+// later run replays the same balance. A sandbox reset that wipes the keyed
+// balance just re-runs the initial creation; the one environmental state
+// that breaks this test is a NOK balance on the same profile created outside
+// this idempotency key.
 func TestSandboxLiveCreateBalanceIdempotent(t *testing.T) {
 	client := newSandboxClient(t)
 	profile := firstSandboxProfile(t, client)

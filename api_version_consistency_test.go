@@ -32,7 +32,6 @@ func TestQuarterlyAPIVersionsConsistent(t *testing.T) {
 		"webhookSubscriptionsAPIVersion": webhookSubscriptionsAPIVersion,
 		"accountDetailsAPIVersion":       accountDetailsAPIVersion,
 	} {
-
 		if !wellFormedQuarter.MatchString(value) {
 			t.Fatalf("%s = %q is not a well-formed Wise quarter", constant, value)
 		}
@@ -48,13 +47,11 @@ func TestQuarterlyAPIVersionsConsistent(t *testing.T) {
 	sources := []string{"README.md"}
 
 	goFiles, err := filepath.Glob("*.go")
-
 	if err != nil {
 		t.Fatalf("glob root Go files: %v", err)
 	}
 
 	rawFiles, err := filepath.Glob(filepath.Join("internal", "raw", "*.go"))
-
 	if err != nil {
 		t.Fatalf("glob internal/raw Go files: %v", err)
 	}
@@ -65,7 +62,6 @@ func TestQuarterlyAPIVersionsConsistent(t *testing.T) {
 
 	for _, path := range sources {
 		content, err := os.ReadFile(path)
-
 		if err != nil {
 			t.Fatalf("read %s: %v", path, err)
 		}
@@ -96,7 +92,6 @@ func TestQuarterlyAPIVersionsConsistent(t *testing.T) {
 		"profiles":       5,
 		"balances":       3,
 	} {
-
 		if foundPerSurface[segment] < floor {
 			t.Fatalf("found only %d %q quarterly paths (floor %d); the scan itself must be broken",
 				foundPerSurface[segment], segment, floor)

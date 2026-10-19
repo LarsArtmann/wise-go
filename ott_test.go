@@ -126,7 +126,7 @@ var _ = Describe("OTT (SCA one-time-token endpoints)", func() {
 
 	Describe("GetOTTStatus", func() {
 		It("should fetch and parse the challenge state", func() {
-			mux.HandleFunc("/2026Q3/one-time-token/status", ottHandler(http.MethodGet, func(
+			mux.HandleFunc("/2026Q4/one-time-token/status", ottHandler(http.MethodGet, func(
 				w http.ResponseWriter, _ *http.Request,
 			) {
 				w.Header().Set("Content-Type", "application/json")
