@@ -213,11 +213,19 @@ transport themselves (documented in README).
 
 ### Medium-term
 
-- **Metrics hook** — `WithMetrics` option exposing counters/histograms for
-  Prometheus or OpenTelemetry (request count, latency, retry count, error rate).
+- **Metrics hook** — a second hook (`WithMetrics`) is on hold: the `Logger`
+  already carries every metric-relevant field (method, status, duration,
+  attempt, retry-after), and the README documents the `WithLogger` →
+  OpenTelemetry bridge (2026-10-19). Revisit only if a consumer need outgrows
+  the bridge.
 
 ### Shipped
 
+- **OpenTelemetry integration recipe** — spans via the `otelhttp` transport
+  seam (`WithHTTPClient`) and metrics via a `WithLogger` bridge, documented
+  and verified end-to-end on v0.16.0 (2026-10-19). No SDK code changed: the
+  two hooks are the OTEL surface, and a telemetry dependency stays out per
+  the library policy (nil-default hooks only).
 - **Request/response logging** — `WithLogger` + `RequestLog`/`RequestLogFunc`
   (2026-08-21).
 - **Per-request correlation ID** — client-wide `WithCorrelationID` plus the
@@ -282,7 +290,9 @@ scheduled work:
 
 - ~~**Typed `BadRequestError`** for 400 responses~~ SHIPPED 2026-10-16 (error-system execution): 400s surface `*BadRequestError` (`wise.bad_request`) with Wise's granular reason codes in `APIError.Details`.
 - **Circuit breaker** — go-retry does not provide one; wiring one is new in-house code (or go-cqrs-lite middleware). Only with a consumer demand signal.
-- **`WithMetrics` hook** — Prometheus/OTel counters and histograms (Axis 3 medium-term).
+- **`WithMetrics` hook** — Prometheus/OTel counters and histograms; on hold —
+  the `WithLogger` → OTel bridge (Axis 3, shipped 2026-10-19) covers it until
+  a consumer need outgrows the bridge.
 - **GoReleaser-style release automation** — tags are manual + annotated today.
 - **Webhook end-to-end README quickstart** — subscribe → verify → parse in one runnable block.
 - **`ParseWebhookEvent` RFC3339 fast path** — the bench shows the multi-layout timestamp trial loop dominates (34µs); one-line win if webhook volume ever matters.

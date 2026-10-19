@@ -311,10 +311,23 @@ test. The ritual:
 3. **Straggler grep** — `grep -rn "<flipped-from quarter>" --include='*.go' .` (the old
    value) must come back empty outside changelog/history; update any
    comment, test path, or doc that still names the old prefix.
+   `TestQuarterlyAPIVersionsConsistent` (api_version_consistency_test.go)
+   mechanically pins every quarter-qualified path in Go sources and the
+   README to the version constants, so a missed mock path or doc path now
+   fails `go test` — the grep still covers prose and history the test
+   deliberately ignores.
 4. **Changelog** — record the flip under `[Unreleased]`.
 5. **Verify** — `go test ./...` and `nix run .#doc-verify` (the spec
    conformance harness normalizes quarterly prefixes; a stale path fails
    there).
+
+**Evidence discipline (tests before verdicts).** A wire-shape verdict enters
+CHANGELOG, AGENTS, or TODO_LIST only after the artifact that will pin it —
+usually a test — has reproduced it. The 2026-10-17 assumption-#2 flip (a
+recorded "sandbox creation lock" falsified by the very test written to pin
+it an hour later) is the cost of recording prior-session evidence before
+re-verifying: the correction touched three living docs and raced the release
+tag.
 
 ---
 

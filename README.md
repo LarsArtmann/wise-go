@@ -223,6 +223,66 @@ _, err := client.ListTransfers(ctx, req)
 
 `RequestLog.Attempt` is 1-based; a value above 1 means the request was retried.
 
+#### OpenTelemetry
+
+The SDK ships zero telemetry dependencies by design (it is a library, not a
+service); `WithHTTPClient` (transport seam) and `WithLogger` (per-attempt
+metadata) are the OpenTelemetry surface. The bridges below were verified
+end-to-end against otelhttp v0.72.0 / otel v1.47.0.
+
+**Traces** — wrap the transport with `otelhttp.NewTransport`: every HTTP
+attempt (retries included) becomes a client span with W3C trace context
+injected, nested under whatever span is active in the `context.Context` you
+pass to SDK calls:
+
+```go
+tp := sdktrace.NewTracerProvider() // add your exporter here
+defer func() { _ = tp.Shutdown(context.Background()) }()
+otel.SetTracerProvider(tp)
+
+client := wise.New("api-token",
+    wise.WithHTTPClient(&http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}))
+
+ctx, span := otel.Tracer("app").Start(ctx, "bankSync.fetchRate")
+defer span.End()
+
+rate, err := client.GetExchangeRate(ctx, "EUR", "USD", time.Time{})
+if err != nil {
+    span.RecordError(err)
+    span.SetStatus(codes.Error, err.Error())
+}
+```
+
+A client span ends when the response body closes — the SDK closes it after
+decoding, so attempt spans complete promptly. Retried attempts appear as
+separate sibling spans; the transport span classifies the HTTP outcome (a 429
+attempt ends with `Error` status), while Wise's typed API errors are yours to
+record on the operation span, as above. For Wise-side correlation across its
+own systems, keep using `WithRequestCorrelationID` — the two are
+complementary.
+
+**Metrics** — bridge `WithLogger` to an OTel meter. Skip
+`RetryAfterDelay > 0` entries: they are retry-delay decisions emitted between
+attempts, not exchanges, and counting them would double-count throttled
+operations:
+
+```go
+meter := otel.Meter("wise-go")
+attempts, _ := meter.Int64Counter("wise.http.attempts")
+duration, _ := meter.Float64Histogram("wise.http.duration", metric.WithUnit("s"))
+
+otelBridge := wise.RequestLogFunc(func(e wise.RequestLog) {
+    if e.RetryAfterDelay > 0 {
+        return // delay decision, not an HTTP exchange
+    }
+    attrs := metric.WithAttributes(attribute.String("http.request.method", e.Method))
+    attempts.Add(context.Background(), 1, attrs)
+    duration.Record(context.Background(), e.Duration.Seconds(), attrs)
+})
+
+client := wise.New("api-token", wise.WithLogger(otelBridge))
+```
+
 ### mTLS (client-certificate authentication)
 
 Wise serves compliance-heavy integrations from dedicated mTLS endpoints

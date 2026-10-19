@@ -5,38 +5,19 @@ ownership, and can be completed in one sitting. For long-term vision and raw ide
 see [ROADMAP.md](ROADMAP.md). For shipped features see [FEATURES.md](FEATURES.md).
 Completed work lives in [CHANGELOG.md](CHANGELOG.md), never here.
 
-## P1 — Release readiness
-
-[x] ~~Bump bank-sync's wise-go pin to v0.15.0~~ DONE 2026-10-17 (as v0.16.0,
-skipping the intermediate): go.mod + flake input/lock + vendorHash dance +
-check-dep-alignment green; SCA mock paths flipped Q3→Q4 with the SDK;
-sentinel-sweep verdict recorded in bank-sync AGENTS/07 (keep AsType at all
-four sites — sentinels would narrow router-404 handling). Committed locally;
-bank-sync push stays user-gated. Parallel-session note: internal/server was
-mid-refactor (default_selection) during the bump — its transient breakage is
-that session's, verified unrelated to the pin.
-
-[x] ~~Run the sandbox live-verification pass (`WISE_SANDBOX_API_KEY`) against the
-five spec-vs-live assumptions settled by the conformance work~~ DONE
-2026-10-17: `/v1/rates` VERIFIED, funding-errors VERIFIED SDK-side,
-COMPACT/FLAT PARTIAL (server accepts both; content SCA-gated),
-`X-idempotence-uuid` VERIFIED (creation round-trips; idempotent replay
-returns the same balance — the initially recorded 403 lock was transient),
-`details.type` BLOCKED (same SCA gate). Evidence:
-`docs/status/2026-10-17_08-00_sandbox-lane-first-live-pass-ott-q4-flip-and-sca-automation.md`.
-Residuals 1+3 parked behind the sandbox SCA web login (single capped attempt
-per session).
-
 ## P2 — User-gated
 
-[x] ~~Convert the sandbox lane's evidence into permanent key-gated live tests
-(`sandbox_live_test.go`)~~ DONE 2026-10-17: five new key-gated tests —
-rates shape (current + historical), `GetOTTStatus` on 2026Q4 (raised via
-statement 403), funding-404 typing, SCA-challenge shape, and
-CreateBalance idempotency (assumption #2 upgraded to VERIFIED when the
-initially recorded sandbox lock stopped reproducing). Keyless runs SKIP
-cleanly; credentialed run green 2026-10-17.
-Carried since `docs/status/archived/2026-08-08_05-15_wise-sandbox-integration-status.md`.
+[ ] Push bank-sync's v0.16.0 pin bump — committed locally 2026-10-17 (go.mod +
+flake input/lock + vendorHash dance + SCA mock paths flipped Q3→Q4 + sentinel-sweep
+verdict in its AGENTS/07); the parallel `internal/server` refactor landing green
+is the other input. **User-gated: pushes to other repos need the explicit word.**
+
+[ ] Sandbox assumptions 1+3 — one capped (~30 min) browser SCA attempt
+(existing `/tmp` tooling; DOM probe with a 20s timeout first, sandbox 2FA
+catch-all `111111`) would close the COMPACT-vs-FLAT content diff and the
+statement `details.type` census; otherwise bank the PARTIAL/BLOCKED verdicts
+permanently and delete the browser tooling. **User-gated (Q1 of the
+2026-10-17 self-review).**
 
 [ ] Lock the public API at v1.0 — audit is green (re-audit + growth lineage in
 `docs/reviews/2026-08-21_v1.0-api-audit.md`, growth lineage maintained through
@@ -45,12 +26,12 @@ User decision 2026-10-17: hold v1.0.0 — v0.16.0 (breaking allowed) ships the
 sandbox lane instead; revisit the tag once the v1 blockers in ROADMAP clear.
 **BLOCKED: needs the user's explicit approval (tagging is irreversible).**
 
-[ ] `RequestLog.RetryAfterDelay` API freeze — lock the delay-decision-entry shape
+[ ] `RequestLog.RetryAfterDelay` API freeze — **PARKED FOR v1.0** (owner
+decision 2026-10-17: breaking changes are allowed in v0.x, so freezing early
+buys nothing). When v1.0 planning starts: lock the delay-decision-entry shape
 (entry riding the `LogRequest` channel, `Method`/`URL` empty, honored wait as a
-`time.Duration`) for v1.0, or grow a dedicated observer interface. Evidence:
-`nix run .#apidiff` vs v0.12.0 shows it is the ONLY compatible delta (gorelease
-suggests v0.13.0). Source: `docs/status/2026-10-07_07-09_p3-resume-execution-prerelease-green-status.md` §g2.
-**BLOCKED: needs the user's design decision.**
+`time.Duration`), or grow a dedicated observer interface. The behavior is
+pinned by the 429 BDD tests either way.
 
 [ ] Typed recipient `Details` — typed per-corridor structs vs `map[string]string`
 key constants. Carried unanswered through seven status reports (2026-08-19_17-14
@@ -98,12 +79,6 @@ track the BuildFlow #66/#67 and
 branching-flow #15/#16 consumer-side cleanups. Source:
 `docs/status/2026-10-17_01-43_buildflow-warning-surface-zero-and-gate-repair-status.md` §b1/§f.
 
-[x] ~~Rewrite the `spec_drift.py` extractor on stdlib `go/parser`~~ DONE
-2026-10-17 (v0.15.0 train M16): `scripts/testdata/specdriftext/main.go` (AST
-walk incl. the `c.request` method-parameter binding), parity-equal with the
-regex extractor at 43 endpoints (`scripts/spec_drift_parity.py`), all 9
-negative fixtures green, live spec-drift exit 0.
-
 [ ] Continue the AGENTS.md prune — part 1 done 2026-10-17 (v0.15.0 train M15):
 57,097 → 47,354 bytes with every concept carried (narratives compressed to
 their evidence pointers; one erraudit split-brain fixed). Remaining: the
@@ -119,15 +94,6 @@ capture-hygiene rule (idle machine, capture at the tag) is written in
 `docs/bench/README.md`; a polluted parallel-load capture showed +73% geomean
 with identical B/op and was discarded. benchstat is NOT in the devShell —
 install with `go install golang.org/x/perf/cmd/benchstat@latest`.
-
-[x] ~~Buildflow/infra micro-batch~~ DONE 2026-10-17 (v0.15.0 train M14):
-T56 full-diff confirms only `lll` was lost (no exclusions rule); T57 nested-
-fence defect reproduced at source and filed (md-go-validator [#11](https://github.com/LarsArtmann/md-go-validator/issues/11));
-T58 bandit/pytest line-fallback reproductions measured mechanically and
-commented on BuildFlow [#64](https://github.com/LarsArtmann/BuildFlow/issues/64) (3 issues → 47 lines; 0 tests → 5
-lines); T59 legacy `buildflow.db` proven unread (mtime unchanged across a
-full run) and deleted; T60 `interrogate` identified (Python docstring-
-coverage) and skip_steps'd with rationale.
 
 ### Decisions (P3)
 
