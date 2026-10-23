@@ -6,9 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-### Added
+### Changed
 
-- Nothing yet.
+- Toolchain lock: the nixpkgs flake input moved to `02c087f` (go **1.26.9**
+  toolchain; pulled 2026-10-23 by buildflow's nix-flake-update repair). The
+  module's `go` directive stays `1.26.0` per the go-mod-normalize policy, so
+  govulncheck's stdlib advisories remain warning-class (48 findings across
+  10 advisories, keyed on the directive — not the toolchain).
+- The buildflow `vulnix` step is skip_steps'd: NIST now 404s the
+  `nvdcve-2.0-modified.json.gz` archive vulnix 1.12.5 requires and the
+  unmaintained tool hard-fails in `nvd.update()` before scanning. Go-side
+  advisories stay covered by govulncheck; rationale and re-enable conditions
+  live in `.buildflow.yml`.
+- `dprint.json` excludes `scripts/testdata/**` and `.config/metadata.yaml`
+  (the spec-drift fixtures are minified/broken by design; the metadata file
+  is tool-written and owns its style), so a bare `dprint fmt` is tree-safe
+  again; scoped paths remain the habit.
+- `.gitleaks.toml` / `.codespellrc` allowlists extended with inline
+  rationale (the pretty-printed `plus_one.json` fixture in permanent
+  history; the `decorder` linter identifier; point-in-time doc dirs).
+
+### Fixed
+
+- `scripts/spec_drift.py`: the endpoint extractor resolves `go` via
+  `shutil.which` with an explicit not-found guard (bandit B607
+  partial-path finding; direct bandit run is now clean).
 
 ## [0.16.0] - 2026-10-17
 

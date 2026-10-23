@@ -1,8 +1,8 @@
 # Transfer Category Re-Audit vs Live Preview
 
 **Date:** 2026-10-16 · **Source:** `docs.wise.com/api-reference/transfer` (live preview,
-server version `2026Q4`) · **Baseline:** `docs/reviews/2026-08-08_api-docs-study.md`
-(8/11 items covered) · **Feeds:** Pareto plan M5/M8/M9/M15.
+server version `2026Q4`) · **Baseline:** `docs/reviews/archived/2026-08-08_api-docs-study.md`
+(8/11 items covered; study archived 2026-10-23) · **Feeds:** Pareto plan M5/M8/M9/M15.
 
 ## Category deltas vs the 2026-08-08 study
 

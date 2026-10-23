@@ -20,7 +20,7 @@ permanently and delete the browser tooling. **User-gated (Q1 of the
 2026-10-17 self-review).**
 
 [ ] Lock the public API at v1.0 — audit is green (re-audit + growth lineage in
-`docs/reviews/2026-08-21_v1.0-api-audit.md`, growth lineage maintained through
+`docs/reviews/archived/2026-08-21_v1.0-api-audit.md`, growth lineage maintained through
 the current 46-method surface); remaining: tag `v1.0.0`.
 User decision 2026-10-17: hold v1.0.0 — v0.16.0 (breaking allowed) ships the
 sandbox lane instead; revisit the tag once the v1 blockers in ROADMAP clear.
@@ -53,6 +53,21 @@ fails, the gate is skipped, and the job stays green (`continue-on-error` pattern
 lines in the `erraudit` job to make the gate blocking.
 **BLOCKED: needs the user's PAT.**
 
+[ ] Rebuild the BuildFlow binary + swap the global profile — the green full-run
+verdicts ride a stale binary (built at `e547e2b`; BuildFlow repo HEAD is
+`952cf3e`, preflight warns). Rebuild requires the manual
+`nix profile remove/add` dance (the `reinstall` app is a no-op, BuildFlow
+[#35](https://github.com/LarsArtmann/BuildFlow/issues/35)) on the user's
+global profile. **BLOCKED: touches the user's global profile.** Source:
+`docs/status/2026-10-23_07-48_buildflow-recovery.md` §f4.
+
+[ ] Daemon observability — locate the auto-git daemon (no process/unit/log
+findable from inside a session), document a heartbeat/log location, and
+record whether the hook bypass (`--no-verify`) is intentional. Until then
+"is the daemon alive?" is answerable only from `git log` timestamps.
+**BLOCKED: the owner knows where the daemon lives.** Source:
+`docs/status/2026-10-23_08-25_continuation-backlog-execution.md` §f4.
+
 [ ] Re-enable CI on GitHub — the auth blocker is RESOLVED (2026-09-13): all
 flake inputs moved from `git+ssh` to public `github:` URLs pinned by rev, so CI
 needs no secrets; the workflow file is refreshed (8 jobs incl. the network
@@ -67,17 +82,33 @@ Until then the coverage badge stays frozen at its last CI-measured value.
 
 ### Open
 
-[ ] Security window: re-run `nix flake update nixpkgs` when go **1.26.9**
-lands in nixpkgs-unstable (locked nixpkgs `55bfb4d` still ships **1.26.8**,
-re-probed 2026-10-17 on the v0.15.0 train — window NOT open) — clears
-all 9 govulncheck stdlib vulns (GO-2026-6603..6617, fixed in 1.26.9) and
-shrinks the vulnix advisory set. The update procedure is pre-staged as a
-click-through checklist:
-`docs/planning/2026-10-17_security-window-checklist.md` (vendor FOD →
-flake check → full buildflow → re-measure govulncheck/vulnix). Then
-track the BuildFlow #66/#67 and
-branching-flow #15/#16 consumer-side cleanups. Source:
-`docs/status/2026-10-17_01-43_buildflow-warning-surface-zero-and-gate-repair-status.md` §b1/§f.
+[ ] Close the daemon-commit format gap — pick one: a daemon-side post-commit
+`dprint check` (needs the daemon's location, see the P2 observability row)
+or a vendored-WASM dprint plugin cache (`fetchurl` ×4 + prepared
+`DPRINT_CACHE_DIR`) so `nix flake check` can run `dprint check` hermetically.
+The pre-commit hook only protects manual commits (daemon bypasses it).
+Source: `docs/status/2026-10-23_08-25_continuation-backlog-execution.md` §f5/f6.
+
+[ ] Quoted-title gate — extend `scripts/anchor_check.py` to verify
+`"quoted entry title"` strings in living docs against actual bold entry
+titles, turning paraphrased cross-references into gate failures (the
+2026-10-23 split-brain sweep shipped 5 unguarded paraphrase pointers).
+Source: `docs/status/2026-10-23_07-22_agents-md-split-brain-sweep.md` §f3.
+
+[ ] Reconcile buildflow finding counts against direct tool output — bandit
+claimed 78 vs direct 1 (fixed); characterize the inflation
+(per-occurrence? scope?) and document or file upstream; same pass: verify
+which of buildflow's "9 tools unavailable" are actually missing vs
+PATH-scoping. Source:
+`docs/status/2026-10-23_08-25_continuation-backlog-execution.md` §f7/f8.
+
+[ ] Upstream filings/proposals (verify-before-filing first): the
+nixpkgs/vulnix NVD-feed 404 issue (vulnix 1.12.5 hard-fails on the 404'd
+`nvdcve-2.0-modified.json.gz` archive; skip_steps'd here), and the
+scoped-dprint step for crush-config's status-report skill flow (an
+unformatted status report failed a full run 2026-10-23). Sources:
+`docs/status/2026-10-23_07-48_buildflow-recovery.md` §f7,
+`docs/status/2026-10-23_08-25_continuation-backlog-execution.md` §f19.
 
 [ ] Continue the AGENTS.md prune — part 1 done 2026-10-17 (v0.15.0 train M15):
 57,097 → 47,354 bytes with every concept carried (narratives compressed to
@@ -152,6 +183,32 @@ input for darwin checks, or drop x86_64-darwin from the check matrix.
 `docs/planning/2026-10-16_decision-memos.md` D5 (drop x86_64-darwin;
 reversible one-liner if a consumer appears) — also ask #7 in
 `docs/planning/2026-10-16_open-user-asks.md`.
+
+[ ] Vulnix replacement — vulnix is skip_steps'd (unmaintained; NIST 404s the
+modified-feed archive it needs), so non-Go closure CVEs have NO scanner
+(govulncheck is Go-only). Decide: a maintained scanner (e.g. grype/syft over
+`./result`) wired as a buildflow step or on-demand, vs accepting the
+govulncheck-only gap until a nixpkgs successor exists. A third-party NVD
+mirror was declined on feed-integrity grounds (2026-10-23).
+**BLOCKED: user risk call.** Source:
+`docs/status/2026-10-23_07-48_buildflow-recovery.md` §g1.
+
+[ ] Stdlib-advisory go-directive policy — the 10 govulncheck advisories (48
+findings) persist because the module pins `go 1.26.0` and govulncheck keys
+on the directive; the toolchain is already 1.26.9 (nixpkgs lock `02c087f`).
+Patch-pinning `1.26.9` would clear them but violates the go-mod-normalize
+"no patch pins" policy. Which wins — clean findings output or the policy?
+**BLOCKED: user call.** Source:
+`docs/status/2026-10-23_07-48_buildflow-recovery.md` §g2; AGENTS
+"buildflow warning-class findings" gotcha.
+
+[ ] AGENTS.md structural split — keep the single file (with taxonomy/index,
+see the split-brain sweep's systemic analysis) or split into per-area files
+loaded via `context_paths`. The 2026-10-23 split-brain recurrence is a
+direct symptom of the append-to-one-file pattern; the <30 KB prune (above)
+is the near-term lever either way. **BLOCKED: user memory-architecture
+call.** Source:
+`docs/status/2026-10-23_07-22_agents-md-split-brain-sweep.md` §g1/§f15.
 
 [ ] Go 1.27 toolchain migration — execute
 `docs/planning/2026-10-07_go-1.27-migration-plan.md` (4 unlock conditions,

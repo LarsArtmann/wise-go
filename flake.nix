@@ -616,7 +616,11 @@
                   # forces a conscious doc update instead of silent drift.
                   check_count "shipped operations" FEATURES.md '[0-9]+ of those documented' "$actual_methods"
                   check_count "methods" ROADMAP.md '[0-9]+ methods' "$actual_methods"
-                  check_count "Client methods" docs/reviews/2026-08-21_v1.0-api-audit.md '[0-9]+ .\*Client. methods across' "$actual_methods"
+                  # The archived v1.0 audit (2026-08-21) was removed as a
+                  # count anchor on 2026-10-23: archived files are frozen,
+                  # so a future method-count change could never satisfy it.
+                  # The living docs above plus the latest release notes
+                  # still enforce the count.
 
                   # Release notes: only the LATEST docs/releases file is a
                   # living claim — it must state the current method count.

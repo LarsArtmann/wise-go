@@ -11,7 +11,8 @@ library that is obviously correct, obviously typed, and obviously safe to depend
 Every monetary amount is `Money` (cents paired with `Currency`). Every entity ID is
 branded. Every error is typed and classifiable. Every API call retries intelligently.
 
-As of 2026-10-17 (v0.15.0 shipped; the structured error surface is live), the
+As of 2026-10-23 (v0.16.0 shipped; the structured error surface and the
+credentialed sandbox lane are live), the
 type-safety redesign is
 complete, the core transfer flow — and with it the whole transfer category —
 is live END TO END (quotes, recipients, transfers, funding, delivery
@@ -27,17 +28,18 @@ event decoding, programmatic SCA challenge clearing (one-time-token endpoints,
 every OTT-taking surface typed via `OneTimeToken`), a spec-drift gate against
 the live OpenAPI bundle, and
 observability (WithLogger, per-request correlation IDs) under the
-existing retry/error architecture. v0.9.0 through v0.14.0
-have shipped; the v1.0 audit (`docs/reviews/2026-08-21_v1.0-api-audit.md`) found
-nothing blocking the tag (re-audited 2026-09-13; the v0.11.0 OTT additions are
-covered by the audit's growth-lineage note). The roadmap expands the surface
+existing retry/error architecture. v0.9.0 through v0.16.0
+have shipped; the v1.0 audit (`docs/reviews/archived/2026-08-21_v1.0-api-audit.md`) found
+nothing blocking the tag (re-audited 2026-09-13; the growth lineage is
+maintained through the current 46-method surface in CHANGELOG and the
+release notes). The roadmap expands the surface
 along four axes — completeness, type-safety, observability, and scale — while
 preserving the architectural decisions that make the codebase maintainable.
 
 ## Axis 1: Completeness (API surface)
 
 Today: tiers 1 and 2 of
-`docs/planning/2026-08-19_wise-api-full-implementation-plan.md` are complete,
+`docs/planning/archived/2026-08-19_wise-api-full-implementation-plan.md` are complete,
 and the transfer category is complete end to end — 46 `*Client` methods
 across 17 resources. The core transfer flow is live: quotes (including
 account requirements and the two-pass refresh), recipients, transfers
@@ -94,25 +96,36 @@ that clear challenges programmatically, and `GetBankAccountDetails` on the
 
 **Release state:** shipped as **v0.9.0** (2026-08-21), **v0.10.0**
 (2026-09-13), **v0.11.0** (2026-09-14), **v0.12.0** and **v0.13.0**
-(2026-10-07), **v0.14.0** (2026-10-16), and **v0.15.0** (2026-10-17; tags on
-origin and served by the module proxy, GitHub Release objects published).
+(2026-10-07), **v0.14.0** (2026-10-16), and **v0.15.0** and **v0.16.0**
+(2026-10-17; tags on origin and served by the module proxy, GitHub Release
+objects published).
 v0.14.0 carried the breaking
 `OneTimeToken`/`OTTAction` typing, the 2027Q1 account-details migration, and
 the transfer-category completion (payments list, US combined receipt, NOC,
 originator transfers); v0.15.0 shipped the structured error surface
 (code sentinels, `BadRequestError`, `APIError.Details`, the central catalog)
-with `*BadRequestError` on 400s as its one breaking change.
+with `*BadRequestError` on 400s as its one breaking change; v0.16.0 shipped
+the credentialed sandbox lane (key-gated live tests, five settled
+spec-vs-live assumptions, live-only wire shapes documented) and the OTT
+`2026Q4` roll.
 The v1.0 audit is
 green and re-audited 2026-09-13 at the 33-method surface
-(`docs/reviews/2026-08-21_v1.0-api-audit.md` — refreshed inventory, godoc pass,
-risk-register items 8–10, growth lineage through 46 methods as of 2026-10-16); the v1.0.0 tag
+(`docs/reviews/archived/2026-08-21_v1.0-api-audit.md` — refreshed inventory, godoc pass,
+risk-register items 8–10, growth lineage through 46 methods); the v1.0.0 tag
 remains gated on the maintainer's explicit approval.
 
 ### Medium-term
 
-- **Sandbox verification** — credentialed integration tests against
-  `api.wise-sandbox.com`. The workflow and test skeleton are in place
-  (manual dispatch, key-gated); blocked on a sandbox API key.
+### Sandbox verification — SHIPPED (2026-10-17)
+
+- The credentialed lane is live: `WISE_SANDBOX_API_KEY`-gated tests in
+  `sandbox_live_test.go` (smoke trio, rates shape, funding-404, SCA
+  challenge shape, OTT status on the quarterly surface, balance-creation
+  idempotency) plus the `sandbox-live.yml` dispatch-gated workflow; the
+  first live pass settled five spec-vs-live assumptions and flipped OTT to
+  `2026Q4` (v0.16.0). Residual: statement CONTENT is SCA-gated in sandbox
+  (SIGNATURE challenge; web login with the `111111` catch-all) — the two
+  parked assumptions sit in TODO_LIST P2 behind one capped browser attempt.
 
 - **Application-level webhook subscriptions (deferred 2026-09-13)** — the spec
   also exposes `/applications/{clientKey}/subscriptions` (2 CRUD ops + GET +
@@ -191,7 +204,7 @@ full analysis lives at `docs/brainstorming/2026-07-18_data-model-review.html`.
 
 - **Lock the public API surface** — freeze exported symbols; future breaking changes
   require v2. The formal API audit and godoc review pass are complete
-  (`docs/reviews/2026-08-21_v1.0-api-audit.md`, green). v0.9.0 shipped
+  (`docs/reviews/archived/2026-08-21_v1.0-api-audit.md`, green). v0.9.0 shipped
   2026-08-21; the v1.0.0 tag awaits the maintainer's explicit approval.
 
 ### Beyond
@@ -311,7 +324,8 @@ scheduled work:
 - **Upstream BuildFlow proposals** — a fleet-wide pin-sync step and rev-aware gomod-check warnings on `go.mod` changes.
 - **crush-config lessons** — pipe-masking as fleet lesson; "`ps` for live buildflow before running gates in daemon-managed repos"; the compile-the-snippet-you-ship rule as a fleet checklist item.
 - **Consumer-guidance README notes (twelve-factor review residue)** — retry-composition guidance (consumer retries multiplying SDK retries) and a transport-redaction note for injected `WithHTTPClient` middleware.
-- **`Quote` residual wire fields** — `rateExpirationTime`, `targetAmountAllowed`, `user` (parse when a consumer needs them).
+- ~~**`Quote` residual wire fields** — `rateExpirationTime`, `targetAmountAllowed`, `user` (parse when a consumer needs them).~~ SHIPPED v0.16.0: all four including `preferredPayIn` (typed `PayIn`); `pricingConfiguration` stays unparsed (no consumer demand).
+- **`Balance` residual wire fields** — `investmentState`, `cashAccountType`, `bankDetails` (harvested 2026-10-23 from the archived api-docs-study §8.2: `cashAccountType` is not even parsed raw; `InvestmentState` drives list filtering but is absent from the public `Balance` struct). Parse when a consumer needs them.
 - **Property tests for `Money` cents conversion** — fuzz/table coverage over the `toMoney` boundary.
 - **CI fuzz smoke job** — 30s run of the four fuzz targets once CI is enabled.
 - **Repo polish** — `.github/ISSUE_TEMPLATE/config.yml` (blank-issues toggle + discussions link); a session-claim convention for parallel Crush sessions (2026-10-16 22:44 §g3).
@@ -330,7 +344,10 @@ scheduled work:
   and the one-command pre-release chain; v0.14.0 the typed
   `OneTimeToken`/`OTTAction` credentials, the 2027Q1 account-details
   migration, and the transfer-category completion (originator transfers,
-  payments list, US combined receipt, NOC).
+  payments list, US combined receipt, NOC); v0.15.0 the structured error
+  surface (11 code sentinels, `BadRequestError`, `APIError.Details`, the
+  central catalog); v0.16.0 the credentialed sandbox lane and the OTT
+  `2026Q4` roll.
 - **v1.0** — public API freeze. After v1.0, breaking changes require v2 and a
   deliberate migration path.
 

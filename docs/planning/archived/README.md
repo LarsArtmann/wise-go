@@ -26,3 +26,12 @@ remaining seeds are routed to TODO_LIST/ROADMAP.
   behind it landed or was routed). Completion banner at the top of the plan
   carries the shipped/gated/open breakdown; open residue lives in
   TODO_LIST (AGENTS second pass) and the decision memos.
+
+## 2026-10-23 docs-health 2026-0x sweep (owner-ordered archive of fully-resolved reports)
+
+- `2026-08-19_wise-api-full-implementation-plan.md` — EXECUTED + ARCHIVE:
+  tier 1 fully shipped (rows struck with ship versions), tier 2 shipped
+  except comparisons (routed to FEATURES PLANNED), tiers 3/4 every row
+  struck with its outcome (PLANNED / DEMAND_GATED / OUT_OF_SCOPE per the
+  FEATURES matrix), all four phases shipped. The 2026-10-17 M22
+  banner-grade disposition is superseded by the owner's archive order.

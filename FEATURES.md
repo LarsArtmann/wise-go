@@ -43,7 +43,7 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
   already-shipped families), **26 DEMAND_GATED** (whole families awaiting a
   consumer demand signal — plan tier 3), **5 ON_HOLD** (app-level webhook
   scope decision). Tiers per
-  [the implementation plan](docs/planning/2026-08-19_wise-api-full-implementation-plan.md).
+  [the implementation plan](docs/planning/archived/2026-08-19_wise-api-full-implementation-plan.md).
 - **123 operations are OUT_OF_SCOPE** (cards, KYC/KYB, SCA factors, JOSE,
   simulations, embedded flows, cases, disputes, settlement allocations, …).
 
