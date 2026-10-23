@@ -138,11 +138,11 @@ These align with the existing ROADMAP and are the most common consumer needs:
 
 ### Current documented URLs
 
-| Environment                 | TLS                                         | mTLS                                |
-| --------------------------- | ------------------------------------------- | ----------------------------------- |
-| **Production**              | `https://api.wise.com`                      | `https://api-mtls.transferwise.com` |
-| **Sandbox V2** (current)    | `https://api.wise-sandbox.com`              | `https://api-mtls.wise-sandbox.com` |
-| ~~Sandbox V1~~ (deprecated) | ~~`https://api.sandbox.transferwise.tech`~~ | —                                   |
+| Environment                  | TLS                                         | mTLS                                    |
+| ---------------------------- | ------------------------------------------- | --------------------------------------- |
+| ~~**Production**~~           | ~~`https://api.wise.com`~~                  | ~~`https://api-mtls.transferwise.com`~~ |
+| ~~**Sandbox V2 (current)**~~ | ~~`https://api.wise-sandbox.com`~~          | ~~`https://api-mtls.wise-sandbox.com`~~ |
+| ~~Sandbox V1 (deprecated)~~  | ~~`https://api.sandbox.transferwise.tech`~~ | ~~—~~                                   |
 
 ### V1 → V2 migration notes (Nov 2025)
 
