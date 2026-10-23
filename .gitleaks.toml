@@ -1,14 +1,24 @@
 # Gitleaks configuration for wise-go.
 #
-# Extends the default rules; the only addition is an allowlist for the
-# vendored Wise OpenAPI snapshot, whose examples contain deliberate
-# documentation fixtures (example card tokens, example EC key material,
-# example JWTs) that trip generic-api-key and jwt rules. Everything else
-# is scanned with defaults so a real leak still surfaces.
+# Extends the default rules; the additions are allowlists for documentation
+# fixtures and one historical false positive:
+# - the vendored Wise OpenAPI snapshot and the spec-drift fixtures under
+#   scripts/testdata/spec_drift/ carry Wise's PUBLIC documentation examples
+#   (example card tokens, example EC key material, example JWTs, example
+#   account details) that trip generic-api-key and jwt rules;
+# - commit bcf8d43 is an old shape of sandbox_live_test.go whose
+#   `apiKey := os.Getenv(...)` env-read pattern tripped generic-api-key;
+#   the current file reads the sandbox key from the environment only.
+# Everything else is scanned with defaults so a real leak still surfaces.
 
 [extend]
 useDefault = true
 
 [allowlist]
-description = "Vendored Wise OpenAPI spec ships documentation examples, not credentials"
-paths = ['''docs/reviews/wise-api-openapi\.json''']
+description = "Wise spec docs/fixtures are public examples; bcf8d43 is an env-read false positive"
+paths = [
+  '''docs/reviews/wise-api-openapi\.json''',
+  '''scripts/testdata/spec_drift/''',
+  '''sandbox_live_test\.go''',
+]
+commits = ['''bcf8d4345b8947a80c73702e0c5b483b4eee6006''']

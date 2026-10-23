@@ -3,10 +3,13 @@
 # - "unparseable" is the repo's deliberate spelling (13+ consistent uses in
 #   code, comments, and docs); codespell's dictionary prefers "unparsable",
 #   which would churn every site.
-# - docs/reviews/ holds point-in-time review snapshots and the two vendored
-#   Wise OpenAPI JSON specs; their typos are upstream Wise content or
-#   historical record and must not be rewritten.
+# - "decorder" is the golangci-lint linter's actual name (quoted verbatim in
+#   the flake's linter allowlist); "correcting" it would break the allowlist.
+# - docs/reviews/ and docs/planning/ hold point-in-time review/planning
+#   snapshots and the two vendored Wise OpenAPI JSON specs; their typos are
+#   upstream Wise content or historical record and must not be rewritten.
+#   CHANGELOG.md is released history for the same reason.
 
 [codespell]
-ignore-words-list = unparseable
-skip = *docs/reviews/*,*docs/status/*
+ignore-words-list = unparseable,decorder
+skip = *docs/reviews/*,*docs/status/*,*docs/planning/*,*CHANGELOG.md

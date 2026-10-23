@@ -28,6 +28,7 @@ import json
 import os
 import pathlib
 import re
+import shutil
 import subprocess  # nosec B404 -- shells to the repo's own go/parser extractor only
 import sys
 import tempfile
@@ -92,8 +93,13 @@ def extract_sdk_endpoints_go(repo: pathlib.Path) -> list[dict]:
             "HOME": str(pathlib.Path(tmp)),
             "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
         }
+        go_bin = shutil.which("go")
+        if go_bin is None:
+            raise RuntimeError(
+                "go toolchain not found on PATH (needed by the go extractor)"
+            )
         proc = subprocess.run(  # nosec B603 -- fixed argv, repo-owned tool, stdlib-only
-            ["go", "run", str(GO_EXTRACTOR), str(repo)],
+            [go_bin, "run", str(GO_EXTRACTOR), str(repo)],
             capture_output=True,
             text=True,
             check=False,
