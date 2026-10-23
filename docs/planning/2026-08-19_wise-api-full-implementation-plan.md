@@ -2,9 +2,17 @@
 
 **Date:** 2026-08-19
 **Source:** [docs.wise.com/api-reference](https://docs.wise.com/api-reference)
-**Current SDK version:** v0.7.0 (plan baseline; SDK is now v0.15.0)
+**Current SDK version:** v0.7.0 (plan baseline; SDK is now v0.16.0)
 
-> **Update (2026-10-17 docs-health pass):** tier 1 is fully shipped — ~~row 5 (`GetQuoteAccountRequirements`, still PLANNED)~~ shipped in v0.9.0 (struck in the table below). Tier 2 shipped except row 23 (`/v1/comparisons`, still PLANNED). The SDK is now **v0.15.0** with **46 `*Client` methods across 17 resources** (v0.15.0 shipped the structured error surface, no endpoint changes) — the transfer category completed 2026-10-16 (payments list, US combined receipt, NOC) plus third-party (originator) transfers, and bank details migrated to Wise's 2027Q1 `GET /balances/account-details/{id}` surface. The full per-endpoint coverage matrix lives in `FEATURES.md`, and open tier-2/3/4 work is tracked in `TODO_LIST.md` (bounded tasks) and `ROADMAP.md` (strategy). Earlier banner: ~~the SDK is now v0.12.0 with 41 methods~~ (2026-10-07); ~~v0.8.1, tier-1 fully shipped except row 5~~ (2026-08-21).
+> **Update (2026-10-17 docs-health pass):** tier 1 is fully shipped — ~~row 5 (`GetQuoteAccountRequirements`, still PLANNED)~~ shipped in v0.9.0 (struck in the table below). Tier 2 shipped except row 23 (`/v1/comparisons`, still PLANNED). The SDK is now **v0.16.0** with **46 `*Client` methods across 17 resources** (v0.15.0 shipped the structured error surface and v0.16.0 the sandbox lane — no endpoint changes) — the transfer category completed 2026-10-16 (payments list, US combined receipt, NOC) plus third-party (originator) transfers, and bank details migrated to Wise's 2027Q1 `GET /balances/account-details/{id}` surface. The full per-endpoint coverage matrix lives in `FEATURES.md`, and open tier-2/3/4 work is tracked in `TODO_LIST.md` (bounded tasks) and `ROADMAP.md` (strategy). Earlier banner: ~~the SDK is now v0.12.0 with 41 methods~~ (2026-10-07); ~~v0.8.1, tier-1 fully shipped except row 5~~ (2026-08-21).
+>
+> **Archive verdict (2026-10-23, docs-health sweep — owner-ordered archiving
+> of fully-resolved reports):** every tier-2/3/4 row now carries an inline
+> outcome (struck below) and all four phases are shipped; the live truth is
+> maintained in `FEATURES.md` (coverage matrix), `TODO_LIST.md`, and
+> `ROADMAP.md`. Archived to `docs/planning/archived/` — the tier framework's
+> residue (row 23 comparisons, profile writes, demand-gated families) is
+> exactly the FEATURES matrix's PLANNED/DEMAND_GATED/OUT_OF_SCOPE rows.
 
 ---
 
@@ -59,16 +67,16 @@ This plan maps the full API surface, applies Pareto prioritisation, and defines 
 
 | #  | Category              | Method | Path                                                                                             | Notes                                                         |
 | -- | --------------------- | ------ | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
-| 14 | Users                 | GET    | `/me`                                                                                            | Current user                                                  |
-| 15 | Users                 | GET    | `/users/{userId}`                                                                                | User by ID                                                    |
-| 16 | Balances              | POST   | `/v4/profiles/{profileId}/balances`                                                              | Create balance                                                |
-| 17 | Balances              | GET    | `/v4/profiles/{profileId}/balances/{balanceId}`                                                  | Get balance by ID (new endpoint; may remove client-side scan) |
-| 18 | Balances              | GET    | `/v1/profiles/{profileId}/total-funds/{currency}`                                                | Total funds                                                   |
-| 19 | Statements            | GET    | `/v1/profiles/{profileId}/balance-statements/{balanceId}/statement.{csv,pdf,xlsx,xml,mt940,qif}` | Format parameter                                              |
-| 20 | Webhooks              | —      | Signature verification helper                                                                    | High value, no REST calls                                     |
-| 21 | Transfer requirements | POST   | `/v1/transfer-requirements`                                                                      | Validate before create                                        |
-| 22 | Currencies            | GET    | `/v1/currencies`                                                                                 | Allowed currencies                                            |
-| 23 | Comparisons           | GET    | `/v1/comparisons`                                                                                | Provider comparison                                           |
+| ~~14~~ | ~~Users~~              | ~~GET~~    | ~~/me~~                                                                                          | ~~Current user~~ shipped v0.9.0 (`GetMe`) |
+| ~~15~~ | ~~Users~~              | ~~GET~~    | ~~/users/{userId}~~                                                                              | ~~User by ID~~ shipped v0.9.0 (`GetUser`) |
+| ~~16~~ | ~~Balances~~           | ~~POST~~   | ~~/v4/profiles/{profileId}/balances~~                                                            | ~~Create balance~~ shipped v0.9.0 (idempotency key added v0.12.0) |
+| ~~17~~ | ~~Balances~~           | ~~GET~~    | ~~/v4/profiles/{profileId}/balances/{balanceId}~~                                                | ~~Get balance by ID (new endpoint; may remove client-side scan)~~ shipped v0.9.0 (direct endpoint; the scan is gone) |
+| ~~18~~ | ~~Balances~~           | ~~GET~~    | ~~/v1/profiles/{profileId}/total-funds/{currency}~~                                              | ~~Total funds~~ shipped v0.9.0 |
+| ~~19~~ | ~~Statements~~         | ~~GET~~    | ~~/v1/profiles/{profileId}/balance-statements/{balanceId}/statement.{csv,pdf,xlsx,xml,mt940,qif}~~ | ~~Format parameter~~ shipped v0.9.0 (six formats via raw `GetStatement`) |
+| ~~20~~ | ~~Webhooks~~           | ~~—~~      | ~~Signature verification helper~~                                                                 | ~~High value, no REST calls~~ shipped v0.9.0 (verify) + v0.10.0 (typed event decoding) |
+| ~~21~~ | ~~Transfer requirements~~ | ~~POST~~ | ~~/v1/transfer-requirements~~                                                                   | ~~Validate before create~~ shipped v0.8.0 |
+| ~~22~~ | ~~Currencies~~         | ~~GET~~    | ~~/v1/currencies~~                                                                               | ~~Allowed currencies~~ shipped v0.9.0 |
+| ~~23~~ | ~~Comparisons~~        | ~~GET~~    | ~~/v1/comparisons~~                                                                              | ~~Provider comparison~~ still PLANNED — routed to the FEATURES matrix (tier 2 leftover) |
 
 ### Tier 3 — Moderate value, broader surface
 

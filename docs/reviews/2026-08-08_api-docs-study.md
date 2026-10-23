@@ -18,8 +18,18 @@
 > count — v0.15.0 shipped the structured error surface, no new endpoints): the transfer
 > paperwork trio (payments list, US combined receipt, NOC) and the
 > third-party (originator) create/get pair landed, and bank details moved to
-> Wise's 2027Q1 `GET /balances/account-details/{id}` surface. The routed
-> "still open" set above is unchanged; FEATURES.md owns the live matrix.
+> Wise's 2027Q1 `GET /balances/account-details/{id}` surface. v0.16.0 (also
+> 2026-10-17) left the surface unchanged (sandbox lane + OTT `2026Q4` flip).
+> The routed "still open" set above is unchanged; FEATURES.md owns the live matrix.
+>
+> **Archive verdict (2026-10-23, docs-health sweep — owner-ordered archiving
+> of fully-resolved reports):** every §8 next-step is shipped or routed
+> (struck below), every tier-table row carries its outcome, and the live
+> truth is maintained where it is acted on: `FEATURES.md` (the 46/49/123
+> coverage matrix), `TODO_LIST.md`, and `ROADMAP.md`. Archived to
+> `docs/reviews/archived/` — this file is a point-in-time gap analysis and
+> no longer the canonical gap map (the 2026-10-07/M22 "keep in place"
+> disposition is superseded by the owner's archive order).
 
 **Date:** 2026-08-08
 **Sources:** [changelog](https://docs.wise.com/changelog) | [API reference](https://docs.wise.com/api-reference) | [environments](https://docs.wise.com/guides/developer/environments)
@@ -84,36 +94,36 @@ The Wise Platform API has ~135+ endpoints across 29 categories. The SDK covers 3
 
 These align with the existing ROADMAP and are the most common consumer needs:
 
-| Category           | Key Endpoints                                                                                                                       | wise-go Status  |
+| ~~Category           ~~ | ~~Key Endpoints                                                                                                                       ~~ | ~~wise-go Status~~                                                                     |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | --------------- |
-| **Quotes**         | `POST /v3/quotes`, `POST /v3/profiles/{id}/quotes`, `GET /v3/profiles/{id}/quotes/{id}`, `GET /v1/quotes/{id}/account-requirements` | PLANNED         |
-| **Transfers**      | `GET /v1/transfers/{id}`, `GET /v1/delivery-estimates/{id}`, CRUD for transfers                                                     | PLANNED         |
-| **Recipients**     | `GET /v2/accounts`, `GET /v1/accounts/{id}`, `GET /v1/account-requirements`                                                         | PLANNED         |
-| **Exchange rates** | `GET /v1/rates`                                                                                                                     | Not planned     |
-| **Statements**     | `GET /v1/profiles/{id}/balance-statements/{id}/statement.{json,csv,pdf}`                                                            | CSV/PDF PLANNED |
+| ~~**Quotes**~~         | ~~`POST /v3/quotes`, `POST /v3/profiles/{id}/quotes`, `GET /v3/profiles/{id}/quotes/{id}`, `GET /v1/quotes/{id}/account-requirements`~~ | ~~PLANNED~~ shipped v0.8.0 (+ requirements v0.9.0) |
+| ~~**Transfers**~~      | ~~`GET /v1/transfers/{id}`, `GET /v1/delivery-estimates/{id}`, CRUD for transfers~~                                                    | ~~PLANNED~~ shipped v0.8.0 (+ funding v0.9.0) |
+| ~~**Recipients**~~     | ~~`GET /v2/accounts`, `GET /v1/accounts/{id}`, `GET /v1/account-requirements`~~                                                        | ~~PLANNED~~ shipped v0.8.0 |
+| ~~**Exchange rates**~~ | ~~`GET /v1/rates`~~                                                                                                                     | ~~Not planned~~ shipped v0.8.0 |
+| ~~**Statements**~~     | ~~`GET /v1/profiles/{id}/balance-statements/{id}/statement.{json,csv,pdf}`~~                                                           | ~~CSV/PDF PLANNED~~ shipped v0.9.0 (all six formats) |
 
 ### Tier 2: Moderate-value SDK targets
 
-| Category                   | Key Endpoints                                                                                                                        | Notes                                         |
+| ~~Category                   ~~ | ~~Key Endpoints                                                                                                                        ~~ | ~~Notes~~                                                                          |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
-| **Users**                  | `GET /v1/me`, `GET /v1/users/{id}`                                                                                                   | Simple read endpoints                         |
-| **Webhooks**               | Profile & application subscription CRUD + signature verification                                                                     | High-value, self-contained                    |
-| **Balances (expanded)**    | `POST /v4/profiles/{id}/balances` (create), `GET /v1/profiles/{id}/total-funds/{currency}`, `GET /v1/profiles/{id}/balance-capacity` | Natural extension of existing balance support |
-| **Multi-Currency Account** | `GET /v4/profiles/{id}/multi-currency-account`, eligibility, available currencies                                                    | MCA details with bank account numbers         |
-| **Bank Account Details**   | `GET /v1/profiles/{id}/account-details`, `GET /v3/profiles/{id}/bank-details`                                                        | IBAN/SortCode/routing info                    |
-| **Addresses**              | `GET /v1/addresses`, `POST /v1/addresses`, `GET /v1/address-requirements`                                                            | CRUD for address book                         |
+| ~~**Users**~~                  | ~~`GET /v1/me`, `GET /v1/users/{id}`~~                                                                                                   | ~~Simple read endpoints~~ shipped v0.9.0 (`GetMe`/`GetUser`) |
+| ~~**Webhooks**~~               | ~~Profile & application subscription CRUD + signature verification~~                                                                     | ~~High-value, self-contained~~ shipped: signature verify v0.9.0, profile-level CRUD v0.10.0 (app-level ON_HOLD) |
+| ~~**Balances (expanded)**~~    | ~~`POST /v4/profiles/{id}/balances` (create), `GET /v1/profiles/{id}/total-funds/{currency}`, `GET /v1/profiles/{id}/balance-capacity`~~ | ~~Natural extension of existing balance support~~ shipped v0.9.0 (create/get/total-funds; capacity DEMAND_GATED) |
+| ~~**Multi-Currency Account**~~ | ~~`GET /v4/profiles/{id}/multi-currency-account`, eligibility, available currencies~~                                                    | ~~MCA details with bank account numbers~~ read shipped v0.9.0 (configuration PLANNED) |
+| ~~**Bank Account Details**~~   | ~~`GET /v1/profiles/{id}/account-details`, `GET /v3/profiles/{id}/bank-details`~~                                                        | ~~IBAN/SortCode/routing info~~ shipped v0.9.0; migrated to Wise's 2027Q1 surface in v0.14.0 |
+| ~~**Addresses**~~              | ~~`GET /v1/addresses`, `POST /v1/addresses`, `GET /v1/address-requirements`~~                                                            | ~~CRUD for address book~~ DEMAND_GATED (FEATURES matrix) |
 
 ### Tier 3: Specialized (card issuance, KYC, disputes, SCA)
 
-| Category               | Endpoints                                                              | Notes                                     |
+| ~~Category               ~~ | ~~Endpoints~~                                                              | ~~Notes~~                                     |
 | ---------------------- | ---------------------------------------------------------------------- | ----------------------------------------- |
-| **Cards**              | ~15 endpoints (orders, transactions, limits, spend controls, disputes) | Large surface, card-issuing partners only |
-| **KYC Review**         | ~8 endpoints (list, create, submit, verify requirements)               | Compliance-focused                        |
-| **SCA**                | One-time tokens, SCA sessions, verification                            | Strong customer authentication            |
-| **Disputes**           | ~4 endpoints (list, get, submit, upload evidence)                      | Card dispute management                   |
-| **Digital Wallets**    | Payment tokens, provisioning, activation                               | Apple/Google Pay integration              |
-| **Batch Groups**       | Batch payment initiation and tracking                                  | Bulk payment operations                   |
-| **Sandbox Simulation** | ~15 simulation endpoints                                               | Testing-only                              |
+| ~~**Cards**~~              | ~~approx. 15 endpoints (orders, transactions, limits, spend controls, disputes)~~ | ~~Large surface, card-issuing partners only~~ OUT_OF_SCOPE (FEATURES) |
+| ~~**KYC Review**~~         | ~~approx. 8 endpoints (list, create, submit, verify requirements)~~               | ~~Compliance-focused~~ OUT_OF_SCOPE (FEATURES) |
+| ~~**SCA**~~                | ~~One-time tokens, SCA sessions, verification~~                             | ~~Strong customer authentication~~ OTT endpoints shipped v0.11.0; sessions/factors OUT_OF_SCOPE |
+| ~~**Disputes**~~           | ~~approx. 4 endpoints (list, get, submit, upload evidence)~~                      | ~~Card dispute management~~ OUT_OF_SCOPE (FEATURES) |
+| ~~**Digital Wallets**~~    | ~~Payment tokens, provisioning, activation~~                                | ~~Apple/Google Pay integration~~ OUT_OF_SCOPE (FEATURES) |
+| ~~**Batch Groups**~~       | ~~Batch payment initiation and tracking~~                                   | ~~Bulk payment operations~~ DEMAND_GATED (FEATURES) |
+| ~~**Sandbox Simulation**~~ | ~~approx. 15 simulation endpoints~~                                                | ~~Testing-only~~ OUT_OF_SCOPE (FEATURES; the SDK tests against httptest) |
 
 ### Not in scope for wise-go (per ROADMAP non-goals)
 
@@ -202,36 +212,54 @@ Previous endpoint-based versions remain available.
 
 ### Immediate (next release)
 
-1. **Add `GetProfile`** — `GET /v2/profiles/{profileId}` is a simple addition
-2. **Expand `Balance` struct** — capture `investmentState`, `cashAccountType`,
-   `bankDetails` fields already in Wise responses
-3. **Add exchange rates** — `GET /v1/rates` is self-contained and high-value
+1. ~~**Add `GetProfile`** — `GET /v2/profiles/{profileId}` is a simple addition~~ shipped v0.8.0
+2. ~~**Expand `Balance` struct** — capture `investmentState`, `cashAccountType`,~~
+   ~~`bankDetails` fields already in Wise responses~~ PARTIALLY — the balance
+   lifecycle shipped v0.9.0 (CreateBalance / direct GetBalance /
+   GetTotalFunds) and `InvestmentState` drives list filtering, but the three
+   named wire fields remain unexposed on the public `Balance` struct
+   (`cashAccountType` is not even parsed raw); routed 2026-10-23 → ROADMAP
+   raw ideas "Balance residual wire fields".
+3. ~~**Add exchange rates** — `GET /v1/rates` is self-contained and high-value~~ shipped v0.8.0
 
 ### Near-term (v0.7–v0.8)
 
-4. **Quotes API** — prerequisite for transfers
-5. **Recipients API** — prerequisite for transfers
-6. **Transfers API** — the core write-operation value proposition
-7. **Statements (CSV/PDF)** — format parameter on existing endpoint
+4. ~~**Quotes API** — prerequisite for transfers~~ shipped v0.8.0 (+ account
+   requirements and the two-pass refresh v0.9.0)
+5. ~~**Recipients API** — prerequisite for transfers~~ shipped v0.8.0
+6. ~~**Transfers API** — the core write-operation value proposition~~ shipped
+   v0.8.0 (create/get/list/cancel); funding v0.9.0; the category completed
+   v0.14.0 (payments list, US combined receipt, NOC, originator transfers)
+7. ~~**Statements (CSV/PDF)** — format parameter on existing endpoint~~
+   shipped v0.9.0 (all six formats via `GetStatement`)
 
 ### Medium-term (v0.9–v1.0)
 
-8. **Webhook signature verification** — high-value, self-contained helper
-9. **Per-request correlation ID** — allow overriding per-call, not just per-client
-10. **Bank account details** — IBAN/SortCode access for MCA
+8. ~~**Webhook signature verification** — high-value, self-contained helper~~
+   shipped v0.9.0 (subscription CRUD followed in v0.10.0)
+9. ~~**Per-request correlation ID** — allow overriding per-call, not just
+   per-client~~ shipped v0.9.0 (`WithRequestCorrelationID`; ctx wins over the
+   client-wide `WithCorrelationID`)
+10. ~~**Bank account details** — IBAN/SortCode access for MCA~~ shipped
+    v0.9.0; migrated to Wise's 2027Q1 `GET /balances/account-details/{id}`
+    surface in v0.14.0
 
 ### Context for future work
 
-11. **mTLS support** — `api-mtls.wise.com` / `api-mtls.wise-sandbox.com` endpoints
-12. **OAuth token endpoint** — consolidated auth (Mar 2026)
-13. **Global API versioning** — `2026Q4` header support when it becomes required
+11. ~~**mTLS support** — `api-mtls.wise.com` / `api-mtls.wise-sandbox.com` endpoints~~
+    documentation shipped (README mTLS section); client certs ride the
+    `WithHTTPClient` transport seam — no SDK code needed
+12. ~~**OAuth token endpoint** — consolidated auth (Mar 2026)~~ routed:
+    OUT_OF_SCOPE in FEATURES (only if the SDK takes over token exchange)
+13. ~~**Global API versioning** — `2026Q4` header support when it becomes
+    required~~ routed: the quarterly surfaces are LIVE for webhooks and OTT
+    (`2026Q4`); the 2027Q1 canonicalization belongs to the tracked
+    spec-refresh item
 
 ---
 
-**Archive-grade disposition (2026-10-17, v0.15.0 train M22):** banner-grade
-RE-AFFIRMED. This file stays live as the canonical gap map cited from
-AGENTS.md; the banner above is the single refreshed surface, per-row tier
-strikes add no information beyond it, and the open routed work is tracked
-where it is acted on (FEATURES.md matrix, TODO_LIST, ROADMAP). Re-open the
-archive-grade question only when the banner alone can no longer carry the
-truth.
+**ARCHIVED 2026-10-23** (docs-health sweep; owner-ordered archiving of
+fully-resolved reports — supersedes the 2026-10-07 and v0.15.0-train M22
+banner-grade dispositions above). All §8 items and every tier row carry
+inline outcomes; the live coverage matrix is `FEATURES.md`. File moved to
+`docs/reviews/archived/`.
