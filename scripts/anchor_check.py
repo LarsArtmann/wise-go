@@ -1,22 +1,31 @@
 #!/usr/bin/env python3
-"""Verify every `file.go:NN` line anchor in the living docs still lands.
+"""Verify every `file.go:NN` line anchor and quoted title pointer in the
+living docs still lands.
 
-The repo's convention is `Symbol` (`file.go:NN`). Two claim shapes are
-checked:
+The repo's conventions carry three checkable claim shapes:
 
 1. `` `Symbol` (`file.go:NN`) `` -- the cited line must contain Symbol as a
    word; if the symbol moved, the error reports the line where it now lives.
 2. `` `file.go:NN` `` (bare) -- the file must exist, NN must be in range,
    and the cited line must be non-empty.
+3. `` "Title" gotcha `` (quoted text + pointer noun, or the noun inside the
+   quotes) -- the quoted text must be a registered `**bold**` title from a
+   living doc, verbatim. Pointer-shaped quotes that only paraphrase a title
+   (high token overlap) or match nothing are failures: a title rename would
+   otherwise break the reference silently (the 2026-10-23 07:22 sweep found
+   5 such paraphrased pointers). Quotes inside code fences or inline code
+   are prose-blind; genuinely external quoted phrases can be exempted in
+   ALLOWLISTED_QUOTED with a rationale.
 
 Point-in-time docs under docs/status/, docs/planning/, docs/reviews/,
 docs/architecture-understanding/ and every archived/ tree are deliberately
 NOT swept: they are historical records (docs-health annotates/archives them,
 never keeps them line-true). doc-verify gates counts; this gate owns line
-anchors, which rot silently (8 dead anchors 2026-10-16, more re-drifted the
-same evening).
+anchors and title pointers, which rot silently (8 dead anchors 2026-10-16,
+more re-drifted the same evening).
 
-Usage: anchor_check.py [--repo DIR]. Exit 0 clean, 1 drifts, 2 environment.
+Usage: anchor_check.py [--repo DIR] [--self-test]. Exit 0 clean, 1 drifts,
+2 environment.
 """
 
 from __future__ import annotations
@@ -37,6 +46,170 @@ LIVING_DOCS = [
 
 ANCHOR_RE = re.compile(r"`((?:[A-Za-z0-9_.-]+/)*[A-Za-z0-9_-]+\.go):(\d+)`")
 SYMBOL_BEFORE_RE = re.compile(r"`([A-Za-z_][A-Za-z0-9_]*)`\s*\(\s*$")
+
+TITLE_RE = re.compile(r"\*\*(.+?)\*\*")
+QUOTED_RE = re.compile(r'"([^"\n]+)"')
+INLINE_CODE_RE = re.compile(r"`[^`]*`")
+FENCE_RE = re.compile(r"^\s*```")
+
+POINTER_NOUNS = (
+    "gotchas",
+    "gotcha",
+    "entries",
+    "entry",
+    "bullets",
+    "bullet",
+    "sections",
+    "section",
+    "rows",
+    "row",
+    "memos",
+    "memo",
+    "notes",
+    "note",
+    "claims",
+    "claim",
+    "conventions",
+    "convention",
+    "items",
+    "item",
+    "requirements",
+    "requirement",
+    "warnings",
+    "warning",
+)
+NOUN_AFTER_RE = re.compile(
+    rf"^(?:{'|'.join(POINTER_NOUNS)})\b", re.IGNORECASE
+)
+NOUN_TAIL_RE = re.compile(
+    rf"^(?:the\s+)?(.*\S)\s+(?:{'|'.join(POINTER_NOUNS)})\s*$",
+    re.IGNORECASE,
+)
+
+STOPWORDS = {
+    "the",
+    "a",
+    "an",
+    "of",
+    "on",
+    "in",
+    "to",
+    "for",
+    "and",
+    "or",
+    "is",
+    "are",
+    "be",
+    "with",
+    "at",
+    "as",
+    "it",
+    "its",
+    "not",
+    "no",
+    "vs",
+    "per",
+    "by",
+}
+
+ALLOWLISTED_QUOTED: set[str] = set()
+
+
+def prose_lines(text: str):
+    """Yield (lineno, prose-line) outside fenced code, with inline-code spans
+    blanked (length preserved) so wire strings inside backticks are never
+    mistaken for prose quotes or titles."""
+    in_fence = False
+    for lineno, line in enumerate(text.splitlines(), start=1):
+        if FENCE_RE.match(line):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        yield lineno, INLINE_CODE_RE.sub(lambda m: " " * len(m.group(0)), line)
+
+
+def normalize_title(raw: str) -> str:
+    return re.sub(r"\s+", " ", raw).strip()
+
+
+def build_title_registry(docs) -> dict[str, str]:
+    """Map every bold title in the living docs to the doc defining it."""
+    registry: dict[str, str] = {}
+    for doc, text in docs:
+        for _, line in prose_lines(text):
+            for match in TITLE_RE.finditer(line):
+                registry.setdefault(normalize_title(match.group(1)), str(doc))
+    return registry
+
+
+def title_tokens(text: str) -> set[str]:
+    words = re.findall(r"[a-z0-9]+", text.lower())
+    return {w for w in words if len(w) > 1 and w not in STOPWORDS}
+
+
+def near_miss_title(candidate: str, registry: dict[str, str]) -> str | None:
+    """Return the registered title the candidate most likely paraphrases."""
+    cand = title_tokens(candidate)
+    if len(cand) < 2:
+        return None
+    best_n, best_t = 0, ""
+    for title in registry:
+        overlap = len(cand & title_tokens(title))
+        if overlap > best_n:
+            best_n, best_t = overlap, title
+    if best_n >= 2 and best_n >= 0.5 * len(cand):
+        return best_t
+    return None
+
+
+def quoted_title_drifts(doc: Path, text: str, registry: dict[str, str]):
+    """Check pointer-shaped quoted strings against the title registry.
+
+    Returns (drifts, checked): drift messages and the number of
+    pointer-shaped quotes verified."""
+    drifts: list[str] = []
+    checked = 0
+    for line_no, line in prose_lines(text):
+        if line.lstrip().startswith(">"):
+            continue
+        for match in QUOTED_RE.finditer(line):
+            quoted = match.group(1)
+            after = line[match.end() :].lstrip()
+            tail = NOUN_TAIL_RE.match(quoted)
+            if not (NOUN_AFTER_RE.match(after) or tail):
+                continue
+            checked += 1
+
+            def stripped(raw: str) -> str:
+                plain = re.sub(r"^the\s+", "", raw, flags=re.IGNORECASE)
+                return normalize_title(plain).strip(" \t.:;,!")
+
+            candidates = [stripped(quoted)]
+            if tail:
+                candidates.append(stripped(tail.group(1)))
+            candidates = [c for c in candidates if c]
+            if any(c in registry or c in ALLOWLISTED_QUOTED for c in candidates):
+                continue
+            near = next(
+                (
+                    hit
+                    for hit in (near_miss_title(c, registry) for c in candidates)
+                    if hit
+                ),
+                None,
+            )
+            if near:
+                drifts.append(
+                    f'{doc}:{line_no}: quoted pointer "{quoted}" is not a '
+                    f'registered title -- paraphrase of "{near}"?'
+                )
+            else:
+                drifts.append(
+                    f'{doc}:{line_no}: quoted pointer "{quoted}" matches no '
+                    f"registered bold title in the living docs"
+                )
+    return drifts, checked
 
 
 def find_go_file(repo: Path, rel: str) -> Path | None:
@@ -117,10 +290,31 @@ SELF_TEST_EXPECTED = [
     "cited line is blank",
 ]
 
+SELF_TEST_TITLES_DOC = (
+    "# Fixture\n"
+    "\n"
+    "- **Real Gotcha Title** -- body text.\n"
+    "- **Another Entry Name** -- body.\n"
+)
+
+SELF_TEST_QUOTED_DOC = (
+    'ok exact: see the "Real Gotcha Title" gotcha.\n'
+    'ok noun-inside: see "Another Entry Name" entry.\n'
+    'paraphrase: see the "Real Gotcha" gotcha.\n'
+    'unmatched: see "wholly unrelated phrase here" entry.\n'
+    "non-pointer quotes are ignored:\n"
+    'value "111111" stays a wire literal.\n'
+    "fenced code is prose-blind:\n"
+    "```go\n"
+    'x := "invented gotcha inside fence"\n'
+    "```\n"
+)
+
 
 def self_test() -> int:
     import tempfile
 
+    failures = 0
     with tempfile.TemporaryDirectory(prefix="anchor-check-selftest-") as tmp:
         root = Path(tmp)
         (root / "go.mod").write_text("module fixture\n\ngo 1.26\n", encoding="utf-8")
@@ -141,9 +335,37 @@ def self_test() -> int:
                 print(f"self-test FAIL: expected drift class not raised: {miss}")
             if unexpected != 0:
                 print(f"self-test FAIL: {unexpected} unexpected drift(s): {drifts}")
-            return 1
-        print(f"self-test OK: all {len(SELF_TEST_EXPECTED)} drift classes raised")
-        return 0
+            failures += 1
+        else:
+            print(f"anchor self-test OK: all {len(SELF_TEST_EXPECTED)} classes raised")
+
+        registry = build_title_registry([("A.md", SELF_TEST_TITLES_DOC)])
+        qdrifts, checked = quoted_title_drifts(
+            Path("B.md"), SELF_TEST_QUOTED_DOC, registry
+        )
+        expected_quotes = [
+            ("paraphrase of", 'paraphrase: "Real Gotcha" must be flagged'),
+            ("matches no registered", "unmatched phrase must be flagged"),
+        ]
+        qmissing = [
+            hint
+            for fragment, hint in expected_quotes
+            if not any(fragment in d for d in qdrifts)
+        ]
+        if qmissing or len(qdrifts) != len(expected_quotes) or checked != 4:
+            for miss in qmissing:
+                print(f"self-test FAIL: quoted-pointer class not raised: {miss}")
+            if len(qdrifts) != len(expected_quotes):
+                print(f"self-test FAIL: unexpected quoted drifts: {qdrifts}")
+            if checked != 4:
+                print(f"self-test FAIL: expected 4 checked pointers, got {checked}")
+            failures += 1
+        else:
+            print(
+                "quoted-title self-test OK: exact+noun-inside pass, "
+                "paraphrase+unmatched flagged, fence+non-pointer ignored"
+            )
+    return 1 if failures else 0
 
 
 def main() -> int:
@@ -176,10 +398,11 @@ def main() -> int:
             file=sys.stderr,
         )
 
+    texts = [(doc, doc.read_text(encoding="utf-8")) for doc in docs]
+
     drifts: list[str] = []
     anchors = 0
-    for doc in docs:
-        text = doc.read_text(encoding="utf-8")
+    for doc, text in texts:
         for lineno, line in enumerate(text.splitlines(), start=1):
             if line.lstrip().startswith(">"):
                 continue
@@ -189,16 +412,24 @@ def main() -> int:
                 if problem:
                     drifts.append(problem)
 
+    registry = build_title_registry(texts)
+    pointers = 0
+    for doc, text in texts:
+        qdrifts, checked = quoted_title_drifts(doc, text, registry)
+        pointers += checked
+        drifts.extend(qdrifts)
+
     for drift in drifts:
         print(f"FAIL: {drift}")
     if drifts:
         print(
-            f"anchor-check: {len(drifts)} drifted of {anchors} anchors "
-            f"across {len(docs)} living docs"
+            f"anchor-check: {len(drifts)} drifted of {anchors} anchors + "
+            f"{pointers} quoted pointers across {len(docs)} living docs"
         )
         return 1
     print(
-        f"anchor-check: all {anchors} anchors verified across {len(docs)} living docs"
+        f"anchor-check: all {anchors} anchors + {pointers} quoted pointers "
+        f"verified across {len(docs)} living docs"
     )
     return 0
 
