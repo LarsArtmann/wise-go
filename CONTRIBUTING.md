@@ -105,8 +105,8 @@ analysis surfaces as phantom diagnostics (false "unused import",
 `undefined: json`, bogus formatting findings) that the CLI does not show.
 Inject `GOEXPERIMENT=jsonv2` into the editor's LSP server environment; this
 repo's `.crushrc` does exactly that for Crush-launched `gopls` and
-`golangci_lint_ls`. Root-cause write-up: AGENTS.md, "LSP phantoms were an env
-problem" (2026-10-07).
+`golangci_lint_ls`. Root-cause write-up: AGENTS.md, "LSP phantoms: two
+classes, both solved".
 
 ---
 
