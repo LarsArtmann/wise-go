@@ -80,9 +80,7 @@ POINTER_NOUNS = (
     "warnings",
     "warning",
 )
-NOUN_AFTER_RE = re.compile(
-    rf"^(?:{'|'.join(POINTER_NOUNS)})\b", re.IGNORECASE
-)
+NOUN_AFTER_RE = re.compile(rf"^(?:{'|'.join(POINTER_NOUNS)})\b", re.IGNORECASE)
 NOUN_TAIL_RE = re.compile(
     rf"^(?:the\s+)?(.*\S)\s+(?:{'|'.join(POINTER_NOUNS)})\s*$",
     re.IGNORECASE,

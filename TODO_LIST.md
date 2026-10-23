@@ -106,9 +106,16 @@ unformatted status report failed a full run 2026-10-23). Sources:
 
 [ ] Continue the AGENTS.md prune — part 1 done 2026-10-17 (v0.15.0 train M15):
 57,097 → 47,354 bytes with every concept carried (narratives compressed to
-their evidence pointers; one erraudit split-brain fixed). Remaining: the
-<30 KB target needs a second pass over the remaining mid-size bullets;
-carry-every-concept rule stays. Source: 21:45 plan M24/T87.
+their evidence pointers; one erraudit split-brain fixed). Part 2 done
+2026-10-23 (plan T11): 54,411 (post-sweep-2) → 52,687 — history→
+evidence-pointer compression on the six biggest bullets, duplicate facts
+folded to their owning entries (GOEXPERIMENT, CI-state), auto-configure
+supersedes chain trimmed; every removed clause verified greppable in
+`.buildflow.yml` / `.gitleaks.toml` / `.codespellrc` /
+`.go-structure-linter.yaml` / the narratives doc. Remaining: ~23 KB to the
+<30 KB target needs a full-rewrite pass over the mid-size tail, not clause
+trims; carry-every-concept rule stays. Source: 21:45 plan M24/T87;
+2026-10-23 plan T11.
 
 [ ] Consume the committed `benchstat` baseline
 (`docs/bench/2026-10-17_v0150_baseline.txt`) in the next perf-touching PR.
@@ -200,7 +207,11 @@ Patch-pinning `1.26.9` would clear them but violates the go-mod-normalize
 see the split-brain sweep's systemic analysis) or split into per-area files
 loaded via `context_paths`. The 2026-10-23 split-brain recurrence is a
 direct symptom of the append-to-one-file pattern; the <30 KB prune (above)
-is the near-term lever either way. **BLOCKED: user memory-architecture
+is the near-term lever either way. Single-file mini-index landed 2026-10-23
+(plan T12): sections line at the top + three misfiled bullets moved to their
+owning sections (Transaction.Date → timestamp cluster; newAPIError test
+note + Accept-Minor-Version → Conventions). Full subsection taxonomy and
+any per-area split stay pending this call. **BLOCKED: user memory-architecture
 call.** Source:
 `docs/status/2026-10-23_07-22_agents-md-split-brain-sweep.md` §g1/§f15.
 
