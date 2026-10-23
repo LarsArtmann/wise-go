@@ -6,9 +6,19 @@
 
 **Point-in-time note (2026-10-16):** this comparison is a snapshot against
 the wise-go surface and Wise's open-banking docs as of 2026-08-08; the SDK
-has since grown (46 methods, v0.14.0) and Wise's API reference rolls
-quarterly (vendored spec at 2026Q3, live at 2027Q1). Re-verify any
+has since grown (46 methods, v0.16.0) and Wise's API reference rolls
+quarterly (vendored spec at 2026Q3, live at 2027Q1). Two snapshot claims
+are superseded by later releases: the retry row in §8 (wise-go swapped
+failsafe-go for the in-house go-retry in v0.11.0, ADR 003) and the
+"read-only" claims in §7/§11 (the Public API's own-account transfer flow —
+quotes, recipients, transfers, funding — is the SDK's core since v0.8.0;
+Open Banking PISP remains a separate regulated surface). Re-verify any
 capability gap against the live preview reference before acting on it.
+
+**Archive verdict (2026-10-23, docs-health sweep):** settled comparative
+analysis with zero open items — the OB-API side is static and the wise-go
+column is superseded by `FEATURES.md`. Archived to
+`docs/reviews/archived/`.
 
 ---
 
@@ -242,7 +252,10 @@ Some accounts have an empty `Account` array (no local bank details) — use `Acc
 | **Account schemes**  | `UK.OBIE.SortCodeAccountNumber`, `UK.OBIE.IBAN` | Same                                                        |
 | **Reference limits** | EUR: 35 chars, GBP: 18 chars                    | Same                                                        |
 
-wise-go has **no payment capabilities** — read-only.
+~~wise-go has **no payment capabilities** — read-only.~~ Superseded:
+wise-go drives the Public API's own-account payment flow (transfer creation,
+funding, requirements validation) since v0.8.0; third-party/consent-based
+payment initiation stays Open-Banking-only.
 
 ---
 

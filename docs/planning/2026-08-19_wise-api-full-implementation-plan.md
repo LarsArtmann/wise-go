@@ -65,56 +65,56 @@ This plan maps the full API surface, applies Pareto prioritisation, and defines 
 
 ### Tier 2 — High-value, self-contained
 
-| #  | Category              | Method | Path                                                                                             | Notes                                                         |
-| -- | --------------------- | ------ | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
-| ~~14~~ | ~~Users~~              | ~~GET~~    | ~~/me~~                                                                                          | ~~Current user~~ shipped v0.9.0 (`GetMe`) |
-| ~~15~~ | ~~Users~~              | ~~GET~~    | ~~/users/{userId}~~                                                                              | ~~User by ID~~ shipped v0.9.0 (`GetUser`) |
-| ~~16~~ | ~~Balances~~           | ~~POST~~   | ~~/v4/profiles/{profileId}/balances~~                                                            | ~~Create balance~~ shipped v0.9.0 (idempotency key added v0.12.0) |
-| ~~17~~ | ~~Balances~~           | ~~GET~~    | ~~/v4/profiles/{profileId}/balances/{balanceId}~~                                                | ~~Get balance by ID (new endpoint; may remove client-side scan)~~ shipped v0.9.0 (direct endpoint; the scan is gone) |
-| ~~18~~ | ~~Balances~~           | ~~GET~~    | ~~/v1/profiles/{profileId}/total-funds/{currency}~~                                              | ~~Total funds~~ shipped v0.9.0 |
-| ~~19~~ | ~~Statements~~         | ~~GET~~    | ~~/v1/profiles/{profileId}/balance-statements/{balanceId}/statement.{csv,pdf,xlsx,xml,mt940,qif}~~ | ~~Format parameter~~ shipped v0.9.0 (six formats via raw `GetStatement`) |
-| ~~20~~ | ~~Webhooks~~           | ~~—~~      | ~~Signature verification helper~~                                                                 | ~~High value, no REST calls~~ shipped v0.9.0 (verify) + v0.10.0 (typed event decoding) |
-| ~~21~~ | ~~Transfer requirements~~ | ~~POST~~ | ~~/v1/transfer-requirements~~                                                                   | ~~Validate before create~~ shipped v0.8.0 |
-| ~~22~~ | ~~Currencies~~         | ~~GET~~    | ~~/v1/currencies~~                                                                               | ~~Allowed currencies~~ shipped v0.9.0 |
-| ~~23~~ | ~~Comparisons~~        | ~~GET~~    | ~~/v1/comparisons~~                                                                              | ~~Provider comparison~~ still PLANNED — routed to the FEATURES matrix (tier 2 leftover) |
+| #      | Category                  | Method   | Path                                                                                               | Notes                                                                                                                |
+| ------ | ------------------------- | -------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| ~~14~~ | ~~Users~~                 | ~~GET~~  | ~~/me~~                                                                                            | ~~Current user~~ shipped v0.9.0 (`GetMe`)                                                                            |
+| ~~15~~ | ~~Users~~                 | ~~GET~~  | ~~/users/{userId}~~                                                                                | ~~User by ID~~ shipped v0.9.0 (`GetUser`)                                                                            |
+| ~~16~~ | ~~Balances~~              | ~~POST~~ | ~~/v4/profiles/{profileId}/balances~~                                                              | ~~Create balance~~ shipped v0.9.0 (idempotency key added v0.12.0)                                                    |
+| ~~17~~ | ~~Balances~~              | ~~GET~~  | ~~/v4/profiles/{profileId}/balances/{balanceId}~~                                                  | ~~Get balance by ID (new endpoint; may remove client-side scan)~~ shipped v0.9.0 (direct endpoint; the scan is gone) |
+| ~~18~~ | ~~Balances~~              | ~~GET~~  | ~~/v1/profiles/{profileId}/total-funds/{currency}~~                                                | ~~Total funds~~ shipped v0.9.0                                                                                       |
+| ~~19~~ | ~~Statements~~            | ~~GET~~  | ~~/v1/profiles/{profileId}/balance-statements/{balanceId}/statement.{csv,pdf,xlsx,xml,mt940,qif}~~ | ~~Format parameter~~ shipped v0.9.0 (six formats via raw `GetStatement`)                                             |
+| ~~20~~ | ~~Webhooks~~              | ~~—~~    | ~~Signature verification helper~~                                                                  | ~~High value, no REST calls~~ shipped v0.9.0 (verify) + v0.10.0 (typed event decoding)                               |
+| ~~21~~ | ~~Transfer requirements~~ | ~~POST~~ | ~~/v1/transfer-requirements~~                                                                      | ~~Validate before create~~ shipped v0.8.0                                                                            |
+| ~~22~~ | ~~Currencies~~            | ~~GET~~  | ~~/v1/currencies~~                                                                                 | ~~Allowed currencies~~ shipped v0.9.0                                                                                |
+| ~~23~~ | ~~Comparisons~~           | ~~GET~~  | ~~/v1/comparisons~~                                                                                | ~~Provider comparison~~ still PLANNED — routed to the FEATURES matrix (tier 2 leftover)                              |
 
 ### Tier 3 — Moderate value, broader surface
 
-| #  | Category               | Method         | Path                                                                                        | Notes                   |
-| -- | ---------------------- | -------------- | ------------------------------------------------------------------------------------------- | ----------------------- |
-| 24 | Profiles               | GET            | `/profiles/{profileId}`                                                                     | v1 alias                |
-| 25 | Profiles               | POST           | `/profiles/personal-profile`                                                                | Create personal profile |
-| 26 | Profiles               | POST           | `/profiles/business-profile`                                                                | Create business profile |
-| 27 | Profiles               | PUT            | `/profiles/{profileId}/personal-profile`                                                    | Update personal profile |
-| 28 | Profiles               | PUT            | `/profiles/{profileId}/business-profile`                                                    | Update business profile |
-| 29 | Addresses              | GET/POST       | `/addresses`, `/addresses/{id}`, `/address-requirements`                                    | Address book            |
-| 30 | Bank account details   | GET/POST       | `/profiles/{profileId}/account-details`, `/profiles/{profileId}/bank-details`               | IBAN/routing            |
-| 31 | Multi-currency account | GET            | `/v4/profiles/{profileId}/multi-currency-account`, `/borderless-accounts-configuration/...` | MCA                     |
-| 32 | Batch groups           | POST/PATCH/GET | `/profiles/{profileId}/batch-groups/...`                                                    | Bulk payments           |
-| 33 | Payin deposit details  | GET            | `/profiles/{profileId}/transfers/{transferId}/deposit-details/bank-transfer`                | Pay-in instructions     |
-| 34 | Direct debit accounts  | GET/POST       | `/profiles/{profileId}/direct-debit-accounts`                                               | Bulk funding            |
-| 35 | Bulk settlement        | POST           | `/settlements`                                                                              | Client-creds only       |
+| #      | Category                   | Method             | Path                                                                                            | Notes                                                                                                                                     |
+| ------ | -------------------------- | ------------------ | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| ~~24~~ | ~~Profiles~~               | ~~GET~~            | ~~`/profiles/{profileId}`~~                                                                     | ~~v1 alias~~ superseded — `GetProfile` ships on `/v2` (v0.8.0); FEATURES owns profile rows                                                |
+| ~~25~~ | ~~Profiles~~               | ~~POST~~           | ~~`/profiles/personal-profile`~~                                                                | ~~Create personal profile~~ PLANNED (FEATURES matrix)                                                                                     |
+| ~~26~~ | ~~Profiles~~               | ~~POST~~           | ~~`/profiles/business-profile`~~                                                                | ~~Create business profile~~ PLANNED (FEATURES matrix, v5)                                                                                 |
+| ~~27~~ | ~~Profiles~~               | ~~PUT~~            | ~~`/profiles/{profileId}/personal-profile`~~                                                    | ~~Update personal profile~~ PLANNED (FEATURES matrix)                                                                                     |
+| ~~28~~ | ~~Profiles~~               | ~~PUT~~            | ~~`/profiles/{profileId}/business-profile`~~                                                    | ~~Update business profile~~ PLANNED (FEATURES matrix)                                                                                     |
+| ~~29~~ | ~~Addresses~~              | ~~GET/POST~~       | ~~`/addresses`, `/addresses/{id}`, `/address-requirements`~~                                    | ~~Address book~~ DEMAND_GATED (FEATURES)                                                                                                  |
+| ~~30~~ | ~~Bank account details~~   | ~~GET/POST~~       | ~~`/profiles/{profileId}/account-details`, `/profiles/{profileId}/bank-details`~~               | ~~IBAN/routing~~ reads shipped v0.9.0; migrated to Wise's 2027Q1 `/balances/account-details/{id}` in v0.14.0 (writes PLANNED in FEATURES) |
+| ~~31~~ | ~~Multi-currency account~~ | ~~GET~~            | ~~`/v4/profiles/{profileId}/multi-currency-account`, `/borderless-accounts-configuration/...`~~ | ~~MCA~~ read shipped v0.9.0 (configuration PLANNED in FEATURES)                                                                           |
+| ~~32~~ | ~~Batch groups~~           | ~~POST/PATCH/GET~~ | ~~`/profiles/{profileId}/batch-groups/...`~~                                                    | ~~Bulk payments~~ DEMAND_GATED (FEATURES)                                                                                                 |
+| ~~33~~ | ~~Payin deposit details~~  | ~~GET~~            | ~~`/profiles/{profileId}/transfers/{transferId}/deposit-details/bank-transfer`~~                | ~~Pay-in instructions~~ DEMAND_GATED (FEATURES)                                                                                           |
+| ~~34~~ | ~~Direct debit accounts~~  | ~~GET/POST~~       | ~~`/profiles/{profileId}/direct-debit-accounts`~~                                               | ~~Bulk funding~~ DEMAND_GATED (FEATURES)                                                                                                  |
+| ~~35~~ | ~~Bulk settlement~~        | ~~POST~~           | ~~`/settlements`~~                                                                              | ~~Client-creds only~~ DEMAND_GATED (FEATURES)                                                                                             |
 
 ### Tier 4 — Specialised / partner-only / long tail
 
-| #  | Category                             | Count                                                                                                                                                                   | Notes                                                                          |
-| -- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| 36 | OAuth token                          | 1                                                                                                                                                                       | `POST /oauth/token` — only if SDK takes over token exchange                    |
-| 37 | JOSE playground                      | 6                                                                                                                                                                       | Signature/encryption testing                                                   |
-| 38 | Users write                          | 4                                                                                                                                                                       | Signup, exists, contact email                                                  |
-| 39 | Claim account                        | 1                                                                                                                                                                       | `POST /user/claim-account`                                                     |
-| 40 | Profile verification                 | 8                                                                                                                                                                       | KYC review, additional verification, FaceTec                                   |
-| 41 | Link requests / embedded flows       | 4                                                                                                                                                                       | iframe/webview helpers                                                         |
-| 42 | SCA / one-time tokens                | 10                                                                                                                                                                      | OTT status, SCA sessions, OTP channels                                         |
-| 43 | PIN / facemaps / device fingerprints | 8                                                                                                                                                                       | JWE-encrypted SCA factors                                                      |
-| 44 | Cards                                | ~25                                                                                                                                                                     | Orders, transactions, limits, spend controls, disputes, sensitive details, 3DS |
-| 45 | Digital wallets                      | 4                                                                                                                                                                       | Apple/Google Pay push provisioning                                             |
-| 46 | Disputes                             | 7                                                                                                                                                                       | Card dispute management                                                        |
-| 47 | Incoming transfers                   | 1                                                                                                                                                                       | Partner-only                                                                   |
-| 48 | Payins                               | 1                                                                                                                                                                       | PayNow QR                                                                      |
-| 49 | Webhook subscriptions                | ~~8~~ 9 (corrected 2026-09-13: the OpenAPI spec has 9 operations across 5 paths — 2 app-level CRUD + 2 app-level get/delete + test-notifications + 4 profile-level ops) | Application + profile level                                                    |
-| 50 | Cases                                | 3                                                                                                                                                                       | Partner support                                                                |
-| 51 | Sandbox simulations                  | ~15                                                                                                                                                                     | Testing-only helpers                                                           |
+| #      | Category                                 | Count                                                                                                                                                                                                                    | Notes                                                                                                                                                                 |
+| ------ | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ~~36~~ | ~~OAuth token~~                          | ~~1~~                                                                                                                                                                                                                    | ~~`POST /oauth/token` — only if SDK takes over token exchange~~ OUT_OF_SCOPE (FEATURES)                                                                               |
+| ~~37~~ | ~~JOSE playground~~                      | ~~6~~                                                                                                                                                                                                                    | ~~Signature/encryption testing~~ OUT_OF_SCOPE (FEATURES)                                                                                                              |
+| ~~38~~ | ~~Users write~~                          | ~~4~~                                                                                                                                                                                                                    | ~~Signup, exists, contact email~~ OUT_OF_SCOPE (FEATURES)                                                                                                             |
+| ~~39~~ | ~~Claim account~~                        | ~~1~~                                                                                                                                                                                                                    | ~~`POST /user/claim-account`~~ OUT_OF_SCOPE (FEATURES)                                                                                                                |
+| ~~40~~ | ~~Profile verification~~                 | ~~8~~                                                                                                                                                                                                                    | ~~KYC review, additional verification, FaceTec~~ OUT_OF_SCOPE (FEATURES)                                                                                              |
+| ~~41~~ | ~~Link requests / embedded flows~~       | ~~4~~                                                                                                                                                                                                                    | ~~iframe/webview helpers~~ OUT_OF_SCOPE (FEATURES)                                                                                                                    |
+| ~~42~~ | ~~SCA / one-time tokens~~                | ~~10~~                                                                                                                                                                                                                   | ~~OTT status, SCA sessions, OTP channels~~ OTT status/trigger/verify shipped v0.11.0 (incl. `ClearSCAChallenge`); sessions and OTP enrollment OUT_OF_SCOPE (FEATURES) |
+| ~~43~~ | ~~PIN / facemaps / device fingerprints~~ | ~~8~~                                                                                                                                                                                                                    | ~~JWE-encrypted SCA factors~~ OUT_OF_SCOPE (FEATURES; sca-jose module trigger documented in ROADMAP)                                                                  |
+| ~~44~~ | ~~Cards~~                                | ~~approx. 25~~                                                                                                                                                                                                           | ~~Orders, transactions, limits, spend controls, disputes, sensitive details, 3DS~~ OUT_OF_SCOPE (FEATURES)                                                            |
+| ~~45~~ | ~~Digital wallets~~                      | ~~4~~                                                                                                                                                                                                                    | ~~Apple/Google Pay push provisioning~~ OUT_OF_SCOPE (FEATURES)                                                                                                        |
+| ~~46~~ | ~~Disputes~~                             | ~~7~~                                                                                                                                                                                                                    | ~~Card dispute management~~ OUT_OF_SCOPE (FEATURES)                                                                                                                   |
+| ~~47~~ | ~~Incoming transfers~~                   | ~~1~~                                                                                                                                                                                                                    | ~~Partner-only~~ OUT_OF_SCOPE (FEATURES)                                                                                                                              |
+| ~~48~~ | ~~Payins~~                               | ~~1~~                                                                                                                                                                                                                    | ~~PayNow QR~~ OUT_OF_SCOPE (FEATURES)                                                                                                                                 |
+| ~~49~~ | ~~Webhook subscriptions~~                | ~~9 operations across 5 paths (2026-09-13 spec correction: 2 app-level CRUD + 2 app-level get/delete + test-notifications + 4 profile-level ops)~~ profile-level CRUD shipped v0.10.0; app-level five ON_HOLD (FEATURES) | ~~Application + profile level~~ resolved                                                                                                                              |
+| ~~50~~ | ~~Cases~~                                | ~~3~~                                                                                                                                                                                                                    | ~~Partner support~~ OUT_OF_SCOPE (FEATURES)                                                                                                                           |
+| ~~51~~ | ~~Sandbox simulations~~                  | ~~approx. 15~~                                                                                                                                                                                                           | ~~Testing-only helpers~~ OUT_OF_SCOPE (FEATURES)                                                                                                                      |
 
 ---
 
@@ -181,24 +181,27 @@ For every endpoint added:
 
 ### Phase 1 — Foundations (this session)
 
-- HTTP POST/PATCH/PUT/DELETE helpers.
-- `GetProfile`.
-- `GetExchangeRate`.
-- `GetTransfer`.
+- ~~HTTP POST/PATCH/PUT/DELETE helpers.~~ done v0.8.0
+- ~~`GetProfile`.~~ done v0.8.0
+- ~~`GetExchangeRate`.~~ done v0.8.0
+- ~~`GetTransfer`.~~ done v0.8.0
 
 ### Phase 2 — Quotes + Recipients (next session)
 
-- `CreateQuote`, `GetQuote`, `GetQuoteAccountRequirements`.
-- `ListRecipients`, `GetRecipient`, `CreateRecipient`.
+- ~~`CreateQuote`, `GetQuote`, `GetQuoteAccountRequirements`.~~ done v0.8.0
+  (requirements + two-pass refresh v0.9.0)
+- ~~`ListRecipients`, `GetRecipient`, `CreateRecipient`.~~ done v0.8.0
 
 ### Phase 3 — Transfers (next session)
 
-- `CreateTransfer`.
-- `CancelTransfer`, `GetDeliveryEstimate`.
+- ~~`CreateTransfer`.~~ done v0.8.0
+- ~~`CancelTransfer`, `GetDeliveryEstimate`.~~ done v0.8.0 (funding v0.9.0)
 
 ### Phase 4 — Completion (future)
 
-- Tier 2 endpoints, then tier 3, then tier 4 as consumer demand justifies.
+- ~~Tier 2 endpoints, then tier 3, then tier 4 as consumer demand justifies.~~
+  tier 2 shipped v0.9.0 except comparisons (PLANNED); tiers 3/4 routed to the
+  FEATURES matrix (PLANNED / DEMAND_GATED / OUT_OF_SCOPE rows)
 
 ---
 
@@ -206,18 +209,20 @@ For every endpoint added:
 
 The following are documented but deliberately excluded from the initial implementation because they require non-REST patterns, partner access, or are too specialised:
 
-- Open Banking API (separate regulated API).
-- JOSE/JWE encryption playground.
-- FaceTec biometric verification.
-- PCI-sensitive card details.
-- Partner support cases.
-- Sandbox simulation endpoints (testing-only).
+- ~~Open Banking API (separate regulated API).~~
+- ~~JOSE/JWE encryption playground.~~
+- ~~FaceTec biometric verification.~~
+- ~~PCI-sensitive card details.~~
+- ~~Partner support cases.~~
+- ~~Sandbox simulation endpoints (testing-only).~~
+
+_All six confirmed still out of scope at archive time (2026-10-23): the
+FEATURES matrix carries them as OUT_OF_SCOPE rows._
 
 ---
 
-**Archive-grade disposition (2026-10-17, v0.15.0 train M22):** banner-grade
-RE-AFFIRMED. The tier tables are historical planning artifacts whose live
-truth (shipped/planned/routed per endpoint) is maintained in FEATURES.md,
-TODO_LIST.md, and ROADMAP.md; per-row strikes here would duplicate that
-maintenance. This file stays live with its refreshed banner until the tier
-framework itself is retired.
+**ARCHIVED 2026-10-23** (docs-health sweep; owner-ordered archiving of
+fully-resolved reports — supersedes the 2026-10-17 M22 banner-grade
+disposition above). Every tier row and phase carries an inline outcome;
+the live coverage matrix is `FEATURES.md`. File moved to
+`docs/planning/archived/`.

@@ -94,36 +94,36 @@ The Wise Platform API has ~135+ endpoints across 29 categories. The SDK covers 3
 
 These align with the existing ROADMAP and are the most common consumer needs:
 
-| ~~Category           ~~ | ~~Key Endpoints                                                                                                                       ~~ | ~~wise-go Status~~                                                                     |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | --------------- |
-| ~~**Quotes**~~         | ~~`POST /v3/quotes`, `POST /v3/profiles/{id}/quotes`, `GET /v3/profiles/{id}/quotes/{id}`, `GET /v1/quotes/{id}/account-requirements`~~ | ~~PLANNED~~ shipped v0.8.0 (+ requirements v0.9.0) |
-| ~~**Transfers**~~      | ~~`GET /v1/transfers/{id}`, `GET /v1/delivery-estimates/{id}`, CRUD for transfers~~                                                    | ~~PLANNED~~ shipped v0.8.0 (+ funding v0.9.0) |
-| ~~**Recipients**~~     | ~~`GET /v2/accounts`, `GET /v1/accounts/{id}`, `GET /v1/account-requirements`~~                                                        | ~~PLANNED~~ shipped v0.8.0 |
-| ~~**Exchange rates**~~ | ~~`GET /v1/rates`~~                                                                                                                     | ~~Not planned~~ shipped v0.8.0 |
-| ~~**Statements**~~     | ~~`GET /v1/profiles/{id}/balance-statements/{id}/statement.{json,csv,pdf}`~~                                                           | ~~CSV/PDF PLANNED~~ shipped v0.9.0 (all six formats) |
+| ~~Category ~~          | ~~Key Endpoints ~~                                                                                                                      | ~~wise-go Status~~                                   |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| ~~**Quotes**~~         | ~~`POST /v3/quotes`, `POST /v3/profiles/{id}/quotes`, `GET /v3/profiles/{id}/quotes/{id}`, `GET /v1/quotes/{id}/account-requirements`~~ | ~~PLANNED~~ shipped v0.8.0 (+ requirements v0.9.0)   |
+| ~~**Transfers**~~      | ~~`GET /v1/transfers/{id}`, `GET /v1/delivery-estimates/{id}`, CRUD for transfers~~                                                     | ~~PLANNED~~ shipped v0.8.0 (+ funding v0.9.0)        |
+| ~~**Recipients**~~     | ~~`GET /v2/accounts`, `GET /v1/accounts/{id}`, `GET /v1/account-requirements`~~                                                         | ~~PLANNED~~ shipped v0.8.0                           |
+| ~~**Exchange rates**~~ | ~~`GET /v1/rates`~~                                                                                                                     | ~~Not planned~~ shipped v0.8.0                       |
+| ~~**Statements**~~     | ~~`GET /v1/profiles/{id}/balance-statements/{id}/statement.{json,csv,pdf}`~~                                                            | ~~CSV/PDF PLANNED~~ shipped v0.9.0 (all six formats) |
 
 ### Tier 2: Moderate-value SDK targets
 
-| ~~Category                   ~~ | ~~Key Endpoints                                                                                                                        ~~ | ~~Notes~~                                                                          |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
-| ~~**Users**~~                  | ~~`GET /v1/me`, `GET /v1/users/{id}`~~                                                                                                   | ~~Simple read endpoints~~ shipped v0.9.0 (`GetMe`/`GetUser`) |
-| ~~**Webhooks**~~               | ~~Profile & application subscription CRUD + signature verification~~                                                                     | ~~High-value, self-contained~~ shipped: signature verify v0.9.0, profile-level CRUD v0.10.0 (app-level ON_HOLD) |
+| ~~Category ~~                  | ~~Key Endpoints ~~                                                                                                                       | ~~Notes~~                                                                                                        |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| ~~**Users**~~                  | ~~`GET /v1/me`, `GET /v1/users/{id}`~~                                                                                                   | ~~Simple read endpoints~~ shipped v0.9.0 (`GetMe`/`GetUser`)                                                     |
+| ~~**Webhooks**~~               | ~~Profile & application subscription CRUD + signature verification~~                                                                     | ~~High-value, self-contained~~ shipped: signature verify v0.9.0, profile-level CRUD v0.10.0 (app-level ON_HOLD)  |
 | ~~**Balances (expanded)**~~    | ~~`POST /v4/profiles/{id}/balances` (create), `GET /v1/profiles/{id}/total-funds/{currency}`, `GET /v1/profiles/{id}/balance-capacity`~~ | ~~Natural extension of existing balance support~~ shipped v0.9.0 (create/get/total-funds; capacity DEMAND_GATED) |
-| ~~**Multi-Currency Account**~~ | ~~`GET /v4/profiles/{id}/multi-currency-account`, eligibility, available currencies~~                                                    | ~~MCA details with bank account numbers~~ read shipped v0.9.0 (configuration PLANNED) |
-| ~~**Bank Account Details**~~   | ~~`GET /v1/profiles/{id}/account-details`, `GET /v3/profiles/{id}/bank-details`~~                                                        | ~~IBAN/SortCode/routing info~~ shipped v0.9.0; migrated to Wise's 2027Q1 surface in v0.14.0 |
-| ~~**Addresses**~~              | ~~`GET /v1/addresses`, `POST /v1/addresses`, `GET /v1/address-requirements`~~                                                            | ~~CRUD for address book~~ DEMAND_GATED (FEATURES matrix) |
+| ~~**Multi-Currency Account**~~ | ~~`GET /v4/profiles/{id}/multi-currency-account`, eligibility, available currencies~~                                                    | ~~MCA details with bank account numbers~~ read shipped v0.9.0 (configuration PLANNED)                            |
+| ~~**Bank Account Details**~~   | ~~`GET /v1/profiles/{id}/account-details`, `GET /v3/profiles/{id}/bank-details`~~                                                        | ~~IBAN/SortCode/routing info~~ shipped v0.9.0; migrated to Wise's 2027Q1 surface in v0.14.0                      |
+| ~~**Addresses**~~              | ~~`GET /v1/addresses`, `POST /v1/addresses`, `GET /v1/address-requirements`~~                                                            | ~~CRUD for address book~~ DEMAND_GATED (FEATURES matrix)                                                         |
 
 ### Tier 3: Specialized (card issuance, KYC, disputes, SCA)
 
-| ~~Category               ~~ | ~~Endpoints~~                                                              | ~~Notes~~                                     |
-| ---------------------- | ---------------------------------------------------------------------- | ----------------------------------------- |
-| ~~**Cards**~~              | ~~approx. 15 endpoints (orders, transactions, limits, spend controls, disputes)~~ | ~~Large surface, card-issuing partners only~~ OUT_OF_SCOPE (FEATURES) |
-| ~~**KYC Review**~~         | ~~approx. 8 endpoints (list, create, submit, verify requirements)~~               | ~~Compliance-focused~~ OUT_OF_SCOPE (FEATURES) |
-| ~~**SCA**~~                | ~~One-time tokens, SCA sessions, verification~~                             | ~~Strong customer authentication~~ OTT endpoints shipped v0.11.0; sessions/factors OUT_OF_SCOPE |
-| ~~**Disputes**~~           | ~~approx. 4 endpoints (list, get, submit, upload evidence)~~                      | ~~Card dispute management~~ OUT_OF_SCOPE (FEATURES) |
-| ~~**Digital Wallets**~~    | ~~Payment tokens, provisioning, activation~~                                | ~~Apple/Google Pay integration~~ OUT_OF_SCOPE (FEATURES) |
-| ~~**Batch Groups**~~       | ~~Batch payment initiation and tracking~~                                   | ~~Bulk payment operations~~ DEMAND_GATED (FEATURES) |
-| ~~**Sandbox Simulation**~~ | ~~approx. 15 simulation endpoints~~                                                | ~~Testing-only~~ OUT_OF_SCOPE (FEATURES; the SDK tests against httptest) |
+| ~~Category ~~              | ~~Endpoints~~                                                                     | ~~Notes~~                                                                                       |
+| -------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| ~~**Cards**~~              | ~~approx. 15 endpoints (orders, transactions, limits, spend controls, disputes)~~ | ~~Large surface, card-issuing partners only~~ OUT_OF_SCOPE (FEATURES)                           |
+| ~~**KYC Review**~~         | ~~approx. 8 endpoints (list, create, submit, verify requirements)~~               | ~~Compliance-focused~~ OUT_OF_SCOPE (FEATURES)                                                  |
+| ~~**SCA**~~                | ~~One-time tokens, SCA sessions, verification~~                                   | ~~Strong customer authentication~~ OTT endpoints shipped v0.11.0; sessions/factors OUT_OF_SCOPE |
+| ~~**Disputes**~~           | ~~approx. 4 endpoints (list, get, submit, upload evidence)~~                      | ~~Card dispute management~~ OUT_OF_SCOPE (FEATURES)                                             |
+| ~~**Digital Wallets**~~    | ~~Payment tokens, provisioning, activation~~                                      | ~~Apple/Google Pay integration~~ OUT_OF_SCOPE (FEATURES)                                        |
+| ~~**Batch Groups**~~       | ~~Batch payment initiation and tracking~~                                         | ~~Bulk payment operations~~ DEMAND_GATED (FEATURES)                                             |
+| ~~**Sandbox Simulation**~~ | ~~approx. 15 simulation endpoints~~                                               | ~~Testing-only~~ OUT_OF_SCOPE (FEATURES; the SDK tests against httptest)                        |
 
 ### Not in scope for wise-go (per ROADMAP non-goals)
 
