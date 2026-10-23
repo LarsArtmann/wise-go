@@ -117,6 +117,14 @@ supersedes chain trimmed; every removed clause verified greppable in
 trims; carry-every-concept rule stays. Source: 21:45 plan M24/T87;
 2026-10-23 plan T11.
 
+[ ] Extend the anchor gate to `###`-heading pointers — the quoted-title gate
+(shape 3) verifies quoted-string cross-references only; heading references and
+backtick-form titles stay gate-blind (boundary + fixture-home split documented
+in the AGENTS anchor gotcha 2026-10-23; the one live backtick pointer
+converted same day). Decide: extend the title registry to markdown headings,
+or convert heading references to quoted form. Source:
+`docs/status/2026-10-23_16-07_pareto-unblocked-set-execution-title-gate-prune-battery.md` §e3.
+
 [ ] Consume the committed `benchstat` baseline
 (`docs/bench/2026-10-17_v0150_baseline.txt`) in the next perf-touching PR.
 Verdict 2026-10-17 (M25): NO benchmarked-path change shipped post-v0.15.0

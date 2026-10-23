@@ -36,6 +36,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `.gitleaks.toml` / `.codespellrc` allowlists extended with inline
   rationale (the pretty-printed `plus_one.json` fixture in permanent
   history; the `decorder` linter identifier; point-in-time doc dirs).
+- AGENTS gotchas: new "Mega-bullet edits need verified boundaries"
+  (edit discipline from the 2026-10-23 multiedit splice incident) and
+  Build & Dev "Serialize heavy gates" (nix/db contention produces
+  SQLITE_BUSY storms, spurious preflight warns, and flaky step failures);
+  the anchor gotcha now documents the quoted-pointer coverage boundary
+  (heading/backtick pointers are gate-blind) and the fixture-home split.
+- The last backtick-form cross-reference (erraudit bullet) converted to the
+  gated quoted-title form; the 2026-10-23 pareto plan's §1 T5/T6 rows
+  annotated done (§1/§3 annotation state now consistent).
 
 ### Fixed
 
