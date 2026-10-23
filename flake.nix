@@ -335,6 +335,7 @@
               }
               ''
                 cd $src
+                python3 scripts/anchor_check.py --self-test
                 python3 scripts/anchor_check.py --repo .
                 touch $out
               '';

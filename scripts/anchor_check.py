@@ -9,13 +9,15 @@ The repo's conventions carry three checkable claim shapes:
 2. `` `file.go:NN` `` (bare) -- the file must exist, NN must be in range,
    and the cited line must be non-empty.
 3. `` "Title" gotcha `` (quoted text + pointer noun, or the noun inside the
-   quotes) -- the quoted text must be a registered `**bold**` title from a
-   living doc, verbatim. Pointer-shaped quotes that only paraphrase a title
-   (high token overlap) or match nothing are failures: a title rename would
-   otherwise break the reference silently (the 2026-10-23 07:22 sweep found
-   5 such paraphrased pointers). Quotes inside code fences or inline code
-   are prose-blind; genuinely external quoted phrases can be exempted in
-   ALLOWLISTED_QUOTED with a rationale.
+   quotes) -- the quoted text must resolve against the registry of `**bold**`
+   titles from the living docs: verbatim, or as a UNIQUE prefix of exactly
+   one title (titles carry inner quotes sometimes, so a stable prefix is the
+   shortest enforceable pointer form). Pointer-shaped quotes that only
+   paraphrase a title (high token overlap, no prefix hit) or match nothing
+   are failures: a title rename would otherwise break the reference silently
+   (the 2026-10-23 07:22 sweep found 5 such paraphrased pointers). Quotes
+   inside code fences or inline code are prose-blind; genuinely external
+   quoted phrases can be exempted in ALLOWLISTED_QUOTED with a rationale.
 
 Point-in-time docs under docs/status/, docs/planning/, docs/reviews/,
 docs/architecture-understanding/ and every archived/ tree are deliberately
@@ -189,7 +191,18 @@ def quoted_title_drifts(doc: Path, text: str, registry: dict[str, str]):
             if tail:
                 candidates.append(stripped(tail.group(1)))
             candidates = [c for c in candidates if c]
-            if any(c in registry or c in ALLOWLISTED_QUOTED for c in candidates):
+            if not candidates:
+                continue
+            resolved = False
+            for cand in candidates:
+                if cand in registry or cand in ALLOWLISTED_QUOTED:
+                    resolved = True
+                    break
+                prefix_hits = [t for t in registry if t.startswith(cand)]
+                if len(prefix_hits) == 1:
+                    resolved = True
+                    break
+            if resolved:
                 continue
             near = next(
                 (
@@ -300,7 +313,8 @@ SELF_TEST_TITLES_DOC = (
 SELF_TEST_QUOTED_DOC = (
     'ok exact: see the "Real Gotcha Title" gotcha.\n'
     'ok noun-inside: see "Another Entry Name" entry.\n'
-    'paraphrase: see the "Real Gotcha" gotcha.\n'
+    'ok unique prefix: see the "Real Gotcha" gotcha.\n'
+    'paraphrase: see the "Gotcha Title for Real" gotcha.\n'
     'unmatched: see "wholly unrelated phrase here" entry.\n'
     "non-pointer quotes are ignored:\n"
     'value "111111" stays a wire literal.\n'
@@ -344,7 +358,7 @@ def self_test() -> int:
             Path("B.md"), SELF_TEST_QUOTED_DOC, registry
         )
         expected_quotes = [
-            ("paraphrase of", 'paraphrase: "Real Gotcha" must be flagged'),
+            ("paraphrase of", 'non-prefix paraphrase "Gotcha Title for Real"'),
             ("matches no registered", "unmatched phrase must be flagged"),
         ]
         qmissing = [
@@ -352,17 +366,17 @@ def self_test() -> int:
             for fragment, hint in expected_quotes
             if not any(fragment in d for d in qdrifts)
         ]
-        if qmissing or len(qdrifts) != len(expected_quotes) or checked != 4:
+        if qmissing or len(qdrifts) != len(expected_quotes) or checked != 5:
             for miss in qmissing:
                 print(f"self-test FAIL: quoted-pointer class not raised: {miss}")
             if len(qdrifts) != len(expected_quotes):
                 print(f"self-test FAIL: unexpected quoted drifts: {qdrifts}")
-            if checked != 4:
-                print(f"self-test FAIL: expected 4 checked pointers, got {checked}")
+            if checked != 5:
+                print(f"self-test FAIL: expected 5 checked pointers, got {checked}")
             failures += 1
         else:
             print(
-                "quoted-title self-test OK: exact+noun-inside pass, "
+                "quoted-title self-test OK: exact/prefix/noun-inside pass, "
                 "paraphrase+unmatched flagged, fence+non-pointer ignored"
             )
     return 1 if failures else 0
