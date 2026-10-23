@@ -84,6 +84,17 @@ skip_steps:
   # is redundant here because the allowlist gate is strict.
   - golangci-lint-auto-configure
 
+  # vulnix: NIST's nvdcve-2.0-modified.json.gz archive 404s (verified
+  # 2026-10-23: the .json.gz is 404 while the .meta and the 2026 year
+  # archive still serve 200), and vulnix 1.12.5 — the latest upstream
+  # release, unmaintained — hard-fails in nvd.update() downloading that
+  # archive before any scanning (traceback: nvd.py raise_for_status, exit
+  # 1). A --mirror pointing at a third-party CVE mirror was declined
+  # (CVE-feed integrity). Go-side vulnerabilities stay covered by
+  # govulncheck. Re-enable when vulnix learns the NVD API or a
+  # maintained successor lands in nixpkgs.
+  - vulnix
+
 # Embedded erraudit skip REMOVED 2026-10-07 (BuildFlow issue #34 fixed):
 # the embedded detector now runs the SAME legacyerrors engine as the
 # canonical standalone gate (`erraudit lint`), so verdicts agree by
