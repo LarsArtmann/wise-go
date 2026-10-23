@@ -89,12 +89,6 @@ or a vendored-WASM dprint plugin cache (`fetchurl` ×4 + prepared
 The pre-commit hook only protects manual commits (daemon bypasses it).
 Source: `docs/status/2026-10-23_08-25_continuation-backlog-execution.md` §f5/f6.
 
-[ ] Quoted-title gate — extend `scripts/anchor_check.py` to verify
-`"quoted entry title"` strings in living docs against actual bold entry
-titles, turning paraphrased cross-references into gate failures (the
-2026-10-23 split-brain sweep shipped 5 unguarded paraphrase pointers).
-Source: `docs/status/2026-10-23_07-22_agents-md-split-brain-sweep.md` §f3.
-
 [ ] Reconcile buildflow finding counts against direct tool output — bandit
 claimed 78 vs direct 1 (fixed); characterize the inflation
 (per-occurrence? scope?) and document or file upstream; same pass: verify

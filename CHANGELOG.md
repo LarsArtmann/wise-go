@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Quoted-title pointer gate in `scripts/anchor_check.py` (claim shape 3):
+  every `"entry title" gotcha`-style cross-reference in the living docs must
+  resolve against the registry of `**bold**` titles verbatim or as a unique
+  prefix of exactly one title; paraphrases and dangling pointers now fail
+  `nix flake check` instead of rotting silently. Born from the 2026-10-23
+  split-brain sweep's 5 unguarded paraphrase pointers (all fixed in the same
+  change); the `--self-test` fixture covers the pass and drift classes and
+  the `checks.anchor-check` derivation now runs it.
+
 ### Changed
 
 - Toolchain lock: the nixpkgs flake input moved to `02c087f` (go **1.26.9**
