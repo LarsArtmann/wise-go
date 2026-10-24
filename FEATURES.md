@@ -193,17 +193,17 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 
 | Method | Path                                         | Status           | wise-go                                                        |
 | ------ | -------------------------------------------- | ---------------- | -------------------------------------------------------------- |
-| POST   | `/v1/transfers`                              | FULLY_FUNCTIONAL | `CreateTransfer` (`transfers.go:218`)                          |
+| POST   | `/v1/transfers`                              | FULLY_FUNCTIONAL | `CreateTransfer` (`transfers.go:219`)                          |
 | GET    | `/v1/transfers`                              | FULLY_FUNCTIONAL | `ListTransfers` (`transfers.go:39`)                            |
 | GET    | `/v1/transfers/{id}`                         | FULLY_FUNCTIONAL | `GetTransfer` (`transfers.go:117`)                             |
-| PUT    | `/v1/transfers/{id}/cancel`                  | FULLY_FUNCTIONAL | `CancelTransfer` (`transfers.go:254`)                          |
+| PUT    | `/v1/transfers/{id}/cancel`                  | FULLY_FUNCTIONAL | `CancelTransfer` (`transfers.go:255`)                          |
 | POST   | `/v1/transfer-requirements`                  | FULLY_FUNCTIONAL | `ValidateTransferRequirements` (`transfer_requirements.go:20`) |
-| POST   | `/v1/profiles/{id}/transfers/{id}/payments`  | FULLY_FUNCTIONAL | `FundTransfer` (`transfers.go:283`)                            |
-| GET    | `/v1/transfers/{id}/invoices/bankingpartner` | FULLY_FUNCTIONAL | `GetTransferPayoutInfo` (`transfers.go:160`)                   |
+| POST   | `/v1/profiles/{id}/transfers/{id}/payments`  | FULLY_FUNCTIONAL | `FundTransfer` (`transfers.go:284`)                            |
+| GET    | `/v1/transfers/{id}/invoices/bankingpartner` | FULLY_FUNCTIONAL | `GetTransferPayoutInfo` (`transfers.go:161`)                   |
 | GET    | `/v1/transfers/{id}/receipt.pdf`             | FULLY_FUNCTIONAL | `GetTransferReceipt` (`transfers.go:138`)                      |
-| GET    | `/v1/transfers/{id}/payments`                | FULLY_FUNCTIONAL | `ListTransferPayments` (`transfers.go:432`)                    |
-| GET    | `/v1/transfers/{id}/us-combined-receipt.pdf` | FULLY_FUNCTIONAL | `GetUSCombinedReceipt` (`transfers.go:507`)                    |
-| GET    | `/v1/transfers/{id}/documents/noc`           | FULLY_FUNCTIONAL | `GetTransferNOC` (`transfers.go:528`)                          |
+| GET    | `/v1/transfers/{id}/payments`                | FULLY_FUNCTIONAL | `ListTransferPayments` (`transfers.go:433`)                    |
+| GET    | `/v1/transfers/{id}/us-combined-receipt.pdf` | FULLY_FUNCTIONAL | `GetUSCombinedReceipt` (`transfers.go:508`)                    |
+| GET    | `/v1/transfers/{id}/documents/noc`           | FULLY_FUNCTIONAL | `GetTransferNOC` (`transfers.go:530`)                          |
 
 ### Transfers — third-party (2 operations)
 

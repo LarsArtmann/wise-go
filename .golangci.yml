@@ -247,6 +247,8 @@ linters:
         - .WithMessage(
         - .WithMessagef(
         - .WithStack(
+        - .WrapCorruption(
+        - .NewRejection(
   exclusions:
     generated: lax
     rules:
