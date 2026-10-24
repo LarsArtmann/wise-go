@@ -136,6 +136,7 @@ func (c *Client) GetTransfer(ctx context.Context, transferID TransferID) (*Trans
 // is not SCA-protected and is available to personal API tokens in all
 // regions.
 func (c *Client) GetTransferReceipt(ctx context.Context, transferID TransferID) ([]byte, error) {
+	// art-dupl:accept requireID guard and the per-endpoint path literal are the deliberate two-idiom validation convention; an abstraction would take more parameters than it saves lines
 	if err := requireID(transferID, errorCodeTransferInvalidRequest, "transferID"); err != nil {
 		return nil, err
 	}
@@ -505,6 +506,7 @@ func mapTransferPayment(payment raw.TransferPayment) (TransferPayment, error) {
 // outgoing_payment_sent; a 404 (*NotFoundError) before that means "not
 // issued yet", not a hard failure.
 func (c *Client) GetUSCombinedReceipt(ctx context.Context, transferID TransferID) ([]byte, error) {
+	// art-dupl:accept requireID guard and the per-endpoint path literal are the deliberate two-idiom validation convention; an abstraction would take more parameters than it saves lines
 	if err := requireID(transferID, errorCodeTransferInvalidRequest, "transferID"); err != nil {
 		return nil, err
 	}
@@ -526,6 +528,7 @@ func (c *Client) GetUSCombinedReceipt(ctx context.Context, transferID TransferID
 // The endpoint answers 404 (*NotFoundError) until the transfer reaches
 // outgoing_payment_sent; treat that as "not issued yet", not a hard failure.
 func (c *Client) GetTransferNOC(ctx context.Context, transferID TransferID) ([]byte, error) {
+	// art-dupl:accept requireID guard and the per-endpoint path literal are the deliberate two-idiom validation convention; an abstraction would take more parameters than it saves lines
 	if err := requireID(transferID, errorCodeTransferInvalidRequest, "transferID"); err != nil {
 		return nil, err
 	}

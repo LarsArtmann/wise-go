@@ -334,14 +334,8 @@ func (e *RateLimitError) IsRetryable() bool {
 }
 
 func (e *RateLimitError) ErrorContext() map[string]string {
-	ctx := map[string]string{
-		"status_code": strconv.Itoa(e.StatusCode),
-		"retry_after": e.RetryAfter.String(),
-	}
-
-	if len(e.Details) > 0 {
-		ctx["wise_code"] = string(e.Details[0].Code)
-	}
+	ctx := e.APIError.ErrorContext()
+	ctx["retry_after"] = e.RetryAfter.String()
 
 	if e.RateLimitedBy != "" {
 		ctx["rate_limited_by"] = e.RateLimitedBy
