@@ -135,6 +135,26 @@ capture-hygiene rule (idle machine, capture at the tag) is written in
 with identical B/op and was discarded. benchstat is NOT in the devShell —
 install with `go install golang.org/x/perf/cmd/benchstat@latest`.
 
+[ ] `Health` deadline-mitigation BDD test — pin locally that a context
+deadline aborts `Health` mid-backoff (go-retry's delay select is ctx-aware and
+upstream tests cover the loop; this pins the SDK's own seam). Source: 2026-10-31
+samber/do recheck session, status report §f5.
+
+[ ] Health operability docs bundle — README DI recipe gains the ctx-timeout
+bounding line; compile-only `ExampleHealth` in `example_test.go` (existing
+nolint pattern); `Health` godoc states the exact default retry budget instead
+of ~. Source: 2026-10-31 status report §f6/§f15/§f16.
+
+[ ] Harmonize surface-count denominators in AGENTS.md — "46 endpoint methods
+across 17 resources" (families) vs FEATURES' 46-methods/43-carrying-operations
+vs 15-resource-files: pick one convention per doc, cross-reference the others.
+Source: 2026-10-31 status report §c5.
+
+[ ] Series index for `docs/architecture-understanding/` — 5 reports (two HTML
+2026-07-18, two md 2026-10-16/31, d2/svg pair), zero README; one index file
+with verdict one-liners + supersession chain. Source: 2026-10-31 status report
+§e6.
+
 ### Decisions (P3)
 
 [ ] `Health` code-half — decide: keep
@@ -230,3 +250,8 @@ nixpkgs lock at go 1.26.8 (2026-10-17) → condition 1 not met. Blocked on:
 nixpkgs stable 1.27, in-house deps verified on 1.27, erraudit local install,
 buildflow skip_steps removal. Source:
 `docs/status/2026-10-07_03-45_buildflow-red-to-green-repair-status.md` §g1.
+
+[ ] samber/do + health recheck cadence — join the ~8-week seasonal sweep (next
+~2026-12-16), trigger on `samber/do` lifecycle releases (>v2.1.0), or stay
+on-demand only. **BLOCKED: user call.** Source: 2026-10-31 recheck report §g2;
+status report §g2.
