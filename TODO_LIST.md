@@ -10,7 +10,11 @@ Completed work lives in [CHANGELOG.md](CHANGELOG.md), never here.
 [ ] Push bank-sync's v0.16.0 pin bump — committed locally 2026-10-17 (go.mod +
 flake input/lock + vendorHash dance + SCA mock paths flipped Q3→Q4 + sentinel-sweep
 verdict in its AGENTS/07); the parallel `internal/server` refactor landing green
-is the other input. **User-gated: pushes to other repos need the explicit word.**
+is the other input. **Recipe sweep done locally 2026-10-31** (bank-sync
+AGENTS/15-errors.md now carries the wise-go two-idiom decision tree +
+docs/error-codes.md pointer; sweep verdict: all five existing branches are
+type-idiom-appropriate, no code-based branches to convert yet). Remaining:
+the PUSH. **User-gated: pushes to other repos need the explicit word.**
 
 [ ] Sandbox assumptions 1+3 — one capped (~30 min) browser SCA attempt
 (existing `/tmp` tooling; DOM probe with a 20s timeout first, sandbox 2FA
@@ -72,7 +76,13 @@ global profile. **BLOCKED: touches the user's global profile.** Source:
 findable from inside a session), document a heartbeat/log location, and
 record whether the hook bypass (`--no-verify`) is intentional. Until then
 "is the daemon alive?" is answerable only from `git log` timestamps.
-**BLOCKED: the owner knows where the daemon lives.** Source:
+**Cadence heuristic measured 2026-10-31** (M8.3): the daemon commits on a
+~3-minute dirty-tree polling cadence (8 auto-commits across 12:27–12:53
+CEST while the session edited; idle when the tree is clean — 17 auto-commits
+in the surrounding 24 h). The format-gap consequence of the bypass is now
+structurally closed by `checks.dprint-format` (see the P3 row), so this row
+is about observability only. **BLOCKED: the owner knows where the daemon
+lives.** Source:
 `docs/status/2026-10-23_08-25_continuation-backlog-execution.md` §f4.
 
 [ ] Re-enable CI on GitHub — the auth blocker is RESOLVED (2026-09-13): all
@@ -277,8 +287,10 @@ memory-architecture call.** Source:
 
 [ ] Go 1.27 toolchain migration — execute
 `docs/planning/2026-10-07_go-1.27-migration-plan.md` (4 unlock conditions,
-single-commit flip/rollback) when its conditions hold. Latest probe:
-nixpkgs lock at go 1.26.8 (2026-10-17) → condition 1 not met. Blocked on:
+single-commit flip/rollback) when its conditions hold. Latest probe
+2026-10-31: nixpkgs go = **1.26.10** → condition 1 STILL not met (the 48
+govulncheck stdlib advisories therefore stay warning-class; see the resolved
+go-directive row above). Blocked on:
 nixpkgs stable 1.27, in-house deps verified on 1.27, erraudit local install,
 buildflow skip_steps removal. Source:
 `docs/status/2026-10-07_03-45_buildflow-red-to-green-repair-status.md` §g1.
