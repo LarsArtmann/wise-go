@@ -21,19 +21,19 @@ const (
 	defaultRetryBackoffCap   = 5 * time.Second
 )
 
-// The quarterly versioned API surfaces (https://api.wise.com/2026Q4) host
+// The quarterly versioned API surfaces (https://api.wise.com/2027Q1) host
 // endpoint families that exist only there — the webhook subscription CRUD and
 // the SCA one-time-token endpoints — while the rest of the SDK uses the
 // legacy /v1../v4 paths. The OpenAPI spec's server URL is authoritative; when
 // a quarter rolls over, update the surface's constant after verifying the
 // paths still resolve against the live API. The two families roll over
-// independently: webhook subscriptions verified live on 2026Q4
-// (2026-10-05), one-time-token on 2026Q4 (2026-10-16 credentialed sandbox
-// probe: app-level ott_not_found on Q4 vs router-level 404 on the 9999Q1
-// control; the sandbox serves the handler on 2026Q2..2027Q1).
+// independently: both were canonicalized to 2027Q1 on 2026-10-31 (spec
+// refresh; credentialed sandbox probe: app-level ott_not_found /
+// unauthorized on 2026Q4 AND 2027Q1, router-level 404 on 2027Q2 and 9999Q1 —
+// served window per family verified before the flip).
 const (
-	webhookSubscriptionsAPIVersion = "2026Q4"
-	ottAPIVersion                  = "2026Q4"
+	webhookSubscriptionsAPIVersion = "2027Q1"
+	ottAPIVersion                  = "2027Q1"
 	// accountDetailsAPIVersion pins the receiving-bank-details surface. Wise
 	// relocated it from /v1/profiles/{id}/account-details to
 	// /balances/account-details/{id} in the 2027Q1 spec roll (live probe
