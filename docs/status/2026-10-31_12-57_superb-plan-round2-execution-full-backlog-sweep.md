@@ -86,6 +86,17 @@ retained.
 | buildflow full run (fresh binary `74a9212`)     | exit 0 — 59/73 steps, 1m58s, 23 findings all warning/info (nix-checker: 4 info notes on the new fetchurl pins + hash-file suggestions; govulncheck 12, down from 48 under the stale binary; lychee 2 = one redirect hint + one on-demand-class note); 9 config-skips as documented; ruff-format auto-fixed 11 format nits in `anchor_check.py`                                                                                           |
 | count-inflation reconcile (M18)                 | RESOLVED: bandit direct = 0 and the fresh-binary run reports bandit 0 (the 78-vs-1 class was a stale-binary artifact, gone with `74a9212`); the "9 tools unavailable" set is non-applicable ecosystem tools (cargo-*/eslint/jest/c8/knip/prettier/publint/hadolint/protolint/madge/pip-audit) — none missing that this Go+nix+python repo needs; display issue stays BuildFlow [#65](https://github.com/LarsArtmann/BuildFlow/issues/65) |
 
+Re-verified end-to-end later the same day, on the final tree including
+`b511356` (the 13:04 closing doc commit post-dated this table): `go test -race`
+ok · lint 0 issues · anchor-check 101 anchors + 5 quoted pointers (one quoted
+pointer was dropped by the closing doc edits) · doc-verify ok · `nix flake
+check` ALL PASSED · fresh no-cache buildflow full exit 0 (`--fix` changed
+nothing, tree stayed clean) · release-notes-check clean · spec-drift
+`--fail-on-drift` exit 0 (43/43 endpoints match, 0 drift). Blocker re-probes
+same pass: `gh secret list` empty, latest tag still v0.16.0 (no v1.0.0), CI
+workflow active, nixpkgs go still 1.26.10, no browser automation tooling, the
+auto-git daemon still unfindable from a session (ps + user systemd sweep).
+
 ## g. Held for the owner (the only things that could not be executed)
 
 1. **v1.0.0 tag** (M4) — the one-word irreversible call; pre-release chain
