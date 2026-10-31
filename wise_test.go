@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -435,6 +436,194 @@ var _ = Describe("Wise Client", func() {
 				srvErr, ok := errors.AsType[*wise.ServerError](err)
 				Expect(ok).To(BeTrue(), "expected *wise.ServerError, got %T: %v", err, err)
 				Expect(srvErr.IsRetryable()).To(BeTrue())
+			})
+		})
+
+		Context("with a deadline that expires mid-backoff", func() {
+			var entries []wise.RequestLog
+
+			BeforeEach(func() {
+				entries = nil
+				// Long backoff so the deadline fires inside the retry
+				// delay, not inside a request: go-retry's delay select is
+				// ctx-aware, pinning the SDK's own seam.
+				client = wise.New("test-api-key",
+					wise.WithBaseURL(server.URL),
+					wise.WithRetry(3, 2*time.Second, 2*time.Second),
+					wise.WithLogger(wise.RequestLogFunc(func(entry wise.RequestLog) {
+						entries = append(entries, entry)
+					})),
+				)
+
+				mux.HandleFunc("/v2/profiles", errorHandler(
+					http.StatusInternalServerError, nil, "SYSTEM_ERROR", "internal failure",
+				))
+			})
+
+			It("aborts inside the delay, not after the budget", func() {
+				ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+				defer cancel()
+
+				start := time.Now()
+				err := client.Health(ctx)
+				elapsed := time.Since(start)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("context deadline exceeded"))
+				Expect(elapsed).To(BeNumerically("<", 1*time.Second),
+					"the deadline must abort the backoff, not ride it out")
+
+				// Only the first attempt happened; a backoff delay has no
+				// exchange and a plain 5xx emits no delay-decision entry.
+				Expect(entries).To(HaveLen(1))
+				Expect(entries[0].Status).To(Equal(http.StatusInternalServerError))
+				Expect(entries[0].Attempt).To(Equal(1))
+			})
+		})
+
+		Context("with a deadline that expires during an honored Retry-After wait", func() {
+			var entries []wise.RequestLog
+
+			BeforeEach(func() {
+				entries = nil
+				client = wise.New("test-api-key",
+					wise.WithBaseURL(server.URL),
+					wise.WithRetry(3, time.Millisecond, 5*time.Second),
+					wise.WithLogger(wise.RequestLogFunc(func(entry wise.RequestLog) {
+						entries = append(entries, entry)
+					})),
+				)
+
+				mux.HandleFunc("/v2/profiles", errorHandler(
+					http.StatusTooManyRequests,
+					map[string]string{"Retry-After": "30"},
+					"RATE_LIMITED", "Too many requests",
+				))
+			})
+
+			It("emits the delay decision, then aborts with no further log noise", func() {
+				ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+				defer cancel()
+
+				err := client.Health(ctx)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("context deadline exceeded"))
+
+				// The 429 exchange, the delay decision for the honored
+				// hint (30s capped to the 5s ceiling) — and nothing for
+				// the aborted wait: no second request entry, no second
+				// delay entry.
+				Expect(entries).To(HaveLen(2))
+				Expect(entries[0].Status).To(Equal(http.StatusTooManyRequests))
+				Expect(entries[1].RetryAfterDelay).To(Equal(5 * time.Second))
+				Expect(entries[1].Method).To(BeEmpty())
+			})
+		})
+	})
+
+	Describe("VerifyCredentials", func() {
+		Context("with valid credentials", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Header.Get("Authorization")).To(Equal("Bearer test-api-key"))
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.MarshalWrite(
+						w,
+						testProfiles(12345, "John", "Doe", "john@example.com"),
+					)
+				})
+			})
+
+			It("should not return error", func() {
+				err := client.VerifyCredentials(context.Background())
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+
+		Context("with invalid credentials", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v2/profiles", unauthorizedHandler)
+			})
+
+			It("should surface an AuthError", func() {
+				err := client.VerifyCredentials(context.Background())
+				Expect(err).To(HaveOccurred())
+
+				_, ok := errors.AsType[*wise.AuthError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.AuthError, got %T: %v", err, err)
+			})
+		})
+
+		Context("with a throttled API", func() {
+			var calls int32
+
+			BeforeEach(func() {
+				// Default retry config on purpose: the single-attempt
+				// property must hold without caller-side tuning.
+				client = wise.New("test-api-key", wise.WithBaseURL(server.URL))
+
+				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {
+					atomic.AddInt32(&calls, 1)
+					errorHandler(
+						http.StatusTooManyRequests,
+						map[string]string{"Retry-After": "30", "X-Rate-Limited-By": "ip"},
+						"RATE_LIMITED", "Too many requests",
+					)(w, nil)
+				})
+			})
+
+			It("surfaces a RateLimitError after exactly one request — no ladder", func() {
+				err := client.VerifyCredentials(context.Background())
+
+				rlErr, ok := errors.AsType[*wise.RateLimitError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.RateLimitError, got %T: %v", err, err)
+				Expect(rlErr.RateLimitedBy).To(Equal("ip"))
+				Expect(atomic.LoadInt32(&calls)).To(Equal(int32(1)),
+					"VerifyCredentials must not retry")
+			})
+		})
+
+		Context("with a server failure", func() {
+			var calls int32
+
+			BeforeEach(func() {
+				client = wise.New("test-api-key", wise.WithBaseURL(server.URL))
+
+				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {
+					atomic.AddInt32(&calls, 1)
+					errorHandler(
+						http.StatusInternalServerError, nil, "SYSTEM_ERROR", "internal failure",
+					)(w, nil)
+				})
+			})
+
+			It("surfaces the typed ServerError after exactly one attempt", func() {
+				err := client.VerifyCredentials(context.Background())
+
+				srvErr, ok := errors.AsType[*wise.ServerError](err)
+				Expect(ok).To(BeTrue(), "expected *wise.ServerError, got %T: %v", err, err)
+				Expect(srvErr.IsRetryable()).To(BeTrue())
+				Expect(atomic.LoadInt32(&calls)).To(Equal(int32(1)),
+					"VerifyCredentials must not retry")
+			})
+		})
+
+		Context("with a deadline shorter than the round-trip", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {
+					time.Sleep(100 * time.Millisecond)
+					w.WriteHeader(http.StatusOK)
+				})
+			})
+
+			It("honors the caller's deadline", func() {
+				ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+				defer cancel()
+
+				err := client.VerifyCredentials(ctx)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("context deadline exceeded"))
 			})
 		})
 	})

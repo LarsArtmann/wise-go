@@ -197,11 +197,34 @@ func (c *Client) Authenticate(ctx context.Context) error {
 // through the retry executor. It is a readiness probe, not a cheap liveness
 // check: a *RateLimitError proves reachability (the API answered, under
 // throttling), an *AuthError proves reachability with bad credentials, and
-// the worst case spends the full retry budget (~4 attempts x 30s timeout
-// plus capped delays) before returning. Consumers needing a fail-fast probe
-// should call an endpoint directly with a minimal retry policy.
+// the worst case spends the full default budget before returning — 4
+// attempts x 30s per-attempt timeout plus up to 3 x 5s of honored
+// Retry-After delays (2 min 15 s) — unless the caller bounds ctx with a
+// deadline. For a single-attempt credential check use VerifyCredentials.
 func (c *Client) Health(ctx context.Context) error {
 	return c.Authenticate(ctx)
+}
+
+// VerifyCredentials validates the API key with a single authenticated
+// ListProfiles round-trip — the retry ladder is disabled, so the answer
+// arrives after exactly one request (bounded by the client timeout or the
+// caller's ctx deadline, not by ~2 min of retries). The typed errors match
+// Health: an *AuthError means bad credentials, a *RateLimitError means the
+// API answered under throttling, and a *ServerError surfaces after one
+// failed attempt instead of four. Use it for startup config checks; use
+// Health for readiness polling that should ride the retry budget.
+func (c *Client) VerifyCredentials(ctx context.Context) error {
+	// The client is stateless, so a shallow copy with a single-attempt
+	// retry config reuses the full request path — headers, error
+	// classification, logging — without mutating the shared client.
+	failFast := *c
+	failFast.retryConfig.MaxAttempts = 1
+
+	if _, err := failFast.ListProfiles(ctx); err != nil {
+		return fmt.Errorf("verify credentials: %w", err)
+	}
+
+	return nil
 }
 
 // --- HTTP helpers ---
