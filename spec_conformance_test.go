@@ -225,7 +225,7 @@ var versionedSegment = regexp.MustCompile(`^(v[0-9]+|[0-9]{4}Q[1-4])$`)
 
 // stripVersionedPrefix removes leading version segments so SDK wire paths
 // line up with spec path templates (/v4/profiles/1/balances and
-// /2026Q4/profiles/1/subscriptions both normalize into spec-template shape).
+// /2027Q1/profiles/1/subscriptions both normalize into spec-template shape).
 func stripVersionedPrefix(path string) string {
 	segments := strings.Split(strings.TrimPrefix(path, "/"), "/")
 

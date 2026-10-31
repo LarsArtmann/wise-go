@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Quarterly surfaces canonicalized 2026Q4 → **2027Q1** (spec refresh
+  2026-10-31): `ottAPIVersion` and `webhookSubscriptionsAPIVersion` now build
+  `/2027Q1/one-time-token/...` and `/2027Q1/profiles/{id}/subscriptions/...`
+  paths, matching the live spec's server URL. Verified before the flip with a
+  credentialed sandbox probe (app-level error bodies on 2026Q4 AND 2027Q1;
+  router-level 404 on 2027Q2/9999Q1 controls) and pinned by
+  `TestQuarterlyAPIVersionsConsistent`. The vendored snapshot
+  (`docs/reviews/wise-api-openapi.json`) was re-vendored from the live spec
+  (188 paths / 228 operations; `nix run .#spec-drift -- --fail-on-drift` exit
+  0, gitleaks clean).
 - `VerifyCredentials(ctx)` — the fail-fast credential probe from decision
   memo D2-b: a single authenticated `ListProfiles` round-trip with the
   retry ladder disabled (shallow-copy of the stateless client with

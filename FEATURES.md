@@ -217,10 +217,10 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 
 | Method | Path                                                              | Status           | wise-go                                                |
 | ------ | ----------------------------------------------------------------- | ---------------- | ------------------------------------------------------ |
-| POST   | `/2026Q4/profiles/{id}/subscriptions`                             | FULLY_FUNCTIONAL | `CreateProfileWebhookSubscription` (`webhooks.go:92`)  |
-| GET    | `/2026Q4/profiles/{id}/subscriptions`                             | FULLY_FUNCTIONAL | `ListProfileWebhookSubscriptions` (`webhooks.go:119`)  |
-| GET    | `/2026Q4/profiles/{id}/subscriptions/{id}`                        | FULLY_FUNCTIONAL | `GetProfileWebhookSubscription` (`webhooks.go:156`)    |
-| DELETE | `/2026Q4/profiles/{id}/subscriptions/{id}`                        | FULLY_FUNCTIONAL | `DeleteProfileWebhookSubscription` (`webhooks.go:190`) |
+| POST   | `/2027Q1/profiles/{id}/subscriptions`                             | FULLY_FUNCTIONAL | `CreateProfileWebhookSubscription` (`webhooks.go:92`)  |
+| GET    | `/2027Q1/profiles/{id}/subscriptions`                             | FULLY_FUNCTIONAL | `ListProfileWebhookSubscriptions` (`webhooks.go:119`)  |
+| GET    | `/2027Q1/profiles/{id}/subscriptions/{id}`                        | FULLY_FUNCTIONAL | `GetProfileWebhookSubscription` (`webhooks.go:156`)    |
+| DELETE | `/2027Q1/profiles/{id}/subscriptions/{id}`                        | FULLY_FUNCTIONAL | `DeleteProfileWebhookSubscription` (`webhooks.go:190`) |
 | POST   | `/applications/{clientKey}/subscriptions`                         | ON_HOLD          | app-level scope decision pending (ROADMAP.md Axis 1)   |
 | GET    | `/applications/{clientKey}/subscriptions`                         | ON_HOLD          | app-level scope decision pending                       |
 | GET    | `/applications/{clientKey}/subscriptions/{id}`                    | ON_HOLD          | app-level scope decision pending                       |
@@ -231,13 +231,13 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 
 | Method | Path                                         | Status           | wise-go                                                |
 | ------ | -------------------------------------------- | ---------------- | ------------------------------------------------------ |
-| GET    | `/2026Q4/one-time-token/status`              | FULLY_FUNCTIONAL | `GetOTTStatus` (`ott.go:225`)                          |
-| POST   | `/2026Q4/one-time-token/sms/trigger`         | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:246`, `OTTChannelSMS`)           |
-| POST   | `/2026Q4/one-time-token/sms/verify`          | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:272`, `OTTChannelSMS`)            |
-| POST   | `/2026Q4/one-time-token/whatsapp/trigger`    | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:246`, `OTTChannelWhatsApp`)      |
-| POST   | `/2026Q4/one-time-token/whatsapp/verify`     | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:272`, `OTTChannelWhatsApp`)       |
-| POST   | `/2026Q4/one-time-token/voice/trigger`       | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:246`, `OTTChannelVoice`)         |
-| POST   | `/2026Q4/one-time-token/voice/verify`        | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:272`, `OTTChannelVoice`)          |
+| GET    | `/2027Q1/one-time-token/status`              | FULLY_FUNCTIONAL | `GetOTTStatus` (`ott.go:225`)                          |
+| POST   | `/2027Q1/one-time-token/sms/trigger`         | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:246`, `OTTChannelSMS`)           |
+| POST   | `/2027Q1/one-time-token/sms/verify`          | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:272`, `OTTChannelSMS`)            |
+| POST   | `/2027Q1/one-time-token/whatsapp/trigger`    | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:246`, `OTTChannelWhatsApp`)      |
+| POST   | `/2027Q1/one-time-token/whatsapp/verify`     | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:272`, `OTTChannelWhatsApp`)       |
+| POST   | `/2027Q1/one-time-token/voice/trigger`       | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:246`, `OTTChannelVoice`)         |
+| POST   | `/2027Q1/one-time-token/voice/verify`        | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:272`, `OTTChannelVoice`)          |
 | POST   | `/application/users/{id}/phone-numbers`      | OUT_OF_SCOPE     | restricted access (client credentials + Wise approval) |
 | DELETE | `/application/users/{id}/phone-numbers/{id}` | OUT_OF_SCOPE     | restricted access (client credentials + Wise approval) |
 

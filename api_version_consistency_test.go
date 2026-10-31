@@ -8,7 +8,7 @@ import (
 )
 
 // quarterlyPathPattern matches a quarter-qualified endpoint path, e.g.
-// /2026Q4/one-time-token/status or /2027Q1/balances/account-details/1. Bare
+// /2027Q1/one-time-token/status or /2027Q1/balances/account-details/1. Bare
 // quarter mentions (prose like "verified live on 2026Q4", the spec's unversioned
 // template URLs) do not match — only a quarter followed by a path segment
 // counts, because only those are endpoint contracts.
@@ -17,7 +17,7 @@ var quarterlyPathPattern = regexp.MustCompile(`/(20[0-9]{2}Q[1-4])/([A-Za-z{}.-]
 // TestQuarterlyAPIVersionsConsistent pins every quarter-qualified endpoint path
 // literal in the module — production code, test mocks, and the README — to the
 // API-version constant that builds the real request. The quarterly surfaces
-// roll over independently (one-time-token and webhook subscriptions on 2026Q4,
+// roll over independently (one-time-token and webhook subscriptions on 2027Q1,
 // account details on 2027Q1); without this pin a missed mock path or README
 // example keeps serving the previous quarter while the client calls the new
 // one. Consumers such as bank-sync pin their own mock paths and rely on the

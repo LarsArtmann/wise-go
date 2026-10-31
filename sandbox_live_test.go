@@ -268,7 +268,7 @@ func TestSandboxLiveSCAChallengeShape(t *testing.T) {
 }
 
 // TestSandboxLiveGetOTTStatus walks the OTT lifecycle against the quarterly
-// versioned surface (2026Q4 since the 2026-10-16 rollover): an SCA-raised
+// versioned surface (2027Q1 since the 2026-10-31 canonicalization): an SCA-raised
 // token resolves to a status with the statement action, a bounded validity
 // window, and one pending SIGNATURE challenge with no phone alternatives.
 func TestSandboxLiveGetOTTStatus(t *testing.T) {

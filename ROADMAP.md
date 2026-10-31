@@ -47,7 +47,7 @@ account requirements and the two-pass refresh), recipients, transfers
 MT103 payout info), funding, delivery estimates, exchange rates,
 transfer-requirements validation — plus webhook subscription CRUD and typed
 event parsing on the quarterly surfaces (subscriptions and OTT both
-2026Q4 — each rolls over independently), SCA one-time-token endpoints
+2027Q1 since the 2026-10-31 canonicalization — each rolls over independently), SCA one-time-token endpoints
 that clear challenges programmatically, and `GetBankAccountDetails` on the
 2027Q1 account-details surface (spec roll caught by `nix run .#spec-drift`).
 
@@ -77,13 +77,13 @@ that clear challenges programmatically, and `GetBankAccountDetails` on the
 - **`GetTransferPayoutInfo`** — banking-partner proof of payment with the
   SWIFT MT103 message (`*string`, nil for non-SWIFT corridors).
 - **Profile webhook subscription CRUD** — create/list/get/delete against
-  `/2026Q4/profiles/{profileId}/subscriptions` (app-level scope deferred, see
+  `/2027Q1/profiles/{profileId}/subscriptions` (app-level scope deferred, see
   below).
 - **Typed webhook event decoding** — `ParseWebhookEvent` envelope plus typed
   payloads for `transfers#state-change`, `transfers#payout-failure`, and
   `balances#credit`; unknown event types pass through.
 - **SCA one-time-token endpoints** — `GetOTTStatus`, `TriggerOTT`, `VerifyOTT`,
-  and the `ClearSCAChallenge` convenience loop (`/2026Q4/one-time-token/...`).
+  and the `ClearSCAChallenge` convenience loop (`/2027Q1/one-time-token/...`).
 - **`WithUserAgent`** + `Profile.UserID`/`PublicID` + client concurrency pinned
   by test.
 - **v0.12.0 — correctness + conformance** — the OpenAPI spec-conformance gate
