@@ -858,9 +858,10 @@ func ExampleClient_Health() {
 	client := wise.New("your-api-key")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
+	err := client.Health(ctx)
+	cancel()
 
-	if err := client.Health(ctx); err != nil {
+	if err != nil {
 		log.Fatal(err)
 	}
 

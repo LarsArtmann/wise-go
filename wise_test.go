@@ -556,7 +556,7 @@ var _ = Describe("Wise Client", func() {
 		})
 
 		Context("with a throttled API", func() {
-			var calls int32
+			var calls atomic.Int32
 
 			BeforeEach(func() {
 				// Default retry config on purpose: the single-attempt
@@ -564,7 +564,7 @@ var _ = Describe("Wise Client", func() {
 				client = wise.New("test-api-key", wise.WithBaseURL(server.URL))
 
 				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {
-					atomic.AddInt32(&calls, 1)
+					calls.Add(1)
 					errorHandler(
 						http.StatusTooManyRequests,
 						map[string]string{"Retry-After": "30", "X-Rate-Limited-By": "ip"},
@@ -579,19 +579,19 @@ var _ = Describe("Wise Client", func() {
 				rlErr, ok := errors.AsType[*wise.RateLimitError](err)
 				Expect(ok).To(BeTrue(), "expected *wise.RateLimitError, got %T: %v", err, err)
 				Expect(rlErr.RateLimitedBy).To(Equal("ip"))
-				Expect(atomic.LoadInt32(&calls)).To(Equal(int32(1)),
+				Expect(calls.Load()).To(Equal(int32(1)),
 					"VerifyCredentials must not retry")
 			})
 		})
 
 		Context("with a server failure", func() {
-			var calls int32
+			var calls atomic.Int32
 
 			BeforeEach(func() {
 				client = wise.New("test-api-key", wise.WithBaseURL(server.URL))
 
 				mux.HandleFunc("/v2/profiles", func(w http.ResponseWriter, _ *http.Request) {
-					atomic.AddInt32(&calls, 1)
+					calls.Add(1)
 					errorHandler(
 						http.StatusInternalServerError, nil, "SYSTEM_ERROR", "internal failure",
 					)(w, nil)
@@ -604,7 +604,7 @@ var _ = Describe("Wise Client", func() {
 				srvErr, ok := errors.AsType[*wise.ServerError](err)
 				Expect(ok).To(BeTrue(), "expected *wise.ServerError, got %T: %v", err, err)
 				Expect(srvErr.IsRetryable()).To(BeTrue())
-				Expect(atomic.LoadInt32(&calls)).To(Equal(int32(1)),
+				Expect(calls.Load()).To(Equal(int32(1)),
 					"VerifyCredentials must not retry")
 			})
 		})
