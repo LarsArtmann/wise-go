@@ -4,6 +4,7 @@
 **Scope:** Is `samber/do` v2 used — and used superbly — in combination with health checks? Is the architecture service-oriented, composable, resilient, and self-healthy?
 **Method:** samber-do-best-practices skill (DO-1 → DO-6 lens) + architecture-review rubric; every claim below verified against the working tree this session (see §8).
 **Series:** third architecture assessment; extends `2026-07-18_10-08_modularity-and-composability.html` and `docs/modularization/2026-07-18_ASSESSMENT.html` (both 2026-07-18).
+**Superseded on current-state claims by:** `2026-10-31_09-33_samber-do-health-architecture-recheck.md` (post-v0.16.0 re-verification; the DO-1..DO-6 derivation and health-chain analysis below remain the full original).
 
 ---
 
