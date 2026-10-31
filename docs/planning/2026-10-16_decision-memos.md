@@ -81,6 +81,10 @@ trigger is one YAML block).
 
 ## D4. Flake input pins: rev vs tag (M20/T73)
 
+**Resolved 2026-10-31** — (a) kept: rev pins + pin-sync gates stay the
+invariant; no flake change needed (the recommendation describes the
+standing state). Row closed.
+
 **Context.** In-house inputs are rev-pinned to peeled commit SHAs, with
 `checks.pin-sync` (hermetic) + `nix run .#pin-sync` (network) asserting
 flake rev == go.mod tag commit. The 2026-10-07 audit found tag-object pins
@@ -103,6 +107,10 @@ narHash-locked refs — unchanged.
 
 ## D5. x86_64-darwin in the check matrix (M20/T74)
 
+**Resolved 2026-10-31** — (b) applied: the `systems` list in `flake.nix`
+drops x86_64-darwin (reversible: re-add the string); AGENTS all-systems
+gotcha updated to shipped state.
+
 **Context.** nixpkgs-26.11 dropped x86_64-darwin; `nix flake check
 --all-systems` fails externally on it (aarch64-linux and aarch64-darwin
 evaluate clean). No known consumer builds wise-go on x86_64-darwin.
@@ -120,6 +128,10 @@ one line if an x86_64-darwin consumer appears. Filed as ask #7 in
 `2026-10-16_open-user-asks.md`.
 
 ## D6. `BUILDFLOW_NO_RESULT_CACHE=1` standing default (added 2026-10-17)
+
+**Resolved 2026-10-31** — (a) applied as the standing invocation shape for
+every buildflow run in this repo (documented in the AGENTS result-cache
+gotcha); flip back when BuildFlow #67 lands.
 
 **Context.** The 2026-10-17 01:55 full buildflow run diagnosed cross-repo
 result-cache contamination: 37 findings carried bimi-lens paths (sibling

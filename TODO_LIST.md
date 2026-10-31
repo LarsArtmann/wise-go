@@ -32,13 +32,20 @@ buys nothing). When v1.0 planning starts: lock the delay-decision-entry shape
 (entry riding the `LogRequest` channel, `Method`/`URL` empty, honored wait as a
 `time.Duration`), or grow a dedicated observer interface. The behavior is
 pinned by the 429 BDD tests either way.
+**Recommendation ready 2026-10-31** (spike memo:
+`docs/planning/2026-10-31_12-28_retryafterdelay-freeze-memo.md`): freeze the
+entry as-is at v1.x; the observer interface waits for a consumer need.
+Remaining: the owner's word at v1.x + the 3-line execution checklist in the
+memo.
 
-[ ] Typed recipient `Details` — typed per-corridor structs vs `map[string]string`
-key constants. Carried unanswered through seven status reports (2026-08-19_17-14
-g.2 through 2026-10-05_14-53 g2 — all under `docs/status/`, several now in `archived/`). The v1.0 audit confirms
-the map is the only shape consumers depend on today, so v1.0 can freeze the map
-and add typed accessors later.
-**BLOCKED: needs the user's design decision.**
+[x] ~~Typed recipient `Details`~~ resolved 2026-10-31 — spike memo
+`docs/planning/2026-10-31_12-28_typed-details-spike.md`: keep the map (the
+field vocabulary is server-owned and route-polymorphic; typed structs would
+promise what the SDK has no authority over), v1.0 freezes the map, and a
+`ValidateDetailsAgainstRequirements` helper (types the missing/extra-field
+decision, not the vocabulary) sits in the parked demand-gated set. Census:
+only the GBP corridor appears in fixtures; a per-corridor census is
+implementation work for when a demand signal exists.
 
 [ ] Set the `CACHIX_AUTH_TOKEN` secret (and confirm the `larsartmann` cache
 exists) — the CI cachix step (pinned to verified v15 commit `ad2ddac`) is
@@ -149,15 +156,21 @@ the retry delay is context-aware); `ExampleClient_Health` +
 godoc states the exact default budget (4 attempts x 30 s + up to 3 x 5 s
 honored Retry-After = 2 min 15 s).
 
-[ ] Harmonize surface-count denominators in AGENTS.md — "46 endpoint methods
-across 17 resources" (families) vs FEATURES' 46-methods/43-carrying-operations
-vs 15-resource-files: pick one convention per doc, cross-reference the others.
+[x] ~~Harmonize surface-count denominators in AGENTS.md~~ done 2026-10-31 —
+convention: **47 public `*Client` methods / 46 Wise operations shipped /
+15 resource files** everywhere ("17 resource families" survives only as
+ROADMAP's enumerated trigger list; README's `16 resources` claims dropped).
+Cross-reference + derivation command live in the AGENTS "API docs study"
+bullet; the doc-verify gate pins the method count (FEATURES pattern updated
+in the same change — methods and operations diverged at `VerifyCredentials`).
 Source: 2026-10-31 status report §c5.
 
-[ ] Series index for `docs/architecture-understanding/` — 5 reports (two HTML
-2026-07-18, two md 2026-10-16/31, d2/svg pair), zero README; one index file
-with verdict one-liners + supersession chain. Source: 2026-10-31 status report
-§e6.
+[x] ~~Series index for `docs/architecture-understanding/`~~ done 2026-10-31 —
+`docs/architecture-understanding/README.md`: table of all five artifacts with
+verdict one-liners, supersession chain (2026-10-31 recheck supersedes
+2026-10-16 on current-state claims), leave-alone note for generated
+HTML/D2/SVG, and the recheck-cadence trigger. Source: 2026-10-31 status
+report §e6.
 
 ### Decisions (P3)
 
@@ -192,32 +205,20 @@ manual-before-release). Source:
 `docs/planning/2026-10-16_decision-memos.md` D3 (keep pre-release
 report-only; wire `--fail-on-drift` into a scheduled job once CI runs).
 
-[ ] Flake pinning strategy — keep `?rev=<commit-sha>` inputs (the hermetic
-`checks.pin-sync` asserts structural invariants only; the network
-`apps.pin-sync` is the real version detector, firing at pre-release time) or
-switch to version-tag refs (`github:LarsArtmann/go-retry/v0.7.1`, flake.lock
-still pinning the immutable commit) so the hermetic check can catch version
-drift offline. Reverses the documented rev-pinned decision — user call.
-Recommendation + options written: `docs/planning/2026-10-16_decision-memos.md` D4
-(keep rev pins; tag pins hide drift behind the lock).
-Source: `docs/status/2026-10-07_08-22_v0.13.0-release-pin-sync-drift-discovery-status.md` §g1.
-**BLOCKED: user decision.**
+[x] ~~Flake pinning strategy~~ resolved 2026-10-31 — (a) kept: rev pins +
+pin-sync gates stay the invariant (memo D4 annotated; the recommendation
+describes the standing state, no flake change needed).
 
-[ ] `BUILDFLOW_NO_RESULT_CACHE=1` standing default — make the result-cache
-bypass the standing buildflow invocation shape until BuildFlow #67 fixes the
-cache scoping (the 01-55 session measured ~0% hit rate, so the cost is
-near-zero), or keep it opt-in for parallel-session nights.
-**BLOCKED: user decision.** Source:
+[x] ~~`BUILDFLOW_NO_RESULT_CACHE=1` standing default~~ resolved 2026-10-31 —
+(a) applied (blanket-directive default, reversible): every buildflow run in
+this repo uses the bypass invocation shape until BuildFlow #67 lands
+(documented in the AGENTS result-cache gotcha; memo D6 annotated). Source:
 `docs/status/2026-10-17_01-55_buildflow-warning-zero-full-session-status.md` §g3.
 
-[ ] `nix flake check --all-systems` — verified 2026-10-07: aarch64-linux and
-aarch64-darwin evaluate clean; x86_64-darwin FAILS EXTERNALLY (nixpkgs-26.11
-dropped that system, not a flake bug). Decide: pin a nixpkgs-26.05-darwin
-input for darwin checks, or drop x86_64-darwin from the check matrix.
-**BLOCKED: user decision.** Recommendation + options written:
-`docs/planning/2026-10-16_decision-memos.md` D5 (drop x86_64-darwin;
-reversible one-liner if a consumer appears) — also ask #7 in
-`docs/planning/2026-10-16_open-user-asks.md`.
+[x] ~~`nix flake check --all-systems`~~ resolved 2026-10-31 — (b) applied:
+x86_64-darwin dropped from the `flake.nix` `systems` list (reversible
+one-liner; memo D5 annotated; AGENTS all-systems gotcha updated to shipped
+state).
 
 [ ] Vulnix replacement — vulnix is skip_steps'd (unmaintained; NIST 404s the
 modified-feed archive it needs), so non-Go closure CVEs have NO scanner
@@ -257,7 +258,9 @@ nixpkgs stable 1.27, in-house deps verified on 1.27, erraudit local install,
 buildflow skip_steps removal. Source:
 `docs/status/2026-10-07_03-45_buildflow-red-to-green-repair-status.md` §g1.
 
-[ ] samber/do + health recheck cadence — join the ~8-week seasonal sweep (next
-~2026-12-16), trigger on `samber/do` lifecycle releases (>v2.1.0), or stay
-on-demand only. **BLOCKED: user call.** Source: 2026-10-31 recheck report §g2;
-status report §g2.
+[x] ~~samber/do + health recheck cadence~~ resolved 2026-10-31 (blanket-directive
+default, reversible) — joins the ~8-week seasonal sweep (next ~2026-12-16)
+AND re-triggers on `samber/do` lifecycle releases (>v2.1.0). Wired in the
+AGENTS "Seasonal conventions" bullet + the series index
+(`docs/architecture-understanding/README.md`). Source: 2026-10-31 recheck
+report §g2; status report §g2.
