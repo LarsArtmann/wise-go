@@ -417,10 +417,10 @@ the plan; bulk payments only on a consumer demand signal).
 | Feature                           | Status           | Evidence                                                                                                      |
 | --------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------- |
 | Godoc examples for the public API | FULLY_FUNCTIONAL | `example_test.go`; 38 `Example*` funcs (compile-only doc examples + 3 runnable) covering every resource group |
-| README API reference              | FULLY_FUNCTIONAL | All 16 resources documented with runnable snippets + TOC                                                      |
+| README API reference              | FULLY_FUNCTIONAL | Every API-reference resource group documented with runnable snippets + TOC                                                                       |
 
 ## Deferred architecture
 
 | Feature                      | Status  | Notes                                          |
 | ---------------------------- | ------- | ---------------------------------------------- |
-| Service-client sub-structure | PLANNED | Trigger reached: 16 resources (see ROADMAP.md) |
+| Service-client sub-structure | PLANNED | Trigger reached (see the enumerated resource families in ROADMAP.md) |

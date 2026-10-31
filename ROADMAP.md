@@ -23,7 +23,7 @@ the tier-2 surface shipped: users, statement files in all six formats, webhook
 signature verification, balance lifecycle (create/direct-get/total-funds),
 Multi-Currency Account + bank details (on Wise's 2027Q1 surface), and
 currency reference data — 47
-`*Client` methods across 17 resources, plus webhook subscriptions with typed
+`*Client` methods across 15 resource files, plus webhook subscriptions with typed
 event decoding, programmatic SCA challenge clearing (one-time-token endpoints,
 every OTT-taking surface typed via `OneTimeToken`), a spec-drift gate against
 the live OpenAPI bundle, and
@@ -41,7 +41,7 @@ preserving the architectural decisions that make the codebase maintainable.
 Today: tiers 1 and 2 of
 `docs/planning/archived/2026-08-19_wise-api-full-implementation-plan.md` are complete,
 and the transfer category is complete end to end — 47 `*Client` methods
-across 17 resources. The core transfer flow is live: quotes (including
+across 15 resource files. The core transfer flow is live: quotes (including
 account requirements and the two-pass refresh), recipients, transfers
 (including receipts, US combined receipt, NOC documents, payments-list and
 MT103 payout info), funding, delivery estimates, exchange rates,
@@ -256,7 +256,7 @@ is clear.
 
 ### Trigger: resource count crosses ~6–8 — REACHED
 
-The SDK now has 17 resources (profiles, users, balances, multi-currency account,
+The SDK now has 17 resource families (profiles, users, balances, multi-currency account,
 bank details, transactions/statements, transfers/receipts,
 third-party transfers, funding, quotes,
 recipients, exchange rates, delivery estimates, transfer requirements,

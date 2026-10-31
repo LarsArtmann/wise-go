@@ -859,6 +859,7 @@ func ExampleClient_Health() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	err := client.Health(ctx)
+
 	cancel()
 
 	if err != nil {

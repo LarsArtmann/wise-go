@@ -30,6 +30,14 @@ cost on EVERY run rather than on the key-present path.
 
 ## D2. Health P1b code-half (M20/T71): redocument vs fail-fast alias
 
+**Resolved 2026-10-31** — executed recommendation (b) under the blanket
+execute directive: `VerifyCredentials(ctx)` shipped (single-attempt
+shallow-copy of the stateless client; same typed errors as `Health`;
+BDD-pinned one-hit contexts; README "which probe when"). The `HealthCheck`
+alias sub-question was declined — the two-line adapter bridges
+`do.HealthcheckerWithContext`. `Health` semantics unchanged. Flip by
+reverting the additive change.
+
 **Context.** `Health(ctx)` walks the full retry ladder (~2 min worst case,
 rate-budget spend) before reporting; the docs-half (2026-10-16) made the
 semantics honest and pinned the typed-error contract. The open question is

@@ -135,15 +135,19 @@ capture-hygiene rule (idle machine, capture at the tag) is written in
 with identical B/op and was discarded. benchstat is NOT in the devShell —
 install with `go install golang.org/x/perf/cmd/benchstat@latest`.
 
-[ ] `Health` deadline-mitigation BDD test — pin locally that a context
-deadline aborts `Health` mid-backoff (go-retry's delay select is ctx-aware and
-upstream tests cover the loop; this pins the SDK's own seam). Source: 2026-10-31
-samber/do recheck session, status report §f5.
+[x] ~~`Health` deadline-mitigation BDD test~~ done 2026-10-31 — two
+contexts in the `Health` describe: a deadline firing mid-backoff aborts
+inside the delay (context deadline exceeded, one request-log entry, &lt;1 s)
+and a deadline firing during an honored Retry-After wait emits the delay
+decision then stops (2 entries, no post-abort noise). Landed with
+`VerifyCredentials`.
 
-[ ] Health operability docs bundle — README DI recipe gains the ctx-timeout
-bounding line; compile-only `ExampleHealth` in `example_test.go` (existing
-nolint pattern); `Health` godoc states the exact default retry budget instead
-of ~. Source: 2026-10-31 status report §f6/§f15/§f16.
+[x] ~~Health operability docs bundle~~ done 2026-10-31 — README DI recipe
+carries the ctx-timeout bounding snippet (delay aborts mid-backoff because
+the retry delay is context-aware); `ExampleClient_Health` +
+`ExampleClient_VerifyCredentials` are compile-only godoc examples; `Health`
+godoc states the exact default budget (4 attempts x 30 s + up to 3 x 5 s
+honored Retry-After = 2 min 15 s).
 
 [ ] Harmonize surface-count denominators in AGENTS.md — "46 endpoint methods
 across 17 resources" (families) vs FEATURES' 46-methods/43-carrying-operations
@@ -157,24 +161,26 @@ with verdict one-liners + supersession chain. Source: 2026-10-31 status report
 
 ### Decisions (P3)
 
-[ ] `Health` code-half — decide: keep
-`Health` as the retried readiness probe as-is, give it a fail-fast path
-(`MaxAttempts=1`-style, health probes should not spend ~2 min in the retry
-executor), and/or add a `VerifyCredentials` alias if any consumer depends on
-the current retried semantics; consider a `HealthCheck(ctx)` name-alias so
-consumer `do.HealthcheckerWithContext` containers satisfy the interface
-directly. A true cheap liveness probe additionally needs
+[x] ~~`Health` code-half~~ done 2026-10-31 — executed memo D2-b's
+recommendation under the 2026-10-31 blanket execute directive: additive
+`VerifyCredentials(ctx)` (single authenticated `ListProfiles` round-trip,
+retry ladder disabled via a stateless-client shallow copy with
+`MaxAttempts = 1`), same typed errors as `Health`, BDD-pinned
+(one-server-hit contexts + deadline honoring), godoc cross-links and the
+README "which probe when" recipe (scratch-compiled against master; needs
+the next release tag for pinned consumers). `HealthCheck` alias declined
+—the two-line `do.HealthcheckerWithContext` adapter is the whole cost.
+Semantics of `Health` unchanged. Flip: revert `client.go` + tests + docs
+rows if the owner rules otherwise.
+~~A true cheap liveness probe additionally needs
 an endpoint choice verified against the live API (no ping/health endpoint is
-documented in the vendored snapshot). SHIPPED 2026-10-16: the docs-half
+documented in the vendored snapshot).~~ still true: no ping endpoint in the
+spec; liveness remains out of scope. SHIPPED 2026-10-16: the docs-half
 (godoc + README + FEATURES wording), the `Describe("Health")` typed-error
 contract tests (429 → `*RateLimitError`, bad key → `*AuthError`, retry-
 exhausted 5xx → `*ServerError`), and the consumer-side DI recipe (README
 "Dependency Injection & Health Checks", compile-verified vs v0.13.0 +
-master). Remaining is the code-half ONLY.
-**BLOCKED: user design decision.** Recommendation + options written:
-`docs/planning/2026-10-16_decision-memos.md` D2 (suggests additive
-`VerifyCredentials` in v1.1, no `Health` behavior change). Source: 2026-10-16 samber/do + health
-architecture review, finding F-1; `docs/architecture-understanding/2026-10-16_19-59_samber-do-health-architecture-review.md`.
+master).
 
 [ ] Spec-drift gate posture — decide whether `--fail-on-drift` should be
 wired into `nix run .#pre-release` (releases then require a fresh vendored
