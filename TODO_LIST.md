@@ -113,11 +113,18 @@ which of buildflow's "9 tools unavailable" are actually missing vs
 PATH-scoping. Source:
 `docs/status/2026-10-23_08-25_continuation-backlog-execution.md` §f7/f8.
 
-[ ] Upstream filings/proposals (verify-before-filing first): the
-nixpkgs/vulnix NVD-feed 404 issue (vulnix 1.12.5 hard-fails on the 404'd
-`nvdcve-2.0-modified.json.gz` archive; skip_steps'd here), and the
-scoped-dprint step for crush-config's status-report skill flow (an
-unformatted status report failed a full run 2026-10-23). Sources:
+[x] ~~Upstream filings/proposals~~ done 2026-10-31 — (1) nixpkgs/vulnix:
+**nothing to file — the premise healed**: NIST serves the
+`nvdcve-2.0-modified.json.gz` archive again (HEAD 200, ~14.5 MB, verified
+2026-10-31) and vulnix 1.12.5 completes (on-demand run over `./result`:
+22 derivations with advisories, all nixpkgs-closure level, 0
+SDK-actionable); the skip rationale in `.buildflow.yml` is updated to the
+healed state (verify-before-filing did its job — filing today would have
+been a false report). (2) crush-config scoped-dprint: **filed as
+[LarsArtmann/crush-config#3](https://github.com/LarsArtmann/crush-config/issues/3)**
+(propagate the hermetic `checks.dprint-format` pattern into the
+report-producing skill flows; voice-checked, draft kept in
+`docs/drafts/2026-10-31_crush-config-hermetic-dprint.md`). Sources:
 `docs/status/2026-10-23_07-48_buildflow-recovery.md` §f7,
 `docs/status/2026-10-23_08-25_continuation-backlog-execution.md` §f19.
 
@@ -236,23 +243,24 @@ x86_64-darwin dropped from the `flake.nix` `systems` list (reversible
 one-liner; memo D5 annotated; AGENTS all-systems gotcha updated to shipped
 state).
 
-[ ] Vulnix replacement — vulnix is skip_steps'd (unmaintained; NIST 404s the
-modified-feed archive it needs), so non-Go closure CVEs have NO scanner
-(govulncheck is Go-only). Decide: a maintained scanner (e.g. grype/syft over
-`./result`) wired as a buildflow step or on-demand, vs accepting the
-govulncheck-only gap until a nixpkgs successor exists. A third-party NVD
-mirror was declined on feed-integrity grounds (2026-10-23).
-**BLOCKED: user risk call.** Source:
+[x] ~~Vulnix replacement~~ resolved 2026-10-31 — **no replacement needed:
+NIST healed the feed** (archive HEAD 200 verified; vulnix completes). The
+step stays skip'd (unmaintained tool + closure-noise rationales, updated
+in `.buildflow.yml`), and non-Go closure scanning is available ON DEMAND:
+`nix develop -c vulnix ./result` (run 2026-10-31: 22 advisories, all
+nixpkgs-closure level, 0 SDK-actionable — e.g. binutils CVEs nothing in
+this repo can fix). grype 0.120.0 is in nixpkgs if a maintained scanner is
+ever wanted; the third-party NVD mirror stays declined. Re-enable trigger:
+a triage-worthy advisory class. Source:
 `docs/status/2026-10-23_07-48_buildflow-recovery.md` §g1.
 
-[ ] Stdlib-advisory go-directive policy — the 10 govulncheck advisories (48
-findings) persist because the module pins `go 1.26.0` and govulncheck keys
-on the directive; the toolchain is already 1.26.9 (nixpkgs lock `02c087f`).
-Patch-pinning `1.26.9` would clear them but violates the go-mod-normalize
-"no patch pins" policy. Which wins — clean findings output or the policy?
-**BLOCKED: user call.** Source:
-`docs/status/2026-10-23_07-48_buildflow-recovery.md` §g2; AGENTS
-"buildflow warning-class findings" gotcha.
+[x] ~~Stdlib-advisory go-directive policy~~ resolved 2026-10-31 (standing
+posture applied, blanket directive): the go-mod-normalize policy wins — the
+directive stays `1.26.0`, the 48 govulncheck findings / 10 advisories stay
+warning-class until the Go 1.27 migration (M25/TODO row below retires
+them). Clean findings output was never worth a policy violation that
+go-mod-normalize would revert anyway. Flip = the owner explicitly ordering
+a patch pin. Source: `docs/status/2026-10-23_07-48_buildflow-recovery.md` §g2.
 
 [ ] AGENTS.md structural split — keep the single file (with taxonomy/index,
 see the split-brain sweep's systemic analysis) or split into per-area files
