@@ -325,14 +325,20 @@ and connection-pool tuning; retries, logging, and typed errors work unchanged.
 ### Authentication
 
 ```go
-// Validate API key (calls ListProfiles internally)
+// Validate API key (calls ListProfiles internally, rides the retry ladder)
 err := client.Authenticate(ctx)
 
 // Readiness probe: authenticated ListProfiles through the retry executor.
 // A *RateLimitError proves reachability (answered, throttled); an *AuthError
 // proves reachability with bad credentials; worst case spends the full
-// retry budget (~2 min). Not a cheap liveness check.
-err := client.Health(ctx)
+// default budget (4 attempts x 30s + honored Retry-After waits, up to
+// 2 min 15 s) unless ctx carries a deadline. Not a cheap liveness check.
+err = client.Health(ctx)
+
+// Fail-fast credential check: a single authenticated round-trip — the
+// retry ladder is disabled, the typed errors match Health. Use at
+// startup; use Health for readiness polling.
+err = client.VerifyCredentials(ctx)
 ```
 
 ### Profiles
@@ -895,13 +901,26 @@ func main() {
 authenticated `ListProfiles` through the retry executor, so a
 `*RateLimitError` means the API answered under throttling, an `*AuthError`
 means bad credentials, and the worst case spends the full retry budget
-(~2 min). Wrap the adapter with your own timeout or retry policy if your
-orchestrator expects sub-second probes.
+(4 attempts x 30s plus honored Retry-After waits — 2 min 15 s). Bound it
+with a deadline if your orchestrator expects sub-second probes:
 
-> Naming note: whether the SDK should also expose a `HealthCheck(ctx)` alias
-> (so `do.HealthcheckerWithContext` containers satisfy the interface without
-> an adapter) is a tracked open decision; the recipe above works unchanged
-> either way.
+```go
+// Bound the probe: without a deadline, Health may spend the full retry
+// budget under sustained throttling; the deadline aborts mid-backoff
+// because the retry delay is context-aware.
+probeCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+defer cancel()
+
+if err := client.Health(probeCtx); err != nil {
+    slog.Warn("wise API not ready", "err", err)
+}
+```
+
+> Which probe when: `VerifyCredentials(ctx)` for one-shot startup
+> validation (single round-trip, retry ladder disabled, same typed errors),
+> `Health` (ctx-bounded) for readiness polling that should ride the retry
+> budget. The `HealthCheck` alias stayed unshipped — the two-line adapter
+> above is the whole cost of bridging to `do.HealthcheckerWithContext`.
 
 ## Error Handling
 

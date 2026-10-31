@@ -848,3 +848,36 @@ func ExampleAPIError_Details() {
 		fmt.Printf("%s: %s\n", detail.Code, detail.Message)
 	}
 }
+
+// Health is the readiness probe: an authenticated ListProfiles call through
+// the retry executor. Bound it with a context deadline — the default budget
+// is 4 attempts x 30s plus honored Retry-After waits (2 min 15 s worst case).
+//
+//nolint:testableexamples // documentation-only; runs against the live API
+func ExampleClient_Health() {
+	client := wise.New("your-api-key")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	if err := client.Health(ctx); err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("wise API reachable")
+}
+
+// VerifyCredentials is the fail-fast probe: one authenticated round-trip
+// with the retry ladder disabled, for startup config checks. Health is for
+// readiness polling that should ride the retry budget.
+//
+//nolint:testableexamples // documentation-only; runs against the live API
+func ExampleClient_VerifyCredentials() {
+	client := wise.New("your-api-key")
+
+	if err := client.VerifyCredentials(context.Background()); err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("credentials accepted")
+}
