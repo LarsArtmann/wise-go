@@ -79,11 +79,17 @@ record whether the hook bypass (`--no-verify`) is intentional. Until then
 flake inputs moved from `git+ssh` to public `github:` URLs pinned by rev, so CI
 needs no secrets; the workflow file is refreshed (8 jobs incl. the network
 `pin-sync` job, 92.0 coverage gate single-sourced, tool pins).
-Remaining: `gh workflow enable ci` (🟡 user word) and the first-run watch —
-triage runbook + badge checklist + art-dupl promotion criteria are written in
-`docs/planning/2026-10-17_ci-first-run-watch-package.md`.
-Until then the coverage badge stays frozen at its last CI-measured value.
-**BLOCKED: needs the user's approval to enable.**
+**ENABLED 2026-10-31** (`gh workflow enable ci`, blanket-directive default —
+disable again with `gh workflow disable ci` if unwanted). The workflow also
+gained `workflow_dispatch` + a weekly `spec-drift` scheduled job (D3-b,
+`--fail-on-drift`, Mondays 06:00 UTC) — these activate when the local ci.yml
+reaches GitHub. **Remaining: the first-run watch** — the REMOTE ci.yml (at
+origin/master) has no `workflow_dispatch`, so the first run fires on the next
+CODE push (paths-ignore skips md-only); NO push was made from the session
+(never-push rule) — the owner's next push or explicit word triggers it.
+Triage runbook + badge checklist + art-dupl promotion criteria:
+`docs/planning/2026-10-17_ci-first-run-watch-package.md`. The coverage badge
+unfreezes on that first run (coverage-badge job, master pushes).
 
 ## P3 — Quality & tooling (unblocked)
 
@@ -128,13 +134,17 @@ further would drop operative rules (Verschlimmbessern guard). History: part 1
 (→40,634). The remaining size lever is the per-area split decision (row
 below). Source: 21:45 plan M24/T87; 2026-10-23 plan T11; 2026-10-31 plan M6.
 
-[ ] Extend the anchor gate to `###`-heading pointers — the quoted-title gate
-(shape 3) verifies quoted-string cross-references only; heading references and
-backtick-form titles stay gate-blind (boundary + fixture-home split documented
-in the AGENTS anchor gotcha 2026-10-23; the one live backtick pointer
-converted same day). Decide: extend the title registry to markdown headings,
-or convert heading references to quoted form. Source:
-`docs/status/2026-10-23_16-07_pareto-unblocked-set-execution-title-gate-prune-battery.md` §e3.
+[x] ~~Extend the anchor gate to `###`-heading pointers~~ done 2026-10-31 —
+the shape-3 title registry in `scripts/anchor_check.py` now also registers
+`##`-and-deeper markdown headings from the living docs (generic headings —
+under two tokens or eight chars — are skipped for prefix safety; registry
+keys strip emphasis/backticks), so a quoted `"Heading" section` pointer
+resolves and a renamed heading with a dangling pointer fails the gate.
+Self-test extended (heading-pass + renamed-heading-drift classes; 7 checked
+pointers); census over the living docs: 0 findings — no dangling heading
+pointers existed. Remaining prose-blind surface: backtick-form titles
+(``the `Gotcha` gotcha``) — deliberate, inline code is wire-string territory.
+Source: `docs/status/2026-10-23_16-07_pareto-unblocked-set-execution-title-gate-prune-battery.md` §e3.
 
 [ ] Consume the committed `benchstat` baseline
 (`docs/bench/2026-10-17_v0150_baseline.txt`) in the next perf-touching PR.

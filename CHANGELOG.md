@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Heading-pointer support in the anchor gate (`scripts/anchor_check.py`): the
+  quoted-title registry now also registers `##`-and-deeper markdown headings
+  from the living docs (generic headings skipped for prefix safety; emphasis
+  and backticks stripped from registry keys), so `"Heading" section` pointers
+  resolve and a renamed heading with a dangling pointer fails
+  `nix flake check`. Self-test extended with heading-pass and
+  renamed-heading-drift classes; census found zero dangling pointers.
 - Hermetic `dprint check` gate (`checks.dprint-format` in `nix flake check`):
   the four dprint plugin .wasm files are fetchurl-pinned, the wrapper config
   rewrites `dprint.json`'s plugin URLs to store paths, and plugins compile

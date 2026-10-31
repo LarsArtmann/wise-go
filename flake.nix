@@ -377,7 +377,10 @@
             in
             pkgs.runCommand "dprint-format"
               {
-                nativeBuildInputs = [ pkgs.dprint pkgs.jq ];
+                nativeBuildInputs = [
+                  pkgs.dprint
+                  pkgs.jq
+                ];
                 src = lib.fileset.toSource {
                   root = ./.;
                   fileset = lib.fileset.unions [

@@ -10,9 +10,12 @@ The repo's conventions carry three checkable claim shapes:
    and the cited line must be non-empty.
 3. `` "Title" gotcha `` (quoted text + pointer noun, or the noun inside the
    quotes) -- the quoted text must resolve against the registry of `**bold**`
-   titles from the living docs: verbatim, or as a UNIQUE prefix of exactly
-   one title (titles carry inner quotes sometimes, so a stable prefix is the
-   shortest enforceable pointer form). Pointer-shaped quotes that only
+   titles AND `##`-or-deeper markdown headings from the living docs: verbatim,
+   or as a UNIQUE prefix of exactly one title (titles carry inner quotes
+   sometimes, so a stable prefix is the shortest enforceable pointer form).
+   Headings joined the registry 2026-10-31 (generic headings -- fewer than
+   two tokens or eight chars -- are skipped to stay prefix-safe).
+   Pointer-shaped quotes that only
    paraphrase a title (high token overlap, no prefix hit) or match nothing
    are failures: a title rename would otherwise break the reference silently
    (the 2026-10-23 07:22 sweep found 5 such paraphrased pointers). Quotes
@@ -50,6 +53,7 @@ ANCHOR_RE = re.compile(r"`((?:[A-Za-z0-9_.-]+/)*[A-Za-z0-9_-]+\.go):(\d+)`")
 SYMBOL_BEFORE_RE = re.compile(r"`([A-Za-z_][A-Za-z0-9_]*)`\s*\(\s*$")
 
 TITLE_RE = re.compile(r"\*\*(.+?)\*\*")
+HEADING_RE = re.compile(r"^(#{2,6})\s+(.+?)\s*$")
 QUOTED_RE = re.compile(r'"([^"\n]+)"')
 INLINE_CODE_RE = re.compile(r"`[^`]*`")
 FENCE_RE = re.compile(r"^\s*```")
@@ -133,13 +137,39 @@ def normalize_title(raw: str) -> str:
     return re.sub(r"\s+", " ", raw).strip()
 
 
+def plain_text(raw: str) -> str:
+    """Strip markdown emphasis/backticks so registry keys and pointer
+    candidates meet on the same plane (a heading like `## `Money` rules`
+    registers as "Money rules")."""
+    return normalize_title(raw.replace("**", "").replace("`", "").replace("*", ""))
+
+
+def registry_key(raw: str) -> str | None:
+    """Heading/bold text -> registry key, or None for generic headings
+    (single-token or under 8 chars: 'Open', 'Decisions' would make
+    prefix-matching unsafe)."""
+    key = plain_text(raw).strip(" :.;")
+    tokens = [t for t in re.findall(r"[a-zA-Z0-9]+", key)]
+    if len(key) < 8 or len(tokens) < 2:
+        return None
+    return key
+
+
 def build_title_registry(docs) -> dict[str, str]:
-    """Map every bold title in the living docs to the doc defining it."""
+    """Map every bold title and ##-or-deeper heading in the living docs to
+    the doc defining it (bold titles win ties via setdefault ordering)."""
     registry: dict[str, str] = {}
     for doc, text in docs:
         for _, line in prose_lines(text):
             for match in TITLE_RE.finditer(line):
-                registry.setdefault(normalize_title(match.group(1)), str(doc))
+                key = registry_key(match.group(1))
+                if key:
+                    registry.setdefault(key, str(doc))
+            heading = HEADING_RE.match(line)
+            if heading:
+                key = registry_key(heading.group(2))
+                if key:
+                    registry.setdefault(key, str(doc))
     return registry
 
 
@@ -306,12 +336,18 @@ SELF_TEST_TITLES_DOC = (
     "\n"
     "- **Real Gotcha Title** -- body text.\n"
     "- **Another Entry Name** -- body.\n"
+    "\n"
+    "## Verbose Heading Section\n"
+    "\n"
+    "Body under the heading.\n"
 )
 
 SELF_TEST_QUOTED_DOC = (
     'ok exact: see the "Real Gotcha Title" gotcha.\n'
     'ok noun-inside: see "Another Entry Name" entry.\n'
     'ok unique prefix: see the "Real Gotcha" gotcha.\n'
+    'ok heading pointer: see the "Verbose Heading Section" section.\n'
+    'heading drift: see "Verbose Renamed Section" section.\n'
     'paraphrase: see the "Gotcha Title for Real" gotcha.\n'
     'unmatched: see "wholly unrelated phrase here" entry.\n'
     "non-pointer quotes are ignored:\n"
@@ -358,24 +394,26 @@ def self_test() -> int:
         expected_quotes = [
             ("paraphrase of", 'non-prefix paraphrase "Gotcha Title for Real"'),
             ("matches no registered", "unmatched phrase must be flagged"),
+            ("matches no registered", 'renamed-heading pointer "Verbose Renamed Section"'),
         ]
         qmissing = [
             hint
             for fragment, hint in expected_quotes
             if not any(fragment in d for d in qdrifts)
         ]
-        if qmissing or len(qdrifts) != len(expected_quotes) or checked != 5:
+        if qmissing or len(qdrifts) != len(expected_quotes) or checked != 7:
             for miss in qmissing:
                 print(f"self-test FAIL: quoted-pointer class not raised: {miss}")
             if len(qdrifts) != len(expected_quotes):
                 print(f"self-test FAIL: unexpected quoted drifts: {qdrifts}")
-            if checked != 5:
-                print(f"self-test FAIL: expected 5 checked pointers, got {checked}")
+            if checked != 7:
+                print(f"self-test FAIL: expected 7 checked pointers, got {checked}")
             failures += 1
         else:
             print(
-                "quoted-title self-test OK: exact/prefix/noun-inside pass, "
-                "paraphrase+unmatched flagged, fence+non-pointer ignored"
+                "quoted-title self-test OK: exact/prefix/noun-inside/heading "
+                "pass, paraphrase+unmatched+renamed-heading flagged, "
+                "fence+non-pointer ignored"
             )
     return 1 if failures else 0
 
