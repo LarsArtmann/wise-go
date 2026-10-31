@@ -340,6 +340,81 @@
                 touch $out
               '';
 
+          # Hermetic dprint check (2026-10-31): gates markdown/json/yaml
+          # formatting inside `nix flake check` by vendoring the four
+          # plugin .wasm files as fetchurl inputs — the auto-git daemon
+          # bypasses the pre-commit hook and `nix fmt` does not cover
+          # dprint's file types (see the AGENTS dprint gotcha). The
+          # wrapper config rewrites dprint.json's plugins array to the
+          # store paths; plugins compile into a throwaway
+          # DPRINT_CACHE_DIR at check time, so the build needs no
+          # network. Bump a plugin by updating URL+hash in lockstep with
+          # dprint.json (the version-consistency guard for quarterly
+          # paths has no equivalent here — a mismatch fails this check
+          # loudly when dprint.json's own URLs change).
+          checks.dprint-format =
+            let
+              dprintPlugin = { url, hash }: pkgs.fetchurl { inherit url hash; };
+              dprintPlugins = map dprintPlugin [
+                {
+                  url = "https://plugins.dprint.dev/json-0.23.0.wasm";
+                  hash = "sha256-Ph8bfBQn32vYmBoRqqLEZv3o0RFend5MZSEwRYU5RDw=";
+                }
+                {
+                  url = "https://plugins.dprint.dev/g-plane/pretty_yaml-v0.6.0.wasm";
+                  hash = "sha256-QKL92nBAMX6xsjUg86AHaaVXHu2wScTKkXXBue66Aa4=";
+                }
+                {
+                  url = "https://plugins.dprint.dev/markdown-0.22.1.wasm";
+                  hash = "sha256-SQb7sDiXdzKq4OIW5LC5V+JyL415KCZgzLNtJ90FHxc=";
+                }
+                {
+                  url = "https://plugins.dprint.dev/dockerfile-0.4.1.wasm";
+                  hash = "sha256-3JU2sddEiX0TrT0GIfVR+PNiFD+fbQb/B4Hg4El8t5Q=";
+                }
+              ];
+              pluginsJson = "[${lib.concatStringsSep "," (map (p: "\"${p}\"") dprintPlugins)}]";
+            in
+            pkgs.runCommand "dprint-format"
+              {
+                nativeBuildInputs = [ pkgs.dprint pkgs.jq ];
+                src = lib.fileset.toSource {
+                  root = ./.;
+                  fileset = lib.fileset.unions [
+                    (lib.fileset.fileFilter (file: file.hasExt "md") ./.)
+                    (lib.fileset.fileFilter (file: file.hasExt "json") ./.)
+                    (lib.fileset.fileFilter (file: file.hasExt "yaml") ./.)
+                    (lib.fileset.fileFilter (file: file.hasExt "yml") ./.)
+                  ];
+                };
+              }
+              ''
+                # The scan root is the wrapper config's directory, so both
+                # the probe and the real check get their own copy of it —
+                # never $TMPDIR (the plugin cache must stay outside the
+                # scan root).
+                export DPRINT_CACHE_DIR="$TMPDIR/dprint-cache"
+                mkdir -p "$DPRINT_CACHE_DIR"
+
+                # Negative probe first: the check must reject an
+                # unformatted file, or a silent no-op would read green.
+                mkdir -p "$TMPDIR/probe-root"
+                jq --argjson plugins ${lib.escapeShellArg pluginsJson} '.plugins = $plugins' "$src/dprint.json" > "$TMPDIR/probe-root/dprint.check.json"
+                printf '# Probe\n\n-  badly   formatted\n' > "$TMPDIR/probe-root/probe.md"
+                if dprint check -c "$TMPDIR/probe-root/dprint.check.json" >"$TMPDIR/probe.log" 2>&1; then
+                  echo "FAIL: hermetic dprint check accepted an unformatted probe (gate would be a silent no-op)"
+                  cat "$TMPDIR/probe.log"
+                  exit 1
+                fi
+
+                cp -r "$src" repo
+                chmod -R u+w repo
+                jq --argjson plugins ${lib.escapeShellArg pluginsJson} '.plugins = $plugins' repo/dprint.json > repo/dprint.check.json
+                cd repo
+                dprint check -c dprint.check.json
+                touch $out
+              '';
+
           # Negative fixtures for the python gates (scripts/negative_fixtures.py):
           # pin-sync's stale-lock/tag-mismatch/missing-input/unpinned shapes and
           # spec-drift's broken-spec/missing-endpoint/--fail-on-drift postures,

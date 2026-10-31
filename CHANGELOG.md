@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Hermetic `dprint check` gate (`checks.dprint-format` in `nix flake check`):
+  the four dprint plugin .wasm files are fetchurl-pinned, the wrapper config
+  rewrites `dprint.json`'s plugin URLs to store paths, and plugins compile
+  into a throwaway `DPRINT_CACHE_DIR` — markdown/json/yaml formatting is now
+  verified in every full check, closing the daemon-commit format gap (the
+  auto-git daemon bypasses the pre-commit hook). The derivation carries a
+  negative probe and self-fails if the check would accept an unformatted
+  file.
 - Quarterly surfaces canonicalized 2026Q4 → **2027Q1** (spec refresh
   2026-10-31): `ottAPIVersion` and `webhookSubscriptionsAPIVersion` now build
   `/2027Q1/one-time-token/...` and `/2027Q1/profiles/{id}/subscriptions/...`

@@ -89,12 +89,16 @@ Until then the coverage badge stays frozen at its last CI-measured value.
 
 ### Open
 
-[ ] Close the daemon-commit format gap — pick one: a daemon-side post-commit
-`dprint check` (needs the daemon's location, see the P2 observability row)
-or a vendored-WASM dprint plugin cache (`fetchurl` ×4 + prepared
-`DPRINT_CACHE_DIR`) so `nix flake check` can run `dprint check` hermetically.
-The pre-commit hook only protects manual commits (daemon bypasses it).
-Source: `docs/status/2026-10-23_08-25_continuation-backlog-execution.md` §f5/f6.
+[x] ~~Close the daemon-commit format gap~~ closed at the gate level
+2026-10-31 — `checks.dprint-format` in `flake.nix`: the four plugin .wasm
+files are fetchurl-pinned, a wrapper config rewrites `dprint.json`'s
+plugins to store paths, plugins compile into a throwaway `DPRINT_CACHE_DIR`,
+and `dprint check` runs hermetically in `nix flake check` (negative probe
+built in: the derivation self-fails if the check would accept an unformatted
+file). Any daemon-committed unformatted file now fails the next full check.
+A daemon-side post-commit hook remains available via the P2 observability
+row but is no longer load-bearing. Source:
+`docs/status/2026-10-23_08-25_continuation-backlog-execution.md` §f5/f6.
 
 [ ] Reconcile buildflow finding counts against direct tool output — bandit
 claimed 78 vs direct 1 (fixed); characterize the inflation
@@ -201,9 +205,11 @@ spec; today vendored-snapshot staleness is report-only) and where spec-drift
 recurs while CI is disabled (scheduled local run, buildflow step, or
 manual-before-release). Source:
 `docs/status/2026-10-16_19-48_wise-api-spec-drift-check-session.md` §g2/§g3.
-**BLOCKED: user decision.** Recommendation + options written:
-`docs/planning/2026-10-16_decision-memos.md` D3 (keep pre-release
-report-only; wire `--fail-on-drift` into a scheduled job once CI runs).
+**Standing default applied 2026-10-31 (memo D3-b, blanket directive):**
+pre-release stays report-only; the snapshot was re-vendored 2026-10-31
+(`--fail-on-drift` exit 0 verified); the scheduled report-only CI job is the
+remaining wire-up — lands with the CI re-enable (row in P2). Flip = wire
+`--fail-on-drift` into pre-release instead.
 
 [x] ~~Flake pinning strategy~~ resolved 2026-10-31 — (a) kept: rev pins +
 pin-sync gates stay the invariant (memo D4 annotated; the recommendation

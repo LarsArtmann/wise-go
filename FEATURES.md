@@ -28,10 +28,12 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
 - **215 documented REST operations** across **51 reference categories**, plus
   **29 webhook-event definitions** in the preview sweep (**31** distinct event
   types counting the settlement and Swift events from the webhook-event index).
-  Re-derivation note (2026-10-16): the vendored 2027Q1 spec
-  (`docs/reviews/wise-api-openapi.json`) now carries **188 paths / 227
-  operations** — the +12 over the 215 live-preview census (2026-09-16) are the
-  2027Q1 additions triaged into the sections below; the category count is a
+  Re-derivation note (2026-10-16, re-vendored 2026-10-31): the vendored 2027Q1
+  spec (`docs/reviews/wise-api-openapi.json`) now carries **188 paths / 228
+  operations** — the +13 over the 215 live-preview census (2026-09-16) are the
+  2027Q1 additions triaged into the sections below (the 2026-10-31 re-vendor
+  added the card spending-permissions GET and Kana localizedInformation
+  fields, all in already-triaged DEMAND_GATED paths); the category count is a
   live-preview-pages figure, not a spec-object count, so the two denominators
   measure different things by design.
 - **wise-go ships 46 of the documented operations** through **47 public `*Client`
