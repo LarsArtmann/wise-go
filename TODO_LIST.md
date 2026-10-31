@@ -119,11 +119,15 @@ A daemon-side post-commit hook remains available via the P2 observability
 row but is no longer load-bearing. Source:
 `docs/status/2026-10-23_08-25_continuation-backlog-execution.md` §f5/f6.
 
-[ ] Reconcile buildflow finding counts against direct tool output — bandit
-claimed 78 vs direct 1 (fixed); characterize the inflation
-(per-occurrence? scope?) and document or file upstream; same pass: verify
-which of buildflow's "9 tools unavailable" are actually missing vs
-PATH-scoping. Source:
+[x] ~~Reconcile buildflow finding counts against direct tool output~~ done
+2026-10-31 (fresh binary `74a9212`): bandit direct = 0 and buildflow-reported
+= 0 — the 78-vs-1 inflation was a stale-binary artifact, gone with the
+rebuild. The "9 tools unavailable" set is non-applicable ecosystem tooling
+(cargo-*/eslint/jest/c8/knip/prettier/hadolint/protolint/madge/pip-audit) —
+nothing this Go+nix+python repo needs is missing; the header display issue
+stays BuildFlow [#65](https://github.com/LarsArtmann/BuildFlow/issues/65).
+Also: govulncheck reports 12 findings under the fresh binary (was 48 under
+the stale one) — AGENTS warning-class bullet updated. Source:
 `docs/status/2026-10-23_08-25_continuation-backlog-execution.md` §f7/f8.
 
 [x] ~~Upstream filings/proposals~~ done 2026-10-31 — (1) nixpkgs/vulnix:

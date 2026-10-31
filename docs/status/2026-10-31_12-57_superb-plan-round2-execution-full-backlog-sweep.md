@@ -26,15 +26,15 @@ verification evidence.
 
 ## b. Code changes (all tested)
 
-| Change                                  | Evidence                                                                                                        |
-| --------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `VerifyCredentials(ctx)` in `client.go` | shallow-copy of the stateless client with `MaxAttempts = 1`; same typed errors as `Health`; `go test -race ./...` green |
+| Change                                  | Evidence                                                                                                                        |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `VerifyCredentials(ctx)` in `client.go` | shallow-copy of the stateless client with `MaxAttempts = 1`; same typed errors as `Health`; `go test -race ./...` green         |
 | 5 new BDD contexts                      | `wise_test.go`: VerifyCredentials (valid/401/429-once/500-once/deadline) + Health deadline-abort (mid-backoff, mid-Retry-After) |
-| 2 godoc examples                        | `ExampleClient_Health` (ctx-bounded), `ExampleClient_VerifyCredentials` — 38 total, gate-checked                 |
-| Quarterly constants flip                | `ottAPIVersion`/`webhookSubscriptionsAPIVersion` → `"2027Q1"`; `TestQuarterlyAPIVersionsConsistent` drove every literal site |
-| `checks.dprint-format`                  | 4 fetchurl-pinned plugin WASMs, store-path plugins, throwaway cache, negative probe self-fails on no-op           |
-| `scripts/anchor_check.py`               | `##`+ headings join the title registry (generic ones skipped); 2 new self-test classes; census 0 findings         |
-| ci.yml                                  | `workflow_dispatch` + weekly `spec-drift` scheduled job (`--fail-on-drift`, report-only posture per D3-b)         |
+| 2 godoc examples                        | `ExampleClient_Health` (ctx-bounded), `ExampleClient_VerifyCredentials` — 38 total, gate-checked                                |
+| Quarterly constants flip                | `ottAPIVersion`/`webhookSubscriptionsAPIVersion` → `"2027Q1"`; `TestQuarterlyAPIVersionsConsistent` drove every literal site    |
+| `checks.dprint-format`                  | 4 fetchurl-pinned plugin WASMs, store-path plugins, throwaway cache, negative probe self-fails on no-op                         |
+| `scripts/anchor_check.py`               | `##`+ headings join the title registry (generic ones skipped); 2 new self-test classes; census 0 findings                       |
+| ci.yml                                  | `workflow_dispatch` + weekly `spec-drift` scheduled job (`--fail-on-drift`, report-only posture per D3-b)                       |
 
 ## c. Documents
 
@@ -49,7 +49,7 @@ verification evidence.
   updated in the same change (methods ≠ operations since VerifyCredentials).
 - Series index: `docs/architecture-understanding/README.md` (5 artifacts,
   supersession chain, cadence trigger).
-- New memos: typed-Details spike (keep the map; type the decision), 
+- New memos: typed-Details spike (keep the map; type the decision),
   RetryAfterDelay freeze (entry-as-is at v1.x).
 - Decision memos D2–D6 annotated with resolutions; plan file §7 log appended.
 
@@ -74,17 +74,17 @@ retained.
 
 ## f. Gates
 
-| Gate                                          | Result |
-| --------------------------------------------- | ------ |
-| `go test -race ./...`                         | ok     |
-| `golangci-lint run`                           | 0 issues |
-| `nix run .#anchor-check`                      | 101 anchors + 6 quoted pointers OK |
-| `nix run .#doc-verify`                        | all checks passed |
-| `nix run .#spec-drift -- --fail-on-drift`     | exit 0 (0 drift) |
-| gitleaks (full tree)                          | no leaks |
-| `nix build .#checks.x86_64-linux.dprint-format` | ok (probe self-test included) |
-| buildflow full run (fresh binary `74a9212`)   | BUILDFLOW-FULL-VERDICT |
-| count-inflation reconcile (M18)               | M18-VERDICT |
+| Gate                                            | Result                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `go test -race ./...`                           | ok                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `golangci-lint run`                             | 0 issues                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `nix run .#anchor-check`                        | 101 anchors + 6 quoted pointers OK                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `nix run .#doc-verify`                          | all checks passed                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `nix run .#spec-drift -- --fail-on-drift`       | exit 0 (0 drift)                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| gitleaks (full tree)                            | no leaks                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `nix build .#checks.x86_64-linux.dprint-format` | ok (probe self-test included)                                                                                                                                                                                                                                                                                                                                                                                                            |
+| buildflow full run (fresh binary `74a9212`)     | exit 0 — 59/73 steps, 1m58s, 23 findings all warning/info (nix-checker: 4 info notes on the new fetchurl pins + hash-file suggestions; govulncheck 12, down from 48 under the stale binary; lychee 2 = one redirect hint + one on-demand-class note); 9 config-skips as documented; ruff-format auto-fixed 11 format nits in `anchor_check.py`                                                                                           |
+| count-inflation reconcile (M18)                 | RESOLVED: bandit direct = 0 and the fresh-binary run reports bandit 0 (the 78-vs-1 class was a stale-binary artifact, gone with `74a9212`); the "9 tools unavailable" set is non-applicable ecosystem tools (cargo-*/eslint/jest/c8/knip/prettier/publint/hadolint/protolint/madge/pip-audit) — none missing that this Go+nix+python repo needs; display issue stays BuildFlow [#65](https://github.com/LarsArtmann/BuildFlow/issues/65) |
 
 ## g. Held for the owner (the only things that could not be executed)
 
