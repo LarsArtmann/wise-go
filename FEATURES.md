@@ -34,11 +34,12 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
   2027Q1 additions triaged into the sections below; the category count is a
   live-preview-pages figure, not a spec-object count, so the two denominators
   measure different things by design.
-- **wise-go ships 46 of those documented operations** through **43 of the 46
-  public `*Client` methods** — the other three are `Authenticate`/`Health`
-  (convenience wrappers) and `ClearSCAChallenge` (a multi-call loop);
-  `TriggerOTT`/`VerifyOTT` each cover three channel paths. The count is
-  gate-checked by `nix run .#doc-verify` against the compiled surface.
+- **wise-go ships 46 of the documented operations** through **47 public `*Client`
+  methods** — 44 operation-carrying; the other four are the
+  `ListProfiles` wrappers `Authenticate`/`Health`/`VerifyCredentials` and
+  `ClearSCAChallenge` (a multi-call loop); `TriggerOTT`/`VerifyOTT` each
+  cover three channel paths. The method count is gate-checked by
+  `nix run .#doc-verify` against the compiled surface.
 - **51 operations have no code yet**, split by why: **20 PLANNED** (complete
   already-shipped families), **26 DEMAND_GATED** (whole families awaiting a
   consumer demand signal — plan tier 3), **5 ON_HOLD** (app-level webhook
@@ -314,7 +315,7 @@ the plan; bulk payments only on a consumer demand signal).
 | `Authenticate(ctx)`                     | FULLY_FUNCTIONAL | `client.go:185`; delegates to `ListProfiles`                                                                                                             |
 | `Health(ctx)`                           | FULLY_FUNCTIONAL | `client.go:202`; credential-validating readiness probe (authenticated `ListProfiles` through the retry executor — not a cheap liveness check; see godoc) |
 | `WithUserAgent` option (v0.11.0)        | FULLY_FUNCTIONAL | `options.go:88`; custom `User-Agent` on every request, default preserved (BDD)                                                                           |
-| Shared-client concurrency (v0.11.0)     | FULLY_FUNCTIONAL | `wise_test.go:246`; 16 parallel requests, per-request correlation-ID isolation, `-race`                                                                  |
+| Shared-client concurrency (v0.11.0)     | FULLY_FUNCTIONAL | `wise_test.go:267`; 16 parallel requests, per-request correlation-ID isolation, `-race`                                                                  |
 
 ## Transaction behavior
 
@@ -415,7 +416,7 @@ the plan; bulk payments only on a consumer demand signal).
 
 | Feature                           | Status           | Evidence                                                                                                      |
 | --------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------- |
-| Godoc examples for the public API | FULLY_FUNCTIONAL | `example_test.go`; 36 `Example*` funcs (compile-only doc examples + 3 runnable) covering every resource group |
+| Godoc examples for the public API | FULLY_FUNCTIONAL | `example_test.go`; 38 `Example*` funcs (compile-only doc examples + 3 runnable) covering every resource group |
 | README API reference              | FULLY_FUNCTIONAL | All 16 resources documented with runnable snippets + TOC                                                      |
 
 ## Deferred architecture

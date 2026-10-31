@@ -8,6 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- `VerifyCredentials(ctx)` — the fail-fast credential probe from decision
+  memo D2-b: a single authenticated `ListProfiles` round-trip with the
+  retry ladder disabled (shallow-copy of the stateless client with
+  `MaxAttempts = 1`), returning Health's typed errors after exactly one
+  request. `Health` keeps the retried readiness semantics; both godocs
+  cross-link which probe to use when. BDD-pinned: 429/401/500 each surface
+  the typed error after exactly one server hit, ctx deadlines are honored,
+  and `Health` deadline-aborts mid-backoff/mid-Retry-After-wait with no
+  post-abort log noise (`wise_test.go`). README DI recipe gained the
+  ctx-timeout bounding snippet; `ExampleClient_Health` and
+  `ExampleClient_VerifyCredentials` are compile-only godoc examples.
 - Quoted-title pointer gate in `scripts/anchor_check.py` (claim shape 3):
   every `"entry title" gotcha`-style cross-reference in the living docs must
   resolve against the registry of `**bold**` titles verbatim or as a unique

@@ -21,7 +21,7 @@ permanently and delete the browser tooling. **User-gated (Q1 of the
 
 [ ] Lock the public API at v1.0 — audit is green (re-audit + growth lineage in
 `docs/reviews/archived/2026-08-21_v1.0-api-audit.md`, growth lineage maintained through
-the current 46-method surface); remaining: tag `v1.0.0`.
+the current 47-method surface); remaining: tag `v1.0.0`.
 User decision 2026-10-17: hold v1.0.0 — v0.16.0 (breaking allowed) ships the
 sandbox lane instead; revisit the tag once the v1 blockers in ROADMAP clear.
 **BLOCKED: needs the user's explicit approval (tagging is irreversible).**

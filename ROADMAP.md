@@ -22,7 +22,7 @@ exchange rates, payments-list/receipts/US receipt/NOC, third-party
 the tier-2 surface shipped: users, statement files in all six formats, webhook
 signature verification, balance lifecycle (create/direct-get/total-funds),
 Multi-Currency Account + bank details (on Wise's 2027Q1 surface), and
-currency reference data — 46
+currency reference data — 47
 `*Client` methods across 17 resources, plus webhook subscriptions with typed
 event decoding, programmatic SCA challenge clearing (one-time-token endpoints,
 every OTT-taking surface typed via `OneTimeToken`), a spec-drift gate against
@@ -31,7 +31,7 @@ observability (WithLogger, per-request correlation IDs) under the
 existing retry/error architecture. v0.9.0 through v0.16.0
 have shipped; the v1.0 audit (`docs/reviews/archived/2026-08-21_v1.0-api-audit.md`) found
 nothing blocking the tag (re-audited 2026-09-13; the growth lineage is
-maintained through the current 46-method surface in CHANGELOG and the
+maintained through the current 47-method surface in CHANGELOG and the
 release notes). The roadmap expands the surface
 along four axes — completeness, type-safety, observability, and scale — while
 preserving the architectural decisions that make the codebase maintainable.
@@ -40,7 +40,7 @@ preserving the architectural decisions that make the codebase maintainable.
 
 Today: tiers 1 and 2 of
 `docs/planning/archived/2026-08-19_wise-api-full-implementation-plan.md` are complete,
-and the transfer category is complete end to end — 46 `*Client` methods
+and the transfer category is complete end to end — 47 `*Client` methods
 across 17 resources. The core transfer flow is live: quotes (including
 account requirements and the two-pass refresh), recipients, transfers
 (including receipts, US combined receipt, NOC documents, payments-list and
@@ -111,7 +111,7 @@ spec-vs-live assumptions, live-only wire shapes documented) and the OTT
 The v1.0 audit is
 green and re-audited 2026-09-13 at the 33-method surface
 (`docs/reviews/archived/2026-08-21_v1.0-api-audit.md` — refreshed inventory, godoc pass,
-risk-register items 8–10, growth lineage through 46 methods); the v1.0.0 tag
+risk-register items 8–10, growth lineage through 47 methods); the v1.0.0 tag
 remains gated on the maintainer's explicit approval.
 
 ### Medium-term
@@ -260,7 +260,7 @@ The SDK now has 17 resources (profiles, users, balances, multi-currency account,
 bank details, transactions/statements, transfers/receipts,
 third-party transfers, funding, quotes,
 recipients, exchange rates, delivery estimates, transfer requirements,
-currencies, webhooks, SCA one-time tokens) and 46 `*Client` methods on the flat
+currencies, webhooks, SCA one-time tokens) and 47 `*Client` methods on the flat
 `client.X` surface — the core
 flow including `FundTransfer` is complete (2026-08-21). The threshold documented
 here

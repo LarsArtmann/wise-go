@@ -612,10 +612,11 @@
 
                   actual_methods="$(go doc -all . | grep -c '^func (c \*Client)' || true)"
                   check_count "endpoint methods" AGENTS.md '[0-9]+ endpoint methods' "$actual_methods"
-                  # FEATURES phrases the same number as shipped operations;
-                  # they coincide today, and if they ever diverge the gate
-                  # forces a conscious doc update instead of silent drift.
-                  check_count "shipped operations" FEATURES.md '[0-9]+ of those documented' "$actual_methods"
+                  # FEATURES pins the METHODS count (operations and methods
+                  # diverged at VerifyCredentials: 47 methods ship 46
+                  # operations); the pattern fails loudly if the phrase
+                  # drifts, forcing a conscious doc update.
+                  check_count "public client methods" FEATURES.md '[0-9]+ public ..Client.' "$actual_methods"
                   check_count "methods" ROADMAP.md '[0-9]+ methods' "$actual_methods"
                   # The archived v1.0 audit (2026-08-21) was removed as a
                   # count anchor on 2026-10-23: archived files are frozen,
