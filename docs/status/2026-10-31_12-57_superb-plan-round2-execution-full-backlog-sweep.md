@@ -88,11 +88,13 @@ retained.
 
 Re-verified end-to-end later the same day, on the final tree including
 `b511356` (the 13:04 closing doc commit post-dated this table): `go test -race`
-ok · lint 0 issues · anchor-check 101 anchors + 5 quoted pointers (one quoted
-pointer was dropped by the closing doc edits) · doc-verify ok · `nix flake
+ok · lint 0 issues · anchor-check 101 anchors + 5 quoted pointers · doc-verify ok · `nix flake
 check` ALL PASSED · fresh no-cache buildflow full exit 0 (`--fix` changed
 nothing, tree stayed clean) · release-notes-check clean · spec-drift
-`--fail-on-drift` exit 0 (43/43 endpoints match, 0 drift). Blocker re-probes
+`--fail-on-drift` exit 0 (43/43 endpoints match, 0 drift) · gitleaks +
+codespell clean (run again standalone — the earlier "6 quoted pointers" row
+above was a miscount: `b511356`'s closing edits touched NO quoted-pointer
+text; the gate-verifiable count is 5). Blocker re-probes
 same pass: `gh secret list` empty, latest tag still v0.16.0 (no v1.0.0), CI
 workflow active, nixpkgs go still 1.26.10, no browser automation tooling, the
 auto-git daemon still unfindable from a session (ps + user systemd sweep).
