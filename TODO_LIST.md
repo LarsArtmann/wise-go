@@ -111,18 +111,18 @@ unformatted status report failed a full run 2026-10-23). Sources:
 `docs/status/2026-10-23_07-48_buildflow-recovery.md` §f7,
 `docs/status/2026-10-23_08-25_continuation-backlog-execution.md` §f19.
 
-[ ] Continue the AGENTS.md prune — part 1 done 2026-10-17 (v0.15.0 train M15):
-57,097 → 47,354 bytes with every concept carried (narratives compressed to
-their evidence pointers; one erraudit split-brain fixed). Part 2 done
-2026-10-23 (plan T11): 54,411 (post-sweep-2) → 52,687 — history→
-evidence-pointer compression on the six biggest bullets, duplicate facts
-folded to their owning entries (GOEXPERIMENT, CI-state), auto-configure
-supersedes chain trimmed; every removed clause verified greppable in
-`.buildflow.yml` / `.gitleaks.toml` / `.codespellrc` /
-`.go-structure-linter.yaml` / the narratives doc. Remaining: ~23 KB to the
-<30 KB target needs a full-rewrite pass over the mid-size tail, not clause
-trims; carry-every-concept rule stays. Source: 21:45 plan M24/T87;
-2026-10-23 plan T11.
+[x] ~~Continue the AGENTS.md prune~~ part 3 done 2026-10-31 (full-rewrite pass):
+56,812 → 40,634 bytes with every title preserved (69→69, pointer registry
+intact — anchor-check + doc-verify green) and every removed clause verified
+greppable at its evidence owner (narratives doc, `.buildflow.yml`, dprint
+exclusions, bank-sync AGENTS). **The <30 KB target is retired as
+unreachable-without-loss**: the remaining largest bullets (~1.0–1.2 KB each —
+API-docs study, error-system contract, SCA gotcha, spec-conformance gate,
+sandbox lane facts) are normative rule density, not narrative; cutting
+further would drop operative rules (Verschlimmbessern guard). History: part 1
+2026-10-17 (57,097→47,354), part 2 2026-10-23 (→52,687), part 3 2026-10-31
+(→40,634). The remaining size lever is the per-area split decision (row
+below). Source: 21:45 plan M24/T87; 2026-10-23 plan T11; 2026-10-31 plan M6.
 
 [ ] Extend the anchor gate to `###`-heading pointers — the quoted-title gate
 (shape 3) verifies quoted-string cross-references only; heading references and
@@ -241,13 +241,14 @@ Patch-pinning `1.26.9` would clear them but violates the go-mod-normalize
 [ ] AGENTS.md structural split — keep the single file (with taxonomy/index,
 see the split-brain sweep's systemic analysis) or split into per-area files
 loaded via `context_paths`. The 2026-10-23 split-brain recurrence is a
-direct symptom of the append-to-one-file pattern; the <30 KB prune (above)
-is the near-term lever either way. Single-file mini-index landed 2026-10-23
-(plan T12): sections line at the top + three misfiled bullets moved to their
-owning sections (Transaction.Date → timestamp cluster; newAPIError test
-note + Accept-Minor-Version → Conventions). Full subsection taxonomy and
-any per-area split stay pending this call. **BLOCKED: user memory-architecture
-call.** Source:
+direct symptom of the append-to-one-file pattern. Part-3 rewrite landed
+2026-10-31 (40.6 KB — see the prune row above); the single-file taxonomy
+(sections index + placement audit re-verified during the rewrite) is the
+standing shape. Remaining open: ONLY the per-area-split verdict —
+recommended default: keep single-file (the write-time memory discipline
+entry + the title-registry pointer gate address the split-brain class; a
+split multiplies sync surface for 40 KB of content). **BLOCKED: user
+memory-architecture call.** Source:
 `docs/status/2026-10-23_07-22_agents-md-split-brain-sweep.md` §g1/§f15.
 
 [ ] Go 1.27 toolchain migration — execute
