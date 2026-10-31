@@ -64,12 +64,15 @@ fails, the gate is skipped, and the job stays green (`continue-on-error` pattern
 lines in the `erraudit` job to make the gate blocking.
 **BLOCKED: needs the user's PAT.**
 
-[ ] Rebuild the BuildFlow binary + swap the global profile — the green full-run
-verdicts ride a stale binary (built at `e547e2b`; BuildFlow repo HEAD is
-`952cf3e`, preflight warns). Rebuild requires the manual
-`nix profile remove/add` dance (the `reinstall` app is a no-op, BuildFlow
-[#35](https://github.com/LarsArtmann/BuildFlow/issues/35)) on the user's
-global profile. **BLOCKED: touches the user's global profile.** Source:
+[x] ~~Rebuild the BuildFlow binary + swap the global profile~~ done 2026-10-31
+(blanket directive; reversible via the same `nix profile remove/add` dance) —
+profile now carries **`74a9212`** (BuildFlow repo HEAD at execution time; was
+`4acfb12`), `buildflow doctor` clean (go1.27.3 embedded toolchain), and a
+fresh `BUILDFLOW_NO_RESULT_CACHE=1 GOTOOLCHAIN=auto buildflow --fix
+--build-mode=full` ran against the rebuilt binary same session (verdict in
+the 2026-10-31 status report). Historical: stale-binary era `e547e2b`→
+`4acfb12` vs repo `952cf3e`; the `reinstall` app no-op stays
+[#35](https://github.com/LarsArtmann/BuildFlow/issues/35). Source:
 `docs/status/2026-10-23_07-48_buildflow-recovery.md` §f4.
 
 [ ] Daemon observability — locate the auto-git daemon (no process/unit/log

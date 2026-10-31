@@ -149,7 +149,7 @@ def registry_key(raw: str) -> str | None:
     (single-token or under 8 chars: 'Open', 'Decisions' would make
     prefix-matching unsafe)."""
     key = plain_text(raw).strip(" :.;")
-    tokens = [t for t in re.findall(r"[a-zA-Z0-9]+", key)]
+    tokens = [*re.findall(r"[a-zA-Z0-9]+", key)]
     if len(key) < 8 or len(tokens) < 2:
         return None
     return key
@@ -394,7 +394,10 @@ def self_test() -> int:
         expected_quotes = [
             ("paraphrase of", 'non-prefix paraphrase "Gotcha Title for Real"'),
             ("matches no registered", "unmatched phrase must be flagged"),
-            ("matches no registered", 'renamed-heading pointer "Verbose Renamed Section"'),
+            (
+                "matches no registered",
+                'renamed-heading pointer "Verbose Renamed Section"',
+            ),
         ]
         qmissing = [
             hint
