@@ -11,4 +11,4 @@
 # Repair policy (AGENTS.md): never hand-paste a new hash — run
 # `buildflow -s nix-hash-fix --fix` (or the fake-hash dance for the
 # md-go-validator hash in vendorHashMdGoValidator.nix).
-"sha256-OTnWa30Qy8MpL1ogJMaztxioOo8E0ZmxU3KpG+e9di8="
+"sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
