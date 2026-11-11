@@ -108,6 +108,11 @@
         description = "Unofficial Go SDK for the Wise (TransferWise) API";
         inherit src;
         vendorHash = import ./vendorHash.nix;
+        # go.mod requires >= 1.27.3 since the 2026-11-04 deps bump; the
+        # nixpkgs default go is 1.26.x. Pin the branch explicitly (the
+        # bank-sync pattern) or every devshell go command fails
+        # GOTOOLCHAIN=local with "requires go >= 1.27.3".
+        goPkgAttr = "go_1_27";
         # D5 (docs/planning/2026-10-16_decision-memos.md): x86_64-darwin is
         # dropped from the check matrix — nixpkgs-26.11 no longer ships it
         # and nothing consumes it. Reversible: re-add the string.

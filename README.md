@@ -1051,8 +1051,11 @@ in [docs/error-codes.md](docs/error-codes.md).
 
 One error type carries its verdict in headers instead of the body:
 `SCAChallengeError` (403 + Wise's two-factor headers) never contains granular
-codes. Clear the challenge through the one-time-token endpoints, then retry
-with the token from `TwoFAApprovalToken()`; the full flow is in
+codes. Approve the challenge in the Wise app (view a statement) — for
+balance-statement challenges the one-time-token endpoints answer
+`ott_not_found` even for a fresh token (live-verified 2026-11-10); retry
+with the token from `TwoFAApprovalToken()` where a token was issued. The
+full flow is in
 [Strong Customer Authentication](#strong-customer-authentication-sca).
 
 ### Consumer recipe: transfer with funding fallback
@@ -1154,7 +1157,11 @@ if err != nil {
 ```
 
 The one-time-token endpoints (`GetOTTStatus`, `TriggerOTT`, `VerifyOTT`,
-`ClearSCAChallenge`) live on the quarterly versioned surface
+`ClearSCAChallenge`) live on the quarterly versioned surface.
+Availability caveat, live-verified 2026-11-10: balance-statement challenge
+tokens are typically NOT registered with these endpoints — status and
+trigger answer `ott_not_found` even for a fresh, unraced token. Treat
+not-found as "clear via Wise app approval", never as a retryable race.
 (`/2027Q1/one-time-token/...`) and authorize with the same personal API
 token. The OTT is a distinct type, `wise.OneTimeToken` (construct with
 `wise.NewOneTimeToken`), so it can never be passed where an OTP code or any

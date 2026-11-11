@@ -1398,6 +1398,14 @@ func TestMapTransactionCorruption(t *testing.T) {
 			},
 			wantSub: "from amount",
 		},
+		{
+			name: "neither transactionId nor referenceNumber",
+			mutate: func(tx *raw.StatementTransaction) {
+				tx.TransactionID = ""
+				tx.ReferenceNumber = ""
+			},
+			wantSub: "wise.transaction.id_missing",
+		},
 	}
 
 	for _, tt := range tests {
@@ -1412,6 +1420,48 @@ func TestMapTransactionCorruption(t *testing.T) {
 		if !strings.Contains(err.Error(), tt.wantSub) {
 			t.Errorf("%s: error %q lacks %q", tt.name, err.Error(), tt.wantSub)
 		}
+	}
+}
+
+func TestMapTransactionMintsIDFromReferenceNumber(t *testing.T) {
+	t.Parallel()
+
+	// The REAL wire shape (live-proven 2026-10-17): the FLAT statement
+	// schema carries only referenceNumber per row — transactionId is
+	// absent. The mapper must mint the row identity from the reference so
+	// consumer dedup keys stay stable (the empty-ID bug collapsed whole
+	// statement windows onto one identity in bank-sync).
+	wireShape := raw.StatementTransaction{
+		TransactionID:   "",
+		Date:            "2023-01-15 14:30:00",
+		Amount:          raw.BalanceAmount{Value: -10.5, Currency: "EUR"},
+		TotalFees:       raw.BalanceAmount{Value: 0, Currency: "EUR"},
+		RunningBalance:  raw.BalanceAmount{Value: 90, Currency: "EUR"},
+		Details:         raw.TransactionDetails{Type: "TRANSFER"},
+		ReferenceNumber: "TRANSFER-20230115-123456",
+	}
+
+	tx, err := mapTransaction(wireShape, NewProfileID(1), NewBalanceID(2), Currency("EUR"))
+	if err != nil {
+		t.Fatalf("mapTransaction(reference-only row): %v", err)
+	}
+
+	if tx.ID.Get() != "TRANSFER-20230115-123456" {
+		t.Errorf("ID = %q, want the referenceNumber", tx.ID.Get())
+	}
+
+	// The documented (fixture-era) shape: an explicit transactionId wins.
+	withID := wireShape
+	withID.TransactionID = "tx-1"
+	withID.ReferenceNumber = "TRANSFER-20230115-123456"
+
+	txIDed, err := mapTransaction(withID, NewProfileID(1), NewBalanceID(2), Currency("EUR"))
+	if err != nil {
+		t.Fatalf("mapTransaction(transactionId row): %v", err)
+	}
+
+	if txIDed.ID.Get() != "tx-1" {
+		t.Errorf("ID = %q, want the explicit transactionId", txIDed.ID.Get())
 	}
 }
 

@@ -336,10 +336,14 @@ func TestCheckErrorClassifiesSCAChallenge(t *testing.T) {
 	}
 }
 
-// TestCheckErrorTokenlessSCAChallenge pins Wise's PSD2 flavor: a 403 with
-// the verdict header but NO x-2fa-approval OTT (live 2026-10-16). The error
-// is still an SCA challenge — blocked — but TwoFAApprovalToken() is zero:
-// nothing to clear programmatically, and the context reports issued=false.
+// TestCheckErrorTokenlessSCAChallenge pins the tokenless verdict shape: a
+// 403 with the verdict header but NO x-2fa-approval OTT. LIVE CAUSE
+// (2026-11-10, prod): this byte-shape is usually the response to a STALE
+// token presented on the request — presenting no token mints a fresh OTT
+// every time. The error is still an SCA challenge — blocked — and
+// TwoFAApprovalToken() is zero; checkError cannot see the request side, so
+// the interpretation (stale token vs Wise flavor) belongs to the caller
+// (see SCAChallengeError's doc comment).
 func TestCheckErrorTokenlessSCAChallenge(t *testing.T) {
 	t.Parallel()
 

@@ -174,6 +174,10 @@ type StatementResponse struct {
 
 // StatementTransaction from Wise balance statements.
 type StatementTransaction struct {
+	// TransactionID is routinely ABSENT on real statement responses
+	// (live-proven 2026-10-17: the FLAT schema carries only
+	// ReferenceNumber per row) — the public mapper mints the row identity
+	// from ReferenceNumber when this is empty.
 	TransactionID   string             `json:"transactionId"`
 	Date            string             `json:"date"`
 	Amount          BalanceAmount      `json:"amount"`

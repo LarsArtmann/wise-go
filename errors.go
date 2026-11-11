@@ -71,6 +71,7 @@ const (
 	errorCodeResponseDecode                    = "wise.response.decode"
 	errorCodeTotalFundsInvalidRequest          = "wise.total_funds.invalid_request"
 	errorCodeTransactionParseDate              = "wise.transaction.parse_date"
+	errorCodeTransactionIDMissing              = "wise.transaction.id_missing"
 	errorCodeTransactionsInvalidRequest        = "wise.transactions.invalid_request"
 	errorCodeTransferInvalidRequest            = "wise.transfer.invalid_request"
 	errorCodeTransferMap                       = "wise.transfer.map"
@@ -360,11 +361,18 @@ func (e *AuthError) ErrorCode() string {
 // SCAChallengeError is returned when the Wise API answers 403 with Wise's
 // two-factor headers instead of a body: Strong Customer Authentication is
 // required for the request. This is not a token permission problem — the same
-// token works on non-SCA endpoints. Clear the challenge by verifying it over
-// the one-time-token endpoints (see [Client.ClearSCAChallenge]) or by viewing
-// a statement on wise.com, then retry with the one-time token in
-// [HeaderTwoFAApproval]. The token value deliberately never appears in the
-// error message — fetch it with [SCAChallengeError.TwoFAApprovalToken].
+// token works on non-SCA endpoints. For balance-statement challenges the
+// WORKING remedy is the account holder approving in the Wise app or on
+// wise.com (view or export a statement): live-verified 2026-11-10, the
+// one-time-token endpoints answer not-found for statement-challenge tokens
+// even when the token is fresh and unraced, so [Client.ClearSCAChallenge]
+// cannot clear that surface programmatically (it did engage on 2026-10-05 —
+// availability is inconsistent; do not build on it). A challenge that carries
+// NO token in [HeaderTwoFAApproval] is, in production, usually the response to
+// a STALE token presented on the request — presenting no token mints a fresh
+// one every time (live-verified 2026-11-10) — so audit the caller's token
+// source before blaming Wise. The token value deliberately never appears in
+// the error message — fetch it with [SCAChallengeError.TwoFAApprovalToken].
 type SCAChallengeError struct {
 	APIError
 }
@@ -385,7 +393,7 @@ func (e *SCAChallengeError) Error() string {
 	return fmt.Sprintf(
 		"wise: sca challenge (%d): strong customer authentication required "+
 			"(x-2fa-approval-result=%q, one-time token issued: %t); clear the challenge "+
-			"(verify it via the one-time-token endpoints or view a statement on wise.com), "+
+			"(view a statement in the Wise app to approve, or try the one-time-token endpoints), "+
 			"then retry with the token from TwoFAApprovalToken() in the x-2fa-approval header",
 		e.StatusCode,
 		e.Headers.Get(HeaderTwoFAApprovalResult),
@@ -395,8 +403,11 @@ func (e *SCAChallengeError) Error() string {
 
 // TwoFAApprovalToken returns the one-time token (OTT) this challenge was
 // issued with, for the retry request's x-2fa-approval header. The zero
-// value means Wise issued a tokenless (PSD2 flavor) challenge — nothing to
-// clear programmatically, but the request is still SCA-blocked.
+// value means Wise issued a tokenless challenge — the request is still
+// SCA-blocked. Live-verified 2026-11-10: a tokenless verdict is usually NOT
+// a Wise-side flavor but the response to a STALE token presented on the
+// request (presenting no token mints a fresh OTT every time) — audit the
+// caller's token source before treating it as unprogrammable.
 func (e *SCAChallengeError) TwoFAApprovalToken() OneTimeToken {
 	return OneTimeToken(e.Headers.Get(HeaderTwoFAApproval))
 }

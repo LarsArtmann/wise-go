@@ -79,6 +79,30 @@ func mapTransaction(
 	balanceID BalanceID,
 	currency Currency,
 ) (Transaction, error) {
+	// Statement rows carry their identity in referenceNumber on the real
+	// wire — the transactionId field is routinely ABSENT (live-proven
+	// 2026-10-17: 130 fetched rows decoded an empty TransactionID each).
+	// Minting an empty branded ID here collapsed whole statement windows
+	// onto one identity in the consumer's dedup. Fall back to the
+	// reference; both missing is a malformed row, not a transaction.
+	statementID := t.TransactionID
+	if statementID == "" {
+		statementID = t.ReferenceNumber
+	}
+
+	if statementID == "" {
+		return Transaction{}, errorfamily.NewCorruption(
+			errorCodeTransactionIDMissing,
+			fmt.Sprintf(
+				"statement row has neither transactionId nor referenceNumber (profileID=%d balanceID=%d currency=%s date=%q)",
+				profileID.Get(),
+				balanceID.Get(),
+				currency,
+				t.Date,
+			),
+		)
+	}
+
 	date, err := parseWiseTimestamp(t.Date)
 	if err != nil {
 		return Transaction{}, errorfamily.WrapCorruption(err, errorCodeTransactionParseDate,
@@ -114,7 +138,7 @@ func mapTransaction(
 	}
 
 	return Transaction{
-		ID:             id.NewID[TransactionBrand](t.TransactionID),
+		ID:             id.NewID[TransactionBrand](statementID),
 		ProfileID:      profileID,
 		BalanceID:      balanceID,
 		Amount:         amount,
