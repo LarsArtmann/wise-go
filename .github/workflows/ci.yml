@@ -28,10 +28,10 @@ on:
       - .github/badges/**
 
 env:
-  GO_VERSION: "1.26"
+  GO_VERSION: "1.27"
   # v2.13+ is required: the exhaustruct_v5 linter (the forced replacement of
   # the deprecated exhaustruct) only exists in golangci-lint v2.13.0+.
-  GOLANGCI_LINT_VERSION: v2.13
+  GOLANGCI_LINT_VERSION: v2.15
   # Pinned tool versions: @latest would make formatting and vulnerability
   # results drift between runs of the same commit (non-reproducible CI).
   GOFUMPT_VERSION: v0.12.0
