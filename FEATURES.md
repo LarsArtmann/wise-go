@@ -233,13 +233,13 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 
 | Method | Path                                         | Status           | wise-go                                                |
 | ------ | -------------------------------------------- | ---------------- | ------------------------------------------------------ |
-| GET    | `/2027Q1/one-time-token/status`              | FULLY_FUNCTIONAL | `GetOTTStatus` (`ott.go:225`)                          |
+| GET    | `/2027Q1/one-time-token/status`              | FULLY_FUNCTIONAL | `GetOTTStatus` (`ott.go:230`)                          |
 | POST   | `/2027Q1/one-time-token/sms/trigger`         | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:246`, `OTTChannelSMS`)           |
-| POST   | `/2027Q1/one-time-token/sms/verify`          | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:272`, `OTTChannelSMS`)            |
+| POST   | `/2027Q1/one-time-token/sms/verify`          | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:278`, `OTTChannelSMS`)            |
 | POST   | `/2027Q1/one-time-token/whatsapp/trigger`    | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:246`, `OTTChannelWhatsApp`)      |
-| POST   | `/2027Q1/one-time-token/whatsapp/verify`     | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:272`, `OTTChannelWhatsApp`)       |
+| POST   | `/2027Q1/one-time-token/whatsapp/verify`     | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:278`, `OTTChannelWhatsApp`)       |
 | POST   | `/2027Q1/one-time-token/voice/trigger`       | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:246`, `OTTChannelVoice`)         |
-| POST   | `/2027Q1/one-time-token/voice/verify`        | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:272`, `OTTChannelVoice`)          |
+| POST   | `/2027Q1/one-time-token/voice/verify`        | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:278`, `OTTChannelVoice`)          |
 | POST   | `/application/users/{id}/phone-numbers`      | OUT_OF_SCOPE     | restricted access (client credentials + Wise approval) |
 | DELETE | `/application/users/{id}/phone-numbers/{id}` | OUT_OF_SCOPE     | restricted access (client credentials + Wise approval) |
 
@@ -344,22 +344,22 @@ the plan; bulk payments only on a consumer demand signal).
 
 | Feature                                           | Status           | Evidence                                                                                            |
 | ------------------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------- |
-| `APIError` base type                              | FULLY_FUNCTIONAL | `errors.go:241`; embeds into all subtypes; carries `Headers` (`:252`) and `Details` (`:255`)        |
-| `BadRequestError` (HTTP 400)                      | FULLY_FUNCTIONAL | `errors.go:423`; granular reason codes arrive in `Details`                                          |
-| `RateLimitError` (HTTP 429) with `RetryAfter`     | FULLY_FUNCTIONAL | `errors.go:320`; parses delta-seconds + HTTP-date                                                   |
-| `RateLimitError.RateLimitedBy` (429 header)       | FULLY_FUNCTIONAL | `errors.go:324`; captures `X-Rate-Limited-By` header                                                |
+| `APIError` base type                              | FULLY_FUNCTIONAL | `errors.go:243`; embeds into all subtypes; carries `Headers` (`:250`) and `Details` (`:259`)        |
+| `BadRequestError` (HTTP 400)                      | FULLY_FUNCTIONAL | `errors.go:429`; granular reason codes arrive in `Details`                                          |
+| `RateLimitError` (HTTP 429) with `RetryAfter`     | FULLY_FUNCTIONAL | `errors.go:322`; parses delta-seconds + HTTP-date                                                   |
+| `RateLimitError.RateLimitedBy` (429 header)       | FULLY_FUNCTIONAL | `errors.go:326`; captures `X-Rate-Limited-By` header                                                |
 | `AuthError` (HTTP 401, 403)                       | FULLY_FUNCTIONAL | `errors.go:357`                                                                                     |
 | `SCAChallengeError` (403 + 2FA headers, v0.6.0)   | FULLY_FUNCTIONAL | `errors.go:373`; `TwoFAApprovalToken()` returns the OTT                                             |
 | `WithSCAApprovalToken` option (v0.6.0)            | FULLY_FUNCTIONAL | `options.go:161`; sends cleared OTT as `x-2fa-approval`                                             |
 | `NotFoundError` (HTTP 404)                        | FULLY_FUNCTIONAL | `errors.go:410`                                                                                     |
-| `ServerError` (HTTP 5xx)                          | FULLY_FUNCTIONAL | `errors.go:432`                                                                                     |
+| `ServerError` (HTTP 5xx)                          | FULLY_FUNCTIONAL | `errors.go:438`                                                                                     |
 | `ErrorCode()` / `ErrorFamily()` / `IsRetryable()` | FULLY_FUNCTIONAL | All implement go-error-family interfaces                                                            |
 | `errors.AsType` matching                          | FULLY_FUNCTIONAL | Demonstrated in README; tested                                                                      |
 | `APIError.Details` structured error envelope      | FULLY_FUNCTIONAL | `errors.go:255`; Wise's `errors[].code`/`message` per entry, wire order                             |
 | `WiseErrorCode` open enum (14 documented codes)   | FULLY_FUNCTIONAL | `errors.go:195`; unknown wire values pass through                                                   |
-| Curated code sentinels (11) + `APIError.Is`       | FULLY_FUNCTIONAL | `ErrNotValid` (`errors.go:124`) ... `Is` (`errors.go:307`) matches `Details` codes through any wrap |
+| Curated code sentinels (11) + `APIError.Is`       | FULLY_FUNCTIONAL | `ErrNotValid` (`errors.go:125`) ... `Is` (`errors.go:308`) matches `Details` codes through any wrap |
 | `APIError.HasCode(WiseErrorCode)`                 | FULLY_FUNCTIONAL | `errors.go:286`; open-enum matcher for uncurated codes                                              |
-| `wise_code` in `ErrorContext()`                   | FULLY_FUNCTIONAL | `errors.go:276` (APIError) and `errors.go:342` (RateLimitError); first granular code                |
+| `wise_code` in `ErrorContext()`                   | FULLY_FUNCTIONAL | `errors.go:278` (APIError) and `errors.go:342` (RateLimitError); first granular code                |
 | Granular-code reference doc                       | FULLY_FUNCTIONAL | `docs/error-codes.md`; code, sentinel, status context, retry guidance                               |
 
 ## Type system
