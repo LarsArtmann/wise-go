@@ -363,19 +363,19 @@
               dprintPlugins = map dprintPlugin [
                 {
                   url = "https://plugins.dprint.dev/json-0.23.0.wasm";
-                  hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+                  hash = "sha256-Ph8bfBQn32vYmBoRqqLEZv3o0RFend5MZSEwRYU5RDw=";
                 }
                 {
                   url = "https://plugins.dprint.dev/g-plane/pretty_yaml-v0.6.0.wasm";
-                  hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+                  hash = "sha256-QKL92nBAMX6xsjUg86AHaaVXHu2wScTKkXXBue66Aa4=";
                 }
                 {
                   url = "https://plugins.dprint.dev/markdown-0.22.1.wasm";
-                  hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+                  hash = "sha256-SQb7sDiXdzKq4OIW5LC5V+JyL415KCZgzLNtJ90FHxc=";
                 }
                 {
                   url = "https://plugins.dprint.dev/dockerfile-0.4.1.wasm";
-                  hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+                  hash = "sha256-3JU2sddEiX0TrT0GIfVR+PNiFD+fbQb/B4Hg4El8t5Q=";
                 }
               ];
               pluginsJson = "[${lib.concatStringsSep "," (map (p: "\"${p}\"") dprintPlugins)}]";
