@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Nothing yet.
+
+### Fixed
+
+- Nothing yet.
+
+## [0.17.0] - 2026-11-11
+
+### Added
+
 - Heading-pointer support in the anchor gate (`scripts/anchor_check.py`): the
   quoted-title registry now also registers `##`-and-deeper markdown headings
   from the living docs (generic headings skipped for prefix safety; emphasis
@@ -55,6 +65,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- SCA doctrine corrected across `SCAChallengeError`, `GetOTTStatus`,
+  `TriggerOTT`, `TwoFAApprovalToken`, README, and AGENTS (live-prod
+  findings 2026-11-10): balance-statement challenge tokens answer
+  `ott_not_found` on the one-time-token endpoints even when fresh and
+  unraced, so Wise app approval is the documented working remedy for
+  statements; a tokenless verdict is documented as usually the response
+  to a STALE token presented on the request (presenting none mints a
+  fresh OTT every time).
+- Devshell/toolchain pinned to `go_1_27` (`goPkgAttr` in `flake.nix`):
+  go.mod requires `>= 1.27.3` since the 2026-11-04 deps bump and the
+  nixpkgs default go 1.26.x broke every shell go command.
 - Toolchain lock: the nixpkgs flake input moved to `02c087f` (go **1.26.9**
   toolchain; pulled 2026-10-23 by buildflow's nix-flake-update repair). The
   module's `go` directive stays `1.26.0` per the go-mod-normalize policy, so
@@ -84,6 +105,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Statement rows mint their identity from `referenceNumber` when the
+  wire omits `transactionId`** (the real FLAT-statement shape — a live
+  130-row capture decoded an empty ID on EVERY row, collapsing whole
+  statement windows onto one identity in consumers' dedup). Rows with
+  neither field surface `wise.transaction.id_missing` Corruption instead
+  of a silent empty ID. Consumer IDs for reference-only rows are now the
+  referenceNumber — matching bank-sync's adapter-side fallback, so no
+  dedup keys shift for rows that already stored reference-based IDs.
 - `scripts/spec_drift.py`: the endpoint extractor resolves `go` via
   `shutil.which` with an explicit not-found guard (bandit B607
   partial-path finding; direct bandit run is now clean).
