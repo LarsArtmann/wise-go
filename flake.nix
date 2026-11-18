@@ -10,7 +10,7 @@
     };
 
     go-nix-helpers = {
-      url = "github:LarsArtmann/go-nix-helpers?rev=16c3184262c55377aba2126dc20e028637f58aa0";
+      url = "github:LarsArtmann/go-nix-helpers";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -133,9 +133,9 @@
         enableCheck = false;
         lintAsCheck = false;
 
-        # go-branded-id v0.5.1 + go-error-family v0.10.0 import encoding/json/v2.
-        extraBuildAttrs.env.GOEXPERIMENT = "jsonv2";
-        shellExtraEnv.GOEXPERIMENT = "jsonv2";
+        # go-branded-id v0.5.1 + go-error-family v0.10.0 import
+        # encoding/json/v2 (typed option feeds build AND devShells).
+        goExperiment = "jsonv2";
 
         # Keep the extra tools from the original devShell (lychee for link
         # checks, go-tools for staticcheck helpers). gitleaks/codespell/
