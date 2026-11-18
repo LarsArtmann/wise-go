@@ -20,12 +20,12 @@
     };
 
     go-branded-id = {
-      url = "github:LarsArtmann/go-branded-id?rev=f610057630e9f0efffac2814b65ca8dc7a3b9774";
+      url = "github:LarsArtmann/go-branded-id?rev=0fe9f367e6176d446634312c462477d2276ba025";
       flake = false;
     };
 
     go-error-family = {
-      url = "github:LarsArtmann/go-error-family?rev=898004e3e1cbf4f104dd93bf621874fdbecfb143";
+      url = "github:LarsArtmann/go-error-family?rev=a5ce32c0e3dfe1d24ac1e24fdc05c24b24d58fcd";
       flake = false;
     };
 

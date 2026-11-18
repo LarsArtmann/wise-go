@@ -81,34 +81,34 @@
     "go-branded-id": {
       "flake": false,
       "locked": {
-        "lastModified": 1794895006,
-        "narHash": "sha256-m7xVXGSTBSpeVB/SY+QLp8Ye4lPN7fIt12tXffR8VMI=",
+        "lastModified": 1790667043,
+        "narHash": "sha256-I1nyYWNCUdIixs4qJs2/ZJ6f09rqcHIw24WGl/C/Rx8=",
         "owner": "LarsArtmann",
         "repo": "go-branded-id",
-        "rev": "f610057630e9f0efffac2814b65ca8dc7a3b9774",
+        "rev": "0fe9f367e6176d446634312c462477d2276ba025",
         "type": "github"
       },
       "original": {
         "owner": "LarsArtmann",
         "repo": "go-branded-id",
-        "rev": "f610057630e9f0efffac2814b65ca8dc7a3b9774",
+        "rev": "0fe9f367e6176d446634312c462477d2276ba025",
         "type": "github"
       }
     },
     "go-error-family": {
       "flake": false,
       "locked": {
-        "lastModified": 1794765142,
-        "narHash": "sha256-q9XJ5QSGXyn93AfUz16UPjPl3pIW/gZ2qVlYaSWsbco=",
+        "lastModified": 1791947535,
+        "narHash": "sha256-R7eGIW3GqDfq+z1BpYQvtPZKYqaiWcez7g4kZuSw3nQ=",
         "owner": "LarsArtmann",
         "repo": "go-error-family",
-        "rev": "898004e3e1cbf4f104dd93bf621874fdbecfb143",
+        "rev": "a5ce32c0e3dfe1d24ac1e24fdc05c24b24d58fcd",
         "type": "github"
       },
       "original": {
         "owner": "LarsArtmann",
         "repo": "go-error-family",
-        "rev": "898004e3e1cbf4f104dd93bf621874fdbecfb143",
+        "rev": "a5ce32c0e3dfe1d24ac1e24fdc05c24b24d58fcd",
         "type": "github"
       }
     },
