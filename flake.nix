@@ -866,12 +866,13 @@
               meta.description = "Verify in-house flake pins match go.mod and the remote tags";
             };
 
-          # Apps provided by the imported flake modules; annotate them so
-          # `nix flake check` stops warning about a missing meta.description.
-          apps.default.meta.description = "Build the wise-go library";
-          apps.test.meta.description = "Run the hermetic race + coverage test suite";
-          apps.lint.meta.description = "Run golangci-lint over the module";
-          apps.fmt.meta.description = "Format the repository (treefmt)";
+          # Module-provided apps (default/test/lint/fmt): go-standard ships
+          # meta.description on every emitted app, so the old subpath
+          # annotations are gone — and MUST stay gone: a subpath-only
+          # definition (apps.test.meta.description) out-prioritizes the
+          # module's whole-app mkDefault and silently drops `program`
+          # ("accessed but has no value defined"). Override the WHOLE app
+          # or annotate nothing.
 
           # One-command release gate: chains every local gate a release
           # previously relied on session discipline to run (the v0.12.0
