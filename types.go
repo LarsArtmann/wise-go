@@ -13,6 +13,8 @@ import (
 	"encoding/json/jsontext"
 	"fmt"
 	"time"
+
+	"github.com/larsartmann/go-composable-business-types/money"
 )
 
 // Version is the released version of this SDK, mirrored from the latest tag.
@@ -82,6 +84,15 @@ func (m Money) String() string {
 	}
 
 	return fmt.Sprintf("%s %d.%02d", m.Currency, major, minor)
+}
+
+// Amount converts to the fleet-canonical money type
+// (github.com/larsartmann/go-composable-business-types/money) — the typed
+// bridge at the wire edge (plan P16): Wise's float64 major units never
+// leave this package unpaired or untyped, and the conversion validates
+// the ISO 4217 code the local constructor cannot.
+func (m Money) Amount() (money.Money, error) {
+	return money.NewMoneyFromCents(m.Cents, string(m.Currency))
 }
 
 // --- Parsed result types (strongly typed, int64 cents, time.Time) ---

@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added (2026-11-22 canonical money bridge, P16)
+
+- `Money.Amount()` converts to the fleet-canonical
+  `go-composable-business-types/money` type at the wire edge — Wise's
+  float64 major units leave the package typed, paired, and ISO-4217-validated
+  (three bridge tests; the local `Money` surface is unchanged).
+
 ### Added
 
 - Nothing yet.
