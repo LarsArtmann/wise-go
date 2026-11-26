@@ -238,6 +238,156 @@ func TestNewAPIErrorCapturesDetails(t *testing.T) {
 	}
 }
 
+// flatOTTEnvelope is the exact body Wise answered GET
+// /2027Q1/one-time-token/status with on 2026-11-25 when called with a personal
+// API token (HTTP 404): a top-level code beside an EMPTY errors[] list, so
+// only the flat decode can reach the code.
+const flatOTTEnvelope = `{"code":"ott_not_found","message":"Something went wrong. ` +
+	`Please retry your action from the beginning.","errors":[],"parameters":{}}`
+
+// flatOTTDetails and flatOTTMessage are what flatOTTEnvelope must decode to:
+// exactly one detail carrying the code, and the same flattened "code: message"
+// join the structured envelope yields.
+var flatOTTDetails = []WiseErrorDetail{
+	{Code: "ott_not_found", Message: "Something went wrong. Please retry your action from the beginning."},
+}
+
+const flatOTTMessage = "ott_not_found: Something went wrong. Please retry your action from the beginning."
+
+// flatEnvelopeRow is one status x body-shape expectation of
+// TestNewAPIErrorFlatEnvelope.
+type flatEnvelopeRow struct {
+	name        string
+	statusCode  int
+	body        string
+	wantType    func(error) bool
+	wantDetails []WiseErrorDetail
+	wantMessage string
+}
+
+// TestNewAPIErrorFlatEnvelope pins the flat-envelope decode: a body whose
+// errors[] list is empty but that carries a top-level code yields exactly
+// one Detail — HasCode sees the code and Message takes the flattened form of
+// the structured envelope — while the status keeps driving the type. The
+// structured envelope keeps precedence, and a body carrying neither shape
+// stays unparsed exactly as before.
+func TestNewAPIErrorFlatEnvelope(t *testing.T) {
+	t.Parallel()
+
+	tests := []flatEnvelopeRow{
+		{
+			name:        "404 flat envelope (live OTT body) maps to NotFoundError carrying the code",
+			statusCode:  http.StatusNotFound,
+			body:        flatOTTEnvelope,
+			wantType:    errorMatches[*NotFoundError],
+			wantDetails: flatOTTDetails,
+			wantMessage: flatOTTMessage,
+		},
+		{
+			name:        "400 flat envelope maps to BadRequestError carrying the code",
+			statusCode:  http.StatusBadRequest,
+			body:        flatOTTEnvelope,
+			wantType:    errorMatches[*BadRequestError],
+			wantDetails: flatOTTDetails,
+			wantMessage: flatOTTMessage,
+		},
+		{
+			name:        "code-only flat envelope (sandbox shape) maps to one detail",
+			statusCode:  http.StatusNotFound,
+			body:        `{"code":"non.existing.balance"}`,
+			wantType:    errorMatches[*NotFoundError],
+			wantDetails: []WiseErrorDetail{{Code: "non.existing.balance"}},
+			wantMessage: "non.existing.balance: ",
+		},
+		{
+			name:       "structured envelope wins over a top-level code",
+			statusCode: http.StatusNotFound,
+			body: `{"code":"ott_not_found","message":"flat message",` +
+				`"errors":[{"code":"resource_not_found","message":"profile not found"}]}`,
+			wantType:    errorMatches[*NotFoundError],
+			wantDetails: []WiseErrorDetail{{Code: WiseErrorCodeResourceNotFound, Message: "profile not found"}},
+			wantMessage: "resource_not_found: profile not found",
+		},
+		{
+			name:        "flat body with an empty code yields no details",
+			statusCode:  http.StatusNotFound,
+			body:        `{"code":"","message":"no code here","errors":[],"parameters":{}}`,
+			wantType:    errorMatches[*NotFoundError],
+			wantDetails: nil,
+			wantMessage: `{"code":"","message":"no code here","errors":[],"parameters":{}}`,
+		},
+		{
+			name:        "router-shaped body without a code yields no details",
+			statusCode:  http.StatusNotFound,
+			body:        `{"error":"Not Found"}`,
+			wantType:    errorMatches[*NotFoundError],
+			wantDetails: nil,
+			wantMessage: `{"error":"Not Found"}`,
+		},
+		{
+			name:        "non-JSON body yields no details",
+			statusCode:  http.StatusNotFound,
+			body:        "Funding failed",
+			wantType:    errorMatches[*NotFoundError],
+			wantDetails: nil,
+			wantMessage: "Funding failed",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			assertFlatEnvelopeRow(t, tt)
+		})
+	}
+}
+
+// assertFlatEnvelopeRow checks one row: the status still drives the type,
+// Details carry exactly the expected entries (each matchable via HasCode and
+// reported as the wise_code context), Message is the flattened join — or the
+// raw body when nothing decoded — and Body stays verbatim.
+func assertFlatEnvelopeRow(t *testing.T, tt flatEnvelopeRow) {
+	t.Helper()
+
+	err := newAPIError(tt.statusCode, tt.body, nil, 0, "")
+
+	if !tt.wantType(err) {
+		t.Fatalf("got %T, want the row's typed error", err)
+	}
+
+	apiErr := embeddedAPIError(err)
+	if apiErr == nil {
+		t.Fatalf("no embedded APIError reachable from %T", err)
+	}
+
+	if len(apiErr.Details) != len(tt.wantDetails) {
+		t.Fatalf("Details = %+v, want %+v", apiErr.Details, tt.wantDetails)
+	}
+
+	for i, want := range tt.wantDetails {
+		if apiErr.Details[i] != want {
+			t.Errorf("Details[%d] = %+v, want %+v", i, apiErr.Details[i], want)
+		}
+
+		if !apiErr.HasCode(want.Code) {
+			t.Errorf("HasCode(%q) = false, want true", want.Code)
+		}
+
+		if got := apiErr.ErrorContext()["wise_code"]; got != string(want.Code) {
+			t.Errorf("ErrorContext wise_code = %q, want %q", got, want.Code)
+		}
+	}
+
+	if apiErr.Message != tt.wantMessage {
+		t.Errorf("Message = %q, want %q", apiErr.Message, tt.wantMessage)
+	}
+
+	if apiErr.Body != tt.body {
+		t.Errorf("Body = %q, want the raw body %q", apiErr.Body, tt.body)
+	}
+}
+
 func TestCheckErrorCapturesRateLimitedBy(t *testing.T) {
 	t.Parallel()
 
@@ -342,8 +492,7 @@ func TestCheckErrorClassifiesSCAChallenge(t *testing.T) {
 // token presented on the request — presenting no token mints a fresh OTT
 // every time. The error is still an SCA challenge — blocked — and
 // TwoFAApprovalToken() is zero; checkError cannot see the request side, so
-// the interpretation (stale token vs Wise flavor) belongs to the caller
-// (see SCAChallengeError's doc comment).
+// the stale-token audit belongs to the caller (see SCAChallengeError's doc).
 func TestCheckErrorTokenlessSCAChallenge(t *testing.T) {
 	t.Parallel()
 
@@ -939,6 +1088,8 @@ func TestErrorCodesUniqueAndWellFormed(t *testing.T) {
 		errorCodeAccountParseModificationTime,
 		errorCodeAccountDetailsInvalidRequest,
 		errorCodeAccountDetailsParseIdentification,
+		errorCodeActivityInvalidRequest,
+		errorCodeActivityMap,
 		errorCodeBalanceInvalidRequest,
 		errorCodeBalanceParseCreationTime,
 		errorCodeBalanceParseCurrency,
@@ -1671,6 +1822,8 @@ func FuzzParseErrorResponse(f *testing.F) {
 	f.Add(`not json at all`)
 	f.Add(`{"errors":[{"code":"","message":""}]}`)
 	f.Add(`{"errors":[{"code":"a"},{"code":"b","message":"m"}]}`)
+	f.Add(`{"code":"ott_not_found","message":"flat","errors":[],"parameters":{}}`)
+	f.Add(`{"code":"","message":"no code"}`)
 	f.Add(`[1,2,3]`)
 	f.Add(`null`)
 
@@ -1695,6 +1848,7 @@ func FuzzNewAPIError(f *testing.F) {
 	f.Add(http.StatusInternalServerError, "plain text")
 	f.Add(http.StatusNotFound, `{}`)
 	f.Add(http.StatusUnauthorized, `{"errors":[]}`)
+	f.Add(http.StatusNotFound, `{"code":"ott_not_found","message":"flat","errors":[],"parameters":{}}`)
 
 	f.Fuzz(func(t *testing.T, rawStatus int, body string) {
 		statusCode := 100 + ((rawStatus%500)+500)%500

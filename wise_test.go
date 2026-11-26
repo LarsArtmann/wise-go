@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go"
 	"github.com/larsartmann/wise-go/internal/raw"
 	. "github.com/onsi/ginkgo/v2"
@@ -5208,6 +5209,202 @@ var _ = Describe("Wise Client", func() {
 			_, err = event.TransferRefund()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("refund amount or currency missing"))
+		})
+	})
+
+	Describe("ListActivities", func() {
+		const activitiesPath = "/v1/profiles/12345/activities"
+
+		activitiesRequest := func() wise.ListActivitiesRequest {
+			return wise.ListActivitiesRequest{
+				ProfileID:    wise.NewProfileID(12345),
+				Since:        time.Date(2025, 3, 1, 0, 0, 0, 0, time.UTC),
+				Until:        time.Date(2025, 3, 31, 23, 59, 59, 0, time.UTC),
+				ResourceType: wise.ActivityResourceTypeCardTransaction,
+				Status:       wise.ActivityStatusCompleted,
+				Cursor:       "abc",
+				Size:         100,
+			}
+		}
+
+		serveActivities := func(body string) {
+			mux.HandleFunc(activitiesPath, func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte(body))
+			})
+		}
+
+		// One page carrying the spec's own example (a two-legged card
+		// payment) beside a single-legged credit and a currency-pair leg.
+		const activitiesJSON = `{
+			"cursor": "WyJQUklPUklUWSIsMTAwMDAxNjY5NzA4MjI0MDAwMDE2MDk5OV0=",
+			"activities": [
+				{
+					"id": "TU9ORVRBUllfQUNUSVZJVFk6OjE0NTU4OTk4OjpDQVJEX1RSQU5TQUNUSU9OOjozNDMwNDk=",
+					"type": "CARD_PAYMENT",
+					"resource": {"type": "CARD_TRANSACTION", "id": "343049"},
+					"title": "<strong>Test Payment</strong>",
+					"description": "",
+					"primaryAmount": "150 JPY",
+					"secondaryAmount": "1.50 SGD",
+					"status": "COMPLETED",
+					"createdOn": "2023-01-01T00:00:00.000Z",
+					"updatedOn": "2023-01-02T03:04:05.000Z"
+				},
+				{
+					"id": "TU9ORVRBUllfQUNUSVZJVFk6OjE0NTU4OTk5OjpCQUxBTkNFX0RFUE9TSVQ6OjM0MzA1MA==",
+					"type": "BALANCE_DEPOSIT",
+					"resource": {"type": "BALANCE_TRANSACTION", "id": "343050"},
+					"title": "Money added",
+					"description": "From your bank",
+					"primaryAmount": "<positive>+ 9,999.99 USD</positive>",
+					"secondaryAmount": "",
+					"status": "COMPLETED",
+					"createdOn": "2023-01-03T00:00:00.000Z",
+					"updatedOn": "2023-01-03T00:00:00.000Z"
+				},
+				{
+					"id": "TU9ORVRBUllfQUNUSVZJVFk6OjE0NTU4OTk5OjpCQUxBTkNFX0RFUE9TSVQ6OjM0MzA1MQ==",
+					"type": "INTERBALANCE",
+					"resource": {"type": "BALANCE_TRANSACTION", "id": "343051"},
+					"title": "Converted",
+					"description": "",
+					"primaryAmount": "12,345.67 PLN",
+					"secondaryAmount": "USD, EUR",
+					"status": "COMPLETED",
+					"createdOn": "2023-01-04T00:00:00.000Z",
+					"updatedOn": "2023-01-04T00:00:00.000Z"
+				}
+			]
+		}`
+
+		Context("with a valid page", func() {
+			BeforeEach(func() {
+				mux.HandleFunc(activitiesPath, func(w http.ResponseWriter, r *http.Request) {
+					params := r.URL.Query()
+
+					Expect(params.Get("since")).To(Equal("2025-03-01T00:00:00Z"))
+					Expect(params.Get("until")).To(Equal("2025-03-31T23:59:59Z"))
+					Expect(params.Get("size")).To(Equal("100"))
+					Expect(params.Get("nextCursor")).To(Equal("abc"))
+					Expect(params.Get("monetaryResourceType")).To(Equal("CARD_TRANSACTION"))
+					Expect(params.Get("status")).To(Equal("COMPLETED"))
+
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = w.Write([]byte(activitiesJSON))
+				})
+			})
+
+			It("should send the documented query parameters and map every field", func() {
+				page, err := client.ListActivities(context.Background(), activitiesRequest())
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(page.NextCursor).To(Equal("WyJQUklPUklUWSIsMTAwMDAxNjY5NzA4MjI0MDAwMDE2MDk5OV0="))
+				Expect(page.Activities).To(HaveLen(3))
+
+				card := page.Activities[0]
+				Expect(card.Type).To(Equal(wise.ActivityTypeCardPayment))
+				Expect(card.ResourceType).To(Equal(wise.ActivityResourceTypeCardTransaction))
+				Expect(card.ResourceID).To(Equal("343049"))
+				Expect(card.Title).To(Equal("<strong>Test Payment</strong>"))
+				Expect(card.Status).To(Equal(wise.ActivityStatusCompleted))
+				Expect(card.CreatedOn.Equal(time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC))).To(BeTrue())
+				Expect(card.UpdatedOn.Equal(time.Date(2023, 1, 2, 3, 4, 5, 0, time.UTC))).To(BeTrue())
+			})
+
+			It("should parse a plain amount into cents and keep the raw text", func() {
+				page, err := client.ListActivities(context.Background(), activitiesRequest())
+				Expect(err).ToNot(HaveOccurred())
+
+				legs := page.Activities[0]
+				Expect(legs.PrimaryAmount.Present).To(BeTrue())
+				Expect(legs.PrimaryAmount.Credit).To(BeFalse())
+				Expect(legs.PrimaryAmount.Amount).
+					To(Equal(wise.Money{Cents: 15000, Currency: wise.Currency("JPY")}))
+				Expect(legs.PrimaryAmount.Text).To(Equal("150 JPY"))
+				Expect(legs.SecondaryAmount.Present).To(BeTrue())
+				Expect(legs.SecondaryAmount.Amount).
+					To(Equal(wise.Money{Cents: 150, Currency: wise.Currency("SGD")}))
+			})
+
+			It("should mark a credited leg and read comma grouping", func() {
+				page, err := client.ListActivities(context.Background(), activitiesRequest())
+				Expect(err).ToNot(HaveOccurred())
+
+				deposit := page.Activities[1]
+				Expect(deposit.PrimaryAmount.Present).To(BeTrue())
+				Expect(deposit.PrimaryAmount.Credit).To(BeTrue())
+				Expect(deposit.PrimaryAmount.Amount.Cents).To(Equal(int64(999999)))
+				Expect(deposit.SecondaryAmount.Present).To(BeFalse())
+				Expect(deposit.SecondaryAmount.Text).To(BeEmpty())
+
+				conversion := page.Activities[2]
+				Expect(conversion.PrimaryAmount.Amount.Cents).To(Equal(int64(1234567)))
+				// A currency pair is not an amount: unparsed, text kept.
+				Expect(conversion.SecondaryAmount.Present).To(BeFalse())
+				Expect(conversion.SecondaryAmount.Text).To(Equal("USD, EUR"))
+			})
+		})
+
+		It("should report the last page with an empty NextCursor", func() {
+			serveActivities(`{"cursor": null, "activities": []}`)
+
+			page, err := client.ListActivities(context.Background(), wise.ListActivitiesRequest{
+				ProfileID: wise.NewProfileID(12345),
+			})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(page.Activities).To(BeEmpty())
+			Expect(page.NextCursor).To(BeEmpty())
+		})
+
+		It("should omit unset filters from the query", func() {
+			mux.HandleFunc(activitiesPath, func(w http.ResponseWriter, r *http.Request) {
+				Expect(r.URL.Query()).To(BeEmpty())
+
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte(`{"cursor": null, "activities": []}`))
+			})
+
+			_, err := client.ListActivities(context.Background(), wise.ListActivitiesRequest{
+				ProfileID: wise.NewProfileID(12345),
+			})
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should reject a zero profile id and an out-of-range size", func() {
+			for _, req := range []wise.ListActivitiesRequest{
+				{},
+				{ProfileID: wise.NewProfileID(12345), Size: 101},
+			} {
+				_, err := client.ListActivities(context.Background(), req)
+				Expect(err).To(HaveOccurred())
+
+				classified, ok := errors.AsType[*errorfamily.Error](err)
+				Expect(ok).To(BeTrue(), "expected a classified error, got %T: %v", err, err)
+				Expect(classified.Code()).To(Equal("wise.activity.invalid_request"))
+			}
+		})
+
+		It("should classify an unparseable timestamp as corruption", func() {
+			serveActivities(`{
+				"cursor": null,
+				"activities": [{
+					"id": "x", "type": "TRANSFER",
+					"resource": {"type": "TRANSFER", "id": "1"},
+					"title": "t", "description": "", "primaryAmount": "1 EUR", "secondaryAmount": "",
+					"status": "COMPLETED", "createdOn": "not-a-date", "updatedOn": "2023-01-01T00:00:00.000Z"
+				}]
+			}`)
+
+			_, err := client.ListActivities(context.Background(), wise.ListActivitiesRequest{
+				ProfileID: wise.NewProfileID(12345),
+			})
+			Expect(err).To(HaveOccurred())
+
+			classified, ok := errors.AsType[*errorfamily.Error](err)
+			Expect(ok).To(BeTrue(), "expected a classified error, got %T: %v", err, err)
+			Expect(classified.Code()).To(Equal("wise.activity.map"))
+			Expect(classified.ErrorFamily()).To(Equal(errorfamily.Corruption))
 		})
 	})
 })

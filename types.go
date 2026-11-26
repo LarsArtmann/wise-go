@@ -92,7 +92,12 @@ func (m Money) String() string {
 // leave this package unpaired or untyped, and the conversion validates
 // the ISO 4217 code the local constructor cannot.
 func (m Money) Amount() (money.Money, error) {
-	return money.NewMoneyFromCents(m.Cents, string(m.Currency))
+	converted, err := money.NewMoneyFromCents(m.Cents, string(m.Currency))
+	if err != nil {
+		return money.Money{}, fmt.Errorf("convert %s to the canonical money type: %w", m, err)
+	}
+
+	return converted, nil
 }
 
 // --- Parsed result types (strongly typed, int64 cents, time.Time) ---

@@ -45,15 +45,20 @@ default explicitly.
 
 ## Envelope variants observed live
 
-Wise also emits two error-body shapes the structured-envelope parser does not
-cover (both observed in the sandbox, 2026-10-17):
+Wise also emits two error-body shapes besides the structured envelope (both
+first observed in the sandbox, 2026-10-17):
 
-- **Top-level-`code`-only**: `{"code":"non.existing.balance"}` — a single
-  `code` with no `errors[]` array. `APIError.Details` stays empty (it parses
-  only the structured envelope) and `Message` renders the raw body verbatim;
-  branch on a substring of `APIError.Body` when you need the code.
+- **Top-level-`code` (flat envelope)**: `{"code":"non.existing.balance"}` — a
+  `code` (with or without a `message`) and no `errors[]` entries. The SDK
+  synthesizes exactly one `Details` entry from it, so `HasCode` and the
+  `wise_code` context work as for the structured envelope and `Message` takes
+  the flattened `code: message` form (decode added 2026-11-25, after the
+  one-time-token endpoints answered a personal API token with 404
+  `{"code":"ott_not_found","message":"...","errors":[],"parameters":{}}` —
+  match it with `HasCode(WiseErrorCode("ott_not_found"))`).
 - **Router-shaped 404 on quarterly surfaces**: `{"error":"Not Found"}` — the
-  gateway's body for an unknown version prefix, as opposed to the app-level
+  gateway's body for an unknown version prefix (no `code`, so `APIError.Details`
+  stays empty and `Message` is the raw body), as opposed to the app-level
   `{"code":"ott_not_found"}` a served prefix returns. This discriminates
   quarterly rollovers (see CONTRIBUTING.md) rather than consumer errors.
   Related wire fact: funding-404s arrive as `application/json` — the spec's

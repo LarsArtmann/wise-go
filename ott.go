@@ -24,8 +24,8 @@ const HeaderOneTimeToken = "One-Time-Token"
 // the challenge's requirements. It is a SECRET — never log it, never put it
 // in an error message; pass it to the OTT endpoints and to
 // [WithSCAApprovalToken], and prefer reporting only whether one was issued
-// ([OneTimeToken.IsZero]). The zero value means "no token" (Wise's PSD2
-// flavor issues tokenless challenges — blocked, but with nothing to clear).
+// ([OneTimeToken.IsZero]). The zero value means "no token": the challenge
+// response carried no x-2fa-approval header (blocked, with nothing to clear).
 //
 // It is a distinct type so an OTT can never be accidentally passed where an
 // OTP code (the 6-digit user entry), an API key, or any other string is
@@ -45,8 +45,8 @@ func NewOneTimeToken(value string) (OneTimeToken, error) {
 	return OneTimeToken(value), nil
 }
 
-// IsZero reports whether the token is absent — either Wise issued a
-// tokenless challenge, or no challenge was seen at all.
+// IsZero reports whether the token is absent — the SCA response carried no
+// x-2fa-approval header, or no challenge was seen at all.
 func (t OneTimeToken) IsZero() bool { return t == "" }
 
 // OTTChannel is the phone-based delivery channel of a one-time password for
@@ -220,13 +220,13 @@ func ottHeaders(ott OneTimeToken) map[string]string {
 // GetOTTStatus retrieves the challenge state of a one-time token
 // (GET /2027Q1/one-time-token/status): which challenges must be passed to
 // clear it, their types and alternatives, the remaining validity, and the
-// authorized action. The personal API token authorizes the call; the OTT is
-// the one issued in the x-2fa-approval header of an [SCAChallengeError].
-//
-// Live-verified 2026-11-10: balance-statement challenge tokens are typically
-// NOT registered with these endpoints — status answers not-found even for a
-// fresh, unraced token (they did engage on 2026-10-05). Treat not-found as
-// "clear via Wise app approval", never as a retryable race.
+// authorized action. The spec scopes the call to OAuth user tokens
+// (security: [{"UserToken": []}]); the OTT is the one issued in the
+// x-2fa-approval header of an [SCAChallengeError].
+// Wire-proven 2026-11-25: a personal API token gets ott_not_found for any
+// statement-challenge token, however fresh — the guide "Personal API
+// tokens" excludes statements for accounts outside US/CA/AU/NZ/SG/MY.
+// Treat not-found as "clear via Wise app approval", never a retryable race.
 func (c *Client) GetOTTStatus(ctx context.Context, ott OneTimeToken) (*OTTStatus, error) {
 	if err := requireOTT(ott); err != nil {
 		return nil, err
@@ -247,8 +247,8 @@ func (c *Client) GetOTTStatus(ctx context.Context, ott OneTimeToken) (*OTTStatus
 // user's verified phone number (POST /2027Q1/one-time-token/{channel}/trigger).
 // The OTP arrives out of band; submit it with [Client.VerifyOTT]. Triggering
 // is required before verifying. On the sandbox no real SMS is sent and the
-// OTP is always "111111". Statement-challenge tokens usually answer
-// not-found here (see [Client.GetOTTStatus] for the live-verified caveat).
+// OTP is always "111111". With a personal API token, statement-challenge
+// tokens answer not-found here (see [Client.GetOTTStatus] for the cause).
 func (c *Client) TriggerOTT(ctx context.Context, ott OneTimeToken, channel OTTChannel) (*OTTTriggerResult, error) {
 	if err := requireOTT(ott); err != nil {
 		return nil, err

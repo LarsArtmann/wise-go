@@ -1157,20 +1157,24 @@ if err != nil {
 ```
 
 The one-time-token endpoints (`GetOTTStatus`, `TriggerOTT`, `VerifyOTT`,
-`ClearSCAChallenge`) live on the quarterly versioned surface.
-Availability caveat, live-verified 2026-11-10: balance-statement challenge
-tokens are typically NOT registered with these endpoints — status and
-trigger answer `ott_not_found` even for a fresh, unraced token. Treat
+`ClearSCAChallenge`) live on the quarterly versioned surface
+(`/2027Q1/one-time-token/...`). Availability caveat, wire-proven 2026-11-25:
+the OpenAPI spec scopes these endpoints to OAuth user tokens only
+(`security: [{"UserToken": []}]`), and Wise's "Personal API tokens" guide does
+not support statement retrieval for accounts outside the US, Canada, Australia,
+New Zealand, Singapore and Malaysia — so a personal API token gets
+`ott_not_found` for any statement-challenge token, however fresh. Treat
 not-found as "clear via Wise app approval", never as a retryable race.
-(`/2027Q1/one-time-token/...`) and authorize with the same personal API
-token. The OTT is a distinct type, `wise.OneTimeToken` (construct with
+The OTT is a distinct type, `wise.OneTimeToken` (construct with
 `wise.NewOneTimeToken`), so it can never be passed where an OTP code or any
 other string is expected. Challenges that no phone channel can clear (e.g. a
 PIN-only challenge) surface as a Rejection naming the available types — clear
-those by viewing a statement on wise.com instead. Wise's PSD2 flavor can also
-issue a **tokenless** challenge (403 with the verdict header but no
-`x-2fa-approval`): `TwoFAApprovalToken()` then returns the zero
-`OneTimeToken` — still blocked, but with nothing to clear programmatically.
+those by viewing a statement on wise.com instead. A 403 with the verdict
+header but no `x-2fa-approval` (live-verified 2026-11-10: usually the response
+to a stale token presented in `x-2fa-approval`, not a Wise flavor — presenting
+no token mints a fresh OTT every time) leaves `TwoFAApprovalToken()` zero:
+still blocked, with nothing to clear programmatically — audit the caller's
+token source.
 
 `GET /v1/transfers` (and the other transfer endpoints) are **not** SCA-protected,
 which is why `ListTransfers` is the reliable source for outgoing transfer

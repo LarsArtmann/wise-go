@@ -352,7 +352,7 @@ the plan; bulk payments only on a consumer demand signal).
 | `SCAChallengeError` (403 + 2FA headers, v0.6.0)   | FULLY_FUNCTIONAL | `errors.go:373`; `TwoFAApprovalToken()` returns the OTT                                             |
 | `WithSCAApprovalToken` option (v0.6.0)            | FULLY_FUNCTIONAL | `options.go:161`; sends cleared OTT as `x-2fa-approval`                                             |
 | `NotFoundError` (HTTP 404)                        | FULLY_FUNCTIONAL | `errors.go:410`                                                                                     |
-| `ServerError` (HTTP 5xx)                          | FULLY_FUNCTIONAL | `errors.go:438`                                                                                     |
+| `ServerError` (HTTP 5xx)                          | FULLY_FUNCTIONAL | `errors.go:441`                                                                                     |
 | `ErrorCode()` / `ErrorFamily()` / `IsRetryable()` | FULLY_FUNCTIONAL | All implement go-error-family interfaces                                                            |
 | `errors.AsType` matching                          | FULLY_FUNCTIONAL | Demonstrated in README; tested                                                                      |
 | `APIError.Details` structured error envelope      | FULLY_FUNCTIONAL | `errors.go:255`; Wise's `errors[].code`/`message` per entry, wire order                             |

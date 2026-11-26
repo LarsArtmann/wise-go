@@ -36,6 +36,8 @@ const (
 	errorCodeAccountParseModificationTime      = "wise.account.parse_modification_time"
 	errorCodeAccountDetailsInvalidRequest      = "wise.account_details.invalid_request"
 	errorCodeAccountDetailsParseIdentification = "wise.account_details.parse_identification"
+	errorCodeActivityInvalidRequest            = "wise.activity.invalid_request"
+	errorCodeActivityMap                       = "wise.activity.map"
 	errorCodeBalanceInvalidRequest             = "wise.balance.invalid_request"
 	errorCodeBalanceParseCreationTime          = "wise.balance.parse_creation_time"
 	errorCodeBalanceParseCurrency              = "wise.balance.parse_currency"
@@ -249,9 +251,9 @@ type APIError struct {
 	// rate-limit owner), so dropping them hides the actual verdict.
 	Headers http.Header
 	// Details carries Wise's structured error envelope (errors[].code /
-	// errors[].message from the response body) so consumers can branch on
-	// Wise's granular codes without parsing Message. Empty when the body was
-	// not Wise's structured envelope (empty body, plain text, non-JSON).
+	// errors[].message) or the flat envelope's top-level code as one entry,
+	// so consumers can branch on Wise's granular codes without parsing
+	// Message. Empty when the body was neither (empty body, plain text, non-JSON).
 	// Message stays the flattened join of the same entries for backward
 	// compatibility; prefer Details for matching.
 	Details []WiseErrorDetail
@@ -366,8 +368,11 @@ func (e *AuthError) ErrorCode() string {
 // wise.com (view or export a statement): live-verified 2026-11-10, the
 // one-time-token endpoints answer not-found for statement-challenge tokens
 // even when the token is fresh and unraced, so [Client.ClearSCAChallenge]
-// cannot clear that surface programmatically (it did engage on 2026-10-05 —
-// availability is inconsistent; do not build on it). A challenge that carries
+// cannot clear that surface with a personal API token — documented, not
+// intermittent (wire-proven 2026-11-25): the spec scopes those endpoints
+// to security: [{"UserToken": []}] (OAuth user tokens only), and the guide
+// "Personal API tokens" does not support statement retrieval for accounts
+// outside US/CA/AU/NZ/SG/MY. A challenge that carries
 // NO token in [HeaderTwoFAApproval] is, in production, usually the response to
 // a STALE token presented on the request — presenting no token mints a fresh
 // one every time (live-verified 2026-11-10) — so audit the caller's token
@@ -403,10 +408,10 @@ func (e *SCAChallengeError) Error() string {
 
 // TwoFAApprovalToken returns the one-time token (OTT) this challenge was
 // issued with, for the retry request's x-2fa-approval header. The zero
-// value means Wise issued a tokenless challenge — the request is still
-// SCA-blocked. Live-verified 2026-11-10: a tokenless verdict is usually NOT
-// a Wise-side flavor but the response to a STALE token presented on the
-// request (presenting no token mints a fresh OTT every time) — audit the
+// value means the response carried no OTT header — the request is still
+// SCA-blocked. Live-verified 2026-11-10: a tokenless verdict is usually
+// the response to a STALE token presented on the request (presenting no
+// token mints a fresh OTT every time), not a Wise-side flavor — audit the
 // caller's token source before treating it as unprogrammable.
 func (e *SCAChallengeError) TwoFAApprovalToken() OneTimeToken {
 	return OneTimeToken(e.Headers.Get(HeaderTwoFAApproval))
@@ -536,10 +541,24 @@ func isSCAChallenge(statusCode int, headers http.Header) bool {
 	return headers.Get(HeaderTwoFAApprovalResult) != "" || headers.Get(HeaderTwoFAApproval) != ""
 }
 
+// parseErrorResponse decodes the two JSON error envelopes Wise answers a
+// non-2xx with. The structured one wins: a non-empty errors[] list is
+// returned verbatim. Otherwise a flat envelope — a top-level code/message
+// pair beside an empty or absent errors[] (live 2026-11-25: the one-time-token
+// endpoints answer a personal API token with 404
+// {"code":"ott_not_found","message":"...","errors":[]}) — has the shape of a
+// single errors[] entry and is returned as exactly one, so Details, HasCode,
+// and the curated code sentinels see its code. Bodies carrying neither
+// (non-JSON, empty, no code) yield nil.
 func parseErrorResponse(body string) *raw.ErrorResponse {
 	var errResp raw.ErrorResponse
 	if json.Unmarshal([]byte(body), &errResp) == nil && len(errResp.Errors) > 0 {
 		return &errResp
+	}
+
+	var flat raw.ErrorDetail
+	if json.Unmarshal([]byte(body), &flat) == nil && flat.Code != "" {
+		return &raw.ErrorResponse{Errors: []raw.ErrorDetail{flat}}
 	}
 
 	return nil

@@ -366,3 +366,33 @@ type ErrorDetail struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
 }
+
+// ActivityPage from the profile activity endpoint
+// (GET /v1/profiles/{profileId}/activities): one page of a profile's
+// activity feed. Cursor is null on the last page.
+type ActivityPage struct {
+	Cursor     *string    `json:"cursor"`
+	Activities []Activity `json:"activities"`
+}
+
+// Activity from Wise's profile activity feed: a snapshot of a performed
+// action. Amounts arrive as display text with units (and optional sign or
+// <positive> markup), never as numeric wire fields.
+type Activity struct {
+	ID              string           `json:"id"`
+	Type            string           `json:"type"`
+	Resource        ActivityResource `json:"resource"`
+	Title           string           `json:"title"`
+	Description     string           `json:"description"`
+	PrimaryAmount   string           `json:"primaryAmount"`
+	SecondaryAmount string           `json:"secondaryAmount"`
+	Status          string           `json:"status"`
+	CreatedOn       string           `json:"createdOn"`
+	UpdatedOn       string           `json:"updatedOn"`
+}
+
+// ActivityResource identifies the underlying entity an activity snapshots.
+type ActivityResource struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
+}
