@@ -2265,27 +2265,32 @@ var _ = Describe("Wise Client", func() {
 	})
 
 	Describe("ListRecipients", func() {
-		Context("with valid API response", func() {
+		writeRecipientPage := func(w http.ResponseWriter, content []raw.Recipient, next *int64) {
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.MarshalWrite(w, raw.RecipientPage{Content: content, SeekPositionForNext: next})
+		}
+
+		Context("with a single page in the live wire shape", func() {
 			BeforeEach(func() {
 				mux.HandleFunc("/v2/accounts", func(w http.ResponseWriter, r *http.Request) {
-					Expect(r.URL.Query().Get("profile")).To(Equal("12345"))
+					Expect(r.URL.Query().Get("profileId")).To(Equal("12345"))
+					Expect(r.URL.Query().Has("profile")).To(BeFalse())
+					Expect(r.URL.Query().Has("offset")).To(BeFalse())
+					Expect(r.URL.Query().Has("seekPosition")).To(BeFalse())
 
-					w.Header().Set("Content-Type", "application/json")
-					_ = json.MarshalWrite(w, []raw.Recipient{
-						{
-							ID: 98765432, AccountHolderName: "Jane Doe",
-							Currency: "GBP", Country: "GB", Type: "sort_code",
-							Details: map[string]any{
-								"sortCode":      "040075",
-								"accountNumber": "37778842",
-							},
-							Active: true,
+					writeRecipientPage(w, []raw.Recipient{{
+						ID: 98765432, Name: raw.RecipientName{FullName: "Jane Doe"},
+						Currency: "GBP", Country: "GB", Type: "sort_code",
+						Details: map[string]any{
+							"sortCode":      "040075",
+							"accountNumber": "37778842",
 						},
-					})
+						Active: true,
+					}}, nil)
 				})
 			})
 
-			It("should return mapped recipients", func() {
+			It("should return mapped recipients with the holder from name.fullName", func() {
 				recipients, err := client.ListRecipients(context.Background(), wise.ListRecipientsRequest{
 					ProfileID: wise.NewProfileID(12345),
 				})
@@ -2294,6 +2299,79 @@ var _ = Describe("Wise Client", func() {
 				Expect(recipients[0].ID.Get()).To(Equal(int64(98765432)))
 				Expect(recipients[0].AccountHolderName).To(Equal("Jane Doe"))
 				Expect(recipients[0].Details["sortCode"]).To(Equal("040075"))
+			})
+		})
+
+		Context("when the holder arrives in the flat create-response spelling", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v2/accounts", func(w http.ResponseWriter, _ *http.Request) {
+					writeRecipientPage(w, []raw.Recipient{{
+						ID: 98765432, AccountHolderName: "Jane Doe", Currency: "GBP", Active: true,
+					}}, nil)
+				})
+			})
+
+			It("should still map the holder name", func() {
+				recipients, err := client.ListRecipients(context.Background(), wise.ListRecipientsRequest{
+					ProfileID: wise.NewProfileID(12345),
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(recipients).To(HaveLen(1))
+				Expect(recipients[0].AccountHolderName).To(Equal("Jane Doe"))
+			})
+		})
+
+		Context("across two seek-paginated pages", func() {
+			var seeks []string
+
+			BeforeEach(func() {
+				seeks = nil
+				next := int64(40)
+
+				mux.HandleFunc("/v2/accounts", func(w http.ResponseWriter, r *http.Request) {
+					seek := r.URL.Query().Get("seekPosition")
+					seeks = append(seeks, seek)
+
+					switch seek {
+					case "":
+						writeRecipientPage(w, []raw.Recipient{
+							{ID: 1, Currency: "GBP", Name: raw.RecipientName{FullName: "A"}, Active: true},
+							{ID: 2, Currency: "GBP", Name: raw.RecipientName{FullName: "B"}, Active: true},
+						}, &next)
+					case "40":
+						writeRecipientPage(w, []raw.Recipient{
+							{ID: 3, Currency: "GBP", Name: raw.RecipientName{FullName: "C"}, Active: true},
+						}, nil)
+					default:
+						Fail("unexpected seekPosition " + seek)
+					}
+				})
+			})
+
+			It("should follow seekPositionForNext once and stop at the last page", func() {
+				recipients, err := client.ListRecipients(context.Background(), wise.ListRecipientsRequest{
+					ProfileID: wise.NewProfileID(12345),
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(recipients).To(HaveLen(3))
+				Expect(seeks).To(Equal([]string{"", "40"}))
+			})
+		})
+
+		Context("when the feed is empty", func() {
+			BeforeEach(func() {
+				mux.HandleFunc("/v2/accounts", func(w http.ResponseWriter, _ *http.Request) {
+					writeRecipientPage(w, []raw.Recipient{}, nil)
+				})
+			})
+
+			It("should return an empty, non-nil slice", func() {
+				recipients, err := client.ListRecipients(context.Background(), wise.ListRecipientsRequest{
+					ProfileID: wise.NewProfileID(12345),
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(recipients).ToNot(BeNil())
+				Expect(recipients).To(BeEmpty())
 			})
 		})
 

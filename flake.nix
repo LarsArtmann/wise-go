@@ -34,6 +34,11 @@
       flake = false;
     };
 
+    go-composable-business-types = {
+      url = "github:LarsArtmann/go-composable-business-types?rev=ab07af4bab94c727e1cc3638b291d3cf6584ab64";
+      flake = false;
+    };
+
     # Source-only: built in checks.md-go-snippets with this repo's nixpkgs
     # (go 1.27 for the tool's go.mod floor — its own flake currently pins a
     # go too old to build it, so its packages.default is not consumable).
@@ -54,6 +59,7 @@
         ./helpers.go
         ./options.go
         ./profiles.go
+        ./activities.go
         ./balances.go
         ./errors.go
         ./client.go
@@ -78,6 +84,7 @@
         ./internal/raw/types_test.go
         ./internal_test.go
         ./errors_test.go
+        ./activities_internal_test.go
         ./helpers_test.go
         ./bench_test.go
         ./example_test.go
@@ -126,6 +133,7 @@
           "github.com/larsartmann/go-branded-id" = inputs.go-branded-id;
           "github.com/larsartmann/go-error-family" = inputs.go-error-family;
           "github.com/larsartmann/go-retry" = inputs.go-retry;
+          "github.com/larsartmann/go-composable-business-types" = inputs.go-composable-business-types;
         };
 
         # Library: run tests in the dedicated checks.test derivation instead of
@@ -180,8 +188,19 @@
           # The coverage floor is SINGLE-SOURCED in ci.yml (the parity check
           # below enforces the shape): this check reads the floor from ci.yml
           # at check time, so a promotion can never split the two gates.
+          # This repo is a library: the package compiles and installs nothing,
+          # so go-standard's empty-bin guard (meant for CLI repos) is dropped
+          # from the compile check. packages.default stays as the module builds
+          # it; checks.test below derives from it.
+          checks.build = lib.mkForce (
+            config.packages.default.overrideAttrs (_old: {
+              postInstall = "";
+            })
+          );
+
           checks.test = config.packages.default.overrideAttrs (_old: {
             pname = "wise-go-test";
+            postInstall = "";
             doCheck = true;
             ciYml = ./.github/workflows/ci.yml;
             checkPhase = ''

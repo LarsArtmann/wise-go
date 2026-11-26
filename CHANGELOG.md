@@ -6,13 +6,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-### Added (2026-11-22 canonical money bridge, P16)
-
-- `Money.Amount()` converts to the fleet-canonical
-  `go-composable-business-types/money` type at the wire edge — Wise's
-  float64 major units leave the package typed, paired, and ISO-4217-validated
-  (three bridge tests; the local `Money` surface is unchanged).
-
 ### Added
 
 - Nothing yet.
@@ -20,6 +13,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 
 - Nothing yet.
+
+## [0.18.0] - 2026-11-26
+
+### Added
+
+- `ListActivities`: a profile's activity feed
+  (`GET /v1/profiles/{id}/activities`) with typed open enums
+  (`ActivityType`, `ActivityStatus`, `ActivityResourceType`) that preserve
+  unknown wire values, cursor paging, `Since`/`Until`, `ResourceType` and
+  `Status` filters, and a page size of 1 to 100. `ActivityAmount` treats the
+  feed's amounts as the display text they are: one plain amount is parsed
+  into `Money` and the raw text is kept; a currency pair or another locale
+  stays unparsed rather than being misread. The endpoint is not
+  SCA-protected and answers a personal API token on profiles whose
+  statements answer 403 (live 2026-11-26 on five profiles). The feed is
+  real-time visibility, not the statement ledger.
+- `Money.Amount()` converts to the fleet-canonical
+  `go-composable-business-types/money` type at the wire edge.
+- `TransferStatusFundsRefunded` (`funds_refunded`), seen live on five
+  transfers.
+
+### Fixed
+
+- `ListRecipients` decoded a bare array, but `GET /v2/accounts` answers a
+  page envelope (`content`, `seekPositionForNext`). It now follows the
+  `seekPositionForNext` cursor to the last page, where the field is absent.
+- `ListRecipients` filtered with `profile=`, which the live wire ignored
+  (two profiles returned the same ids); it now sends `profileId`.
+- `Recipient.AccountHolderName` was always empty from the list endpoint:
+  the holder name arrives as `name.fullName`. Both spellings map.
+- A flat error envelope (top-level `code` and `message` beside an empty
+  `errors` list) now decodes to one detail, so `HasCode` and the
+  `wise_code` error context see the code.
+- The spec-conformance suite no longer exempts the recipient list from
+  response validation; the exemption had hidden the envelope mismatch.
+
+### Changed
+
+- `ListRecipients` returns an empty, non-nil slice when a profile has no
+  recipients.
 
 ## [0.17.0] - 2026-11-11
 

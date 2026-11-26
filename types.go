@@ -272,6 +272,7 @@ const (
 	TransferStatusCancelled              TransferStatus = "cancelled"
 	TransferStatusUnsuccessful           TransferStatus = "unsuccessful"
 	TransferStatusChargedBack            TransferStatus = "charged_back"
+	TransferStatusFundsRefunded          TransferStatus = "funds_refunded"
 )
 
 // TransferPayoutInfo is the banking-partner payout information for a

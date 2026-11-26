@@ -19,8 +19,8 @@ type ListRecipientsRequest struct {
 	Currency  Currency // Optional filter.
 }
 
-// ListRecipients returns the recipient accounts for a profile, paginating
-// through the complete result set in recipientsPageSize chunks.
+// ListRecipients returns every recipient account of a profile, following the
+// page envelope's seekPositionForNext cursor until the last page.
 func (c *Client) ListRecipients(
 	ctx context.Context,
 	req ListRecipientsRequest,
@@ -29,32 +29,42 @@ func (c *Client) ListRecipients(
 		return nil, err
 	}
 
-	var all []Recipient
+	all := []Recipient{}
 
-	for offset := 0; ; offset += recipientsPageSize {
-		page, err := c.listRecipientsPage(ctx, req, offset)
+	seek := ""
+
+	for {
+		page, next, err := c.listRecipientsPage(ctx, req, seek)
 		if err != nil {
 			return nil, err
 		}
 
 		all = append(all, page...)
 
-		if len(page) < recipientsPageSize {
+		if next == nil || len(page) == 0 {
 			return all, nil
 		}
+
+		seek = strconv.FormatInt(*next, 10)
 	}
 }
 
+// listRecipientsPage fetches one page for the seek position ("" = first page)
+// and returns its mapped recipients plus the next seek position, nil on the
+// last page.
 func (c *Client) listRecipientsPage(
 	ctx context.Context,
 	req ListRecipientsRequest,
-	offset int,
-) ([]Recipient, error) {
+	seek string,
+) ([]Recipient, *int64, error) {
 	query := func() string {
 		v := url.Values{}
-		v.Set("profile", strconv.FormatInt(req.ProfileID.Get(), 10))
+		v.Set("profileId", strconv.FormatInt(req.ProfileID.Get(), 10))
 		v.Set("size", strconv.Itoa(recipientsPageSize))
-		v.Set("offset", strconv.Itoa(offset))
+
+		if seek != "" {
+			v.Set("seekPosition", seek)
+		}
 
 		if req.Currency != "" {
 			v.Set(wireKeyCurrency, string(req.Currency))
@@ -63,25 +73,25 @@ func (c *Client) listRecipientsPage(
 		return v.Encode()
 	}
 
-	var recipients []raw.Recipient
+	var page raw.RecipientPage
 
-	err := c.getWithQuery(ctx, "/v2/accounts", query, &recipients)
+	err := c.getWithQuery(ctx, "/v2/accounts", query, &page)
 	if err != nil {
-		return nil, fmt.Errorf("list recipients for profile %d: %w", req.ProfileID.Get(), err)
+		return nil, nil, fmt.Errorf("list recipients for profile %d: %w", req.ProfileID.Get(), err)
 	}
 
-	result := make([]Recipient, 0, len(recipients))
-	for _, r := range recipients {
+	result := make([]Recipient, 0, len(page.Content))
+	for _, r := range page.Content {
 		mapped, mapErr := mapRecipient(r)
 		if mapErr != nil {
-			return nil, errorfamily.WrapCorruption(mapErr, errorCodeRecipientMap,
+			return nil, nil, errorfamily.WrapCorruption(mapErr, errorCodeRecipientMap,
 				fmt.Sprintf("map recipient %d", r.ID))
 		}
 
 		result = append(result, mapped)
 	}
 
-	return result, nil
+	return result, page.SeekPositionForNext, nil
 }
 
 // GetRecipient returns a single recipient account by ID.
@@ -198,9 +208,14 @@ func mapRecipient(r raw.Recipient) (Recipient, error) {
 		details[k] = fmt.Sprintf("%v", v)
 	}
 
+	holder := r.AccountHolderName
+	if holder == "" {
+		holder = r.Name.FullName
+	}
+
 	return Recipient{
 		ID:                id.NewID[RecipientBrand](r.ID),
-		AccountHolderName: r.AccountHolderName,
+		AccountHolderName: holder,
 		Currency:          currency,
 		Country:           r.Country,
 		Type:              r.Type,

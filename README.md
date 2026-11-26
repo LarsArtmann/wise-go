@@ -38,6 +38,7 @@ Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise'
 - [API Reference](#api-reference)
   - [Authentication](#authentication)
   - [Profiles](#profiles)
+  - [Activity feed](#activity-feed)
   - [Users](#users)
   - [Balances](#balances)
   - [Transactions](#transactions)
@@ -75,6 +76,7 @@ Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise'
 - **Write operations** — create quotes (authenticated and unauthenticated), recipients, and transfers; fund transfers from a balance; cancel transfers; validate transfer requirements; fetch delivery estimates.
 - **SCA challenge support** — SCA-protected endpoints (e.g. balance statements for UK/EEA profiles) surface as `*SCAChallengeError` with the one-time approval token; complete the challenge with `WithSCAApprovalToken` and retry. See [SCA](#strong-customer-authentication-sca).
 - **Statement & receipt downloads** — balance statements in CSV/PDF/XLSX/CAMT.053/MT940/QIF, transfer receipts (PDF), and MT103 payout proofs returned as raw bytes with client-side validation.
+- **Profile activity feed** — page through a profile's activity feed (transfers, card payments, deposits, conversions) with `ListActivities`; served to a personal API token without SCA, even while statements are challenge-blocked. Display-oriented visibility, not the statement ledger. See [Activity feed](#activity-feed).
 - **Webhook subscriptions & typed events** — register, list, and delete profile webhook subscriptions, then parse deliveries with `ParseWebhookEvent`: typed payloads for transfer state changes, payout failures, and balance credits; unknown event types never break your handler.
 - **Identify your integration** — `WithUserAgent` replaces Go's default client agent with your own (`bank-sync/1.0`), as Wise recommends.
 - **Tolerant timestamp handling** — Wise emits four different timestamp formats. One parser accepts them all (zoneless = UTC), and outgoing query timestamps are normalized to UTC `Z` (Wise rejects zone offsets with 422).
@@ -351,6 +353,31 @@ profiles, err := client.ListProfiles(ctx)
 // }
 ```
 
+### Activity feed
+
+```go
+page, err := client.ListActivities(ctx, wise.ListActivitiesRequest{
+    ProfileID: profileID,
+    Size:      100, // 1 to 100
+})
+for _, activity := range page.Activities {
+    if activity.PrimaryAmount.Present {
+        fmt.Println(activity.CreatedOn.Format("2006-01-02"), activity.Type,
+            activity.PrimaryAmount.Amount)
+    }
+}
+```
+
+Pass `page.NextCursor` as `Cursor` to read the next page; it is empty on the last page. `Since` / `Until` bound the window on creation time, `ResourceType` and `Status` are optional filters.
+
+The feed is real-time visibility, **not the statement ledger**:
+
+- It is profile-scoped, not balance-scoped: a two-legged row does not say which balance moved.
+- Amounts arrive as Wise's display text. `ActivityAmount.Amount` is set only when `Present` is true and `Text` always keeps the raw value; `Credit` marks money in.
+- Fees are not itemized, so rows can differ from the statement where the two overlap.
+
+Read `ListStatements` for the book of record and the feed for what happened recently. Unlike statements, the endpoint is not SCA-protected and answers a personal API token.
+
 ### Users
 
 ```go
@@ -549,6 +576,8 @@ recipients, err := client.ListRecipients(ctx, wise.ListRecipientsRequest{
     ProfileID: profileID,
 })
 ```
+
+`ListRecipients` follows Wise's page cursor and returns every recipient of the profile (an empty, non-nil slice when there is none). `Recipient.AccountHolderName` comes from Wise's `name.fullName` field.
 
 `Recipient.Details` is a `map[string]string`; required keys vary by currency and
 route — use the account-requirements endpoint to discover them per corridor

@@ -23,7 +23,7 @@ the tier-2 surface shipped: users, statement files in all six formats, webhook
 signature verification, balance lifecycle (create/direct-get/total-funds),
 Multi-Currency Account + bank details (on Wise's 2027Q1 surface), and
 currency reference data — 47
-`*Client` methods across 15 resource files, plus webhook subscriptions with typed
+`*Client` methods across 15 resource files (48 / 16 after v0.18.0), plus webhook subscriptions with typed
 event decoding, programmatic SCA challenge clearing (one-time-token endpoints,
 every OTT-taking surface typed via `OneTimeToken`), a spec-drift gate against
 the live OpenAPI bundle, and
@@ -40,8 +40,8 @@ preserving the architectural decisions that make the codebase maintainable.
 
 Today: tiers 1 and 2 of
 `docs/planning/archived/2026-08-19_wise-api-full-implementation-plan.md` are complete,
-and the transfer category is complete end to end — 47 `*Client` methods
-across 15 resource files. The core transfer flow is live: quotes (including
+and the transfer category is complete end to end — 48 `*Client` methods
+across 16 resource files. The core transfer flow is live: quotes (including
 account requirements and the two-pass refresh), recipients, transfers
 (including receipts, US combined receipt, NOC documents, payments-list and
 MT103 payout info), funding, delivery estimates, exchange rates,
@@ -111,7 +111,7 @@ spec-vs-live assumptions, live-only wire shapes documented) and the OTT
 The v1.0 audit is
 green and re-audited 2026-09-13 at the 33-method surface
 (`docs/reviews/archived/2026-08-21_v1.0-api-audit.md` — refreshed inventory, godoc pass,
-risk-register items 8–10, growth lineage through 47 methods); the v1.0.0 tag
+risk-register items 8–10, growth lineage through 48 methods); the v1.0.0 tag
 remains gated on the maintainer's explicit approval.
 
 ### Medium-term
@@ -260,7 +260,7 @@ The SDK now has 17 resource families (profiles, users, balances, multi-currency 
 bank details, transactions/statements, transfers/receipts,
 third-party transfers, funding, quotes,
 recipients, exchange rates, delivery estimates, transfer requirements,
-currencies, webhooks, SCA one-time tokens) and 47 `*Client` methods on the flat
+currencies, webhooks, SCA one-time tokens, the activity feed) and 48 `*Client` methods on the flat
 `client.X` surface — the core
 flow including `FundTransfer` is complete (2026-08-21). The threshold documented
 here
@@ -370,11 +370,6 @@ scheduled work:
 
 ## From the OpenAPI conformance work (2026-09-16)
 
-- **Paginated recipient surface** — the bundled OpenAPI spec documents only
-  the NEW `/accounts` list shape (envelope with `content`,
-  `seekPositionForNext`, `seekPositionForCurrent`); the SDK targets the
-  legacy bare-array `/v2/accounts`. Migrate with pagination support once the
-  new surface is live-equivalent.
 - **Spec snapshot refresh tooling** — a documented command/app to re-download
   the Wise OpenAPI bundle (docs.wise.com `index.yaml`), convert to JSON, and
   diff paths/schemas against `docs/reviews/wise-api-openapi.json` so contract

@@ -869,6 +869,35 @@ func ExampleClient_Health() {
 	fmt.Println("wise API reachable")
 }
 
+// ListActivities reads one page of a profile's activity feed: snapshots of
+// transfers, card payments, deposits and conversions, newest first. The feed
+// is display-oriented visibility, not the statement ledger.
+//
+//nolint:testableexamples // documentation-only; runs against the live API
+func ExampleClient_ListActivities() {
+	client := wise.New("your-api-key")
+	profileID := wise.NewProfileID(12345)
+
+	page, err := client.ListActivities(context.Background(), wise.ListActivitiesRequest{
+		ProfileID: profileID,
+		Size:      100,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, activity := range page.Activities {
+		amount := activity.PrimaryAmount.Text
+		if !activity.PrimaryAmount.Present {
+			amount = "n/a"
+		}
+
+		fmt.Printf("%s %s %s\n", activity.CreatedOn.Format("2006-01-02"), activity.Type, amount)
+	}
+
+	// page.NextCursor is "" on the last page; pass it as Cursor to continue.
+}
+
 // VerifyCredentials is the fail-fast probe: one authenticated round-trip
 // with the retry ladder disabled, for startup config checks. Health is for
 // readiness polling that should ride the retry budget.

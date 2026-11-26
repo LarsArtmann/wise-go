@@ -47,14 +47,13 @@ func TestMain(m *testing.M) {
 
 		code = 1
 	default:
-		templates, exemptPaths, exchanges, exemptAccountsLists := conformanceCoverageSnapshot()
+		templates, exemptPaths, exchanges := conformanceCoverageSnapshot()
 		fmt.Fprintf(
 			os.Stdout,
-			"spec conformance: %d exchanges validated across %d distinct spec operations; %d exempt statement variants; %d exempt legacy recipient lists\n",
+			"spec conformance: %d exchanges validated across %d distinct spec operations; %d exempt statement variants\n",
 			exchanges,
 			len(templates),
 			len(exemptPaths),
-			exemptAccountsLists,
 		)
 	}
 
@@ -77,7 +76,7 @@ func evaluateConformanceCoverage() conformanceCoverageVerdict {
 		return conformanceCoverageVerdict{}
 	}
 
-	templates, exemptPaths, exchanges, _ := conformanceCoverageSnapshot()
+	templates, exemptPaths, exchanges := conformanceCoverageSnapshot()
 
 	if _, err := loadConformanceSpec(); err != nil {
 		return conformanceCoverageVerdict{

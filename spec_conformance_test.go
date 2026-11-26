@@ -245,14 +245,6 @@ var statementVariantPattern = regexp.MustCompile(
 	`^/profiles/[^/]+/balance-statements/[^/]+/statement\.(csv|pdf|qif|xlsx|xml|mt940)$`,
 )
 
-// accountsListPath is the normalized template of the legacy recipient list.
-// The bundled spec documents only the NEW paginated /accounts surface
-// (a {content, seekPositionForNext, seekPositionForCurrent} envelope), while
-// the legacy /v2/accounts wire this SDK targets returns a bare array.
-// Response-body validation is skipped for it; the migration to the paginated
-// surface is tracked in ROADMAP.md.
-const accountsListPath = "/accounts"
-
 // validateExchange checks one exchange against the spec and returns one
 // message per violation (empty slice means conforming).
 func validateExchange(specCtx *conformanceSpecContext, exchange conformanceExchange) []string {
@@ -302,12 +294,6 @@ func validateExchange(specCtx *conformanceSpecContext, exchange conformanceExcha
 	}
 
 	if !strings.Contains(responseCT, "json") {
-		return problems
-	}
-
-	if normalized == accountsListPath && exchange.method == http.MethodGet {
-		recordExemptLegacyAccountsList()
-
 		return problems
 	}
 
@@ -390,7 +376,6 @@ var (
 	coverageMu              sync.Mutex
 	conformingTemplates     = map[string]int{}
 	exemptStatementPaths    = map[string]int{}
-	exemptAccountsLists     int
 	totalValidatedExchanges int
 )
 
@@ -409,14 +394,7 @@ func recordExemptStatementVariant(rawPath string) {
 	exemptStatementPaths[rawPath]++
 }
 
-func recordExemptLegacyAccountsList() {
-	coverageMu.Lock()
-	defer coverageMu.Unlock()
-
-	exemptAccountsLists++
-}
-
-func conformanceCoverageSnapshot() ([]string, []string, int, int) {
+func conformanceCoverageSnapshot() ([]string, []string, int) {
 	coverageMu.Lock()
 	defer coverageMu.Unlock()
 
@@ -434,7 +412,7 @@ func conformanceCoverageSnapshot() ([]string, []string, int, int) {
 
 	sort.Strings(exemptPaths)
 
-	return templates, exemptPaths, totalValidatedExchanges, exemptAccountsLists
+	return templates, exemptPaths, totalValidatedExchanges
 }
 
 // TestSpecConformanceValidatorCanFail guards the gate against silent rot:

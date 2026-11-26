@@ -220,11 +220,28 @@ type ExchangeRate struct {
 type Recipient struct {
 	ID                int64          `json:"id"`
 	AccountHolderName string         `json:"accountHolderName"`
+	Name              RecipientName  `json:"name"`
 	Currency          string         `json:"currency"`
 	Country           string         `json:"country"`
 	Type              string         `json:"type"`
 	Details           map[string]any `json:"details"`
 	Active            bool           `json:"active"`
+}
+
+// RecipientName is the name object of a recipient on the response wire. The
+// spec's recipient schema carries the holder here (name.fullName); the flat
+// accountHolderName spelling belongs to the create request.
+type RecipientName struct {
+	FullName string `json:"fullName"`
+}
+
+// RecipientPage is one page of a recipient list: the spec and the live wire
+// both answer a page envelope, never a bare array.
+type RecipientPage struct {
+	Content []Recipient `json:"content"`
+	// SeekPositionForNext is the seekPosition of the following page; nil
+	// (absent or null) on the last page.
+	SeekPositionForNext *int64 `json:"seekPositionForNext,omitzero"`
 }
 
 // Quote from Wise API (/v3/quotes).

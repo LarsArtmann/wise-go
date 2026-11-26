@@ -36,14 +36,14 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
   fields, all in already-triaged DEMAND_GATED paths); the category count is a
   live-preview-pages figure, not a spec-object count, so the two denominators
   measure different things by design.
-- **wise-go ships 46 of the documented operations** through **47 public `*Client`
-  methods** — 44 operation-carrying; the other four are the
+- **wise-go ships 47 of the documented operations** through **48 public `*Client`
+  methods** — 45 operation-carrying; the other four are the
   `ListProfiles` wrappers `Authenticate`/`Health`/`VerifyCredentials` and
   `ClearSCAChallenge` (a multi-call loop); `TriggerOTT`/`VerifyOTT` each
   cover three channel paths. The method count is gate-checked by
   `nix run .#doc-verify` against the compiled surface.
-- **51 operations have no code yet**, split by why: **20 PLANNED** (complete
-  already-shipped families), **26 DEMAND_GATED** (whole families awaiting a
+- **50 operations have no code yet**, split by why: **20 PLANNED** (complete
+  already-shipped families), **25 DEMAND_GATED** (whole families awaiting a
   consumer demand signal — plan tier 3), **5 ON_HOLD** (app-level webhook
   scope decision). Tiers per
   [the implementation plan](docs/planning/archived/2026-08-19_wise-api-full-implementation-plan.md).
@@ -72,7 +72,7 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
 | Exchange rates                                                                                          | 1   | 1       | shipped                                                             |
 | Delivery estimates                                                                                      | 1   | 1       | shipped                                                             |
 | Comparison                                                                                              | 1   | 0       | PLANNED (tier 2 leftover)                                           |
-| Activity                                                                                                | 1   | 0       | DEMAND_GATED                                                        |
+| Activity                                                                                                | 1   | 1       | shipped (v0.18.0)                                                   |
 | Contacts                                                                                                | 1   | 0       | DEMAND_GATED                                                        |
 | Addresses                                                                                               | 5   | 0       | DEMAND_GATED                                                        |
 | Payin deposit details                                                                                   | 1   | 0       | DEMAND_GATED                                                        |
@@ -96,6 +96,12 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
 | POST   | `/v4/profiles/{id}/excess-money-account`            | DEMAND_GATED     | excess-funds sweep target                     |
 | GET    | `/v4/profiles/{id}/balances/hold-limit-breach`      | DEMAND_GATED     | hold-limit breaches (SG/MY)                   |
 | POST   | `/v4/profiles/{id}/balances/hold-limit-breach/{id}` | DEMAND_GATED     | close breach via one-time refund              |
+
+### Activity feed (1 operation)
+
+| Method | Path                           | Status           | wise-go                                |
+| ------ | ------------------------------ | ---------------- | -------------------------------------- |
+| GET    | `/v1/profiles/{id}/activities` | FULLY_FUNCTIONAL | `ListActivities` (`activities.go:183`) |
 
 ### Balance statements (1 operation, 6 formats)
 
@@ -181,16 +187,16 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 
 ### Recipients (8 operations)
 
-| Method | Path                                          | Status           | wise-go                                             |
-| ------ | --------------------------------------------- | ---------------- | --------------------------------------------------- |
-| GET    | `/v2/accounts`                                | FULLY_FUNCTIONAL | `ListRecipients` (`recipients.go:24`)               |
-| POST   | `/v1/accounts`                                | FULLY_FUNCTIONAL | `CreateRecipient` (`recipients.go:108`)             |
-| GET    | `/v1/accounts/{id}`                           | FULLY_FUNCTIONAL | `GetRecipient` (`recipients.go:88`)                 |
-| GET    | `/v1/quotes/{id}/account-requirements`        | FULLY_FUNCTIONAL | `GetQuoteAccountRequirements` (`quotes.go:95`)      |
-| POST   | `/v1/quotes/{id}/account-requirements`        | FULLY_FUNCTIONAL | `RefreshQuoteAccountRequirements` (`quotes.go:158`) |
-| DELETE | `/v1/accounts/{id}`                           | PLANNED          | deactivate recipient                                |
-| POST   | `/v1/accounts/{id}/quotes/{id}/compatibility` | PLANNED          | pre-transfer compatibility check                    |
-| PATCH  | `/v1/accounts/{id}/confirmations`             | PLANNED          | accept verification mismatch                        |
+| Method | Path                                          | Status           | wise-go                                                                          |
+| ------ | --------------------------------------------- | ---------------- | -------------------------------------------------------------------------------- |
+| GET    | `/v2/accounts`                                | FULLY_FUNCTIONAL | `ListRecipients` (`recipients.go:24`); page envelope + seek cursor fixed v0.18.0 |
+| POST   | `/v1/accounts`                                | FULLY_FUNCTIONAL | `CreateRecipient` (`recipients.go:118`)                                          |
+| GET    | `/v1/accounts/{id}`                           | FULLY_FUNCTIONAL | `GetRecipient` (`recipients.go:98`)                                              |
+| GET    | `/v1/quotes/{id}/account-requirements`        | FULLY_FUNCTIONAL | `GetQuoteAccountRequirements` (`quotes.go:95`)                                   |
+| POST   | `/v1/quotes/{id}/account-requirements`        | FULLY_FUNCTIONAL | `RefreshQuoteAccountRequirements` (`quotes.go:158`)                              |
+| DELETE | `/v1/accounts/{id}`                           | PLANNED          | deactivate recipient                                                             |
+| POST   | `/v1/accounts/{id}/quotes/{id}/compatibility` | PLANNED          | pre-transfer compatibility check                                                 |
+| PATCH  | `/v1/accounts/{id}/confirmations`             | PLANNED          | accept verification mismatch                                                     |
 
 ### Transfers — standard (11 operations)
 
@@ -253,7 +259,6 @@ the plan; bulk payments only on a consumer demand signal).
 
 | Category              | Method + Path                                                                                            | Status       | wise-go                    |
 | --------------------- | -------------------------------------------------------------------------------------------------------- | ------------ | -------------------------- |
-| Activity              | GET `/v1/profiles/{id}/activities`                                                                       | DEMAND_GATED | account activity feed      |
 | Contacts              | POST `/v1/profiles/{id}/contacts`                                                                        | DEMAND_GATED | Wisetag/email/phone lookup |
 | Addresses             | POST `/v1/addresses`, GET `/v1/addresses`, GET `/v1/addresses/{id}`, GET/POST `/v1/address-requirements` | DEMAND_GATED | address book (5 ops)       |
 | Payin deposit details | GET `/v1/profiles/{id}/transfers/{id}/deposit-details/bank-transfer`                                     | DEMAND_GATED | bank-transfer pay-in info  |
@@ -307,7 +312,7 @@ the plan; bulk payments only on a consumer demand signal).
 | --------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `wise.New(apiKey, opts...)` constructor | FULLY_FUNCTIONAL | `client.go:52`; functional-options pattern                                                                                                               |
 | Bearer-token authentication             | FULLY_FUNCTIONAL | `client.go:397` `setHeaders`                                                                                                                             |
-| Sandbox environment (`WithSandbox`)     | FULLY_FUNCTIONAL | `options.go:64`; `SandboxURL` const in `types.go:24`                                                                                                     |
+| Sandbox environment (`WithSandbox`)     | FULLY_FUNCTIONAL | `options.go:64`; `SandboxURL` const in `types.go:32`                                                                                                     |
 | Custom base URL (`WithBaseURL`)         | FULLY_FUNCTIONAL | `options.go:71`                                                                                                                                          |
 | Custom HTTP timeout (`WithTimeout`)     | FULLY_FUNCTIONAL | `options.go:95`                                                                                                                                          |
 | Custom retry policy (`WithRetry`)       | FULLY_FUNCTIONAL | `options.go:103`; exponential backoff with jitter via go-retry                                                                                           |
@@ -317,7 +322,7 @@ the plan; bulk payments only on a consumer demand signal).
 | `Authenticate(ctx)`                     | FULLY_FUNCTIONAL | `client.go:185`; delegates to `ListProfiles`                                                                                                             |
 | `Health(ctx)`                           | FULLY_FUNCTIONAL | `client.go:202`; credential-validating readiness probe (authenticated `ListProfiles` through the retry executor — not a cheap liveness check; see godoc) |
 | `WithUserAgent` option (v0.11.0)        | FULLY_FUNCTIONAL | `options.go:88`; custom `User-Agent` on every request, default preserved (BDD)                                                                           |
-| Shared-client concurrency (v0.11.0)     | FULLY_FUNCTIONAL | `wise_test.go:267`; 16 parallel requests, per-request correlation-ID isolation, `-race`                                                                  |
+| Shared-client concurrency (v0.11.0)     | FULLY_FUNCTIONAL | `wise_test.go:269`; 16 parallel requests, per-request correlation-ID isolation, `-race`                                                                  |
 
 ## Transaction behavior
 
@@ -328,9 +333,22 @@ the plan; bulk payments only on a consumer demand signal).
 | Transaction type classification                          | FULLY_FUNCTIONAL     | `transactions.go:177`; CARD_PAYMENT / CARD_REFUND split fixed 2026-07-18                     |
 | Cross-currency transaction mapping                       | FULLY_FUNCTIONAL     | `transactions.go:135` `mapExchange`; uses transaction currency, not request currency         |
 | `Transaction.Exchange` (`*TransactionExchange`)          | FULLY_FUNCTIONAL     | `types.go:119`; nil for non-conversion transactions                                          |
-| `EndOfStatementBalance` exposure                         | FULLY_FUNCTIONAL     | `types.go:192`; surfaced as `Money` on `ListTransactionsResponse`                            |
+| `EndOfStatementBalance` exposure                         | FULLY_FUNCTIONAL     | `types.go:219`; surfaced as `Money` on `ListTransactionsResponse`                            |
 | `Transaction.Date` UTC semantics                         | PARTIALLY_FUNCTIONAL | `users.go:137` `parseWiseDate` parses as UTC; Wise sends no TZ — documented in field comment |
-| Pagination                                               | PLANNED              | Wise returns all transactions in one response; no endpoint requires it yet                   |
+| Transaction pagination                                   | NOT_APPLICABLE       | Wise returns all transactions in one response                                                |
+| Recipient list pagination                                | FULLY_FUNCTIONAL     | `recipients.go:24`; follows `seekPositionForNext`, stops on the last page (fixed v0.18.0)    |
+
+## Activity feed behavior
+
+| Feature                                               | Status           | Evidence                                                                   |
+| ----------------------------------------------------- | ---------------- | -------------------------------------------------------------------------- |
+| Cursor pagination                                     | FULLY_FUNCTIONAL | `activities.go:183`; `ActivityPage.NextCursor`, empty on the last page     |
+| Amount text parsing                                   | FULLY_FUNCTIONAL | `ActivityAmount.Present` gates `Amount`; `Text` always keeps the raw value |
+| Money-in detection                                    | FULLY_FUNCTIONAL | `ActivityAmount.Credit`; leading `+` or `<positive>` markup                |
+| `Since` / `Until` / `ResourceType` / `Status` filters | FULLY_FUNCTIONAL | `ListActivitiesRequest`; zero values are omitted                           |
+| Unknown type / status / resource values preserved     | FULLY_FUNCTIONAL | open enums `ActivityType`, `ActivityStatus`, `ActivityResourceType`        |
+| Balance attribution of two-legged rows                | OUT_OF_SCOPE     | the feed is profile-scoped; Wise sends no balance reference                |
+| Fee itemization                                       | OUT_OF_SCOPE     | the feed is display-oriented; read statements for the book of record       |
 
 ## Balance filtering behavior
 
@@ -344,22 +362,22 @@ the plan; bulk payments only on a consumer demand signal).
 
 | Feature                                           | Status           | Evidence                                                                                            |
 | ------------------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------- |
-| `APIError` base type                              | FULLY_FUNCTIONAL | `errors.go:243`; embeds into all subtypes; carries `Headers` (`:250`) and `Details` (`:259`)        |
+| `APIError` base type                              | FULLY_FUNCTIONAL | `errors.go:245`; embeds into all subtypes; carries `Headers` (`:252`) and `Details` (`:259`)        |
 | `BadRequestError` (HTTP 400)                      | FULLY_FUNCTIONAL | `errors.go:429`; granular reason codes arrive in `Details`                                          |
-| `RateLimitError` (HTTP 429) with `RetryAfter`     | FULLY_FUNCTIONAL | `errors.go:322`; parses delta-seconds + HTTP-date                                                   |
-| `RateLimitError.RateLimitedBy` (429 header)       | FULLY_FUNCTIONAL | `errors.go:326`; captures `X-Rate-Limited-By` header                                                |
+| `RateLimitError` (HTTP 429) with `RetryAfter`     | FULLY_FUNCTIONAL | `errors.go:324`; parses delta-seconds + HTTP-date                                                   |
+| `RateLimitError.RateLimitedBy` (429 header)       | FULLY_FUNCTIONAL | `errors.go:328`; captures `X-Rate-Limited-By` header                                                |
 | `AuthError` (HTTP 401, 403)                       | FULLY_FUNCTIONAL | `errors.go:357`                                                                                     |
 | `SCAChallengeError` (403 + 2FA headers, v0.6.0)   | FULLY_FUNCTIONAL | `errors.go:373`; `TwoFAApprovalToken()` returns the OTT                                             |
 | `WithSCAApprovalToken` option (v0.6.0)            | FULLY_FUNCTIONAL | `options.go:161`; sends cleared OTT as `x-2fa-approval`                                             |
 | `NotFoundError` (HTTP 404)                        | FULLY_FUNCTIONAL | `errors.go:410`                                                                                     |
-| `ServerError` (HTTP 5xx)                          | FULLY_FUNCTIONAL | `errors.go:441`                                                                                     |
+| `ServerError` (HTTP 5xx)                          | FULLY_FUNCTIONAL | `errors.go:443`                                                                                     |
 | `ErrorCode()` / `ErrorFamily()` / `IsRetryable()` | FULLY_FUNCTIONAL | All implement go-error-family interfaces                                                            |
 | `errors.AsType` matching                          | FULLY_FUNCTIONAL | Demonstrated in README; tested                                                                      |
 | `APIError.Details` structured error envelope      | FULLY_FUNCTIONAL | `errors.go:255`; Wise's `errors[].code`/`message` per entry, wire order                             |
 | `WiseErrorCode` open enum (14 documented codes)   | FULLY_FUNCTIONAL | `errors.go:195`; unknown wire values pass through                                                   |
-| Curated code sentinels (11) + `APIError.Is`       | FULLY_FUNCTIONAL | `ErrNotValid` (`errors.go:125`) ... `Is` (`errors.go:308`) matches `Details` codes through any wrap |
+| Curated code sentinels (11) + `APIError.Is`       | FULLY_FUNCTIONAL | `ErrNotValid` (`errors.go:125`) ... `Is` (`errors.go:310`) matches `Details` codes through any wrap |
 | `APIError.HasCode(WiseErrorCode)`                 | FULLY_FUNCTIONAL | `errors.go:286`; open-enum matcher for uncurated codes                                              |
-| `wise_code` in `ErrorContext()`                   | FULLY_FUNCTIONAL | `errors.go:278` (APIError) and `errors.go:342` (RateLimitError); first granular code                |
+| `wise_code` in `ErrorContext()`                   | FULLY_FUNCTIONAL | `errors.go:274` (APIError) and `errors.go:339` (RateLimitError); first granular code                |
 | Granular-code reference doc                       | FULLY_FUNCTIONAL | `docs/error-codes.md`; code, sentinel, status context, retry guidance                               |
 
 ## Type system
@@ -400,25 +418,25 @@ the plan; bulk payments only on a consumer demand signal).
 
 ## Build & tooling
 
-| Feature                                                | Status           | Evidence                                                                                                                                                                                                                                                                                                              |
-| ------------------------------------------------------ | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `go test ./...`                                        | FULLY_FUNCTIONAL | httptest mocks; no network required                                                                                                                                                                                                                                                                                   |
-| `golangci-lint run`                                    | FULLY_FUNCTIONAL | 0 issues                                                                                                                                                                                                                                                                                                              |
-| `.github/workflows/ci.yml` (build/test/lint/vulncheck) | DISABLED         | Workflow file is maintained and correct (refreshed 2026-09-12, commit `14523ae`) but `disabled_manually` on GitHub since 2026-07-05. Unblock: push + `gh workflow enable ci`.                                                                                                                                         |
-| Credentialed sandbox integration tests                 | FULLY_FUNCTIONAL | Eight key-gated live tests in `sandbox_live_test.go` (smoke trio + rates shape, funding-404, SCA challenge shape, OTT status on the quarterly surface, CreateBalance idempotency); credentialed run green 2026-10-17, keyless runs SKIP cleanly; `sandbox-live.yml` stays dispatch-gated, key lives outside the repo. |
-| `nix flake check`                                      | FULLY_FUNCTIONAL | Format + sandboxed test via the `go-standard` module (`checks.test` race + coverage)                                                                                                                                                                                                                                  |
-| `nix fmt` (gofumpt + goimports + nixfmt)               | FULLY_FUNCTIONAL | `flake.nix` treefmt config                                                                                                                                                                                                                                                                                            |
-| BDD tests via Ginkgo + httptest                        | FULLY_FUNCTIONAL | `wise_test.go`                                                                                                                                                                                                                                                                                                        |
-| `nix run .#doc-verify` (links + godoc + count claims)  | FULLY_FUNCTIONAL | `flake.nix` app; gates the count claims in AGENTS.md/FEATURES.md against the compiled surface                                                                                                                                                                                                                         |
-| OpenAPI spec-conformance gate                          | FULLY_FUNCTIONAL | `spec_conformance_test.go` + `zz_spec_conformance_coverage_test.go`; every mock exchange validated against `docs/reviews/wise-api-openapi.json` (v0.12.0)                                                                                                                                                             |
-| `nix run .#apidiff` (gorelease vs latest tag)          | FULLY_FUNCTIONAL | `flake.nix` app; pins gorelease via `golang.org/x/exp`; public-surface delta report                                                                                                                                                                                                                                   |
-| `.github/SECURITY.md` (vulnerability reporting)        | FULLY_FUNCTIONAL | private advisories, scope, 7-day triage; linked from CONTRIBUTING.md                                                                                                                                                                                                                                                  |
+| Feature                                                | Status               | Evidence                                                                                                                                                                                                                                                                                                              |
+| ------------------------------------------------------ | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `go test ./...`                                        | FULLY_FUNCTIONAL     | httptest mocks; no network required                                                                                                                                                                                                                                                                                   |
+| `golangci-lint run`                                    | FULLY_FUNCTIONAL     | 0 issues                                                                                                                                                                                                                                                                                                              |
+| `.github/workflows/ci.yml` (build/test/lint/vulncheck) | PARTIALLY_FUNCTIONAL | Enabled 2026-10-31; the push and schedule runs of 2026-11-26 fail in the pin-sync and nix flake check jobs (`gh run view 45759336542`) while lint, error audit, clone detection and fuzz pass                                                                                                                         |
+| Credentialed sandbox integration tests                 | FULLY_FUNCTIONAL     | Eight key-gated live tests in `sandbox_live_test.go` (smoke trio + rates shape, funding-404, SCA challenge shape, OTT status on the quarterly surface, CreateBalance idempotency); credentialed run green 2026-10-17, keyless runs SKIP cleanly; `sandbox-live.yml` stays dispatch-gated, key lives outside the repo. |
+| `nix flake check`                                      | FULLY_FUNCTIONAL     | Format + sandboxed test via the `go-standard` module (`checks.test` race + coverage)                                                                                                                                                                                                                                  |
+| `nix fmt` (gofumpt + goimports + nixfmt)               | FULLY_FUNCTIONAL     | `flake.nix` treefmt config                                                                                                                                                                                                                                                                                            |
+| BDD tests via Ginkgo + httptest                        | FULLY_FUNCTIONAL     | `wise_test.go`                                                                                                                                                                                                                                                                                                        |
+| `nix run .#doc-verify` (links + godoc + count claims)  | FULLY_FUNCTIONAL     | `flake.nix` app; gates the count claims in AGENTS.md/FEATURES.md against the compiled surface                                                                                                                                                                                                                         |
+| OpenAPI spec-conformance gate                          | FULLY_FUNCTIONAL     | `spec_conformance_test.go` + `zz_spec_conformance_coverage_test.go`; every mock exchange validated against `docs/reviews/wise-api-openapi.json` (v0.12.0)                                                                                                                                                             |
+| `nix run .#apidiff` (gorelease vs latest tag)          | FULLY_FUNCTIONAL     | `flake.nix` app; pins gorelease via `golang.org/x/exp`; public-surface delta report                                                                                                                                                                                                                                   |
+| `.github/SECURITY.md` (vulnerability reporting)        | FULLY_FUNCTIONAL     | private advisories, scope, 7-day triage; linked from CONTRIBUTING.md                                                                                                                                                                                                                                                  |
 
 ## Documentation
 
 | Feature                           | Status           | Evidence                                                                                                      |
 | --------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------- |
-| Godoc examples for the public API | FULLY_FUNCTIONAL | `example_test.go`; 38 `Example*` funcs (compile-only doc examples + 3 runnable) covering every resource group |
+| Godoc examples for the public API | FULLY_FUNCTIONAL | `example_test.go`; 39 `Example*` funcs (compile-only doc examples + 3 runnable) covering every resource group |
 | README API reference              | FULLY_FUNCTIONAL | Every API-reference resource group documented with runnable snippets + TOC                                    |
 
 ## Deferred architecture
