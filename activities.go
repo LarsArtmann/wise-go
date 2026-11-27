@@ -11,6 +11,7 @@ import (
 
 	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go/internal/raw"
+	"github.com/samber/oops"
 )
 
 // activitiesPageSizeMax is the largest page size the endpoint documents
@@ -190,7 +191,7 @@ func (c *Client) ListActivities(ctx context.Context, req ListActivitiesRequest) 
 	path := fmt.Sprintf("/v1/profiles/%d/activities", req.ProfileID.Get())
 
 	if err := c.getWithQuery(ctx, path, req.query, &page); err != nil {
-		return nil, fmt.Errorf("list activities for profile %d: %w", req.ProfileID.Get(), err)
+		return nil, oops.Wrapf(err, "list activities for profile %d", req.ProfileID.Get())
 	}
 
 	result := &ActivityPage{

@@ -6,6 +6,7 @@ import (
 
 	id "github.com/larsartmann/go-branded-id"
 	errorfamily "github.com/larsartmann/go-error-family"
+	"github.com/samber/oops"
 )
 
 // ProfileBrand is a phantom type for ProfileID.
@@ -223,7 +224,7 @@ const (
 func newRequestUUID() (string, error) {
 	var uuid [16]byte
 	if _, err := rand.Read(uuid[:]); err != nil {
-		return "", fmt.Errorf("generate request UUID: %w", err)
+		return "", oops.Wrapf(err, "generate request UUID")
 	}
 
 	uuid[6] = (uuid[6] & uuidVersionMask) | uuidVersion4

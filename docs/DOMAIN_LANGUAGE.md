@@ -62,6 +62,7 @@ Immutable objects defined by attributes.
 | Typed webhook payload   | The event-specific struct decoded from a delivery envelope's payload                                                   | `TransferActiveCasesData`/`TransferRefundData` (v0.14.0) alongside the generic `WebhookResource`; unknown event types keep the raw payload                                                                            |
 | Code sentinel           | A package-level error standing for one Wise wire code                                                                  | 11 curated wave-1 sentinels (`ErrNotValid`, ...); `errors.Is` matches them through any wrap chain via `APIError.Is` comparing `Details` (v0.15.0)                                                                     |
 | Typed error (by status) | The concrete error type the HTTP status selects                                                                        | 400 → `*BadRequestError` (v0.15.0), 401/403 → `*AuthError`, 403+2FA → `*SCAChallengeError`, 404 → `*NotFoundError`, 429 → `*RateLimitError`, 5xx → `*ServerError`; the status — never the body code — drives the type |
+| Context wrap            | The layer the SDK adds around an error to say what it was doing ("list balances for profile 123: ...")                 | A `samber/oops` layer with a stack trace; message text unchanged, `errors.Is`/`errors.AsType` see through it (ADR 004)                                                                                                |
 
 ## Raw vs Result Types
 

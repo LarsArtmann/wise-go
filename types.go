@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/larsartmann/go-composable-business-types/money"
+	"github.com/samber/oops"
 )
 
 // Version is the released version of this SDK, mirrored from the latest tag.
@@ -46,16 +47,14 @@ type Currency string
 
 // NewCurrency validates and constructs a Currency from a raw string.
 // Returns an error if the string is not exactly 3 uppercase ASCII letters.
-//
-//nolint:err113 // currency validation needs dynamic error messages with context
 func NewCurrency(s string) (Currency, error) {
 	if len(s) != currencyCodeLength {
-		return "", fmt.Errorf("currency must be exactly 3 letters, got %d", len(s))
+		return "", oops.Errorf("currency must be exactly 3 letters, got %d", len(s))
 	}
 
 	for _, c := range s {
 		if c < 'A' || c > 'Z' {
-			return "", fmt.Errorf("currency must be uppercase ASCII letters, got %q", s)
+			return "", oops.Errorf("currency must be uppercase ASCII letters, got %q", s)
 		}
 	}
 
@@ -94,7 +93,7 @@ func (m Money) String() string {
 func (m Money) Amount() (money.Money, error) {
 	converted, err := money.NewMoneyFromCents(m.Cents, string(m.Currency))
 	if err != nil {
-		return money.Money{}, fmt.Errorf("convert %s to the canonical money type: %w", m, err)
+		return money.Money{}, oops.Wrapf(err, "convert %s to the canonical money type", m)
 	}
 
 	return converted, nil

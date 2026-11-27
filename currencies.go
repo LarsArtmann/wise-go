@@ -2,9 +2,9 @@ package wise
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/larsartmann/wise-go/internal/raw"
+	"github.com/samber/oops"
 )
 
 // CurrencyInfo describes one currency Wise allows for transfers — reference
@@ -23,7 +23,7 @@ func (c *Client) ListCurrencies(ctx context.Context) ([]CurrencyInfo, error) {
 	var currencies []raw.CurrencyInfo
 
 	if err := c.get(ctx, "/v1/currencies", &currencies); err != nil {
-		return nil, fmt.Errorf("list currencies: %w", err)
+		return nil, oops.Wrapf(err, "list currencies")
 	}
 
 	result := make([]CurrencyInfo, 0, len(currencies))

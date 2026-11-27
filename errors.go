@@ -95,22 +95,22 @@ const (
 // matched by value, never by type.
 var (
 	// ErrEmptyRateList reports a rates payload that decoded to zero entries.
-	ErrEmptyRateList error = errors.New("empty rate list")
+	ErrEmptyRateList error = newSentinel("empty rate list")
 
 	// ErrAccountIdentificationCardinality marks a wire accountIdentification
 	// that carries zero or several oneOf members; the wrap's detail message
 	// holds the count.
-	ErrAccountIdentificationCardinality error = errors.New(
+	ErrAccountIdentificationCardinality error = newSentinel(
 		"accountIdentification member count is not exactly one",
 	)
 
 	// ErrOTTAlternativesShape is the sentinel for alternatives payloads that
 	// are neither the documented object form nor a bare string array.
-	ErrOTTAlternativesShape error = errors.New("alternatives are neither objects nor strings")
+	ErrOTTAlternativesShape error = newSentinel("alternatives are neither objects nor strings")
 
 	// ErrTransferRefundAmountMissing marks a transfers#refund payload whose
 	// resource block lacks the refund amount/currency pair.
-	ErrTransferRefundAmountMissing error = errors.New(
+	ErrTransferRefundAmountMissing error = newSentinel(
 		"refund amount or currency missing from resource block",
 	)
 )
@@ -124,48 +124,54 @@ var (
 var (
 	// ErrNotValid reports Wise rejecting a value as not valid (wire code
 	// "not.valid"), typically a malformed amount or field value.
-	ErrNotValid error = errors.New("wise: not valid")
+	ErrNotValid error = newSentinel("wise: not valid")
 
 	// ErrInvalidValue reports Wise rejecting a field value (wire code
 	// "invalid_value").
-	ErrInvalidValue error = errors.New("wise: invalid value")
+	ErrInvalidValue error = newSentinel("wise: invalid value")
 
 	// ErrParameterMissing reports a required request parameter Wise did not
 	// receive (wire code "parameter_missing").
-	ErrParameterMissing error = errors.New("wise: parameter missing")
+	ErrParameterMissing error = newSentinel("wise: parameter missing")
 
 	// ErrParameterInvalid reports a request parameter whose value Wise
 	// rejected (wire code "parameter_invalid").
-	ErrParameterInvalid error = errors.New("wise: parameter invalid")
+	ErrParameterInvalid error = newSentinel("wise: parameter invalid")
 
 	// ErrInvalidRequest reports a generic malformed request (wire code
 	// "invalid_request").
-	ErrInvalidRequest error = errors.New("wise: invalid request")
+	ErrInvalidRequest error = newSentinel("wise: invalid request")
 
 	// ErrUnauthorized reports missing or invalid credentials (wire code
 	// "unauthorized").
-	ErrUnauthorized error = errors.New("wise: unauthorized")
+	ErrUnauthorized error = newSentinel("wise: unauthorized")
 
 	// ErrForbidden reports credentials without permission for the operation
 	// (wire code "forbidden").
-	ErrForbidden error = errors.New("wise: forbidden")
+	ErrForbidden error = newSentinel("wise: forbidden")
 
 	// ErrResourceNotFound reports that the addressed resource does not exist
 	// (wire code "resource_not_found").
-	ErrResourceNotFound error = errors.New("wise: resource not found")
+	ErrResourceNotFound error = newSentinel("wise: resource not found")
 
 	// ErrOperationNotSupported reports that the API surface does not support
 	// the requested operation (wire code "operation_not_supported").
-	ErrOperationNotSupported error = errors.New("wise: operation not supported")
+	ErrOperationNotSupported error = newSentinel("wise: operation not supported")
 
 	// ErrRateLimitExceeded reports that Wise throttled the request (wire
 	// code "rate_limit_exceeded"); back off and retry.
-	ErrRateLimitExceeded error = errors.New("wise: rate limit exceeded")
+	ErrRateLimitExceeded error = newSentinel("wise: rate limit exceeded")
 
 	// ErrSystemError reports a Wise-side system failure (wire code
 	// "system_error"), typically transient.
-	ErrSystemError error = errors.New("wise: system error")
+	ErrSystemError error = newSentinel("wise: system error")
 )
+
+// newSentinel builds a package sentinel. Sentinels stay plain stdlib
+// values on purpose: they are compared by value and key codeSentinels.
+func newSentinel(message string) error {
+	return errors.New(message) //nolint:erraudit, err113 // OopsError holds maps; cannot key codeSentinels
+}
 
 // codeSentinels maps the curated code sentinels to the Wise wire code each
 // stands for; [APIError.Is] consults it. Keyed by sentinel identity (each is

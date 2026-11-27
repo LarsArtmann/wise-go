@@ -10,13 +10,13 @@ import (
 	"encoding/json/jsontext"
 	"encoding/json/v2"
 	"encoding/pem"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go/internal/raw"
+	"github.com/samber/oops"
 )
 
 // HeaderWebhookSignature is the header Wise signs every webhook delivery
@@ -35,15 +35,13 @@ const HeaderDeliveryID = "X-Delivery-Id"
 func ParseWebhookPublicKey(pemBytes []byte) (*rsa.PublicKey, error) {
 	block, _ := pem.Decode(pemBytes)
 	if block == nil {
-		//nolint:err113 // config-validation error with fixed message; no sentinel to wrap
-		return nil, errors.New("no PEM block found in webhook public key")
+		return nil, oops.New("no PEM block found in webhook public key")
 	}
 
 	if key, err := x509.ParsePKIXPublicKey(block.Bytes); err == nil {
 		rsaKey, ok := key.(*rsa.PublicKey)
 		if !ok {
-			//nolint:err113 // dynamic type name in message; no sentinel to wrap
-			return nil, fmt.Errorf("webhook public key is %T, want RSA", key)
+			return nil, oops.Errorf("webhook public key is %T, want RSA", key)
 		}
 
 		return rsaKey, nil
@@ -51,7 +49,7 @@ func ParseWebhookPublicKey(pemBytes []byte) (*rsa.PublicKey, error) {
 
 	rsaKey, err := x509.ParsePKCS1PublicKey(block.Bytes)
 	if err != nil {
-		return nil, fmt.Errorf("parse webhook public key: %w", err)
+		return nil, oops.Wrapf(err, "parse webhook public key")
 	}
 
 	return rsaKey, nil
@@ -107,7 +105,7 @@ func (c *Client) CreateProfileWebhookSubscription(
 	var subscription raw.Subscription
 
 	if err := c.post(ctx, path, req.toWire(), &subscription); err != nil {
-		return nil, fmt.Errorf("create webhook subscription for profile %d: %w", profileID.Get(), err)
+		return nil, oops.Wrapf(err, "create webhook subscription for profile %d", profileID.Get())
 	}
 
 	return toWebhookSubscription("map created webhook subscription", subscription)
@@ -129,7 +127,7 @@ func (c *Client) ListProfileWebhookSubscriptions(
 	var subscriptions []raw.Subscription
 
 	if err := c.get(ctx, path, &subscriptions); err != nil {
-		return nil, fmt.Errorf("list webhook subscriptions for profile %d: %w", profileID.Get(), err)
+		return nil, oops.Wrapf(err, "list webhook subscriptions for profile %d", profileID.Get())
 	}
 
 	results := make([]WebhookSubscription, 0, len(subscriptions))
@@ -176,8 +174,7 @@ func (c *Client) GetProfileWebhookSubscription(
 	var subscription raw.Subscription
 
 	if err := c.get(ctx, path, &subscription); err != nil {
-		return nil, fmt.Errorf("get webhook subscription %s for profile %d: %w",
-			subscriptionID.Get(), profileID.Get(), err)
+		return nil, oops.Wrapf(err, "get webhook subscription %s for profile %d", subscriptionID.Get(), profileID.Get())
 	}
 
 	return toWebhookSubscription("map webhook subscription", subscription)
@@ -207,12 +204,12 @@ func (c *Client) DeleteProfileWebhookSubscription(
 		subscriptionID.Get(),
 	)
 
-	if err := c.delete(ctx, path); err != nil {
-		return fmt.Errorf("delete webhook subscription %s for profile %d: %w",
-			subscriptionID.Get(), profileID.Get(), err)
-	}
-
-	return nil
+	return oops.Wrapf(
+		c.delete(ctx, path),
+		"delete webhook subscription %s for profile %d",
+		subscriptionID.Get(),
+		profileID.Get(),
+	)
 }
 
 // validate mirrors the subscription-request schema's required fields so a
@@ -305,8 +302,7 @@ func ParseWebhookEvent(payload []byte) (*WebhookEvent, error) {
 	}
 
 	if envelope.EventType == "" {
-		//nolint:err113 // corruption-classified decode failure; no sentinel to wrap
-		return nil, errorfamily.WrapCorruption(errors.New("event_type is empty"),
+		return nil, errorfamily.WrapCorruption(oops.New("event_type is empty"),
 			errorCodeWebhookDecode, "parse webhook event envelope")
 	}
 
@@ -424,7 +420,7 @@ func (e *WebhookEvent) BalanceCredit() (*BalanceCreditData, error) {
 
 	amount, err := toMoney(raw.BalanceAmount{Value: payload.Amount, Currency: payload.Currency})
 	if err != nil {
-		return nil, fmt.Errorf("map balances#credit amount: %w", err)
+		return nil, oops.Wrapf(err, "map balances#credit amount")
 	}
 
 	balance, err := toMoney(raw.BalanceAmount{
@@ -432,7 +428,7 @@ func (e *WebhookEvent) BalanceCredit() (*BalanceCreditData, error) {
 		Currency: payload.Currency,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("map balances#credit post-transaction balance: %w", err)
+		return nil, oops.Wrapf(err, "map balances#credit post-transaction balance")
 	}
 
 	return &BalanceCreditData{
@@ -487,7 +483,7 @@ func (e *WebhookEvent) TransferRefund() (*TransferRefundData, error) {
 		Currency: payload.Resource.RefundCurrency,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("map transfers#refund amount: %w", err)
+		return nil, oops.Wrapf(err, "map transfers#refund amount")
 	}
 
 	return &TransferRefundData{

@@ -7,6 +7,7 @@ import (
 
 	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go/internal/raw"
+	"github.com/samber/oops"
 )
 
 // User is the parsed representation of a Wise user account — the owner of an
@@ -50,12 +51,12 @@ func (c *Client) GetMe(ctx context.Context) (*User, error) {
 	var user raw.User
 
 	if err := c.get(ctx, "/v1/me", &user); err != nil {
-		return nil, fmt.Errorf("get current user: %w", err)
+		return nil, oops.Wrapf(err, "get current user")
 	}
 
 	result, err := mapUser(user)
 	if err != nil {
-		return nil, fmt.Errorf("map current user %d: %w", user.ID, err)
+		return nil, oops.Wrapf(err, "map current user %d", user.ID)
 	}
 
 	return &result, nil
@@ -73,7 +74,7 @@ func (c *Client) GetUser(ctx context.Context, userID UserID) (*User, error) {
 
 	result, err := mapUser(user)
 	if err != nil {
-		return nil, fmt.Errorf("map user %d: %w", user.ID, err)
+		return nil, oops.Wrapf(err, "map user %d", user.ID)
 	}
 
 	return &result, nil
@@ -141,7 +142,7 @@ func parseWiseDate(s string) (time.Time, error) {
 
 	t, err := time.Parse(wiseDateFormat, s)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("parse date %q: %w", s, err)
+		return time.Time{}, oops.Wrapf(err, "parse date %q", s)
 	}
 
 	return t, nil

@@ -9,6 +9,7 @@ import (
 	id "github.com/larsartmann/go-branded-id"
 	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go/internal/raw"
+	"github.com/samber/oops"
 )
 
 // ListTransactions returns transactions for a balance within a time range.
@@ -41,21 +42,26 @@ func (c *Client) ListTransactions(
 
 	err := c.getWithQuery(ctx, path, query, &statement)
 	if err != nil {
-		return nil, fmt.Errorf("list transactions for profileID=%d balanceID=%d currency=%s: %w",
-			req.ProfileID.Get(), req.BalanceID.Get(), req.Currency, err)
+		return nil, oops.Wrapf(
+			err,
+			"list transactions for profileID=%d balanceID=%d currency=%s",
+			req.ProfileID.Get(),
+			req.BalanceID.Get(),
+			req.Currency,
+		)
 	}
 
 	transactions := make([]Transaction, 0, len(statement.Transactions))
 	for _, t := range statement.Transactions {
 		tx, mapErr := mapTransaction(t, req.ProfileID, req.BalanceID, req.Currency)
 		if mapErr != nil {
-			return nil, fmt.Errorf(
-				"map transaction %s for profileID=%d balanceID=%d currency=%s: %w",
+			return nil, oops.Wrapf(
+				mapErr,
+				"map transaction %s for profileID=%d balanceID=%d currency=%s",
 				t.TransactionID,
 				req.ProfileID,
 				req.BalanceID,
 				req.Currency,
-				mapErr,
 			)
 		}
 
@@ -64,7 +70,7 @@ func (c *Client) ListTransactions(
 
 	endBalance, err := toMoney(statement.EndOfStatementBalance)
 	if err != nil {
-		return nil, fmt.Errorf("end of statement balance: %w", err)
+		return nil, oops.Wrapf(err, "end of statement balance")
 	}
 
 	return &ListTransactionsResponse{
@@ -114,7 +120,7 @@ func mapTransaction(
 
 	total, err := toMoney(t.Amount)
 	if err != nil {
-		return Transaction{}, fmt.Errorf("total amount %v %q: %w", t.Amount.Value, t.Amount.Currency, err)
+		return Transaction{}, oops.Wrapf(err, "total amount %v %q", t.Amount.Value, t.Amount.Currency)
 	}
 
 	amount := total
@@ -124,17 +130,17 @@ func mapTransaction(
 
 	fees, err := toMoney(t.TotalFees)
 	if err != nil {
-		return Transaction{}, fmt.Errorf("fees amount: %w", err)
+		return Transaction{}, oops.Wrapf(err, "fees amount")
 	}
 
 	runningBalance, err := toMoney(t.RunningBalance)
 	if err != nil {
-		return Transaction{}, fmt.Errorf("running balance: %w", err)
+		return Transaction{}, oops.Wrapf(err, "running balance")
 	}
 
 	exch, err := mapExchange(t.ExchangeDetails)
 	if err != nil {
-		return Transaction{}, fmt.Errorf("exchange: %w", err)
+		return Transaction{}, oops.Wrapf(err, "exchange")
 	}
 
 	return Transaction{
@@ -164,12 +170,12 @@ func mapExchange(ed *raw.ExchangeDetails) (*TransactionExchange, error) {
 
 	from, err := toMoney(ed.FromAmount)
 	if err != nil {
-		return nil, fmt.Errorf("from amount: %w", err)
+		return nil, oops.Wrapf(err, "from amount")
 	}
 
 	to, err := toMoney(ed.ToAmount)
 	if err != nil {
-		return nil, fmt.Errorf("to amount: %w", err)
+		return nil, oops.Wrapf(err, "to amount")
 	}
 
 	return &TransactionExchange{
@@ -359,8 +365,13 @@ func (c *Client) GetStatement(ctx context.Context, req GetStatementRequest) ([]b
 
 	data, err := c.getRaw(ctx, path, query)
 	if err != nil {
-		return nil, fmt.Errorf("get %s statement for profileID=%d balanceID=%d: %w",
-			req.Format, req.ProfileID.Get(), req.BalanceID.Get(), err)
+		return nil, oops.Wrapf(
+			err,
+			"get %s statement for profileID=%d balanceID=%d",
+			req.Format,
+			req.ProfileID.Get(),
+			req.BalanceID.Get(),
+		)
 	}
 
 	return data, nil

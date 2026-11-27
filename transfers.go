@@ -10,6 +10,7 @@ import (
 
 	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go/internal/raw"
+	"github.com/samber/oops"
 )
 
 // transfersPageSize is the per-request page size used when paginating the
@@ -86,7 +87,7 @@ func (c *Client) listTransfersPage(
 
 	err := c.getWithQuery(ctx, "/v1/transfers", query, &transfers)
 	if err != nil {
-		return nil, fmt.Errorf("list transfers (offset=%d): %w", offset, err)
+		return nil, oops.Wrapf(err, "list transfers (offset=%d)", offset)
 	}
 
 	result := make([]Transfer, 0, len(transfers))
@@ -145,7 +146,7 @@ func (c *Client) GetTransferReceipt(ctx context.Context, transferID TransferID) 
 
 	data, err := c.getRaw(ctx, path, nil)
 	if err != nil {
-		return nil, fmt.Errorf("get receipt for transfer %d: %w", transferID.Get(), err)
+		return nil, oops.Wrapf(err, "get receipt for transfer %d", transferID.Get())
 	}
 
 	return data, nil
@@ -168,7 +169,7 @@ func (c *Client) GetTransferPayoutInfo(ctx context.Context, transferID TransferI
 	var payout raw.PayoutInfo
 
 	if err := c.get(ctx, path, &payout); err != nil {
-		return nil, fmt.Errorf("get payout info for transfer %d: %w", transferID.Get(), err)
+		return nil, oops.Wrapf(err, "get payout info for transfer %d", transferID.Get())
 	}
 
 	return &TransferPayoutInfo{
@@ -243,7 +244,7 @@ func (c *Client) CreateTransfer(
 
 	err := c.post(ctx, "/v1/transfers", body, &transfer)
 	if err != nil {
-		return nil, fmt.Errorf("create transfer for quote %s: %w", req.QuoteID.Get(), err)
+		return nil, oops.Wrapf(err, "create transfer for quote %s", req.QuoteID.Get())
 	}
 
 	return toTransfer("map created transfer", transfer)
@@ -262,7 +263,7 @@ func (c *Client) CancelTransfer(ctx context.Context, transferID TransferID) (*Tr
 	var transfer raw.Transfer
 
 	if err := c.put(ctx, path, nil, &transfer); err != nil {
-		return nil, fmt.Errorf("cancel transfer %d: %w", transferID.Get(), err)
+		return nil, oops.Wrapf(err, "cancel transfer %d", transferID.Get())
 	}
 
 	return toTransfer("map cancelled transfer", transfer)
@@ -301,12 +302,12 @@ func (c *Client) FundTransfer(
 
 	// The request body is optional; an empty body selects default balance funding.
 	if err := c.post(ctx, path, nil, &funding); err != nil {
-		return nil, fmt.Errorf("fund transfer %d: %w", transferID.Get(), err)
+		return nil, oops.Wrapf(err, "fund transfer %d", transferID.Get())
 	}
 
 	result, mapErr := mapFundTransferResult(funding)
 	if mapErr != nil {
-		return nil, fmt.Errorf("map funding result for transfer %d: %w", transferID.Get(), mapErr)
+		return nil, oops.Wrapf(mapErr, "map funding result for transfer %d", transferID.Get())
 	}
 
 	return &result, nil
@@ -365,7 +366,7 @@ func mapFundTransferResult(funding raw.FundingResponse) (FundTransferResult, err
 func toTransfer(label string, transfer raw.Transfer) (*Transfer, error) {
 	result, err := mapTransfer(transfer)
 	if err != nil {
-		return nil, fmt.Errorf("%s %d: %w", label, transfer.ID, err)
+		return nil, oops.Wrapf(err, "%s %d", label, transfer.ID)
 	}
 
 	return &result, nil
@@ -375,17 +376,17 @@ func toTransfer(label string, transfer raw.Transfer) (*Transfer, error) {
 func mapTransfer(t raw.Transfer) (Transfer, error) {
 	created, err := parseWiseTimestamp(t.Created)
 	if err != nil {
-		return Transfer{}, fmt.Errorf("parse created %q: %w", t.Created, err)
+		return Transfer{}, oops.Wrapf(err, "parse created %q", t.Created)
 	}
 
 	source, err := toMoney(raw.BalanceAmount{Value: t.SourceValue, Currency: t.SourceCurrency})
 	if err != nil {
-		return Transfer{}, fmt.Errorf("source amount: %w", err)
+		return Transfer{}, oops.Wrapf(err, "source amount")
 	}
 
 	target, err := toMoney(raw.BalanceAmount{Value: t.TargetValue, Currency: t.TargetCurrency})
 	if err != nil {
-		return Transfer{}, fmt.Errorf("target amount: %w", err)
+		return Transfer{}, oops.Wrapf(err, "target amount")
 	}
 
 	reference := t.Details.Reference
@@ -443,14 +444,14 @@ func (c *Client) ListTransferPayments(
 	var payments []raw.TransferPayment
 
 	if err := c.get(ctx, path, &payments); err != nil {
-		return nil, fmt.Errorf("list payments for transfer %d: %w", transferID.Get(), err)
+		return nil, oops.Wrapf(err, "list payments for transfer %d", transferID.Get())
 	}
 
 	result := make([]TransferPayment, 0, len(payments))
 	for _, payment := range payments {
 		mapped, mapErr := mapTransferPayment(payment)
 		if mapErr != nil {
-			return nil, fmt.Errorf("map transfer payment %d: %w", payment.ID, mapErr)
+			return nil, oops.Wrapf(mapErr, "map transfer payment %d", payment.ID)
 		}
 
 		result = append(result, mapped)
@@ -515,7 +516,7 @@ func (c *Client) GetUSCombinedReceipt(ctx context.Context, transferID TransferID
 
 	data, err := c.getRaw(ctx, path, nil)
 	if err != nil {
-		return nil, fmt.Errorf("get US combined receipt for transfer %d: %w", transferID.Get(), err)
+		return nil, oops.Wrapf(err, "get US combined receipt for transfer %d", transferID.Get())
 	}
 
 	return data, nil
@@ -537,7 +538,7 @@ func (c *Client) GetTransferNOC(ctx context.Context, transferID TransferID) ([]b
 
 	data, err := c.getRaw(ctx, path, nil)
 	if err != nil {
-		return nil, fmt.Errorf("get NOC for transfer %d: %w", transferID.Get(), err)
+		return nil, oops.Wrapf(err, "get NOC for transfer %d", transferID.Get())
 	}
 
 	return data, nil

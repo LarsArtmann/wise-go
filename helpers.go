@@ -14,6 +14,7 @@ import (
 	id "github.com/larsartmann/go-branded-id"
 	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go/internal/raw"
+	"github.com/samber/oops"
 )
 
 const defaultRetryAfter = time.Second
@@ -43,11 +44,7 @@ func fetchByID[T any, B any, V comparable](
 		return err
 	}
 
-	if err := client.get(ctx, path, target); err != nil {
-		return fmt.Errorf("get %s %v: %w", resource, identifier.Get(), err)
-	}
-
-	return nil
+	return oops.Wrapf(client.get(ctx, path, target), "get %s %v", resource, identifier.Get())
 }
 
 // toMoney converts a raw BalanceAmount to a validated Money value.
@@ -65,9 +62,8 @@ func toMoney(a raw.BalanceAmount) (Money, error) {
 	}
 
 	if math.IsNaN(a.Value) || math.Abs(a.Value) > maxRepresentableUnits {
-		//nolint:err113 // error-context convention: mapper messages carry the raw wire value
 		return Money{}, errorfamily.WrapCorruption(
-			fmt.Errorf("amount %v is outside the representable cent range", a.Value),
+			oops.Errorf("amount %v is outside the representable cent range", a.Value),
 			errorCodeMoneyParse,
 			fmt.Sprintf("amount %v %q", a.Value, a.Currency),
 		)
@@ -86,8 +82,7 @@ func parseEnum[T ~string](table map[string]T, raw string, kind string) (T, error
 
 	var zero T
 
-	//nolint:err113 // generic enum parser needs a dynamic error message
-	return zero, fmt.Errorf("unknown %s %q", kind, raw)
+	return zero, oops.Errorf("unknown %s %q", kind, raw)
 }
 
 func jsonDecode(resp *http.Response, target any) error {
@@ -154,8 +149,7 @@ func parseWiseTimestamp(s string) (time.Time, error) {
 
 	// One line naming the accepted layouts beats a dump of six near-identical
 	// time.Parse errors; the raw value is the part callers actually need.
-	//nolint:err113 // dynamic value in message; no sentinel to wrap
-	return time.Time{}, fmt.Errorf(
+	return time.Time{}, oops.Errorf(
 		"parse Wise timestamp %q: matches none of the accepted layouts %s", s, strings.Join(layouts, ", "))
 }
 

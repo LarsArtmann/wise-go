@@ -8,7 +8,7 @@ again:
 1. **`APIError.Details`** — the full envelope as
    `[]WiseErrorDetail{Code WiseErrorCode, Message string}`, in wire order.
 2. **`errors.Is(err, wise.ErrX)`** — the curated wave-1 sentinels below match
-   by value through any `fmt.Errorf("%w")` wrap chain.
+   by value through any wrap chain (the SDK's context wraps are `oops.Wrapf` layers).
 3. **`APIError.HasCode(WiseErrorCode)`** — any code, curated or not
    (`WiseErrorCode` is an open enum: unknown wire values pass through).
 

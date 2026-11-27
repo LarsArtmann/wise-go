@@ -134,7 +134,7 @@ Before contributing, read [AGENTS.md](AGENTS.md) — it documents the non-obviou
 - **Branded IDs** — `ProfileID`, `BalanceID`, `TransactionID` are distinct phantom types from `go-branded-id`. Mixing them is a compile error. Construct with `NewProfileID` / `NewBalanceID` / `NewTransactionID`; unwrap with `.Get()`.
 - **Behavioral errors** — domain error types implement `go-error-family` interfaces (`ErrorCode()`, `ErrorFamily()`, `IsRetryable()`). Never construct `AuthError` / `NotFoundError` etc. directly outside `newAPIError()` in `errors.go`.
 - **Two-layer types** — raw wire structs (`raw.Profile`, `raw.Balance`, `raw.StatementTransaction` in `internal/raw`) match Wise's JSON exactly with primitives. Result types (`Profile`, `Balance`, `Transaction`) expose strong Go types (`Money`, branded IDs, enums). Mapping functions are the only bridge. Do not brand the JSON-decode layer.
-- **Error wrapping at call sites** uses `fmt.Errorf("context: %w", err)`; the inner error carries the classification.
+- **Error wrapping at call sites** uses `oops.Wrapf(err, "context", args...)` from `samber/oops` (ADR 004); the inner error carries the classification. Package sentinels are the exception: build them only through `newSentinel` in `errors.go`, because they must stay comparable.
 - **Retries** via `go-retry` — only 429, 5xx, and network errors are retried; Wise's `Retry-After` hint is honored as the delay, capped at `WithRetry`'s max delay.
 
 ---

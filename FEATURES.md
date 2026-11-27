@@ -86,10 +86,10 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
 
 | Method | Path                                                | Status           | wise-go                                       |
 | ------ | --------------------------------------------------- | ---------------- | --------------------------------------------- |
-| POST   | `/v4/profiles/{id}/balances`                        | FULLY_FUNCTIONAL | `CreateBalance` (`balances.go:107`)           |
-| GET    | `/v4/profiles/{id}/balances`                        | FULLY_FUNCTIONAL | `ListBalances` (`balances.go:31`)             |
-| GET    | `/v4/profiles/{id}/balances/{id}`                   | FULLY_FUNCTIONAL | `GetBalance` (`balances.go:61`)               |
-| GET    | `/v4/profiles/{id}/total-funds/{currency}`          | FULLY_FUNCTIONAL | `GetTotalFunds` (`balances.go:195`)           |
+| POST   | `/v4/profiles/{id}/balances`                        | FULLY_FUNCTIONAL | `CreateBalance` (`balances.go:108`)           |
+| GET    | `/v4/profiles/{id}/balances`                        | FULLY_FUNCTIONAL | `ListBalances` (`balances.go:32`)             |
+| GET    | `/v4/profiles/{id}/balances/{id}`                   | FULLY_FUNCTIONAL | `GetBalance` (`balances.go:62`)               |
+| GET    | `/v4/profiles/{id}/total-funds/{currency}`          | FULLY_FUNCTIONAL | `GetTotalFunds` (`balances.go:196`)           |
 | DELETE | `/v4/profiles/{id}/balances/{id}`                   | PLANNED          | close balance (zero balance required)         |
 | POST   | `/v4/profiles/{id}/balance-movements`               | PLANNED          | convert/move between balances                 |
 | GET    | `/v4/profiles/{id}/balance-capacity`                | DEMAND_GATED     | regulatory deposit limit (hold-limit regions) |
@@ -101,13 +101,13 @@ below cover behavior (parsing, filtering, validation), not endpoint inventory.
 
 | Method | Path                           | Status           | wise-go                                |
 | ------ | ------------------------------ | ---------------- | -------------------------------------- |
-| GET    | `/v1/profiles/{id}/activities` | FULLY_FUNCTIONAL | `ListActivities` (`activities.go:183`) |
+| GET    | `/v1/profiles/{id}/activities` | FULLY_FUNCTIONAL | `ListActivities` (`activities.go:184`) |
 
 ### Balance statements (1 operation, 6 formats)
 
 | Method | Path                                                                                     | Status           | wise-go                                                                                        |
 | ------ | ---------------------------------------------------------------------------------------- | ---------------- | ---------------------------------------------------------------------------------------------- |
-| GET    | `/v1/profiles/{id}/balance-statements/{id}/statement.{json,csv,pdf,xlsx,camt,mt940,qif}` | FULLY_FUNCTIONAL | `ListTransactions` (`transactions.go:16`), `GetStatement` raw download (`transactions.go:276`) |
+| GET    | `/v1/profiles/{id}/balance-statements/{id}/statement.{json,csv,pdf,xlsx,camt,mt940,qif}` | FULLY_FUNCTIONAL | `ListTransactions` (`transactions.go:17`), `GetStatement` raw download (`transactions.go:282`) |
 
 ### Bank account details (5 operations)
 
@@ -117,7 +117,7 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 
 | Method | Path                                                      | Status           | wise-go                                            |
 | ------ | --------------------------------------------------------- | ---------------- | -------------------------------------------------- |
-| GET    | `/balances/account-details/{id}` (2027Q1)                 | FULLY_FUNCTIONAL | `GetBankAccountDetails` (`account_details.go:158`) |
+| GET    | `/balances/account-details/{id}` (2027Q1)                 | FULLY_FUNCTIONAL | `GetBankAccountDetails` (`account_details.go:159`) |
 | POST   | `/v1/profiles/{id}/bank-details`                          | PLANNED          | issue local+international details                  |
 | POST   | `/v1/profiles/{id}/account-details-orders`                | PLANNED          | order account details                              |
 | GET    | `/v1/profiles/{id}/account-details-orders`                | PLANNED          | list orders                                        |
@@ -127,7 +127,7 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 
 | Method | Path                                                                    | Status           | wise-go                                             |
 | ------ | ----------------------------------------------------------------------- | ---------------- | --------------------------------------------------- |
-| GET    | `/v1/profiles/{id}/multi-currency-account`                              | FULLY_FUNCTIONAL | `GetMultiCurrencyAccount` (`account_details.go:29`) |
+| GET    | `/v1/profiles/{id}/multi-currency-account`                              | FULLY_FUNCTIONAL | `GetMultiCurrencyAccount` (`account_details.go:30`) |
 | GET    | `/borderless-accounts-configuration/profiles/{id}/available-currencies` | PLANNED          | balance-eligible currencies                         |
 | GET    | `/borderless-accounts-configuration/profiles/{id}/payin-currencies`     | PLANNED          | details-eligible currencies                         |
 | GET    | `/multi-currency-account/eligibility`                                   | PLANNED          | eligibility by profile or location                  |
@@ -137,16 +137,16 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 | Method | Path                                  | Status           | wise-go                                            |
 | ------ | ------------------------------------- | ---------------- | -------------------------------------------------- |
 | GET    | `/v1/currencies`                      | FULLY_FUNCTIONAL | `ListCurrencies` (`currencies.go:22`)              |
-| GET    | `/v1/rates`                           | FULLY_FUNCTIONAL | `GetExchangeRate` (`rates.go:18`)                  |
-| GET    | `/v1/delivery-estimates/{transferId}` | FULLY_FUNCTIONAL | `GetDeliveryEstimate` (`delivery_estimates.go:33`) |
+| GET    | `/v1/rates`                           | FULLY_FUNCTIONAL | `GetExchangeRate` (`rates.go:19`)                  |
+| GET    | `/v1/delivery-estimates/{transferId}` | FULLY_FUNCTIONAL | `GetDeliveryEstimate` (`delivery_estimates.go:34`) |
 | GET    | `/comparisons`                        | PLANNED          | provider comparison (tier 2 of the plan)           |
 
 ### Profiles (19 operations)
 
 | Method | Path                                                      | Status           | wise-go                           |
 | ------ | --------------------------------------------------------- | ---------------- | --------------------------------- |
-| GET    | `/v2/profiles`                                            | FULLY_FUNCTIONAL | `ListProfiles` (`profiles.go:31`) |
-| GET    | `/v2/profiles/{id}`                                       | FULLY_FUNCTIONAL | `GetProfile` (`profiles.go:13`)   |
+| GET    | `/v2/profiles`                                            | FULLY_FUNCTIONAL | `ListProfiles` (`profiles.go:32`) |
+| GET    | `/v2/profiles/{id}`                                       | FULLY_FUNCTIONAL | `GetProfile` (`profiles.go:14`)   |
 | POST   | `/profiles/personal-profile`                              | PLANNED          | create personal profile           |
 | POST   | `/profiles/business-profile`                              | PLANNED          | create business profile (v5)      |
 | PUT    | `/profiles/{id}/personal-profile`                         | PLANNED          | update personal profile           |
@@ -169,8 +169,8 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 
 | Method | Path                             | Status           | wise-go                   |
 | ------ | -------------------------------- | ---------------- | ------------------------- |
-| GET    | `/v1/me`                         | FULLY_FUNCTIONAL | `GetMe` (`users.go:49`)   |
-| GET    | `/v1/users/{id}`                 | FULLY_FUNCTIONAL | `GetUser` (`users.go:66`) |
+| GET    | `/v1/me`                         | FULLY_FUNCTIONAL | `GetMe` (`users.go:50`)   |
+| GET    | `/v1/users/{id}`                 | FULLY_FUNCTIONAL | `GetUser` (`users.go:67`) |
 | POST   | `/user/signup/registration_code` | OUT_OF_SCOPE     | partner onboarding flow   |
 | POST   | `/users/exists`                  | OUT_OF_SCOPE     | partner onboarding flow   |
 | PUT    | `/users/{id}/contact-email`      | OUT_OF_SCOPE     | partner onboarding flow   |
@@ -180,7 +180,7 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 
 | Method | Path                            | Status           | wise-go                                       |
 | ------ | ------------------------------- | ---------------- | --------------------------------------------- |
-| POST   | `/v3/quotes`                    | FULLY_FUNCTIONAL | `CreateUnauthenticatedQuote` (`quotes.go:18`) |
+| POST   | `/v3/quotes`                    | FULLY_FUNCTIONAL | `CreateUnauthenticatedQuote` (`quotes.go:19`) |
 | POST   | `/v3/profiles/{id}/quotes`      | FULLY_FUNCTIONAL | `CreateQuote` (`quotes.go:39`)                |
 | GET    | `/v3/profiles/{id}/quotes/{id}` | FULLY_FUNCTIONAL | `GetQuote` (`quotes.go:61`)                   |
 | PATCH  | `/v3/profiles/{id}/quotes/{id}` | PLANNED          | update quote with recipient                   |
@@ -189,9 +189,9 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 
 | Method | Path                                          | Status           | wise-go                                                                          |
 | ------ | --------------------------------------------- | ---------------- | -------------------------------------------------------------------------------- |
-| GET    | `/v2/accounts`                                | FULLY_FUNCTIONAL | `ListRecipients` (`recipients.go:24`); page envelope + seek cursor fixed v0.18.0 |
-| POST   | `/v1/accounts`                                | FULLY_FUNCTIONAL | `CreateRecipient` (`recipients.go:118`)                                          |
-| GET    | `/v1/accounts/{id}`                           | FULLY_FUNCTIONAL | `GetRecipient` (`recipients.go:98`)                                              |
+| GET    | `/v2/accounts`                                | FULLY_FUNCTIONAL | `ListRecipients` (`recipients.go:25`); page envelope + seek cursor fixed v0.18.0 |
+| POST   | `/v1/accounts`                                | FULLY_FUNCTIONAL | `CreateRecipient` (`recipients.go:119`)                                          |
+| GET    | `/v1/accounts/{id}`                           | FULLY_FUNCTIONAL | `GetRecipient` (`recipients.go:99`)                                              |
 | GET    | `/v1/quotes/{id}/account-requirements`        | FULLY_FUNCTIONAL | `GetQuoteAccountRequirements` (`quotes.go:95`)                                   |
 | POST   | `/v1/quotes/{id}/account-requirements`        | FULLY_FUNCTIONAL | `RefreshQuoteAccountRequirements` (`quotes.go:158`)                              |
 | DELETE | `/v1/accounts/{id}`                           | PLANNED          | deactivate recipient                                                             |
@@ -202,33 +202,33 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 
 | Method | Path                                         | Status           | wise-go                                                        |
 | ------ | -------------------------------------------- | ---------------- | -------------------------------------------------------------- |
-| POST   | `/v1/transfers`                              | FULLY_FUNCTIONAL | `CreateTransfer` (`transfers.go:219`)                          |
-| GET    | `/v1/transfers`                              | FULLY_FUNCTIONAL | `ListTransfers` (`transfers.go:39`)                            |
-| GET    | `/v1/transfers/{id}`                         | FULLY_FUNCTIONAL | `GetTransfer` (`transfers.go:117`)                             |
-| PUT    | `/v1/transfers/{id}/cancel`                  | FULLY_FUNCTIONAL | `CancelTransfer` (`transfers.go:255`)                          |
+| POST   | `/v1/transfers`                              | FULLY_FUNCTIONAL | `CreateTransfer` (`transfers.go:220`)                          |
+| GET    | `/v1/transfers`                              | FULLY_FUNCTIONAL | `ListTransfers` (`transfers.go:40`)                            |
+| GET    | `/v1/transfers/{id}`                         | FULLY_FUNCTIONAL | `GetTransfer` (`transfers.go:118`)                             |
+| PUT    | `/v1/transfers/{id}/cancel`                  | FULLY_FUNCTIONAL | `CancelTransfer` (`transfers.go:256`)                          |
 | POST   | `/v1/transfer-requirements`                  | FULLY_FUNCTIONAL | `ValidateTransferRequirements` (`transfer_requirements.go:20`) |
-| POST   | `/v1/profiles/{id}/transfers/{id}/payments`  | FULLY_FUNCTIONAL | `FundTransfer` (`transfers.go:284`)                            |
-| GET    | `/v1/transfers/{id}/invoices/bankingpartner` | FULLY_FUNCTIONAL | `GetTransferPayoutInfo` (`transfers.go:161`)                   |
-| GET    | `/v1/transfers/{id}/receipt.pdf`             | FULLY_FUNCTIONAL | `GetTransferReceipt` (`transfers.go:138`)                      |
-| GET    | `/v1/transfers/{id}/payments`                | FULLY_FUNCTIONAL | `ListTransferPayments` (`transfers.go:433`)                    |
-| GET    | `/v1/transfers/{id}/us-combined-receipt.pdf` | FULLY_FUNCTIONAL | `GetUSCombinedReceipt` (`transfers.go:508`)                    |
-| GET    | `/v1/transfers/{id}/documents/noc`           | FULLY_FUNCTIONAL | `GetTransferNOC` (`transfers.go:530`)                          |
+| POST   | `/v1/profiles/{id}/transfers/{id}/payments`  | FULLY_FUNCTIONAL | `FundTransfer` (`transfers.go:285`)                            |
+| GET    | `/v1/transfers/{id}/invoices/bankingpartner` | FULLY_FUNCTIONAL | `GetTransferPayoutInfo` (`transfers.go:162`)                   |
+| GET    | `/v1/transfers/{id}/receipt.pdf`             | FULLY_FUNCTIONAL | `GetTransferReceipt` (`transfers.go:139`)                      |
+| GET    | `/v1/transfers/{id}/payments`                | FULLY_FUNCTIONAL | `ListTransferPayments` (`transfers.go:434`)                    |
+| GET    | `/v1/transfers/{id}/us-combined-receipt.pdf` | FULLY_FUNCTIONAL | `GetUSCombinedReceipt` (`transfers.go:509`)                    |
+| GET    | `/v1/transfers/{id}/documents/noc`           | FULLY_FUNCTIONAL | `GetTransferNOC` (`transfers.go:531`)                          |
 
 ### Transfers — third-party (2 operations)
 
 | Method | Path                                           | Status           | wise-go                                                    |
 | ------ | ---------------------------------------------- | ---------------- | ---------------------------------------------------------- |
-| POST   | `/v1/profiles/{id}/third-party-transfers`      | FULLY_FUNCTIONAL | `CreateThirdPartyTransfer` (`third_party_transfers.go:95`) |
-| GET    | `/v1/profiles/{id}/third-party-transfers/{id}` | FULLY_FUNCTIONAL | `GetThirdPartyTransfer` (`third_party_transfers.go:145`)   |
+| POST   | `/v1/profiles/{id}/third-party-transfers`      | FULLY_FUNCTIONAL | `CreateThirdPartyTransfer` (`third_party_transfers.go:96`) |
+| GET    | `/v1/profiles/{id}/third-party-transfers/{id}` | FULLY_FUNCTIONAL | `GetThirdPartyTransfer` (`third_party_transfers.go:146`)   |
 
 ### Webhook subscriptions (9 operations)
 
 | Method | Path                                                              | Status           | wise-go                                                |
 | ------ | ----------------------------------------------------------------- | ---------------- | ------------------------------------------------------ |
-| POST   | `/2027Q1/profiles/{id}/subscriptions`                             | FULLY_FUNCTIONAL | `CreateProfileWebhookSubscription` (`webhooks.go:92`)  |
-| GET    | `/2027Q1/profiles/{id}/subscriptions`                             | FULLY_FUNCTIONAL | `ListProfileWebhookSubscriptions` (`webhooks.go:119`)  |
-| GET    | `/2027Q1/profiles/{id}/subscriptions/{id}`                        | FULLY_FUNCTIONAL | `GetProfileWebhookSubscription` (`webhooks.go:156`)    |
-| DELETE | `/2027Q1/profiles/{id}/subscriptions/{id}`                        | FULLY_FUNCTIONAL | `DeleteProfileWebhookSubscription` (`webhooks.go:190`) |
+| POST   | `/2027Q1/profiles/{id}/subscriptions`                             | FULLY_FUNCTIONAL | `CreateProfileWebhookSubscription` (`webhooks.go:90`)  |
+| GET    | `/2027Q1/profiles/{id}/subscriptions`                             | FULLY_FUNCTIONAL | `ListProfileWebhookSubscriptions` (`webhooks.go:117`)  |
+| GET    | `/2027Q1/profiles/{id}/subscriptions/{id}`                        | FULLY_FUNCTIONAL | `GetProfileWebhookSubscription` (`webhooks.go:154`)    |
+| DELETE | `/2027Q1/profiles/{id}/subscriptions/{id}`                        | FULLY_FUNCTIONAL | `DeleteProfileWebhookSubscription` (`webhooks.go:187`) |
 | POST   | `/applications/{clientKey}/subscriptions`                         | ON_HOLD          | app-level scope decision pending (ROADMAP.md Axis 1)   |
 | GET    | `/applications/{clientKey}/subscriptions`                         | ON_HOLD          | app-level scope decision pending                       |
 | GET    | `/applications/{clientKey}/subscriptions/{id}`                    | ON_HOLD          | app-level scope decision pending                       |
@@ -239,13 +239,13 @@ wise-go migrated in the same shape (live probe 2026-10-16: old path 404s).
 
 | Method | Path                                         | Status           | wise-go                                                |
 | ------ | -------------------------------------------- | ---------------- | ------------------------------------------------------ |
-| GET    | `/2027Q1/one-time-token/status`              | FULLY_FUNCTIONAL | `GetOTTStatus` (`ott.go:230`)                          |
-| POST   | `/2027Q1/one-time-token/sms/trigger`         | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:246`, `OTTChannelSMS`)           |
-| POST   | `/2027Q1/one-time-token/sms/verify`          | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:278`, `OTTChannelSMS`)            |
-| POST   | `/2027Q1/one-time-token/whatsapp/trigger`    | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:246`, `OTTChannelWhatsApp`)      |
-| POST   | `/2027Q1/one-time-token/whatsapp/verify`     | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:278`, `OTTChannelWhatsApp`)       |
-| POST   | `/2027Q1/one-time-token/voice/trigger`       | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:246`, `OTTChannelVoice`)         |
-| POST   | `/2027Q1/one-time-token/voice/verify`        | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:278`, `OTTChannelVoice`)          |
+| GET    | `/2027Q1/one-time-token/status`              | FULLY_FUNCTIONAL | `GetOTTStatus` (`ott.go:231`)                          |
+| POST   | `/2027Q1/one-time-token/sms/trigger`         | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:247`, `OTTChannelSMS`)           |
+| POST   | `/2027Q1/one-time-token/sms/verify`          | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:279`, `OTTChannelSMS`)            |
+| POST   | `/2027Q1/one-time-token/whatsapp/trigger`    | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:247`, `OTTChannelWhatsApp`)      |
+| POST   | `/2027Q1/one-time-token/whatsapp/verify`     | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:279`, `OTTChannelWhatsApp`)       |
+| POST   | `/2027Q1/one-time-token/voice/trigger`       | FULLY_FUNCTIONAL | `TriggerOTT` (`ott.go:247`, `OTTChannelVoice`)         |
+| POST   | `/2027Q1/one-time-token/voice/verify`        | FULLY_FUNCTIONAL | `VerifyOTT` (`ott.go:279`, `OTTChannelVoice`)          |
 | POST   | `/application/users/{id}/phone-numbers`      | OUT_OF_SCOPE     | restricted access (client credentials + Wise approval) |
 | DELETE | `/application/users/{id}/phone-numbers/{id}` | OUT_OF_SCOPE     | restricted access (client credentials + Wise approval) |
 
@@ -301,7 +301,7 @@ the plan; bulk payments only on a consumer demand signal).
   pages (2026-09-16 sweep); the union with the webhook-event index (Swift
   `swift-in#credit`, `swift-message-received`) is **31 distinct event types**.
 - wise-go ships **33 documented `WebhookEventType` constants** (open enum,
-  `types.go:644-678`, verified against Wise's live webhook-event reference
+  `types.go:643-678`, verified against Wise's live webhook-event reference
   2026-09-13); unknown event types pass through by design.
 - **Typed payloads for 3 events**: `transfers#state-change`,
   `transfers#payout-failure`, `balances#credit` (`ParseWebhookEvent`).
@@ -310,17 +310,17 @@ the plan; bulk payments only on a consumer demand signal).
 
 | Feature                                 | Status           | Evidence                                                                                                                                                 |
 | --------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `wise.New(apiKey, opts...)` constructor | FULLY_FUNCTIONAL | `client.go:52`; functional-options pattern                                                                                                               |
-| Bearer-token authentication             | FULLY_FUNCTIONAL | `client.go:397` `setHeaders`                                                                                                                             |
-| Sandbox environment (`WithSandbox`)     | FULLY_FUNCTIONAL | `options.go:64`; `SandboxURL` const in `types.go:32`                                                                                                     |
+| `wise.New(apiKey, opts...)` constructor | FULLY_FUNCTIONAL | `client.go:53`; functional-options pattern                                                                                                               |
+| Bearer-token authentication             | FULLY_FUNCTIONAL | `client.go:393` `setHeaders`                                                                                                                             |
+| Sandbox environment (`WithSandbox`)     | FULLY_FUNCTIONAL | `options.go:64`; `SandboxURL` const in `types.go:33`                                                                                                     |
 | Custom base URL (`WithBaseURL`)         | FULLY_FUNCTIONAL | `options.go:71`                                                                                                                                          |
 | Custom HTTP timeout (`WithTimeout`)     | FULLY_FUNCTIONAL | `options.go:95`                                                                                                                                          |
 | Custom retry policy (`WithRetry`)       | FULLY_FUNCTIONAL | `options.go:103`; exponential backoff with jitter via go-retry                                                                                           |
-| Custom HTTP client (`WithHTTPClient`)   | FULLY_FUNCTIONAL | `options.go:114`; accepts `Doer` interface (`client.go:41`)                                                                                              |
+| Custom HTTP client (`WithHTTPClient`)   | FULLY_FUNCTIONAL | `options.go:114`; accepts `Doer` interface (`client.go:42`)                                                                                              |
 | Correlation ID (`WithCorrelationID`)    | FULLY_FUNCTIONAL | `options.go:127`; sets `X-External-Correlation-Id` header on all requests                                                                                |
-| Retry with backoff (429, 5xx, network)  | FULLY_FUNCTIONAL | `client.go:145` `isRetryableError`; `Retry-After` honored via `DelayFunc` (capped)                                                                       |
-| `Authenticate(ctx)`                     | FULLY_FUNCTIONAL | `client.go:185`; delegates to `ListProfiles`                                                                                                             |
-| `Health(ctx)`                           | FULLY_FUNCTIONAL | `client.go:202`; credential-validating readiness probe (authenticated `ListProfiles` through the retry executor — not a cheap liveness check; see godoc) |
+| Retry with backoff (429, 5xx, network)  | FULLY_FUNCTIONAL | `client.go:146` `isRetryableError`; `Retry-After` honored via `DelayFunc` (capped)                                                                       |
+| `Authenticate(ctx)`                     | FULLY_FUNCTIONAL | `client.go:186`; delegates to `ListProfiles`                                                                                                             |
+| `Health(ctx)`                           | FULLY_FUNCTIONAL | `client.go:200`; credential-validating readiness probe (authenticated `ListProfiles` through the retry executor — not a cheap liveness check; see godoc) |
 | `WithUserAgent` option (v0.11.0)        | FULLY_FUNCTIONAL | `options.go:88`; custom `User-Agent` on every request, default preserved (BDD)                                                                           |
 | Shared-client concurrency (v0.11.0)     | FULLY_FUNCTIONAL | `wise_test.go:269`; 16 parallel requests, per-request correlation-ID isolation, `-race`                                                                  |
 
@@ -328,21 +328,21 @@ the plan; bulk payments only on a consumer demand signal).
 
 | Feature                                                  | Status               | Evidence                                                                                     |
 | -------------------------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------- |
-| `ListTransactionsRequest.Type` filter forwarding         | FULLY_FUNCTIONAL     | `transactions.go:33`; BDD-tested                                                             |
-| Request validation (empty currency, inverted date range) | FULLY_FUNCTIONAL     | `transactions.go:208`; returns `wise.transactions.invalid_request` (`:204`)                  |
-| Transaction type classification                          | FULLY_FUNCTIONAL     | `transactions.go:177`; CARD_PAYMENT / CARD_REFUND split fixed 2026-07-18                     |
-| Cross-currency transaction mapping                       | FULLY_FUNCTIONAL     | `transactions.go:135` `mapExchange`; uses transaction currency, not request currency         |
-| `Transaction.Exchange` (`*TransactionExchange`)          | FULLY_FUNCTIONAL     | `types.go:119`; nil for non-conversion transactions                                          |
-| `EndOfStatementBalance` exposure                         | FULLY_FUNCTIONAL     | `types.go:219`; surfaced as `Money` on `ListTransactionsResponse`                            |
-| `Transaction.Date` UTC semantics                         | PARTIALLY_FUNCTIONAL | `users.go:137` `parseWiseDate` parses as UTC; Wise sends no TZ — documented in field comment |
+| `ListTransactionsRequest.Type` filter forwarding         | FULLY_FUNCTIONAL     | `transactions.go:34`; BDD-tested                                                             |
+| Request validation (empty currency, inverted date range) | FULLY_FUNCTIONAL     | `transactions.go:214`; returns `wise.transactions.invalid_request` (`:204`)                  |
+| Transaction type classification                          | FULLY_FUNCTIONAL     | `transactions.go:183`; CARD_PAYMENT / CARD_REFUND split fixed 2026-07-18                     |
+| Cross-currency transaction mapping                       | FULLY_FUNCTIONAL     | `transactions.go:141` `mapExchange`; uses transaction currency, not request currency         |
+| `Transaction.Exchange` (`*TransactionExchange`)          | FULLY_FUNCTIONAL     | `types.go:118`; nil for non-conversion transactions                                          |
+| `EndOfStatementBalance` exposure                         | FULLY_FUNCTIONAL     | `types.go:218`; surfaced as `Money` on `ListTransactionsResponse`                            |
+| `Transaction.Date` UTC semantics                         | PARTIALLY_FUNCTIONAL | `users.go:138` `parseWiseDate` parses as UTC; Wise sends no TZ — documented in field comment |
 | Transaction pagination                                   | NOT_APPLICABLE       | Wise returns all transactions in one response                                                |
-| Recipient list pagination                                | FULLY_FUNCTIONAL     | `recipients.go:24`; follows `seekPositionForNext`, stops on the last page (fixed v0.18.0)    |
+| Recipient list pagination                                | FULLY_FUNCTIONAL     | `recipients.go:25`; follows `seekPositionForNext`, stops on the last page (fixed v0.18.0)    |
 
 ## Activity feed behavior
 
 | Feature                                               | Status           | Evidence                                                                   |
 | ----------------------------------------------------- | ---------------- | -------------------------------------------------------------------------- |
-| Cursor pagination                                     | FULLY_FUNCTIONAL | `activities.go:183`; `ActivityPage.NextCursor`, empty on the last page     |
+| Cursor pagination                                     | FULLY_FUNCTIONAL | `activities.go:184`; `ActivityPage.NextCursor`, empty on the last page     |
 | Amount text parsing                                   | FULLY_FUNCTIONAL | `ActivityAmount.Present` gates `Amount`; `Text` always keeps the raw value |
 | Money-in detection                                    | FULLY_FUNCTIONAL | `ActivityAmount.Credit`; leading `+` or `<positive>` markup                |
 | `Since` / `Until` / `ResourceType` / `Status` filters | FULLY_FUNCTIONAL | `ListActivitiesRequest`; zero values are omitted                           |
@@ -354,46 +354,47 @@ the plan; bulk payments only on a consumer demand signal).
 
 | Feature                                       | Status           | Evidence                                                       |
 | --------------------------------------------- | ---------------- | -------------------------------------------------------------- |
-| Filter visible + non-investment balances      | FULLY_FUNCTIONAL | `balances.go:43`; drops `Visible: false` and invested balances |
+| Filter visible + non-investment balances      | FULLY_FUNCTIONAL | `balances.go:44`; drops `Visible: false` and invested balances |
 | Fetch hidden or invested balances             | FULLY_FUNCTIONAL | `GetBalance` direct endpoint retrieves them individually       |
-| Profile name construction (personal/business) | FULLY_FUNCTIONAL | `profiles.go:31` name/BusinessName branches                    |
+| Profile name construction (personal/business) | FULLY_FUNCTIONAL | `profiles.go:32` name/BusinessName branches                    |
 
 ## Error handling
 
-| Feature                                           | Status           | Evidence                                                                                            |
-| ------------------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------- |
-| `APIError` base type                              | FULLY_FUNCTIONAL | `errors.go:245`; embeds into all subtypes; carries `Headers` (`:252`) and `Details` (`:259`)        |
-| `BadRequestError` (HTTP 400)                      | FULLY_FUNCTIONAL | `errors.go:429`; granular reason codes arrive in `Details`                                          |
-| `RateLimitError` (HTTP 429) with `RetryAfter`     | FULLY_FUNCTIONAL | `errors.go:324`; parses delta-seconds + HTTP-date                                                   |
-| `RateLimitError.RateLimitedBy` (429 header)       | FULLY_FUNCTIONAL | `errors.go:328`; captures `X-Rate-Limited-By` header                                                |
-| `AuthError` (HTTP 401, 403)                       | FULLY_FUNCTIONAL | `errors.go:357`                                                                                     |
-| `SCAChallengeError` (403 + 2FA headers, v0.6.0)   | FULLY_FUNCTIONAL | `errors.go:373`; `TwoFAApprovalToken()` returns the OTT                                             |
-| `WithSCAApprovalToken` option (v0.6.0)            | FULLY_FUNCTIONAL | `options.go:161`; sends cleared OTT as `x-2fa-approval`                                             |
-| `NotFoundError` (HTTP 404)                        | FULLY_FUNCTIONAL | `errors.go:410`                                                                                     |
-| `ServerError` (HTTP 5xx)                          | FULLY_FUNCTIONAL | `errors.go:443`                                                                                     |
-| `ErrorCode()` / `ErrorFamily()` / `IsRetryable()` | FULLY_FUNCTIONAL | All implement go-error-family interfaces                                                            |
-| `errors.AsType` matching                          | FULLY_FUNCTIONAL | Demonstrated in README; tested                                                                      |
-| `APIError.Details` structured error envelope      | FULLY_FUNCTIONAL | `errors.go:255`; Wise's `errors[].code`/`message` per entry, wire order                             |
-| `WiseErrorCode` open enum (14 documented codes)   | FULLY_FUNCTIONAL | `errors.go:195`; unknown wire values pass through                                                   |
-| Curated code sentinels (11) + `APIError.Is`       | FULLY_FUNCTIONAL | `ErrNotValid` (`errors.go:125`) ... `Is` (`errors.go:310`) matches `Details` codes through any wrap |
-| `APIError.HasCode(WiseErrorCode)`                 | FULLY_FUNCTIONAL | `errors.go:286`; open-enum matcher for uncurated codes                                              |
-| `wise_code` in `ErrorContext()`                   | FULLY_FUNCTIONAL | `errors.go:274` (APIError) and `errors.go:339` (RateLimitError); first granular code                |
-| Granular-code reference doc                       | FULLY_FUNCTIONAL | `docs/error-codes.md`; code, sentinel, status context, retry guidance                               |
+| Feature                                           | Status           | Evidence                                                                                                                        |
+| ------------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `APIError` base type                              | FULLY_FUNCTIONAL | `errors.go:251`; embeds into all subtypes; carries `Headers` (`:252`) and `Details` (`:259`)                                    |
+| `BadRequestError` (HTTP 400)                      | FULLY_FUNCTIONAL | `errors.go:435`; granular reason codes arrive in `Details`                                                                      |
+| `RateLimitError` (HTTP 429) with `RetryAfter`     | FULLY_FUNCTIONAL | `errors.go:330`; parses delta-seconds + HTTP-date                                                                               |
+| `RateLimitError.RateLimitedBy` (429 header)       | FULLY_FUNCTIONAL | `errors.go:334`; captures `X-Rate-Limited-By` header                                                                            |
+| `AuthError` (HTTP 401, 403)                       | FULLY_FUNCTIONAL | `errors.go:363`                                                                                                                 |
+| `SCAChallengeError` (403 + 2FA headers, v0.6.0)   | FULLY_FUNCTIONAL | `errors.go:379`; `TwoFAApprovalToken()` returns the OTT                                                                         |
+| `WithSCAApprovalToken` option (v0.6.0)            | FULLY_FUNCTIONAL | `options.go:161`; sends cleared OTT as `x-2fa-approval`                                                                         |
+| `NotFoundError` (HTTP 404)                        | FULLY_FUNCTIONAL | `errors.go:416`                                                                                                                 |
+| `ServerError` (HTTP 5xx)                          | FULLY_FUNCTIONAL | `errors.go:449`                                                                                                                 |
+| `ErrorCode()` / `ErrorFamily()` / `IsRetryable()` | FULLY_FUNCTIONAL | All implement go-error-family interfaces                                                                                        |
+| `errors.AsType` matching                          | FULLY_FUNCTIONAL | Demonstrated in README; tested                                                                                                  |
+| `APIError.Details` structured error envelope      | FULLY_FUNCTIONAL | `errors.go:261`; Wise's `errors[].code`/`message` per entry, wire order                                                         |
+| `WiseErrorCode` open enum (14 documented codes)   | FULLY_FUNCTIONAL | `errors.go:201`; unknown wire values pass through                                                                               |
+| Curated code sentinels (11) + `APIError.Is`       | FULLY_FUNCTIONAL | `ErrNotValid` (`errors.go:125`) ... `Is` (`errors.go:316`) matches `Details` codes through any wrap                             |
+| `APIError.HasCode(WiseErrorCode)`                 | FULLY_FUNCTIONAL | `errors.go:292`; open-enum matcher for uncurated codes                                                                          |
+| `wise_code` in `ErrorContext()`                   | FULLY_FUNCTIONAL | `errors.go:280` (APIError) and `errors.go:345` (RateLimitError); first granular code                                            |
+| Granular-code reference doc                       | FULLY_FUNCTIONAL | `docs/error-codes.md`; code, sentinel, status context, retry guidance                                                           |
+| Context wraps carry a stack trace (`samber/oops`) | FULLY_FUNCTIONAL | `oops.Wrapf`/`oops.Errorf`/`oops.New` at every construction site; sentinels stay comparable via `newSentinel` (`errors.go:172`) |
 
 ## Type system
 
 | Feature                                               | Status           | Evidence                                                                                  |
 | ----------------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------- |
-| Branded `ProfileID` / `BalanceID`                     | FULLY_FUNCTIONAL | `ids.go:32,38`; phantom types prevent entity-ID mixing at compile time                    |
-| Branded `TransactionID`                               | FULLY_FUNCTIONAL | `ids.go:41`                                                                               |
-| `Money` value object (`Cents` + `Currency`)           | FULLY_FUNCTIONAL | `types.go:65`; paired cents/currency makes mismatch unrepresentable                       |
-| `Currency` branded type with ISO 4217 validation      | FULLY_FUNCTIONAL | `types.go:49` `NewCurrency`; validates 3-letter uppercase ASCII                           |
-| Two-layer raw/result split (`internal/raw` boundary)  | FULLY_FUNCTIONAL | Wire types in `internal/raw/types.go`; parsed types in `types.go`; `helpers.go:54` bridge |
-| `ProfileType`, `BalanceType`, `TransactionType` enums | FULLY_FUNCTIONAL | `types.go:139,147,164`                                                                    |
-| `InvestmentState` typed enum                          | FULLY_FUNCTIONAL | `types.go:155`; used for balance filtering (`balances.go:43`)                             |
-| `DetailType` typed enum + constants                   | FULLY_FUNCTIONAL | `transactions.go:159`; typed filter for `ListTransactionsRequest.Type`                    |
-| `OneTimeToken` typed credential (unreleased)          | FULLY_FUNCTIONAL | `ott.go:38`; `NewOneTimeToken` validates; typed on every OTT-taking surface               |
-| `OTTAction` open enum (unreleased)                    | FULLY_FUNCTIONAL | `ott.go:154`; `OTTStatus.ActionType` (was bare `string`)                                  |
+| Branded `ProfileID` / `BalanceID`                     | FULLY_FUNCTIONAL | `ids.go:33,38`; phantom types prevent entity-ID mixing at compile time                    |
+| Branded `TransactionID`                               | FULLY_FUNCTIONAL | `ids.go:42`                                                                               |
+| `Money` value object (`Cents` + `Currency`)           | FULLY_FUNCTIONAL | `types.go:64`; paired cents/currency makes mismatch unrepresentable                       |
+| `Currency` branded type with ISO 4217 validation      | FULLY_FUNCTIONAL | `types.go:50` `NewCurrency`; validates 3-letter uppercase ASCII                           |
+| Two-layer raw/result split (`internal/raw` boundary)  | FULLY_FUNCTIONAL | Wire types in `internal/raw/types.go`; parsed types in `types.go`; `helpers.go:51` bridge |
+| `ProfileType`, `BalanceType`, `TransactionType` enums | FULLY_FUNCTIONAL | `types.go:138,147,164`                                                                    |
+| `InvestmentState` typed enum                          | FULLY_FUNCTIONAL | `types.go:154`; used for balance filtering (`balances.go:44`)                             |
+| `DetailType` typed enum + constants                   | FULLY_FUNCTIONAL | `transactions.go:165`; typed filter for `ListTransactionsRequest.Type`                    |
+| `OneTimeToken` typed credential (unreleased)          | FULLY_FUNCTIONAL | `ott.go:39`; `NewOneTimeToken` validates; typed on every OTT-taking surface               |
+| `OTTAction` open enum (unreleased)                    | FULLY_FUNCTIONAL | `ott.go:155`; `OTTStatus.ActionType` (was bare `string`)                                  |
 | Enum casing normalization (lowercase SDK values)      | FULLY_FUNCTIONAL | `BalanceType` normalized; `ProfileType`/`TransactionType` already lowercase               |
 
 ## Wire format hardening
@@ -401,8 +402,8 @@ the plan; bulk payments only on a consumer demand signal).
 | Feature                                        | Status           | Evidence                                                  |
 | ---------------------------------------------- | ---------------- | --------------------------------------------------------- |
 | Tolerant timestamp parsing (4 layouts)         | FULLY_FUNCTIONAL | `helpers.go` `parseWiseTimestamp`; zoneless = UTC         |
-| Outgoing query timestamps as UTC `Z` (v0.8.1)  | FULLY_FUNCTIONAL | `helpers.go:167` `formatWiseTimestamp`; Wise 422s offsets |
-| `ListBalances` `types` query param (v0.5.3)    | FULLY_FUNCTIONAL | `balances.go:18,23`; live API 400s without it             |
+| Outgoing query timestamps as UTC `Z` (v0.8.1)  | FULLY_FUNCTIONAL | `helpers.go:161` `formatWiseTimestamp`; Wise 422s offsets |
+| `ListBalances` `types` query param (v0.5.3)    | FULLY_FUNCTIONAL | `balances.go:19,23`; live API 400s without it             |
 | Mapper errors classified `Corruption` (v0.5.2) | FULLY_FUNCTIONAL | `internal_test.go`; fail-fast instead of retry loops      |
 
 ## Webhook behavior
@@ -410,10 +411,10 @@ the plan; bulk payments only on a consumer demand signal).
 | Feature                                                 | Status           | Evidence                                                                                              |
 | ------------------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------- |
 | `ParseWebhookPublicKey` (PKIX + PKCS#1 PEM, RSA-only)   | FULLY_FUNCTIONAL | `webhooks.go:35`; garbage/non-RSA input rejected with clear errors                                    |
-| `VerifyWebhookSignature` (RSA-SHA256 over raw body)     | FULLY_FUNCTIONAL | `webhooks.go:64`; valid/tampered/wrong-key/malformed/empty/5 MiB tested                               |
+| `VerifyWebhookSignature` (RSA-SHA256 over raw body)     | FULLY_FUNCTIONAL | `webhooks.go:62`; valid/tampered/wrong-key/malformed/empty/5 MiB tested                               |
 | `HeaderWebhookSignature` / `HeaderDeliveryID` constants | FULLY_FUNCTIONAL | `webhooks.go:22,24`; delivery-dedup guidance in README Webhooks section                               |
-| `ClearSCAChallenge` convenience loop                    | FULLY_FUNCTIONAL | `ott.go:322`; triggers, prompts via callback, verifies, repeats until every challenge passed          |
-| `OTTChannel` typed channel enum                         | FULLY_FUNCTIONAL | `ott.go:54`; single lowercase-wire → UPPERCASE-challenge-type mapping                                 |
+| `ClearSCAChallenge` convenience loop                    | FULLY_FUNCTIONAL | `ott.go:323`; triggers, prompts via callback, verifies, repeats until every challenge passed          |
+| `OTTChannel` typed channel enum                         | FULLY_FUNCTIONAL | `ott.go:55`; single lowercase-wire → UPPERCASE-challenge-type mapping                                 |
 | OTT secrecy: token never in error strings               | FULLY_FUNCTIONAL | `SCAChallengeError.Error()` reports `token issued: true/false` only; value via `TwoFAApprovalToken()` |
 
 ## Build & tooling

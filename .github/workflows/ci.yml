@@ -27,6 +27,9 @@ on:
       - "**/*.png"
       - .github/badges/**
 
+permissions:
+  contents: read
+
 env:
   GO_VERSION: "1.27"
   # v2.13+ is required: the exhaustruct_v5 linter (the forced replacement of
@@ -130,8 +133,8 @@ jobs:
     timeout-minutes: 15
   erraudit:
     # Error-handling audit (errors.As→AsType modernization + coded-error
-    # enforcement). Curated config: --type-aware plus --enforce-coded-errors;
-    # the other enforcement flags are deliberately off — see AGENTS.md
+    # enforcement). Curated config: --type-aware plus --enforce-coded-errors
+    # and --enforce-samber-oops; --enforce-generic-return stays off — see AGENTS.md
     # "Dependencies → erraudit".
     #
     # WARN-not-fail: github.com/larsartmann/erraudit is a PRIVATE module, so
@@ -165,7 +168,7 @@ jobs:
       - name: Curated erraudit gate
         if: steps.install.outcome == 'success'
         run: |
-          erraudit lint ./... --type-aware --enforce-coded-errors
+          erraudit lint ./... --type-aware --enforce-coded-errors --enforce-samber-oops
     timeout-minutes: 15
   art-dupl:
     # Clone detection against the accepted in-source baseline: the

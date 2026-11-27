@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"reflect"
 	"regexp"
 	"strings"
 	"testing"
@@ -14,6 +15,7 @@ import (
 
 	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go/internal/raw"
+	"github.com/samber/oops"
 )
 
 func TestParseRetryAfter(t *testing.T) {
@@ -1220,9 +1222,45 @@ func TestSentinelsStayInterfaceTyped(t *testing.T) {
 		"ErrRateLimitExceeded",
 		"ErrSystemError",
 	} {
-		declared := regexp.MustCompile(`(?m)^\t` + name + ` error = errors\.New\(`).MatchString(text)
+		declared := regexp.MustCompile(`(?m)^\t` + name + ` error = newSentinel\(`).MatchString(text)
 		if !declared {
-			t.Errorf("sentinel %s must stay declared as `%s error = errors.New(...)` in errors.go", name, name)
+			t.Errorf("sentinel %s must stay declared as `%s error = newSentinel(...)` in errors.go", name, name)
+		}
+	}
+}
+
+// TestSentinelsStayComparable pins the property newSentinel exists for: a
+// sentinel is a map key in codeSentinels, so an uncomparable value would
+// panic at match time. It also pins that every sentinel still matches
+// through the oops wrap the SDK now produces instead of fmt.Errorf("%w").
+func TestSentinelsStayComparable(t *testing.T) {
+	t.Parallel()
+
+	sentinels := map[string]error{
+		"ErrEmptyRateList":                    ErrEmptyRateList,
+		"ErrAccountIdentificationCardinality": ErrAccountIdentificationCardinality,
+		"ErrOTTAlternativesShape":             ErrOTTAlternativesShape,
+		"ErrTransferRefundAmountMissing":      ErrTransferRefundAmountMissing,
+		"ErrNotValid":                         ErrNotValid,
+		"ErrInvalidValue":                     ErrInvalidValue,
+		"ErrParameterMissing":                 ErrParameterMissing,
+		"ErrParameterInvalid":                 ErrParameterInvalid,
+		"ErrInvalidRequest":                   ErrInvalidRequest,
+		"ErrUnauthorized":                     ErrUnauthorized,
+		"ErrForbidden":                        ErrForbidden,
+		"ErrResourceNotFound":                 ErrResourceNotFound,
+		"ErrOperationNotSupported":            ErrOperationNotSupported,
+		"ErrRateLimitExceeded":                ErrRateLimitExceeded,
+		"ErrSystemError":                      ErrSystemError,
+	}
+
+	for name, sentinel := range sentinels {
+		if !reflect.TypeOf(sentinel).Comparable() {
+			t.Errorf("%s is not comparable; it would panic as a codeSentinels key", name)
+		}
+
+		if !errors.Is(oops.Wrapf(sentinel, "context"), sentinel) {
+			t.Errorf("oops.Wrapf wrap lost sentinel match for %s", name)
 		}
 	}
 }
@@ -1251,9 +1289,9 @@ func TestSentinelsMatchThroughProductionWraps(t *testing.T) {
 		t.Error("WrapCorruption wrap lost sentinel match for ErrTransferRefundAmountMissing")
 	}
 
-	fmtWrapped := fmt.Errorf("%w: %s", ErrOTTAlternativesShape, `{"not":"an array"}`)
-	if !errors.Is(fmtWrapped, ErrOTTAlternativesShape) {
-		t.Error("fmt.Errorf wrap lost sentinel match for ErrOTTAlternativesShape")
+	oopsWrapped := oops.Wrapf(ErrOTTAlternativesShape, "%s", `{"not":"an array"}`)
+	if !errors.Is(oopsWrapped, ErrOTTAlternativesShape) {
+		t.Error("oops.Wrapf wrap lost sentinel match for ErrOTTAlternativesShape")
 	}
 }
 

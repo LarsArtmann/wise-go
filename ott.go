@@ -10,6 +10,7 @@ import (
 
 	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go/internal/raw"
+	"github.com/samber/oops"
 )
 
 // HeaderOneTimeToken is the header Wise's one-time-token (OTT) endpoints
@@ -237,7 +238,7 @@ func (c *Client) GetOTTStatus(ctx context.Context, ott OneTimeToken) (*OTTStatus
 	var response raw.OTTResponse
 
 	if err := c.getWithQueryHeaders(ctx, path, nil, ottHeaders(ott), &response); err != nil {
-		return nil, fmt.Errorf("get one-time-token status: %w", err)
+		return nil, oops.Wrapf(err, "get one-time-token status")
 	}
 
 	return toOTTStatus(response)
@@ -264,7 +265,7 @@ func (c *Client) TriggerOTT(ctx context.Context, ott OneTimeToken, channel OTTCh
 	var response raw.OTTTriggerResponse
 
 	if err := c.postWithHeaders(ctx, path, nil, &response, ottHeaders(ott)); err != nil {
-		return nil, fmt.Errorf("trigger %s challenge: %w", channel, err)
+		return nil, oops.Wrapf(err, "trigger %s challenge", channel)
 	}
 
 	return &OTTTriggerResult{ObfuscatedPhoneNo: response.ObfuscatedPhoneNo}, nil
@@ -307,10 +308,10 @@ func (c *Client) VerifyOTT(
 	if err := c.postWithHeaders(
 		ctx, path, raw.OTTVerifyRequest{OTPCode: otpCode}, &response, ottHeaders(ott),
 	); err != nil {
-		return nil, fmt.Errorf(
-			"verify %s challenge: %w",
-			channel,
+		return nil, oops.Wrapf(
 			err,
+			"verify %s challenge",
+			channel,
 		) //nolint:erraudit // otpCode is a secret — it must never appear in an error string
 	}
 
@@ -337,7 +338,7 @@ func (c *Client) ClearSCAChallenge(
 
 	status, err := c.GetOTTStatus(ctx, ott)
 	if err != nil {
-		return nil, fmt.Errorf("clear sca challenge: %w", err)
+		return nil, oops.Wrapf(err, "clear sca challenge")
 	}
 
 	for range maxOTTClearRounds {
@@ -353,7 +354,7 @@ func (c *Client) ClearSCAChallenge(
 
 		trigger, err := c.TriggerOTT(ctx, ott, channel)
 		if err != nil {
-			return nil, fmt.Errorf("clear sca challenge: %w", err)
+			return nil, oops.Wrapf(err, "clear sca challenge")
 		}
 
 		phoneHint := ""
@@ -363,12 +364,12 @@ func (c *Client) ClearSCAChallenge(
 
 		otpCode, err := code(ctx, challenge, channel, phoneHint)
 		if err != nil {
-			return nil, fmt.Errorf("clear sca challenge: obtain otp code: %w", err)
+			return nil, oops.Wrapf(err, "clear sca challenge: obtain otp code")
 		}
 
 		status, err = c.VerifyOTT(ctx, ott, channel, otpCode)
 		if err != nil {
-			return nil, fmt.Errorf("clear sca challenge: %w", err)
+			return nil, oops.Wrapf(err, "clear sca challenge")
 		}
 	}
 
@@ -478,5 +479,5 @@ func parseOTTAlternatives(value jsontext.Value) ([]OTTChallengeView, error) {
 		return views, nil
 	}
 
-	return nil, fmt.Errorf("%w: %s", ErrOTTAlternativesShape, value.String())
+	return nil, oops.Wrapf(ErrOTTAlternativesShape, "%s", value.String())
 }

@@ -7,6 +7,7 @@ import (
 	id "github.com/larsartmann/go-branded-id"
 	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go/internal/raw"
+	"github.com/samber/oops"
 )
 
 // Wise's wire values for balance types; the public BalanceType enum uses
@@ -35,7 +36,7 @@ func (c *Client) ListBalances(ctx context.Context, profileID ProfileID) ([]Balan
 
 	err := c.get(ctx, path, &balances)
 	if err != nil {
-		return nil, fmt.Errorf("list balances for profile %d: %w", profileID.Get(), err)
+		return nil, oops.Wrapf(err, "list balances for profile %d", profileID.Get())
 	}
 
 	results := make([]Balance, 0, len(balances))
@@ -46,7 +47,7 @@ func (c *Client) ListBalances(ctx context.Context, profileID ProfileID) ([]Balan
 
 		result, mapErr := mapBalance(b)
 		if mapErr != nil {
-			return nil, fmt.Errorf("map balance %d: %w", b.ID, mapErr)
+			return nil, oops.Wrapf(mapErr, "map balance %d", b.ID)
 		}
 
 		results = append(results, result)
@@ -77,12 +78,12 @@ func (c *Client) GetBalance(
 	var balance raw.Balance
 
 	if err := c.get(ctx, path, &balance); err != nil {
-		return nil, fmt.Errorf("get balance %d for profile %d: %w", balanceID.Get(), profileID.Get(), err)
+		return nil, oops.Wrapf(err, "get balance %d for profile %d", balanceID.Get(), profileID.Get())
 	}
 
 	result, mapErr := mapBalance(balance)
 	if mapErr != nil {
-		return nil, fmt.Errorf("map balance %d: %w", balance.ID, mapErr)
+		return nil, oops.Wrapf(mapErr, "map balance %d", balance.ID)
 	}
 
 	return &result, nil
@@ -113,8 +114,8 @@ func (c *Client) CreateBalance(ctx context.Context, req CreateBalanceRequest) (*
 	if idempotencyKey == "" {
 		generated, err := newRequestUUID()
 		if err != nil {
-			return nil, fmt.Errorf("create %s balance for profile %d: %w",
-				req.Currency, req.ProfileID.Get(), err)
+			return nil, oops.Wrapf(err, "create %s balance for profile %d",
+				req.Currency, req.ProfileID.Get())
 		}
 
 		idempotencyKey = generated
@@ -140,12 +141,12 @@ func (c *Client) CreateBalance(ctx context.Context, req CreateBalanceRequest) (*
 		&balance,
 		headers,
 	); err != nil {
-		return nil, fmt.Errorf("create %s balance for profile %d: %w", req.Currency, req.ProfileID.Get(), err)
+		return nil, oops.Wrapf(err, "create %s balance for profile %d", req.Currency, req.ProfileID.Get())
 	}
 
 	result, mapErr := mapBalance(balance)
 	if mapErr != nil {
-		return nil, fmt.Errorf("map created balance %d: %w", balance.ID, mapErr)
+		return nil, oops.Wrapf(mapErr, "map created balance %d", balance.ID)
 	}
 
 	return &result, nil
@@ -210,17 +211,17 @@ func (c *Client) GetTotalFunds(
 	var funds raw.TotalFunds
 
 	if err := c.get(ctx, path, &funds); err != nil {
-		return nil, fmt.Errorf("get total funds for profile %d in %s: %w", profileID.Get(), currency, err)
+		return nil, oops.Wrapf(err, "get total funds for profile %d in %s", profileID.Get(), currency)
 	}
 
 	worth, err := toMoney(funds.TotalWorth)
 	if err != nil {
-		return nil, fmt.Errorf("total worth: %w", err)
+		return nil, oops.Wrapf(err, "total worth")
 	}
 
 	available, err := toMoney(funds.TotalAvailable)
 	if err != nil {
-		return nil, fmt.Errorf("total available: %w", err)
+		return nil, oops.Wrapf(err, "total available")
 	}
 
 	return &TotalFunds{Worth: worth, Available: available}, nil
@@ -256,13 +257,13 @@ func mapBalance(b raw.Balance) (Balance, error) {
 
 	amount, err := toMoney(b.Amount)
 	if err != nil {
-		return Balance{}, fmt.Errorf("amount %v %q: %w", b.Amount.Value, b.Amount.Currency, err)
+		return Balance{}, oops.Wrapf(err, "amount %v %q", b.Amount.Value, b.Amount.Currency)
 	}
 
 	reserved, err := toMoney(b.ReservedAmount)
 	if err != nil {
-		return Balance{}, fmt.Errorf("reserved amount %v %q: %w",
-			b.ReservedAmount.Value, b.ReservedAmount.Currency, err)
+		return Balance{}, oops.Wrapf(err, "reserved amount %v %q",
+			b.ReservedAmount.Value, b.ReservedAmount.Currency)
 	}
 
 	return Balance{

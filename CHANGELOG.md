@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Error construction moved to `samber/oops` (ADR 004): every contextual wrap
+  the SDK adds is an `oops.Wrapf` layer with a stack trace, and new errors are
+  built with `oops.Errorf`/`oops.New`. Message text is unchanged and
+  `errors.Is`, `errors.AsType` and `APIError.HasCode` match exactly as before;
+  `%+v` now prints the stack and `oops.AsOops` exposes the layers. Package
+  sentinels stay plain comparable values (built through `newSentinel`). The
+  erraudit gate now enforces `--enforce-samber-oops`.
+
 ### Added
 
 - Nothing yet.

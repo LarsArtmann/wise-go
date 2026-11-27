@@ -10,6 +10,7 @@ import (
 
 	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go/internal/raw"
+	"github.com/samber/oops"
 )
 
 // GetExchangeRate returns the current or historical exchange rate between two
@@ -61,7 +62,7 @@ func (c *Client) GetExchangeRate(
 
 	err := c.getWithQuery(ctx, "/v1/rates", query, &payload)
 	if err != nil {
-		return nil, fmt.Errorf("get exchange rate %s-%s: %w", source, target, err)
+		return nil, oops.Wrapf(err, "get exchange rate %s-%s", source, target)
 	}
 
 	chosen, decodeErr := decodeExchangeRates(payload, source, target)
@@ -71,7 +72,7 @@ func (c *Client) GetExchangeRate(
 
 	result, mapErr := mapExchangeRate(chosen)
 	if mapErr != nil {
-		return nil, fmt.Errorf("map exchange rate %s-%s: %w", source, target, mapErr)
+		return nil, oops.Wrapf(mapErr, "map exchange rate %s-%s", source, target)
 	}
 
 	return result, nil
@@ -87,9 +88,7 @@ func decodeExchangeRates(
 	if unmarshalErr := json.Unmarshal(payload, &rates); unmarshalErr != nil {
 		var single raw.ExchangeRate
 		if singleErr := json.Unmarshal(payload, &single); singleErr != nil {
-			return raw.ExchangeRate{}, fmt.Errorf(
-				"decode exchange rate %s-%s: %w", source, target, unmarshalErr,
-			)
+			return raw.ExchangeRate{}, oops.Wrapf(unmarshalErr, "decode exchange rate %s-%s", source, target)
 		}
 
 		rates = []raw.ExchangeRate{single}

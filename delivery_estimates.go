@@ -8,6 +8,7 @@ import (
 
 	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go/internal/raw"
+	"github.com/samber/oops"
 )
 
 // rawDeliveryEstimate avoids exposing internal/raw types in this file's
@@ -53,12 +54,12 @@ func (c *Client) GetDeliveryEstimate(
 	var estimate rawDeliveryEstimate
 
 	if err := c.getWithQuery(ctx, path, query, &estimate); err != nil {
-		return nil, fmt.Errorf("get delivery estimate for transfer %d: %w", transferID.Get(), err)
+		return nil, oops.Wrapf(err, "get delivery estimate for transfer %d", transferID.Get())
 	}
 
 	result, mapErr := mapDeliveryEstimate(estimate)
 	if mapErr != nil {
-		return nil, fmt.Errorf("map delivery estimate for transfer %d: %w", transferID.Get(), mapErr)
+		return nil, oops.Wrapf(mapErr, "map delivery estimate for transfer %d", transferID.Get())
 	}
 
 	return result, nil

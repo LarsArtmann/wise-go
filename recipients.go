@@ -9,6 +9,7 @@ import (
 	id "github.com/larsartmann/go-branded-id"
 	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go/internal/raw"
+	"github.com/samber/oops"
 )
 
 const recipientsPageSize = 20
@@ -77,7 +78,7 @@ func (c *Client) listRecipientsPage(
 
 	err := c.getWithQuery(ctx, "/v2/accounts", query, &page)
 	if err != nil {
-		return nil, nil, fmt.Errorf("list recipients for profile %d: %w", req.ProfileID.Get(), err)
+		return nil, nil, oops.Wrapf(err, "list recipients for profile %d", req.ProfileID.Get())
 	}
 
 	result := make([]Recipient, 0, len(page.Content))
@@ -108,7 +109,7 @@ func (c *Client) GetRecipient(ctx context.Context, recipientID RecipientID) (*Re
 
 	result, mapErr := mapRecipient(recipient)
 	if mapErr != nil {
-		return nil, fmt.Errorf("map recipient %d: %w", recipient.ID, mapErr)
+		return nil, oops.Wrapf(mapErr, "map recipient %d", recipient.ID)
 	}
 
 	return &result, nil
@@ -129,12 +130,12 @@ func (c *Client) CreateRecipient(
 
 	err := c.post(ctx, "/v1/accounts", body, &recipient)
 	if err != nil {
-		return nil, fmt.Errorf("create recipient for profile %d: %w", req.ProfileID.Get(), err)
+		return nil, oops.Wrapf(err, "create recipient for profile %d", req.ProfileID.Get())
 	}
 
 	result, mapErr := mapRecipient(recipient)
 	if mapErr != nil {
-		return nil, fmt.Errorf("map created recipient %d: %w", recipient.ID, mapErr)
+		return nil, oops.Wrapf(mapErr, "map created recipient %d", recipient.ID)
 	}
 
 	return &result, nil

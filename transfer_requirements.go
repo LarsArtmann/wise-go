@@ -2,9 +2,9 @@ package wise
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/larsartmann/wise-go/internal/raw"
+	"github.com/samber/oops"
 )
 
 // ValidateTransferRequirements discovers the transfer-specific fields
@@ -29,7 +29,7 @@ func (c *Client) ValidateTransferRequirements(
 
 	err := c.post(ctx, "/v1/transfer-requirements", req.toWire(), &requirements)
 	if err != nil {
-		return nil, fmt.Errorf("validate transfer requirements for quote %s: %w", req.QuoteID.Get(), err)
+		return nil, oops.Wrapf(err, "validate transfer requirements for quote %s", req.QuoteID.Get())
 	}
 
 	result := make([]TransferRequirement, 0, len(requirements))

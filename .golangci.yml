@@ -244,6 +244,7 @@ linters:
         - errors.Join(
         - .Wrap(
         - .Wrapf(
+        - .New(
         - .WithMessage(
         - .WithMessagef(
         - .WithStack(

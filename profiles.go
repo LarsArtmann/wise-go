@@ -7,6 +7,7 @@ import (
 	id "github.com/larsartmann/go-branded-id"
 	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go/internal/raw"
+	"github.com/samber/oops"
 )
 
 // GetProfile returns a single profile by ID.
@@ -21,7 +22,7 @@ func (c *Client) GetProfile(ctx context.Context, profileID ProfileID) (*Profile,
 
 	result, mapErr := mapProfile(profile)
 	if mapErr != nil {
-		return nil, fmt.Errorf("map profile %d: %w", profile.ID, mapErr)
+		return nil, oops.Wrapf(mapErr, "map profile %d", profile.ID)
 	}
 
 	return &result, nil
@@ -33,14 +34,14 @@ func (c *Client) ListProfiles(ctx context.Context) ([]Profile, error) {
 
 	err := c.get(ctx, "/v2/profiles", &profiles)
 	if err != nil {
-		return nil, fmt.Errorf("list profiles: %w", err)
+		return nil, oops.Wrapf(err, "list profiles")
 	}
 
 	results := make([]Profile, 0, len(profiles))
 	for _, p := range profiles {
 		result, mapErr := mapProfile(p)
 		if mapErr != nil {
-			return nil, fmt.Errorf("map profile %d: %w", p.ID, mapErr)
+			return nil, oops.Wrapf(mapErr, "map profile %d", p.ID)
 		}
 
 		results = append(results, result)

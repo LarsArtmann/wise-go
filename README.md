@@ -81,7 +81,8 @@ Wise publishes no official Go SDK. An OpenAPI spec exists, but it reflects Wise'
 - **Identify your integration** — `WithUserAgent` replaces Go's default client agent with your own (`bank-sync/1.0`), as Wise recommends.
 - **Tolerant timestamp handling** — Wise emits four different timestamp formats. One parser accepts them all (zoneless = UTC), and outgoing query timestamps are normalized to UTC `Z` (Wise rejects zone offsets with 422).
 - **Sandbox support** — One-line switch to the Wise sandbox environment.
-- **Minimal dependencies** — Three focused production deps: `go-retry`, `go-branded-id`, `go-error-family`.
+- **Few, focused dependencies** — `go-retry`, `go-branded-id`, `go-error-family`, and `samber/oops` for error construction, plus the `Money` bridge.
+- **Errors with a stack trace** — Every contextual wrap the SDK adds is a [samber/oops](https://github.com/samber/oops) layer: the message text is unchanged, `%+v` prints where it happened. See [Where an error happened](#where-an-error-happened).
 
 ## Installation
 
@@ -992,6 +993,23 @@ Mapper failures (unparseable timestamps, invalid currency codes in a response)
 carry `Corruption` classification — permanent, not retryable — so a blanket
 "retry on transient" wrapper fails fast instead of looping.
 
+### Where an error happened
+
+The SDK adds context with [samber/oops](https://github.com/samber/oops). Each
+contextual wrap it adds ("list balances for profile 123: ...") is an
+`oops.OopsError` layer that carries a stack trace. `Error()` and `%v` print
+the same message they always did; `%+v` adds the stack, and `oops.AsOops`
+exposes the layers when you want to read them:
+
+```go
+if oopsErr, ok := oops.AsOops(err); ok {
+    fmt.Println(oopsErr.Stacktrace())
+}
+```
+
+Matching is unaffected: `errors.Is`, `errors.AsType` and `APIError.HasCode`
+see through the wrap layers exactly as before.
+
 ### How to match an error
 
 Three matchers, one decision tree:
@@ -1000,9 +1018,9 @@ Three matchers, one decision tree:
    the SCA token) — extract the type with `errors.AsType`.
 2. **Branching on a Wise granular code with a curated sentinel?** (`not.valid`,
    `resource_not_found`, `rate_limit_exceeded`, ...) — match by value with
-   `errors.Is`. This works through **any** `fmt.Errorf("%w")` wrap chain: the
-   SDK's contextual wraps ("create transfer for quote ...: ...") never break
-   the match.
+   `errors.Is`. This works through **any** wrap chain — yours (`fmt.Errorf` with
+   `%w`) and the SDK's own context wraps ("create transfer for quote ...: ...") —
+   and never breaks the match.
 3. **Any other granular code?** (the open enum — Wise adds codes over time) —
    read the structured details with `APIError.Details` or branch with
    `APIError.HasCode`. Both are promoted onto **every** typed error, so
@@ -1318,13 +1336,14 @@ broken sender is distinguishable from a routing mistake.
 
 ## Design Decisions
 
-| Decision                          | Rationale                                                                                                                                              |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Monetary amounts as `int64` cents | `float64` causes precision loss (e.g., `0.1 + 0.2 ≠ 0.3`). Cents are safe for arithmetic and storage.                                                  |
-| Two-layer type system             | Raw wire types in `internal/raw` mirror JSON exactly. Result types expose clean Go with `Money` value objects. Mapping functions convert between them. |
-| `go-retry` for retries            | In-house, zero-dependency retry with backoff and jitter; the only executor that expresses Wise's `Retry-After` as first-class policy (ADR 003).        |
-| Flat package structure            | Single `package wise`; wire types hidden in `internal/raw`. The import path is the API.                                                                |
-| BDD tests with Ginkgo             | `httptest.Server` mock API responses. Tests verify both happy paths and error classification.                                                          |
+| Decision                          | Rationale                                                                                                                                                                       |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Monetary amounts as `int64` cents | `float64` causes precision loss (e.g., `0.1 + 0.2 ≠ 0.3`). Cents are safe for arithmetic and storage.                                                                           |
+| Two-layer type system             | Raw wire types in `internal/raw` mirror JSON exactly. Result types expose clean Go with `Money` value objects. Mapping functions convert between them.                          |
+| `go-retry` for retries            | In-house, zero-dependency retry with backoff and jitter; the only executor that expresses Wise's `Retry-After` as first-class policy (ADR 003).                                 |
+| `samber/oops` for error context   | Context wraps carry a stack trace any consumer can read; message text and `errors.Is`/`errors.AsType` matching are unchanged. Sentinels stay plain comparable values (ADR 004). |
+| Flat package structure            | Single `package wise`; wire types hidden in `internal/raw`. The import path is the API.                                                                                         |
+| BDD tests with Ginkgo             | `httptest.Server` mock API responses. Tests verify both happy paths and error classification.                                                                                   |
 
 ## Testing
 

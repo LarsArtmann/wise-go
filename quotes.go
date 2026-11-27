@@ -10,6 +10,7 @@ import (
 	id "github.com/larsartmann/go-branded-id"
 	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go/internal/raw"
+	"github.com/samber/oops"
 )
 
 // CreateUnauthenticatedQuote creates a quote without an API token — a public
@@ -27,8 +28,7 @@ func (c *Client) CreateUnauthenticatedQuote(
 
 	err := c.post(ctx, "/v3/quotes", req.toWire(false), &quote)
 	if err != nil {
-		return nil, fmt.Errorf("create unauthenticated quote %s-%s: %w",
-			req.SourceCurrency, req.TargetCurrency, err)
+		return nil, oops.Wrapf(err, "create unauthenticated quote %s-%s", req.SourceCurrency, req.TargetCurrency)
 	}
 
 	return mapQuote(quote, ProfileID{})
@@ -51,7 +51,7 @@ func (c *Client) CreateQuote(
 
 	err := c.post(ctx, path, req.toWire(true), &quote)
 	if err != nil {
-		return nil, fmt.Errorf("create quote for profile %d: %w", profileID.Get(), err)
+		return nil, oops.Wrapf(err, "create quote for profile %d", profileID.Get())
 	}
 
 	return mapQuote(quote, profileID)
@@ -77,7 +77,7 @@ func (c *Client) GetQuote(
 	var quote raw.Quote
 
 	if err := c.get(ctx, path, &quote); err != nil {
-		return nil, fmt.Errorf("get quote %s for profile %d: %w", quoteID.Get(), profileID.Get(), err)
+		return nil, oops.Wrapf(err, "get quote %s for profile %d", quoteID.Get(), profileID.Get())
 	}
 
 	return mapQuote(quote, profileID)
@@ -198,7 +198,7 @@ func (c *Client) quoteAccountRequirements(
 	err := c.request(ctx, method, path, query, wireBody, &requirements,
 		map[string]string{"Accept-Minor-Version": "1"})
 	if err != nil {
-		return nil, fmt.Errorf("%s account requirements for quote %s: %w", verb, quoteID.Get(), err)
+		return nil, oops.Wrapf(err, "%s account requirements for quote %s", verb, quoteID.Get())
 	}
 
 	return mapAccountRequirements(requirements), nil

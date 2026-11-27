@@ -7,6 +7,7 @@ import (
 
 	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go/internal/raw"
+	"github.com/samber/oops"
 )
 
 // OriginatorLegalEntityType discriminates the originator oneOf on the wire.
@@ -129,7 +130,7 @@ func (c *Client) CreateThirdPartyTransfer(
 	var transfer raw.ThirdPartyTransfer
 
 	if err := c.post(ctx, path, body, &transfer); err != nil {
-		return nil, fmt.Errorf("create third-party transfer for profile %d: %w", req.ProfileID.Get(), err)
+		return nil, oops.Wrapf(err, "create third-party transfer for profile %d", req.ProfileID.Get())
 	}
 
 	result, err := toThirdPartyTransfer("map created third-party transfer", transfer)
@@ -160,7 +161,7 @@ func (c *Client) GetThirdPartyTransfer(
 	var transfer raw.ThirdPartyTransfer
 
 	if err := c.get(ctx, path, &transfer); err != nil {
-		return nil, fmt.Errorf("get third-party transfer %d: %w", transferID.Get(), err)
+		return nil, oops.Wrapf(err, "get third-party transfer %d", transferID.Get())
 	}
 
 	result, err := toThirdPartyTransfer("map third-party transfer", transfer)

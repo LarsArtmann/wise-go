@@ -12,6 +12,7 @@ import (
 
 	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/go-retry"
+	"github.com/samber/oops"
 )
 
 const (
@@ -185,11 +186,8 @@ func isRetryableError(err error) bool {
 // Authenticate validates the API key by calling ListProfiles.
 func (c *Client) Authenticate(ctx context.Context) error {
 	_, err := c.ListProfiles(ctx)
-	if err != nil {
-		return fmt.Errorf("authenticate: %w", err)
-	}
 
-	return nil
+	return oops.Wrapf(err, "authenticate")
 }
 
 // Health reports whether the client can reach the Wise API and its
@@ -220,11 +218,9 @@ func (c *Client) VerifyCredentials(ctx context.Context) error {
 	failFast := *c
 	failFast.retryConfig.MaxAttempts = 1
 
-	if _, err := failFast.ListProfiles(ctx); err != nil {
-		return fmt.Errorf("verify credentials: %w", err)
-	}
+	_, err := failFast.ListProfiles(ctx)
 
-	return nil
+	return oops.Wrapf(err, "verify credentials")
 }
 
 // --- HTTP helpers ---
@@ -309,12 +305,12 @@ func (c *Client) getRaw(ctx context.Context, path string, query func() string) (
 	defer rc.close()
 
 	if err := c.checkError(resp); err != nil {
-		return nil, fmt.Errorf("request %s %s: %w", http.MethodGet, fullURL, err)
+		return nil, oops.Wrapf(err, "request %s %s", http.MethodGet, fullURL)
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("read response body from %s: %w", fullURL, err)
+		return nil, oops.Wrapf(err, "read response body from %s", fullURL)
 	}
 
 	return body, nil
@@ -345,7 +341,7 @@ func (c *Client) request(
 	defer rc.close()
 
 	if err := c.checkError(resp); err != nil {
-		return fmt.Errorf("request %s %s: %w", method, fullURL, err)
+		return oops.Wrapf(err, "request %s %s", method, fullURL)
 	}
 
 	if target != nil {
@@ -375,7 +371,7 @@ func (c *Client) doRequest(
 			if body != nil {
 				b, marshalErr := json.Marshal(body)
 				if marshalErr != nil {
-					return nil, fmt.Errorf("encode request body for %s %s: %w", method, fullURL, marshalErr)
+					return nil, oops.Wrapf(marshalErr, "encode request body for %s %s", method, fullURL)
 				}
 
 				bodyReader = bytes.NewReader(b)
@@ -383,7 +379,7 @@ func (c *Client) doRequest(
 
 			req, reqErr := http.NewRequestWithContext(ctx, method, fullURL, bodyReader)
 			if reqErr != nil {
-				return nil, fmt.Errorf("create request for %s %s: %w", method, fullURL, reqErr)
+				return nil, oops.Wrapf(reqErr, "create request for %s %s", method, fullURL)
 			}
 
 			c.setHeaders(ctx, req)
@@ -402,7 +398,7 @@ func (c *Client) doRequest(
 		// On exhaustion the chain wraps the final attempt's typed error
 		// (RateLimitError, ServerError), so errors.AsType still reaches it —
 		// no unwrap bridge needed.
-		return nil, fmt.Errorf("execute %s %s: %w", method, fullURL, err)
+		return nil, oops.Wrapf(err, "execute %s %s", method, fullURL)
 	}
 
 	return resp, nil
@@ -438,7 +434,7 @@ func (c *Client) executeWithLogging(
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("do %s %s: %w", method, fullURL, err)
+		return nil, oops.Wrapf(err, "do %s %s", method, fullURL)
 	}
 
 	apiErr := c.checkError(resp)

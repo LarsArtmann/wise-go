@@ -7,6 +7,7 @@ import (
 
 	errorfamily "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/wise-go/internal/raw"
+	"github.com/samber/oops"
 )
 
 // MultiCurrencyAccount is the profile's Wise account container — the holder
@@ -39,12 +40,12 @@ func (c *Client) GetMultiCurrencyAccount(
 	var account raw.MultiCurrencyAccount
 
 	if err := c.get(ctx, path, &account); err != nil {
-		return nil, fmt.Errorf("get multi-currency account for profile %d: %w", profileID.Get(), err)
+		return nil, oops.Wrapf(err, "get multi-currency account for profile %d", profileID.Get())
 	}
 
 	result, err := mapMultiCurrencyAccount(account)
 	if err != nil {
-		return nil, fmt.Errorf("map multi-currency account %d: %w", account.ID, err)
+		return nil, oops.Wrapf(err, "map multi-currency account %d", account.ID)
 	}
 
 	return &result, nil
@@ -171,12 +172,12 @@ func (c *Client) GetBankAccountDetails(
 	var detail raw.AccountDetails
 
 	if err := c.get(ctx, path, &detail); err != nil {
-		return nil, fmt.Errorf("get bank account details %d: %w", id.Get(), err)
+		return nil, oops.Wrapf(err, "get bank account details %d", id.Get())
 	}
 
 	result, err := mapAccountDetails(detail)
 	if err != nil {
-		return nil, fmt.Errorf("map bank account details %d: %w", detail.ID, err)
+		return nil, oops.Wrapf(err, "map bank account details %d", detail.ID)
 	}
 
 	return &result, nil
